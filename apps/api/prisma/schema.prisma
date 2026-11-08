@@ -36,9 +36,10 @@ model User {
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
-  memberships  Membership[]
-  invitesSent  Invitation[] @relation("InvitedBy")
-  auditEntries AuditLog[]
+  memberships   Membership[]
+  invitesSent   Invitation[]   @relation("InvitedBy")
+  auditEntries  AuditLog[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -141,4 +142,25 @@ model AuditLog {
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([actorId, createdAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+/// One refresh token in a rotation chain. Only the SHA-256 hash is stored.
+/// All tokens from one sign-in share a familyId; reusing an old token revokes the whole family.
+model RefreshToken {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  familyId     String    @map("family_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash")
+  expiresAt    DateTime  @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  replacedById String?   @map("replaced_by_id") @db.Uuid
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("refresh_tokens")
 }
