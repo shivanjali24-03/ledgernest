@@ -10,7 +10,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 |---|---|---|
 | Super Admin console | Platform owner manages every organisation, user and global setting | 📋 |
 | Organisations (multi-tenant) | Each business is a separate organisation; data is always isolated by organisation | 📋 |
-| Sign-in and sessions | Email + password (hashed with Argon2), short-lived access token, rotating refresh token, account lockout | 📋 |
+| Sign-in and sessions | Email + password (hashed with Argon2), short-lived access token, rotating refresh token, account lockout | 🚧 #7 (API done) |
 | Roles and permissions | Built-in roles (below) plus **custom roles** built from a permission matrix | 🚧 Rules done (#3) |
 | Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | 📋 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | 📋 |
