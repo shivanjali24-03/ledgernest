@@ -6,6 +6,7 @@ import { API_URL, ApiError, createAuthClient, type AuthClient } from './client';
 import { AuthContext, DEMO_EMAIL, nameFromEmail, type Auth, type AuthState } from './context';
 import { liveSession } from './liveSession';
 import { PlatformApiContext } from '../platform/context';
+import { ApiClientContext } from './apiClientContext';
 import { createDemoPlatformApi, demoAcceptAsNewUser } from '../platform/demoApi';
 import { createLivePlatformApi } from '../platform/liveApi';
 import type { PlatformApi } from '../platform/types';
@@ -149,7 +150,9 @@ export default function AuthProvider({
 
   return (
     <AuthContext.Provider value={auth}>
-      <PlatformApiContext.Provider value={platformApi}>{content}</PlatformApiContext.Provider>
+      <ApiClientContext.Provider value={client}>
+        <PlatformApiContext.Provider value={platformApi}>{content}</PlatformApiContext.Provider>
+      </ApiClientContext.Provider>
     </AuthContext.Provider>
   );
 }

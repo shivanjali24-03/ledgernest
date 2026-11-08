@@ -10,6 +10,8 @@ export interface Session {
   email: string;
   /** null for a platform Super Admin who isn't a member of any organisation yet */
   organization: string | null;
+  /** Sent as X-Organization-Id on organisation requests */
+  organizationId: string | null;
   /** null when the user's role in this organisation is a custom one */
   role: BuiltInRoleId | null;
   customRoleName?: string;

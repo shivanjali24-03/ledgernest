@@ -60,7 +60,7 @@ export function SelectField({
   options,
   className,
   ...select
-}: Omit<FieldProps, 'children'> & SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string }[] }) {
+}: Omit<FieldProps, 'children'> & SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string; disabled?: boolean }[] }) {
   return (
     <Field label={label} error={error} hint={hint}>
       {({ id, describedBy, invalid }) => (
@@ -72,7 +72,7 @@ export function SelectField({
           {...select}
         >
           {options.map((o) => (
-            <option key={o.value} value={o.value}>
+            <option key={o.value} value={o.value} disabled={o.disabled}>
               {o.label}
             </option>
           ))}

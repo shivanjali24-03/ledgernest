@@ -57,3 +57,13 @@ describe('language switching', () => {
     expect(languageInfo('xx').code).toBe('en');
   });
 });
+
+describe('permission labels', () => {
+  it('every organisation permission and area has a label, so new permissions cannot ship unlabelled', async () => {
+    const { ORGANIZATION_PERMISSIONS } = await import('@ledgernest/shared');
+    for (const p of ORGANIZATION_PERMISSIONS) {
+      expect(english[`permissions.${p.replace(/\./g, '_')}`], p).toBeDefined();
+      expect(english[`permissions.areas.${p.split('.')[0]}`], p).toBeDefined();
+    }
+  });
+});

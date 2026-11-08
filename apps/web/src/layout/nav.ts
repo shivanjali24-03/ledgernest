@@ -62,7 +62,7 @@ export const NAV: NavGroup[] = [
   {
     labelKey: 'nav.groups.organisation',
     items: [
-      { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', keywords: 'team invite permissions' },
+      { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', ready: true, keywords: 'team invite permissions roles members' },
       { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', keywords: 'history activity' },
       { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', keywords: 'company fiscal year currency tax' },
     ],
