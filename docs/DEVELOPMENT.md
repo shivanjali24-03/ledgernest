@@ -22,7 +22,8 @@ createdb -h /tmp -p 5433 -U postgres ledgernest_test
 ```
 Then:
 ```bash
-cp apps/api/.env.example apps/api/.env      # adjust if needed
+cp apps/api/.env.example apps/api/.env      # then set JWT_ACCESS_SECRET (see below)
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"   # paste into JWT_ACCESS_SECRET
 npm run db:migrate -w @ledgernest/api       # create tables
 npm run db:seed -w @ledgernest/api          # create the first Super Admin
 ```

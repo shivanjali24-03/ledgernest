@@ -1,4 +1,4 @@
-import { ALL_PERMISSIONS, ORGANIZATION_PERMISSIONS, isPermission, type Permission } from './permissions';
+import { ALL_PERMISSIONS, ORGANIZATION_PERMISSIONS, isPermission, type Permission } from './permissions.js';
 
 export type BuiltInRoleId = 'super_admin' | 'owner' | 'admin' | 'accountant' | 'bookkeeper' | 'auditor' | 'viewer';
 export type RoleScope = 'platform' | 'organization';

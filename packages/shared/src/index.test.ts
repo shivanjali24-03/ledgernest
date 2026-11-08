@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRODUCT_NAME } from './index';
+import { PRODUCT_NAME } from './index.js';
 
 describe('@ledgernest/shared', () => {
   it('exposes the product name', () => {

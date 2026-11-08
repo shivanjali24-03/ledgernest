@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_PERMISSIONS, ORGANIZATION_PERMISSIONS, PLATFORM_PERMISSIONS, groupByArea, isPermission } from './permissions';
-import { BUILT_IN_ROLES, BUILT_IN_ROLE_IDS, CUSTOM_ROLE_RANK, can, canAssignRole, permissionsOf, validateCustomRole, type RoleDefinition } from './roles';
+import { ALL_PERMISSIONS, ORGANIZATION_PERMISSIONS, PLATFORM_PERMISSIONS, groupByArea, isPermission } from './permissions.js';
+import { BUILT_IN_ROLES, BUILT_IN_ROLE_IDS, CUSTOM_ROLE_RANK, can, canAssignRole, permissionsOf, validateCustomRole, type RoleDefinition } from './roles.js';
 
 const R = BUILT_IN_ROLES;
 const custom = (permissions: RoleDefinition['permissions']): RoleDefinition => ({
