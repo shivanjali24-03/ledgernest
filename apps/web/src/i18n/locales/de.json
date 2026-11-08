@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "Übersicht",
+      "accounting": "Buchhaltung",
+      "sales": "Verkauf und Einkauf",
+      "organisation": "Organisation",
+      "platform": "Plattform"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "accounts": "Kontenplan",
+      "journals": "Buchungssätze",
+      "reports": "Berichte",
+      "invoices": "Ausgangsrechnungen",
+      "bills": "Eingangsrechnungen",
+      "banking": "Bank",
+      "payments": "Zahlungen",
+      "users": "Benutzer und Rollen",
+      "audit": "Prüfprotokoll",
+      "settings": "Einstellungen",
+      "organizations": "Organisationen",
+      "platformUsers": "Plattformbenutzer"
+    },
+    "soon": "Bald"
+  },
+  "shell": {
+    "mainNav": "Hauptmenü",
+    "collapse": "Einklappen",
+    "collapseSidebar": "Seitenleiste einklappen",
+    "expandSidebar": "Seitenleiste ausklappen",
+    "openMenu": "Menü öffnen",
+    "search": "Suchen…",
+    "previewAs": "Ansehen als",
+    "previewAsLabel": "Die App als Rolle ansehen",
+    "toDark": "Zum dunklen Modus wechseln",
+    "toLight": "Zum hellen Modus wechseln",
+    "language": "Sprache"
+  },
+  "palette": {
+    "title": "Befehlspalette",
+    "placeholder": "Seiten, Berichte, Einstellungen suchen…",
+    "noMatches": "Keine Treffer für „{{query}}“",
+    "results": "Ergebnisse"
+  },
+  "roles": {
+    "super_admin": "Super-Admin",
+    "owner": "Inhaber",
+    "admin": "Administrator",
+    "accountant": "Buchhalter",
+    "bookkeeper": "Buchungskraft",
+    "auditor": "Prüfer",
+    "viewer": "Betrachter"
+  },
+  "dashboard": {
+    "roleView": "Ansicht: {{role}}",
+    "greeting": "Schön, dich zu sehen, {{name}}",
+    "sampleData": "Beispieldaten",
+    "keyFigures": "Kennzahlen",
+    "kpi": {
+      "cash": "Kasse und Bank",
+      "receivables": "Forderungen",
+      "payables": "Verbindlichkeiten",
+      "profit": "Jahresüberschuss (lfd. Jahr)"
+    },
+    "vsLastMonth": "{{value}} gegenüber Vormonat",
+    "setupTitle": "Richte deine Buchhaltung ein",
+    "setupProgress": "{{done}} von {{total}} erledigt",
+    "setup": {
+      "organisation": "Organisation anlegen",
+      "team": "Team einladen und Rollen zuweisen",
+      "coa": "Kontenplan-Vorlage wählen",
+      "fiscal": "Geschäftsjahr und Basiswährung festlegen",
+      "bank": "Bankkonto verbinden"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} kommt bald",
+    "thisPage": "Diese Seite",
+    "body": "Das ist Teil der LedgerNest-Roadmap. Sieh dir an, was geplant ist, und verfolge den Fortschritt auf GitHub.",
+    "cta": "Funktionsliste ansehen"
+  }
+}

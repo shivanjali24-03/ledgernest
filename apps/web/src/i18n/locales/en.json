@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "Overview",
+      "accounting": "Accounting",
+      "sales": "Sales & purchases",
+      "organisation": "Organisation",
+      "platform": "Platform"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "accounts": "Chart of accounts",
+      "journals": "Journal entries",
+      "reports": "Reports",
+      "invoices": "Invoices",
+      "bills": "Bills",
+      "banking": "Banking",
+      "payments": "Payments",
+      "users": "Users & roles",
+      "audit": "Audit log",
+      "settings": "Settings",
+      "organizations": "Organisations",
+      "platformUsers": "Platform users"
+    },
+    "soon": "Soon"
+  },
+  "shell": {
+    "mainNav": "Main",
+    "collapse": "Collapse",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "openMenu": "Open menu",
+    "search": "Search…",
+    "previewAs": "Preview as",
+    "previewAsLabel": "Preview the app as a role",
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode",
+    "language": "Language"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Search pages, reports, settings…",
+    "noMatches": "No matches for “{{query}}”",
+    "results": "Results"
+  },
+  "roles": {
+    "super_admin": "Super Admin",
+    "owner": "Owner",
+    "admin": "Admin",
+    "accountant": "Accountant",
+    "bookkeeper": "Bookkeeper",
+    "auditor": "Auditor",
+    "viewer": "Viewer"
+  },
+  "dashboard": {
+    "roleView": "{{role}} view",
+    "greeting": "Good to see you, {{name}}",
+    "sampleData": "Sample data",
+    "keyFigures": "Key figures",
+    "kpi": {
+      "cash": "Cash & bank",
+      "receivables": "Receivables",
+      "payables": "Payables",
+      "profit": "Net profit (YTD)"
+    },
+    "vsLastMonth": "{{value}} vs last month",
+    "setupTitle": "Set up your books",
+    "setupProgress": "{{done}} of {{total}} done",
+    "setup": {
+      "organisation": "Create your organisation",
+      "team": "Invite your team and assign roles",
+      "coa": "Choose a chart of accounts template",
+      "fiscal": "Set your fiscal year and base currency",
+      "bank": "Connect a bank account"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} is on the way",
+    "thisPage": "This page",
+    "body": "It's part of the LedgerNest roadmap. See what's planned and follow progress on GitHub.",
+    "cta": "View the feature list"
+  }
+}

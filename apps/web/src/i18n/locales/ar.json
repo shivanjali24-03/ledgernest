@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "نظرة عامة",
+      "accounting": "المحاسبة",
+      "sales": "المبيعات والمشتريات",
+      "organisation": "المؤسسة",
+      "platform": "المنصة"
+    },
+    "items": {
+      "dashboard": "لوحة التحكم",
+      "accounts": "دليل الحسابات",
+      "journals": "قيود اليومية",
+      "reports": "التقارير",
+      "invoices": "فواتير المبيعات",
+      "bills": "فواتير المشتريات",
+      "banking": "البنوك",
+      "payments": "المدفوعات",
+      "users": "المستخدمون والأدوار",
+      "audit": "سجل التدقيق",
+      "settings": "الإعدادات",
+      "organizations": "المؤسسات",
+      "platformUsers": "مستخدمو المنصة"
+    },
+    "soon": "قريبًا"
+  },
+  "shell": {
+    "mainNav": "الرئيسية",
+    "collapse": "طي",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "expandSidebar": "توسيع الشريط الجانبي",
+    "openMenu": "فتح القائمة",
+    "search": "بحث…",
+    "previewAs": "العرض بصفة",
+    "previewAsLabel": "عرض التطبيق بصفة دور",
+    "toDark": "التبديل إلى الوضع الداكن",
+    "toLight": "التبديل إلى الوضع الفاتح",
+    "language": "اللغة"
+  },
+  "palette": {
+    "title": "لوحة الأوامر",
+    "placeholder": "ابحث في الصفحات والتقارير والإعدادات…",
+    "noMatches": "لا توجد نتائج لـ “{{query}}”",
+    "results": "النتائج"
+  },
+  "roles": {
+    "super_admin": "المسؤول الأعلى",
+    "owner": "المالك",
+    "admin": "المسؤول",
+    "accountant": "المحاسب",
+    "bookkeeper": "مسك الدفاتر",
+    "auditor": "المدقق",
+    "viewer": "المشاهد"
+  },
+  "dashboard": {
+    "roleView": "عرض {{role}}",
+    "greeting": "سعداء برؤيتك، {{name}}",
+    "sampleData": "بيانات تجريبية",
+    "keyFigures": "الأرقام الرئيسية",
+    "kpi": {
+      "cash": "النقد والبنوك",
+      "receivables": "الذمم المدينة",
+      "payables": "الذمم الدائنة",
+      "profit": "صافي الربح (منذ بداية العام)"
+    },
+    "vsLastMonth": "{{value}} مقارنة بالشهر الماضي",
+    "setupTitle": "جهّز دفاترك",
+    "setupProgress": "اكتمل {{done}} من {{total}}",
+    "setup": {
+      "organisation": "أنشئ مؤسستك",
+      "team": "ادعُ فريقك وعيّن الأدوار",
+      "coa": "اختر قالبًا لدليل الحسابات",
+      "fiscal": "حدّد سنتك المالية وعملتك الأساسية",
+      "bank": "اربط حسابًا بنكيًا"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} قادم قريبًا",
+    "thisPage": "هذه الصفحة",
+    "body": "إنها جزء من خارطة طريق LedgerNest. اطّلع على ما هو مخطط وتابع التقدم على GitHub.",
+    "cta": "عرض قائمة الميزات"
+  }
+}
