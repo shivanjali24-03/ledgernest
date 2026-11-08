@@ -79,5 +79,44 @@
     "thisPage": "This page",
     "body": "It's part of the LedgerNest roadmap. See what's planned and follow progress on GitHub.",
     "cta": "View the feature list"
+  },
+  "auth": {
+    "title": "Sign in to LedgerNest",
+    "subtitle": "Welcome back. Enter your details to continue.",
+    "email": "Email",
+    "emailPlaceholder": "you@company.com",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "capsLock": "Caps Lock is on",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "demoTitle": "Demo mode",
+    "demoBody": "No server is connected, so any email and password opens the sample company.",
+    "demoCta": "Explore the demo",
+    "signOut": "Sign out",
+    "account": "Account",
+    "loading": "Loading your workspace…",
+    "platform": "LedgerNest platform",
+    "signedOut": "You've been signed out.",
+    "brand": {
+      "title": "Accounting that keeps up with your business",
+      "secure": "Secure sign-in with automatic lockout",
+      "languages": "Works in 7 languages, including right-to-left",
+      "roles": "Roles from Super Admin to Viewer",
+      "trialBalance": "Trial balance",
+      "balanced": "Balanced"
+    },
+    "errors": {
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Enter your password.",
+      "invalid": "Email or password is incorrect.",
+      "locked": "Too many failed attempts. Try again in {{minutes}} min.",
+      "suspended": "This account is suspended. Contact your administrator.",
+      "rateLimited": "Too many attempts from this device. Wait a minute and try again.",
+      "network": "Can't reach the server. Check your connection and try again.",
+      "server": "Something went wrong on our side. Please try again.",
+      "expired": "Your session has ended. Please sign in again."
+    }
   }
 }

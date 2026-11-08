@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import AnimatedNumber from '../motion/AnimatedNumber';
 import { fadeUp, stagger } from '../motion/tokens';
 import { formatCompactMoney, formatPercent } from '../lib/format';
-import { useSession } from '../layout/session';
+import { roleLabel, useSession } from '../layout/session';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
 
@@ -58,7 +58,7 @@ export default function Dashboard() {
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
       <motion.header variants={fadeUp} className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-brand-700 dark:text-brand-300">{t('dashboard.roleView', { role: t(`roles.${session.role}`) })}</p>
+          <p className="text-sm font-medium text-brand-700 dark:text-brand-300">{t('dashboard.roleView', { role: roleLabel(session, t) })}</p>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('dashboard.greeting', { name: firstName })}</h1>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">

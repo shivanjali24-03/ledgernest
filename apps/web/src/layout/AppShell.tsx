@@ -1,27 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { ChevronsLeft, Menu, Moon, Search, Sun } from 'lucide-react';
+import { ChevronsLeft, Menu, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { BUILT_IN_ROLE_IDS, type BuiltInRoleId } from '@ledgernest/shared';
 import { page, spring } from '../motion/tokens';
-import { useTheme } from '../theme/useTheme';
 import CommandPalette from './CommandPalette';
 import Logo from './Logo';
 import { visibleNav } from './nav';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useSession } from './session';
+import { roleLabel, useSession } from './session';
+import ThemeToggle from './ThemeToggle';
+import UserMenu from './UserMenu';
 
 export default function AppShell() {
   const session = useSession();
-  const theme = useTheme();
   const { t, i18n } = useTranslation();
   const rtl = i18n.dir() === 'rtl';
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const { setRole } = session;
   const groups = useMemo(() => visibleNav(session.permissions), [session.permissions]);
 
   // ⌘/Ctrl+K opens the command palette from anywhere
@@ -141,9 +142,11 @@ export default function AppShell() {
           </button>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold" dir="auto">
-              {session.organization}
+              {session.organization ?? t('auth.platform')}
             </p>
-            <p className="truncate text-xs text-ink-500">{t(`roles.${session.role}`)}</p>
+            <p className="truncate text-xs text-ink-500" dir="auto">
+              {roleLabel(session, t)}
+            </p>
           </div>
 
           <button
@@ -157,11 +160,13 @@ export default function AppShell() {
             <Search className="size-5" />
           </button>
 
+          {/* Role preview exists only in the demo; with real data the server decides */}
+          {setRole && (
           <label className="hidden items-center gap-2 text-xs text-ink-500 sm:flex">
             <span>{t('shell.previewAs')}</span>
             <select
-              value={session.role}
-              onChange={(e) => session.setRole(e.target.value as BuiltInRoleId)}
+              value={session.role ?? undefined}
+              onChange={(e) => setRole(e.target.value as BuiltInRoleId)}
               className="h-9 rounded-xl border border-ink-200 bg-white px-2 text-sm text-ink-800 dark:border-ink-700 dark:bg-ink-800 dark:text-ink-100"
               aria-label={t('shell.previewAsLabel')}
             >
@@ -172,21 +177,11 @@ export default function AppShell() {
               ))}
             </select>
           </label>
+          )}
 
           <LanguageSwitcher />
-          <button onClick={theme.toggle} className="rounded-xl p-2 hover:bg-ink-100 dark:hover:bg-ink-800" aria-label={theme.resolved === 'dark' ? t('shell.toLight') : t('shell.toDark')}>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span key={theme.resolved} className="inline-flex" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={spring.snappy}>
-                {theme.resolved === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
-              </motion.span>
-            </AnimatePresence>
-          </button>
-          <span className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white" aria-label={session.name}>
-            {session.name
-              .split(' ')
-              .map((p) => p[0])
-              .join('')}
-          </span>
+          <ThemeToggle />
+          <UserMenu />
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto">

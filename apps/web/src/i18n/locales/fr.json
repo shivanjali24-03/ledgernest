@@ -79,5 +79,44 @@
     "thisPage": "Cette page",
     "body": "Elle fait partie de la feuille de route de LedgerNest. Découvrez ce qui est prévu et suivez l’avancement sur GitHub.",
     "cta": "Voir la liste des fonctionnalités"
+  },
+  "auth": {
+    "title": "Connexion à LedgerNest",
+    "subtitle": "Bon retour. Saisissez vos informations pour continuer.",
+    "email": "E-mail",
+    "emailPlaceholder": "vous@entreprise.com",
+    "password": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "capsLock": "Verr. Maj est activé",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "demoTitle": "Mode démo",
+    "demoBody": "Aucun serveur n'est connecté : n'importe quel e-mail et mot de passe ouvrent l'entreprise exemple.",
+    "demoCta": "Découvrir la démo",
+    "signOut": "Se déconnecter",
+    "account": "Compte",
+    "loading": "Chargement de votre espace…",
+    "platform": "Plateforme LedgerNest",
+    "signedOut": "Vous avez été déconnecté.",
+    "brand": {
+      "title": "Une comptabilité qui suit le rythme de votre entreprise",
+      "secure": "Connexion sécurisée avec verrouillage automatique",
+      "languages": "Disponible en 7 langues, y compris de droite à gauche",
+      "roles": "Des rôles du Super administrateur au Lecteur",
+      "trialBalance": "Balance générale",
+      "balanced": "Équilibrée"
+    },
+    "errors": {
+      "emailInvalid": "Saisissez une adresse e-mail valide.",
+      "passwordRequired": "Saisissez votre mot de passe.",
+      "invalid": "E-mail ou mot de passe incorrect.",
+      "locked": "Trop de tentatives échouées. Réessayez dans {{minutes}} min.",
+      "suspended": "Ce compte est suspendu. Contactez votre administrateur.",
+      "rateLimited": "Trop de tentatives depuis cet appareil. Attendez une minute et réessayez.",
+      "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
+      "server": "Un problème est survenu de notre côté. Veuillez réessayer.",
+      "expired": "Votre session a expiré. Veuillez vous reconnecter."
+    }
   }
 }

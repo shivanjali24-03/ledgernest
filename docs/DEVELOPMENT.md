@@ -34,6 +34,14 @@ npm run dev:api     # http://localhost:3000/api/v1 · API docs at http://localho
 npm run dev:web     # http://localhost:5173
 ```
 
+The web app talks to the API only when `VITE_API_URL` is set:
+```bash
+cp apps/web/.env.example apps/web/.env.local   # points at http://localhost:3000/api/v1
+```
+Then sign in with the Super Admin from your `SEED_*` settings.
+
+Without `VITE_API_URL` the web app runs in **demo mode**: any email and password opens a sample company, and you can preview every role. This is what the public GitHub Pages demo uses.
+
 ## 5. Test
 ```bash
 npm test                                   # unit tests, all workspaces

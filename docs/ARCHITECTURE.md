@@ -36,6 +36,8 @@ Browser (React SPA)  ──HTTPS / JSON──►  NestJS API  ──Prisma──
 | `POST /api/v1/auth/logout` | Revokes the session, clears the cookie |
 | `GET /api/v1/auth/me` | The user, their organisations, role and permissions in each |
 
+In the web app, the access token is kept in memory only (never in `localStorage`). A 401 triggers one silent refresh and retry. Refreshes run inside a browser-wide lock (`navigator.locks`), so two tabs never send the same refresh token at once, which the API would treat as theft. Signing out in one tab signs out every open tab (`BroadcastChannel`).
+
 ## Authorisation
 
 - Permissions are strings like `journal.post` or `users.invite`, defined in `packages/shared`.

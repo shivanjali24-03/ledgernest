@@ -79,5 +79,44 @@
     "thisPage": "Diese Seite",
     "body": "Das ist Teil der LedgerNest-Roadmap. Sieh dir an, was geplant ist, und verfolge den Fortschritt auf GitHub.",
     "cta": "Funktionsliste ansehen"
+  },
+  "auth": {
+    "title": "Bei LedgerNest anmelden",
+    "subtitle": "Willkommen zurück. Gib deine Daten ein, um fortzufahren.",
+    "email": "E-Mail",
+    "emailPlaceholder": "du@firma.de",
+    "password": "Passwort",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "capsLock": "Feststelltaste ist aktiv",
+    "submit": "Anmelden",
+    "submitting": "Anmeldung läuft…",
+    "demoTitle": "Demo-Modus",
+    "demoBody": "Es ist kein Server verbunden, daher öffnet jede E-Mail und jedes Passwort die Beispielfirma.",
+    "demoCta": "Demo ansehen",
+    "signOut": "Abmelden",
+    "account": "Konto",
+    "loading": "Dein Arbeitsbereich wird geladen…",
+    "platform": "LedgerNest-Plattform",
+    "signedOut": "Du wurdest abgemeldet.",
+    "brand": {
+      "title": "Buchhaltung, die mit deinem Unternehmen Schritt hält",
+      "secure": "Sichere Anmeldung mit automatischer Sperre",
+      "languages": "In 7 Sprachen, auch von rechts nach links",
+      "roles": "Rollen vom Super-Admin bis zum Betrachter",
+      "trialBalance": "Summen- und Saldenliste",
+      "balanced": "Ausgeglichen"
+    },
+    "errors": {
+      "emailInvalid": "Gib eine gültige E-Mail-Adresse ein.",
+      "passwordRequired": "Gib dein Passwort ein.",
+      "invalid": "E-Mail oder Passwort ist falsch.",
+      "locked": "Zu viele Fehlversuche. Versuche es in {{minutes}} Min. erneut.",
+      "suspended": "Dieses Konto ist gesperrt. Wende dich an deine Administration.",
+      "rateLimited": "Zu viele Versuche von diesem Gerät. Warte eine Minute und versuche es erneut.",
+      "network": "Server nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+      "server": "Bei uns ist etwas schiefgelaufen. Bitte versuche es erneut.",
+      "expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
+    }
   }
 }
