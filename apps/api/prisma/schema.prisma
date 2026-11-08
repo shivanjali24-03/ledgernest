@@ -1,0 +1,144 @@
+// LedgerNest database schema.
+// Conventions: UUID primary keys, created/updated timestamps, snake_case table names,
+// and every business table carries organizationId for tenant isolation.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+/// A person who can sign in. Platform-level Super Admins have isSuperAdmin = true.
+model User {
+  id                  String     @id @default(uuid()) @db.Uuid
+  email               String     @unique /// stored lower-case
+  name                String
+  passwordHash        String     @map("password_hash")
+  isSuperAdmin        Boolean    @default(false) @map("is_super_admin")
+  status              UserStatus @default(ACTIVE)
+  locale              String     @default("en")
+  failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?  @map("locked_until")
+  lastLoginAt         DateTime?  @map("last_login_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  memberships  Membership[]
+  invitesSent  Invitation[] @relation("InvitedBy")
+  auditEntries AuditLog[]
+
+  @@map("users")
+}
+
+/// A business (tenant). All accounting data belongs to exactly one organisation.
+model Organization {
+  id                   String             @id @default(uuid()) @db.Uuid
+  name                 String
+  slug                 String             @unique
+  status               OrganizationStatus @default(ACTIVE)
+  baseCurrency         String             @default("INR") @map("base_currency") @db.Char(3)
+  locale               String             @default("en-IN")
+  country              String?            @db.Char(2)
+  fiscalYearStartMonth Int                @default(4) @map("fiscal_year_start_month") /// 1 = January … 4 = April (India)
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  memberships  Membership[]
+  roles        Role[]
+  invitations  Invitation[]
+  auditEntries AuditLog[]
+
+  @@map("organizations")
+}
+
+/// A custom role defined by an organisation. Built-in roles live in @ledgernest/shared, not here.
+model Role {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  description    String?
+  permissions    String[] /// keys from @ledgernest/shared, validated on write
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships  Membership[]
+
+  @@unique([organizationId, name])
+  @@map("roles")
+}
+
+/// A user's place in an organisation: either a built-in role key or a custom role.
+model Membership {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  builtInRole    String?  @map("built_in_role") /// owner | admin | accountant | bookkeeper | auditor | viewer
+  customRoleId   String?  @map("custom_role_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customRole   Role?        @relation(fields: [customRoleId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+/// An emailed invitation to join an organisation. Only a hash of the token is stored.
+model Invitation {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  email          String
+  builtInRole    String?   @map("built_in_role")
+  customRoleId   String?   @map("custom_role_id") @db.Uuid
+  tokenHash      String    @unique @map("token_hash")
+  expiresAt      DateTime  @map("expires_at")
+  acceptedAt     DateTime? @map("accepted_at")
+  revokedAt      DateTime? @map("revoked_at")
+  invitedById    String    @map("invited_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@index([organizationId, email])
+  @@map("invitations")
+}
+
+/// Append-only record of who did what. Never updated or deleted by the application.
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid /// null for platform-level actions
+  actorId        String?  @map("actor_id") @db.Uuid /// null for system actions
+  action         String /// e.g. organization.create, user.login.failed
+  entityType     String?  @map("entity_type")
+  entityId       String?  @map("entity_id")
+  before         Json?
+  after          Json?
+  ip             String?
+  userAgent      String?  @map("user_agent")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  actor        User?         @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
