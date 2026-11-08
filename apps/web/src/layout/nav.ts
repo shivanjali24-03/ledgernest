@@ -18,7 +18,8 @@ import type { Permission } from '@ledgernest/shared';
 
 export interface NavItem {
   to: string;
-  label: string;
+  /** Translation key, e.g. nav.items.dashboard */
+  labelKey: string;
   icon: LucideIcon;
   /** Shown only if the user has this permission */
   permission?: Permission;
@@ -29,45 +30,45 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  label: string;
+  labelKey: string;
   items: NavItem[];
 }
 
 export const NAV: NavGroup[] = [
   {
-    label: 'Overview',
-    items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, ready: true, keywords: 'home summary kpi' }],
+    labelKey: 'nav.groups.overview',
+    items: [{ to: '/', labelKey: 'nav.items.dashboard', icon: LayoutDashboard, ready: true, keywords: 'home summary kpi' }],
   },
   {
-    label: 'Accounting',
+    labelKey: 'nav.groups.accounting',
     items: [
-      { to: '/accounts', label: 'Chart of accounts', icon: ListTree, permission: 'accounts.view', keywords: 'coa ledger codes' },
-      { to: '/journals', label: 'Journal entries', icon: BookOpen, permission: 'journals.view', keywords: 'debit credit posting' },
-      { to: '/reports', label: 'Reports', icon: BarChart3, permission: 'reports.view', keywords: 'profit loss balance sheet trial' },
+      { to: '/accounts', labelKey: 'nav.items.accounts', icon: ListTree, permission: 'accounts.view', keywords: 'coa ledger codes' },
+      { to: '/journals', labelKey: 'nav.items.journals', icon: BookOpen, permission: 'journals.view', keywords: 'debit credit posting' },
+      { to: '/reports', labelKey: 'nav.items.reports', icon: BarChart3, permission: 'reports.view', keywords: 'profit loss balance sheet trial' },
     ],
   },
   {
-    label: 'Sales & purchases',
+    labelKey: 'nav.groups.sales',
     items: [
-      { to: '/invoices', label: 'Invoices', icon: FileText, permission: 'invoices.view', keywords: 'sales customers receivables' },
-      { to: '/bills', label: 'Bills', icon: Receipt, permission: 'bills.view', keywords: 'vendors payables purchases' },
-      { to: '/banking', label: 'Banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
-      { to: '/transactions', label: 'Payments', icon: ArrowLeftRight, permission: 'banking.view', keywords: 'receipts payments transfers' },
+      { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', keywords: 'sales customers receivables' },
+      { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', keywords: 'vendors payables purchases' },
+      { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
+      { to: '/transactions', labelKey: 'nav.items.payments', icon: ArrowLeftRight, permission: 'banking.view', keywords: 'receipts payments transfers' },
     ],
   },
   {
-    label: 'Organisation',
+    labelKey: 'nav.groups.organisation',
     items: [
-      { to: '/users', label: 'Users & roles', icon: Users, permission: 'users.view', keywords: 'team invite permissions' },
-      { to: '/audit', label: 'Audit log', icon: ScrollText, permission: 'audit.view', keywords: 'history activity' },
-      { to: '/settings', label: 'Settings', icon: Settings, permission: 'org.settings.view', keywords: 'company fiscal year currency tax' },
+      { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', keywords: 'team invite permissions' },
+      { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', keywords: 'history activity' },
+      { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', keywords: 'company fiscal year currency tax' },
     ],
   },
   {
-    label: 'Platform',
+    labelKey: 'nav.groups.platform',
     items: [
-      { to: '/platform/organizations', label: 'Organisations', icon: Building2, permission: 'platform.organizations.view', keywords: 'tenants companies super admin' },
-      { to: '/platform/users', label: 'Platform users', icon: ShieldCheck, permission: 'platform.users.view', keywords: 'super admin accounts' },
+      { to: '/platform/organizations', labelKey: 'nav.items.organizations', icon: Building2, permission: 'platform.organizations.view', keywords: 'tenants companies super admin' },
+      { to: '/platform/users', labelKey: 'nav.items.platformUsers', icon: ShieldCheck, permission: 'platform.users.view', keywords: 'super admin accounts' },
     ],
   },
 ];

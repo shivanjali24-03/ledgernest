@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppShell from './AppShell';
 import SessionProvider from './SessionProvider';
 import type { BuiltInRoleId } from '@ledgernest/shared';
+import i18n from '../i18n';
 
 function renderShell(role: BuiltInRoleId = 'super_admin') {
   const router = createMemoryRouter([{ path: '/', element: <AppShell />, children: [{ index: true, element: <p>Home page</p> }] }]);
@@ -15,6 +16,7 @@ function renderShell(role: BuiltInRoleId = 'super_admin') {
 }
 
 const nav = () => within(screen.getByRole('navigation', { name: 'Main' }));
+const nav2 = () => screen.getByRole('navigation');
 
 describe('AppShell', () => {
   it('shows the Platform section to the Super Admin', () => {
@@ -42,10 +44,29 @@ describe('AppShell', () => {
     renderShell('super_admin');
     await userEvent.keyboard('{Control>}k{/Control}');
     const dialog = await screen.findByRole('dialog', { name: 'Command palette' });
-    await userEvent.type(within(dialog).getByLabelText('Search'), 'tenants');
+    await userEvent.type(within(dialog).getByRole('textbox'), 'tenants');
     const options = within(dialog).getAllByRole('option');
     expect(options).toHaveLength(1);
     expect(options[0]).toHaveTextContent('Organisations');
+  });
+
+  it('switches the whole app to Arabic, right-to-left', async () => {
+    renderShell('super_admin');
+    await userEvent.selectOptions(screen.getByLabelText('Language'), 'ar');
+    expect(document.documentElement.dir).toBe('rtl');
+    expect(screen.getByRole('navigation', { name: 'الرئيسية' })).toHaveTextContent('لوحة التحكم');
+    await i18n.changeLanguage('en');
+  });
+
+  it('switches to Hindi and finds pages by English keywords too', async () => {
+    renderShell('super_admin');
+    await userEvent.selectOptions(screen.getByLabelText('Language'), 'hi');
+    expect(nav2()).toHaveTextContent('डैशबोर्ड');
+    await userEvent.keyboard('{Control>}k{/Control}');
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.type(within(dialog).getByRole('textbox'), 'tenants');
+    expect(within(dialog).getAllByRole('option')[0]).toHaveTextContent('संगठन');
+    await i18n.changeLanguage('en');
   });
 
   it('toggles dark mode on <html>', async () => {

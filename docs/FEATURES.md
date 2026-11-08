@@ -14,8 +14,8 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Roles and permissions | Built-in roles (below) plus **custom roles** built from a permission matrix | 🚧 Rules done (#3) |
 | Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | 📋 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | 📋 |
-| Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | 📋 |
-| Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 📋 |
+| Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | ✅ (#5) |
+| Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 🚧 Numbers and money done (#5) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
 | Light and dark themes | System default, remembered per user | ✅ (#4) |
 

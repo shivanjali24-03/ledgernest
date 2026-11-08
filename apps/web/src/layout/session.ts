@@ -21,13 +21,3 @@ export function useSession(): Session {
   if (!s) throw new Error('useSession must be used inside <SessionProvider>');
   return s;
 }
-
-export const ROLE_LABELS: Record<BuiltInRoleId, string> = {
-  super_admin: 'Super Admin',
-  owner: 'Owner',
-  admin: 'Admin',
-  accountant: 'Accountant',
-  bookkeeper: 'Bookkeeper',
-  auditor: 'Auditor',
-  viewer: 'Viewer',
-};

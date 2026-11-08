@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import '../i18n';
 
 // jsdom has no matchMedia; components read it for theme and reduced-motion
 if (!window.matchMedia) {

@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "Resumen",
+      "accounting": "Contabilidad",
+      "sales": "Ventas y compras",
+      "organisation": "Organización",
+      "platform": "Plataforma"
+    },
+    "items": {
+      "dashboard": "Panel",
+      "accounts": "Plan de cuentas",
+      "journals": "Asientos contables",
+      "reports": "Informes",
+      "invoices": "Facturas",
+      "bills": "Facturas de proveedores",
+      "banking": "Bancos",
+      "payments": "Pagos",
+      "users": "Usuarios y roles",
+      "audit": "Registro de auditoría",
+      "settings": "Configuración",
+      "organizations": "Organizaciones",
+      "platformUsers": "Usuarios de la plataforma"
+    },
+    "soon": "Pronto"
+  },
+  "shell": {
+    "mainNav": "Principal",
+    "collapse": "Contraer",
+    "collapseSidebar": "Contraer barra lateral",
+    "expandSidebar": "Expandir barra lateral",
+    "openMenu": "Abrir menú",
+    "search": "Buscar…",
+    "previewAs": "Ver como",
+    "previewAsLabel": "Ver la aplicación como un rol",
+    "toDark": "Cambiar a modo oscuro",
+    "toLight": "Cambiar a modo claro",
+    "language": "Idioma"
+  },
+  "palette": {
+    "title": "Paleta de comandos",
+    "placeholder": "Buscar páginas, informes, configuración…",
+    "noMatches": "No hay resultados para “{{query}}”",
+    "results": "Resultados"
+  },
+  "roles": {
+    "super_admin": "Superadministrador",
+    "owner": "Propietario",
+    "admin": "Administrador",
+    "accountant": "Contador",
+    "bookkeeper": "Auxiliar contable",
+    "auditor": "Auditor",
+    "viewer": "Lector"
+  },
+  "dashboard": {
+    "roleView": "Vista de {{role}}",
+    "greeting": "Qué bueno verte, {{name}}",
+    "sampleData": "Datos de ejemplo",
+    "keyFigures": "Cifras clave",
+    "kpi": {
+      "cash": "Efectivo y bancos",
+      "receivables": "Cuentas por cobrar",
+      "payables": "Cuentas por pagar",
+      "profit": "Beneficio neto (en el año)"
+    },
+    "vsLastMonth": "{{value}} frente al mes pasado",
+    "setupTitle": "Configura tu contabilidad",
+    "setupProgress": "{{done}} de {{total}} completados",
+    "setup": {
+      "organisation": "Crea tu organización",
+      "team": "Invita a tu equipo y asigna roles",
+      "coa": "Elige una plantilla de plan de cuentas",
+      "fiscal": "Define tu año fiscal y moneda base",
+      "bank": "Conecta una cuenta bancaria"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} llegará pronto",
+    "thisPage": "Esta página",
+    "body": "Forma parte de la hoja de ruta de LedgerNest. Consulta lo planificado y sigue el progreso en GitHub.",
+    "cta": "Ver la lista de funciones"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "अवलोकन",
+      "accounting": "लेखांकन",
+      "sales": "बिक्री और खरीद",
+      "organisation": "संगठन",
+      "platform": "प्लेटफ़ॉर्म"
+    },
+    "items": {
+      "dashboard": "डैशबोर्ड",
+      "accounts": "खातों की सूची",
+      "journals": "जर्नल प्रविष्टियाँ",
+      "reports": "रिपोर्ट",
+      "invoices": "बिक्री बिल",
+      "bills": "खरीद बिल",
+      "banking": "बैंकिंग",
+      "payments": "भुगतान",
+      "users": "उपयोगकर्ता और भूमिकाएँ",
+      "audit": "ऑडिट लॉग",
+      "settings": "सेटिंग्स",
+      "organizations": "संगठन",
+      "platformUsers": "प्लेटफ़ॉर्म उपयोगकर्ता"
+    },
+    "soon": "जल्द"
+  },
+  "shell": {
+    "mainNav": "मुख्य",
+    "collapse": "छोटा करें",
+    "collapseSidebar": "साइडबार छोटा करें",
+    "expandSidebar": "साइडबार बड़ा करें",
+    "openMenu": "मेनू खोलें",
+    "search": "खोजें…",
+    "previewAs": "इस रूप में देखें",
+    "previewAsLabel": "ऐप को किसी भूमिका के रूप में देखें",
+    "toDark": "डार्क मोड चालू करें",
+    "toLight": "लाइट मोड चालू करें",
+    "language": "भाषा"
+  },
+  "palette": {
+    "title": "कमांड पैलेट",
+    "placeholder": "पेज, रिपोर्ट, सेटिंग्स खोजें…",
+    "noMatches": "“{{query}}” के लिए कोई परिणाम नहीं",
+    "results": "परिणाम"
+  },
+  "roles": {
+    "super_admin": "सुपर एडमिन",
+    "owner": "मालिक",
+    "admin": "एडमिन",
+    "accountant": "लेखाकार",
+    "bookkeeper": "बहीखाता लेखक",
+    "auditor": "लेखा परीक्षक",
+    "viewer": "दर्शक"
+  },
+  "dashboard": {
+    "roleView": "{{role}} दृश्य",
+    "greeting": "आपका स्वागत है, {{name}}",
+    "sampleData": "नमूना डेटा",
+    "keyFigures": "मुख्य आँकड़े",
+    "kpi": {
+      "cash": "नकद और बैंक",
+      "receivables": "प्राप्य राशि",
+      "payables": "देय राशि",
+      "profit": "शुद्ध लाभ (वर्ष अब तक)"
+    },
+    "vsLastMonth": "पिछले महीने की तुलना में {{value}}",
+    "setupTitle": "अपनी बहीखाता तैयार करें",
+    "setupProgress": "{{total}} में से {{done}} पूरे",
+    "setup": {
+      "organisation": "अपना संगठन बनाएँ",
+      "team": "अपनी टीम को आमंत्रित करें और भूमिकाएँ दें",
+      "coa": "खातों की सूची का टेम्पलेट चुनें",
+      "fiscal": "वित्तीय वर्ष और मूल मुद्रा तय करें",
+      "bank": "बैंक खाता जोड़ें"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} जल्द आ रहा है",
+    "thisPage": "यह पेज",
+    "body": "यह LedgerNest की योजना का हिस्सा है। क्या आने वाला है और प्रगति GitHub पर देखें।",
+    "cta": "फ़ीचर सूची देखें"
+  }
+}

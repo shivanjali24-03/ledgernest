@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { CornerDownLeft, Search } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { scaleIn, fadeIn } from '../motion/tokens';
 import type { NavGroup } from './nav';
 
@@ -16,12 +17,14 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const all = groups.flatMap((g) => g.items.map((i) => ({ ...i, group: g.label })));
+    const all = groups.flatMap((g) => g.items.map((i) => ({ ...i, label: t(i.labelKey), group: t(g.labelKey) })));
+    // Search the translated name, plus English keywords so shortcuts work in any language
     return q ? all.filter((i) => `${i.label} ${i.group} ${i.keywords ?? ''}`.toLowerCase().includes(q)) : all;
-  }, [groups, query]);
+  }, [groups, query, t]);
 
   const go = (to: string) => {
     onClose();
@@ -40,7 +43,7 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
           <motion.div
             role="dialog"
             aria-modal="true"
-            aria-label="Command palette"
+            aria-label={t('palette.title')}
             className="w-full max-w-xl overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-pop dark:border-ink-800 dark:bg-ink-900"
             variants={scaleIn}
             initial="hidden"
@@ -69,14 +72,14 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
                   setQuery(e.target.value);
                   setActive(0);
                 }}
-                placeholder="Search pages, reports, settings…"
-                aria-label="Search"
+                placeholder={t('palette.placeholder')}
+                aria-label={t('shell.search')}
                 className="h-14 w-full bg-transparent text-[15px] outline-none placeholder:text-ink-400"
               />
               <kbd className="rounded-md border border-ink-200 px-1.5 py-0.5 text-[11px] text-ink-500 dark:border-ink-700">Esc</kbd>
             </div>
-            <ul className="max-h-80 overflow-y-auto p-2" role="listbox" aria-label="Results">
-              {results.length === 0 && <li className="px-3 py-6 text-center text-sm text-ink-500">No matches for “{query}”</li>}
+            <ul className="max-h-80 overflow-y-auto p-2" role="listbox" aria-label={t('palette.results')}>
+              {results.length === 0 && <li className="px-3 py-6 text-center text-sm text-ink-500">{t('palette.noMatches', { query })}</li>}
               {results.map((r, i) => (
                 <li key={r.to} role="option" aria-selected={i === active}>
                   <button

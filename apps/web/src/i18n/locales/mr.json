@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "groups": {
+      "overview": "आढावा",
+      "accounting": "लेखा",
+      "sales": "विक्री आणि खरेदी",
+      "organisation": "संस्था",
+      "platform": "प्लॅटफॉर्म"
+    },
+    "items": {
+      "dashboard": "डॅशबोर्ड",
+      "accounts": "खात्यांची यादी",
+      "journals": "जर्नल नोंदी",
+      "reports": "अहवाल",
+      "invoices": "विक्री बिले",
+      "bills": "खरेदी बिले",
+      "banking": "बँकिंग",
+      "payments": "देयके",
+      "users": "वापरकर्ते आणि भूमिका",
+      "audit": "ऑडिट लॉग",
+      "settings": "सेटिंग्ज",
+      "organizations": "संस्था",
+      "platformUsers": "प्लॅटफॉर्म वापरकर्ते"
+    },
+    "soon": "लवकरच"
+  },
+  "shell": {
+    "mainNav": "मुख्य",
+    "collapse": "लहान करा",
+    "collapseSidebar": "साइडबार लहान करा",
+    "expandSidebar": "साइडबार मोठा करा",
+    "openMenu": "मेनू उघडा",
+    "search": "शोधा…",
+    "previewAs": "या रूपात पहा",
+    "previewAsLabel": "अ‍ॅप एखाद्या भूमिकेच्या रूपात पहा",
+    "toDark": "डार्क मोड सुरू करा",
+    "toLight": "लाइट मोड सुरू करा",
+    "language": "भाषा"
+  },
+  "palette": {
+    "title": "कमांड पॅलेट",
+    "placeholder": "पाने, अहवाल, सेटिंग्ज शोधा…",
+    "noMatches": "“{{query}}” साठी काहीही सापडले नाही",
+    "results": "निकाल"
+  },
+  "roles": {
+    "super_admin": "सुपर अ‍ॅडमिन",
+    "owner": "मालक",
+    "admin": "अ‍ॅडमिन",
+    "accountant": "लेखापाल",
+    "bookkeeper": "हिशेबनीस",
+    "auditor": "लेखापरीक्षक",
+    "viewer": "दर्शक"
+  },
+  "dashboard": {
+    "roleView": "{{role}} दृश्य",
+    "greeting": "पुन्हा भेटून आनंद झाला, {{name}}",
+    "sampleData": "नमुना डेटा",
+    "keyFigures": "मुख्य आकडे",
+    "kpi": {
+      "cash": "रोख आणि बँक",
+      "receivables": "येणी",
+      "payables": "देणी",
+      "profit": "निव्वळ नफा (वर्षात आजपर्यंत)"
+    },
+    "vsLastMonth": "मागील महिन्याच्या तुलनेत {{value}}",
+    "setupTitle": "तुमची हिशेबवही तयार करा",
+    "setupProgress": "{{total}} पैकी {{done}} पूर्ण",
+    "setup": {
+      "organisation": "तुमची संस्था तयार करा",
+      "team": "तुमच्या टीमला आमंत्रित करा आणि भूमिका द्या",
+      "coa": "खात्यांच्या यादीचा टेम्पलेट निवडा",
+      "fiscal": "आर्थिक वर्ष आणि मूळ चलन ठरवा",
+      "bank": "बँक खाते जोडा"
+    }
+  },
+  "comingSoon": {
+    "title": "{{page}} लवकरच येत आहे",
+    "thisPage": "हे पान",
+    "body": "हे LedgerNest च्या योजनेचा भाग आहे. काय येणार आहे आणि प्रगती GitHub वर पहा.",
+    "cta": "वैशिष्ट्यांची यादी पहा"
+  }
+}
