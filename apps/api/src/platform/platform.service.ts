@@ -154,7 +154,9 @@ export class PlatformService {
   setSuperAdmin(userId: string, makeSuperAdmin: boolean, actor: Actor, req: Request) {
     return this.changeUser(userId, actor, req, async (tx, user) => {
       if (user.isSuperAdmin === makeSuperAdmin) throw new ConflictException(makeSuperAdmin ? 'This person is already a Super Admin.' : 'This person is not a Super Admin.');
-      if (makeSuperAdmin && user.status !== 'ACTIVE') throw new BadRequestException('Reactivate this account before making it a Super Admin.');
+      if (makeSuperAdmin && user.status !== 'ACTIVE') {
+        throw new BadRequestException({ message: 'Reactivate this account before making it a Super Admin.', details: { reason: 'inactive' } });
+      }
       if (!makeSuperAdmin) await this.assertNotLastSuperAdmin(tx, user);
       return { data: { isSuperAdmin: makeSuperAdmin }, action: makeSuperAdmin ? 'platform.user.promote' : 'platform.user.demote' };
     });
@@ -164,7 +166,7 @@ export class PlatformService {
     return this.changeUser(userId, actor, req, async (tx, user) => {
       if (user.status === status) throw new ConflictException(status === 'SUSPENDED' ? 'This account is already suspended.' : 'This account is already active.');
       if (status === 'SUSPENDED') {
-        if (user.id === actor.userId) throw new BadRequestException("You can't suspend your own account.");
+        if (user.id === actor.userId) throw new BadRequestException({ message: "You can't suspend your own account.", details: { reason: 'self' } });
         await this.assertNotLastSuperAdmin(tx, user);
         // End every session at once
         await tx.refreshToken.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
@@ -248,6 +250,8 @@ export class PlatformService {
   private async assertNotLastSuperAdmin(tx: Prisma.TransactionClient, user: { id: string; isSuperAdmin: boolean; status: string }) {
     if (!user.isSuperAdmin || user.status !== 'ACTIVE') return;
     const others = await tx.user.count({ where: { isSuperAdmin: true, status: 'ACTIVE', id: { not: user.id } } });
-    if (others === 0) throw new ConflictException('LedgerNest needs at least one active Super Admin. Make someone else a Super Admin first.');
+    if (others === 0) {
+      throw new ConflictException({ message: 'LedgerNest needs at least one active Super Admin. Make someone else a Super Admin first.', details: { reason: 'last_super_admin' } });
+    }
   }
 }

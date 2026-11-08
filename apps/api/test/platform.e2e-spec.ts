@@ -254,6 +254,7 @@ describe('Super Admin console and invitations (e2e)', () => {
       await as('super').post(`/platform/users/${users.super2!.id}/demote`).expect(200);
       const res = await as('super').post(`/platform/users/${users.super!.id}/demote`).expect(409);
       expect(res.body.message).toMatch(/at least one active Super Admin/);
+      expect(res.body.details).toEqual({ reason: 'last_super_admin' });
       await as('super').post(`/platform/users/${users.super2!.id}/promote`).expect(200);
     });
 
@@ -273,7 +274,8 @@ describe('Super Admin console and invitations (e2e)', () => {
       await as('regular').get('/auth/me').expect(401);
       expect(await prisma.refreshToken.count({ where: { userId: users.regular!.id, revokedAt: null } })).toBe(0);
 
-      await as('super').post(`/platform/users/${users.super!.id}/suspend`).expect(400);
+      const self = await as('super').post(`/platform/users/${users.super!.id}/suspend`).expect(400);
+      expect(self.body.details).toEqual({ reason: 'self' });
       await as('super').post(`/platform/users/${users.regular!.id}/reactivate`).expect(200);
       await as('regular').get('/auth/me').expect(200);
     });
