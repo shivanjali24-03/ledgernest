@@ -4,6 +4,7 @@ import {
   BookOpen,
   Building2,
   FileText,
+  Gauge,
   Landmark,
   LayoutDashboard,
   ListTree,
@@ -25,6 +26,8 @@ export interface NavItem {
   permission?: Permission;
   /** Built yet? Unbuilt items open the roadmap page */
   ready?: boolean;
+  /** Match the path exactly (for items that are a prefix of others) */
+  end?: boolean;
   /** Extra words for the command palette search */
   keywords?: string;
 }
@@ -67,8 +70,9 @@ export const NAV: NavGroup[] = [
   {
     labelKey: 'nav.groups.platform',
     items: [
-      { to: '/platform/organizations', labelKey: 'nav.items.organizations', icon: Building2, permission: 'platform.organizations.view', keywords: 'tenants companies super admin' },
-      { to: '/platform/users', labelKey: 'nav.items.platformUsers', icon: ShieldCheck, permission: 'platform.users.view', keywords: 'super admin accounts' },
+      { to: '/platform', labelKey: 'nav.items.platformOverview', icon: Gauge, permission: 'platform.organizations.view', ready: true, end: true, keywords: 'super admin stats console' },
+      { to: '/platform/organizations', labelKey: 'nav.items.organizations', icon: Building2, permission: 'platform.organizations.view', ready: true, keywords: 'tenants companies super admin' },
+      { to: '/platform/users', labelKey: 'nav.items.platformUsers', icon: ShieldCheck, permission: 'platform.users.view', ready: true, keywords: 'super admin accounts' },
     ],
   },
 ];

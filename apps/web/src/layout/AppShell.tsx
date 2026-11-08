@@ -53,7 +53,7 @@ export default function AppShell() {
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
-                      end={item.to === '/'}
+                      end={item.end ?? item.to === '/'}
                       title={collapsed ? t(item.labelKey) : undefined}
                       onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>

@@ -20,7 +20,8 @@
       "audit": "Prüfprotokoll",
       "settings": "Einstellungen",
       "organizations": "Organisationen",
-      "platformUsers": "Plattformbenutzer"
+      "platformUsers": "Plattformbenutzer",
+      "platformOverview": "Plattformübersicht"
     },
     "soon": "Bald"
   },
@@ -118,5 +119,216 @@
       "server": "Bei uns ist etwas schiefgelaufen. Bitte versuche es erneut.",
       "expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
     }
+  },
+  "common": {
+    "all": "Alle",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "copied": "Kopiert",
+    "copy": "Kopieren",
+    "done": "Fertig",
+    "edit": "Bearbeiten",
+    "save": "Änderungen speichern",
+    "loadFailed": "Das konnte nicht geladen werden.",
+    "loading": "Wird geladen…",
+    "retry": "Erneut versuchen",
+    "next": "Nächste Seite",
+    "previous": "Vorherige Seite",
+    "pagination": "Seitennavigation",
+    "pageOf": "Seite {{page}} von {{pages}}",
+    "reasonOptional": "Grund (optional)",
+    "reasonHint": "Wird im Audit-Protokoll gespeichert.",
+    "noAccessTitle": "Du hast keinen Zugriff auf diese Seite",
+    "noAccessBody": "Frag bei Bedarf einen Super-Admin oder den Inhaber deiner Organisation.",
+    "status": {
+      "ACTIVE": "Aktiv",
+      "SUSPENDED": "Gesperrt"
+    }
+  },
+  "platform": {
+    "eyebrow": "Super-Admin",
+    "overview": {
+      "title": "Plattformübersicht",
+      "description": "Alle Organisationen und Personen auf LedgerNest auf einen Blick.",
+      "keyFigures": "Kennzahlen",
+      "organizations": "Organisationen",
+      "activeSuspended": "{{active}} aktiv · {{suspended}} gesperrt",
+      "newThisMonth": "Neue Organisationen",
+      "last30Days": "Letzte 30 Tage",
+      "users": "Personen",
+      "superAdmins": "Super-Admins: {{count}}",
+      "signIns": "Anmeldungen",
+      "failedSignIns": "Letzte 7 Tage · {{count}} fehlgeschlagen",
+      "recent": "Aktuelle Plattformaktivität",
+      "noActivity": "Noch keine Aktivität",
+      "system": "System"
+    },
+    "activity": {
+      "platform_organization_create": "hat erstellt:",
+      "platform_organization_update": "hat geändert:",
+      "platform_organization_suspend": "hat gesperrt:",
+      "platform_organization_reactivate": "hat reaktiviert:",
+      "platform_user_promote": "hat jemanden zum Super-Admin gemacht",
+      "platform_user_demote": "hat einen Super-Admin entfernt",
+      "platform_user_suspend": "hat ein Konto gesperrt",
+      "platform_user_reactivate": "hat ein Konto reaktiviert",
+      "invitation_accept": "hat eine Einladung angenommen:",
+      "platform_superadmin_create": "hat die Plattform eingerichtet"
+    },
+    "organizations": {
+      "title": "Organisationen",
+      "description": "Alle Organisationen anlegen, suchen und verwalten.",
+      "new": "Neue Organisation",
+      "search": "Organisationen suchen",
+      "filter": "Nach Status filtern",
+      "count": "Gesamt: {{count}}",
+      "empty": "Noch keine Organisationen",
+      "noMatches": "Keine passenden Organisationen",
+      "columns": {
+        "name": "Organisation",
+        "status": "Status",
+        "members": "Mitglieder",
+        "currency": "Währung",
+        "created": "Erstellt"
+      }
+    },
+    "create": {
+      "title": "Neue Organisation",
+      "description": "Lege eine neue Organisation und ihren ersten Inhaber an.",
+      "submit": "Organisation anlegen",
+      "doneTitle": "{{name}} ist bereit",
+      "open": "Organisation öffnen",
+      "ownerAdded": "Der Inhaber hatte bereits ein Konto und wurde hinzugefügt.",
+      "ownerInvited": "{{email}} hat noch kein Konto. Schick diesen Link, um als Inhaber beizutreten. Er läuft am {{date}} ab.",
+      "inviteLink": "Einladungslink",
+      "inviteOnce": "Der Link funktioniert nur einmal. Aus Sicherheitsgründen wird er nicht erneut angezeigt."
+    },
+    "form": {
+      "name": "Name der Organisation",
+      "slug": "Webadresse",
+      "slugHint": "Wird in Links verwendet: {{slug}}",
+      "ownerEmail": "E-Mail des Inhabers",
+      "ownerHint": "Bestehende Nutzer werden sofort hinzugefügt; alle anderen erhalten einen Einladungslink.",
+      "currency": "Basiswährung",
+      "country": "Land",
+      "noCountry": "Nicht festgelegt",
+      "fiscalYear": "Geschäftsjahr beginnt im",
+      "locale": "Zahlen- und Datumsformat",
+      "localeHint": "So erscheinen Beträge und Daten in Berichten.",
+      "errors": {
+        "name": "Gib einen Namen mit mindestens 2 Zeichen ein.",
+        "slug": "Verwende Kleinbuchstaben, Zahlen und Bindestriche.",
+        "slugTaken": "Diese Webadresse ist vergeben. Versuch eine andere."
+      }
+    },
+    "detail": {
+      "details": "Details",
+      "people": "Personen",
+      "memberCount": "Mitglieder: {{count}}",
+      "noOwner": "Noch kein Inhaber. Die Einladung ist offen.",
+      "pending": "Offene Einladungen",
+      "expires": "Läuft ab {{when}}",
+      "editTitle": "Organisation bearbeiten",
+      "saved": "Änderungen gespeichert",
+      "suspend": "Sperren",
+      "reactivate": "Reaktivieren",
+      "suspendTitle": "{{name}} sperren?",
+      "suspendBody": "Die Mitglieder können sie erst nach der Reaktivierung wieder nutzen. Ihre Daten bleiben erhalten.",
+      "reactivateTitle": "{{name}} reaktivieren?",
+      "reactivateBody": "Die Mitglieder können sie sofort wieder nutzen.",
+      "suspended": "{{name}} ist gesperrt",
+      "reactivated": "{{name}} ist wieder aktiv",
+      "suspendedNote": "Diese Organisation ist gesperrt. Ihre Mitglieder können sie nicht nutzen."
+    },
+    "users": {
+      "title": "Plattformnutzer",
+      "description": "Alle Personen mit einem LedgerNest-Konto. Verwalte, wer Super-Admin ist.",
+      "search": "Nach Name oder E-Mail suchen",
+      "filter": "Anzeigen",
+      "noMatches": "Keine passenden Personen",
+      "you": "Du",
+      "member": "Mitglied",
+      "never": "Nie",
+      "actionsFor": "Aktionen für {{name}}",
+      "columns": {
+        "person": "Person",
+        "access": "Plattformzugriff",
+        "organizations": "Organisationen",
+        "lastSignIn": "Letzte Anmeldung",
+        "actions": "Aktionen"
+      },
+      "actions": {
+        "promote": "Zum Super-Admin machen",
+        "demote": "Super-Admin entfernen",
+        "suspend": "Konto sperren",
+        "reactivate": "Konto reaktivieren"
+      },
+      "confirm": {
+        "promote": {
+          "title": "{{name}} zum Super-Admin machen?",
+          "body": "Diese Person kann dann alle Organisationen und Personen auf LedgerNest verwalten."
+        },
+        "demote": {
+          "title": "{{name}} als Super-Admin entfernen?",
+          "body": "Konto und Rollen in Organisationen bleiben erhalten."
+        },
+        "suspend": {
+          "title": "{{name}} sperren?",
+          "body": "Alle Sitzungen werden sofort beendet; eine Anmeldung ist erst nach der Reaktivierung möglich."
+        },
+        "reactivate": {
+          "title": "{{name}} reaktivieren?",
+          "body": "Eine Anmeldung ist sofort wieder möglich."
+        }
+      },
+      "done": {
+        "promote": "{{name}} ist jetzt Super-Admin",
+        "demote": "{{name}} ist kein Super-Admin mehr",
+        "suspend": "{{name}} ist gesperrt",
+        "reactivate": "{{name}} ist wieder aktiv"
+      }
+    },
+    "errors": {
+      "lastSuperAdmin": "LedgerNest braucht mindestens einen aktiven Super-Admin. Mach zuerst jemand anderen zum Super-Admin.",
+      "self": "Du kannst dein eigenes Konto nicht sperren.",
+      "inactive": "Reaktiviere dieses Konto zuerst.",
+      "forbidden": "Dafür fehlt dir die Berechtigung.",
+      "notFound": "Nicht gefunden. Es wurde eventuell entfernt.",
+      "conflict": "Diese Änderung wurde bereits vorgenommen. Lade neu, um den aktuellen Stand zu sehen."
+    }
+  },
+  "invite": {
+    "youreInvited": "Du bist eingeladen zu",
+    "summary": "Du trittst als {{role}} mit {{email}} bei.",
+    "expiresOn": "Die Einladung läuft am {{date}} ab.",
+    "createAccount": "Konto erstellen",
+    "name": "Dein Name",
+    "password": "Passwort wählen",
+    "rules": {
+      "too_short": "Mindestens 12 Zeichen",
+      "needs_lowercase": "Ein Kleinbuchstabe",
+      "needs_uppercase": "Ein Großbuchstabe",
+      "needs_number": "Eine Zahl",
+      "met": "erfüllt",
+      "notMet": "noch nicht"
+    },
+    "errors": {
+      "name": "Gib deinen Namen ein.",
+      "password": "Dein Passwort erfüllt noch nicht alle Regeln."
+    },
+    "acceptAndJoin": "Konto erstellen und beitreten",
+    "accountNowExists": "Für diese E-Mail gibt es bereits ein Konto. Melde dich an und öffne den Link erneut.",
+    "signInFirst": "{{email}} hat bereits ein LedgerNest-Konto. Melde dich an, um anzunehmen.",
+    "signInToAccept": "Anmelden und annehmen",
+    "wrongAccount": "Du bist als {{current}} angemeldet, aber diese Einladung gilt für {{email}}. Melde dich ab und öffne den Link erneut.",
+    "joinAs": "Mit deinem Konto {{email}} beitreten.",
+    "accept": "Einladung annehmen",
+    "joined": "Du bist {{name}} beigetreten",
+    "problemTitle": "Diese Einladung kann nicht verwendet werden",
+    "invalid": "Der Link ist ungültig. Prüfe, ob du ihn vollständig kopiert hast, oder fordere einen neuen an.",
+    "expired": "Diese Einladung ist abgelaufen. Fordere eine neue an.",
+    "used": "Diese Einladung wurde bereits verwendet. Melde dich stattdessen an.",
+    "orgSuspended": "Diese Organisation ist gesperrt.",
+    "goToSignIn": "Zur Anmeldung"
   }
 }

@@ -20,7 +20,8 @@
       "audit": "Journal d’audit",
       "settings": "Paramètres",
       "organizations": "Organisations",
-      "platformUsers": "Utilisateurs de la plateforme"
+      "platformUsers": "Utilisateurs de la plateforme",
+      "platformOverview": "Vue d'ensemble de la plateforme"
     },
     "soon": "Bientôt"
   },
@@ -118,5 +119,216 @@
       "server": "Un problème est survenu de notre côté. Veuillez réessayer.",
       "expired": "Votre session a expiré. Veuillez vous reconnecter."
     }
+  },
+  "common": {
+    "all": "Toutes",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "copied": "Copié",
+    "copy": "Copier",
+    "done": "Terminé",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "loadFailed": "Impossible de charger ceci.",
+    "loading": "Chargement…",
+    "retry": "Réessayer",
+    "next": "Page suivante",
+    "previous": "Page précédente",
+    "pagination": "Pagination",
+    "pageOf": "Page {{page}} sur {{pages}}",
+    "reasonOptional": "Motif (facultatif)",
+    "reasonHint": "Enregistré dans le journal d'audit.",
+    "noAccessTitle": "Vous n'avez pas accès à cette page",
+    "noAccessBody": "Demandez à un Super administrateur ou au Propriétaire de votre organisation si besoin.",
+    "status": {
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspendue"
+    }
+  },
+  "platform": {
+    "eyebrow": "Super administrateur",
+    "overview": {
+      "title": "Vue d'ensemble de la plateforme",
+      "description": "Toutes les organisations et personnes de LedgerNest en un coup d'œil.",
+      "keyFigures": "Chiffres clés",
+      "organizations": "Organisations",
+      "activeSuspended": "{{active}} actives · {{suspended}} suspendues",
+      "newThisMonth": "Nouvelles organisations",
+      "last30Days": "30 derniers jours",
+      "users": "Personnes",
+      "superAdmins": "Super administrateurs : {{count}}",
+      "signIns": "Connexions",
+      "failedSignIns": "7 derniers jours · {{count}} échouées",
+      "recent": "Activité récente de la plateforme",
+      "noActivity": "Aucune activité pour l'instant",
+      "system": "Système"
+    },
+    "activity": {
+      "platform_organization_create": "a créé",
+      "platform_organization_update": "a modifié",
+      "platform_organization_suspend": "a suspendu",
+      "platform_organization_reactivate": "a réactivé",
+      "platform_user_promote": "a nommé un Super administrateur",
+      "platform_user_demote": "a retiré un Super administrateur",
+      "platform_user_suspend": "a suspendu un compte",
+      "platform_user_reactivate": "a réactivé un compte",
+      "invitation_accept": "a accepté une invitation à",
+      "platform_superadmin_create": "a configuré la plateforme"
+    },
+    "organizations": {
+      "title": "Organisations",
+      "description": "Créez, recherchez et gérez toutes les organisations.",
+      "new": "Nouvelle organisation",
+      "search": "Rechercher des organisations",
+      "filter": "Filtrer par statut",
+      "count": "Total : {{count}}",
+      "empty": "Aucune organisation pour l'instant",
+      "noMatches": "Aucune organisation ne correspond",
+      "columns": {
+        "name": "Organisation",
+        "status": "Statut",
+        "members": "Membres",
+        "currency": "Devise",
+        "created": "Créée"
+      }
+    },
+    "create": {
+      "title": "Nouvelle organisation",
+      "description": "Configurez une organisation et son premier Propriétaire.",
+      "submit": "Créer l'organisation",
+      "doneTitle": "{{name}} est prête",
+      "open": "Ouvrir l'organisation",
+      "ownerAdded": "Le Propriétaire avait déjà un compte et a été ajouté.",
+      "ownerInvited": "{{email}} n'a pas encore de compte. Envoyez-lui ce lien pour rejoindre en tant que Propriétaire. Il expire le {{date}}.",
+      "inviteLink": "Lien d'invitation",
+      "inviteOnce": "Le lien ne fonctionne qu'une fois. Par sécurité, il ne sera plus affiché."
+    },
+    "form": {
+      "name": "Nom de l'organisation",
+      "slug": "Adresse web",
+      "slugHint": "Utilisée dans les liens : {{slug}}",
+      "ownerEmail": "E-mail du Propriétaire",
+      "ownerHint": "Les utilisateurs existants sont ajoutés tout de suite ; les autres reçoivent un lien d'invitation.",
+      "currency": "Devise de base",
+      "country": "Pays",
+      "noCountry": "Non défini",
+      "fiscalYear": "L'exercice commence en",
+      "locale": "Format des nombres et dates",
+      "localeHint": "Affichage des montants et dates dans les rapports.",
+      "errors": {
+        "name": "Saisissez un nom d'au moins 2 caractères.",
+        "slug": "Utilisez des minuscules, des chiffres et des tirets.",
+        "slugTaken": "Cette adresse web est déjà prise. Essayez-en une autre."
+      }
+    },
+    "detail": {
+      "details": "Détails",
+      "people": "Personnes",
+      "memberCount": "Membres : {{count}}",
+      "noOwner": "Pas encore de Propriétaire. L'invitation est en attente.",
+      "pending": "Invitations en attente",
+      "expires": "Expire {{when}}",
+      "editTitle": "Modifier l'organisation",
+      "saved": "Modifications enregistrées",
+      "suspend": "Suspendre",
+      "reactivate": "Réactiver",
+      "suspendTitle": "Suspendre {{name}} ?",
+      "suspendBody": "Ses membres ne pourront plus l'utiliser jusqu'à sa réactivation. Leurs données sont conservées.",
+      "reactivateTitle": "Réactiver {{name}} ?",
+      "reactivateBody": "Ses membres pourront l'utiliser de nouveau immédiatement.",
+      "suspended": "{{name}} est suspendue",
+      "reactivated": "{{name}} est de nouveau active",
+      "suspendedNote": "Cette organisation est suspendue. Ses membres ne peuvent pas l'utiliser."
+    },
+    "users": {
+      "title": "Utilisateurs de la plateforme",
+      "description": "Toutes les personnes ayant un compte LedgerNest. Gérez qui est Super administrateur.",
+      "search": "Rechercher par nom ou e-mail",
+      "filter": "Afficher",
+      "noMatches": "Personne ne correspond",
+      "you": "Vous",
+      "member": "Membre",
+      "never": "Jamais",
+      "actionsFor": "Actions pour {{name}}",
+      "columns": {
+        "person": "Personne",
+        "access": "Accès plateforme",
+        "organizations": "Organisations",
+        "lastSignIn": "Dernière connexion",
+        "actions": "Actions"
+      },
+      "actions": {
+        "promote": "Nommer Super administrateur",
+        "demote": "Retirer Super administrateur",
+        "suspend": "Suspendre le compte",
+        "reactivate": "Réactiver le compte"
+      },
+      "confirm": {
+        "promote": {
+          "title": "Nommer {{name}} Super administrateur ?",
+          "body": "Cette personne pourra gérer toutes les organisations et personnes de LedgerNest."
+        },
+        "demote": {
+          "title": "Retirer {{name}} des Super administrateurs ?",
+          "body": "Le compte et les rôles dans les organisations sont conservés."
+        },
+        "suspend": {
+          "title": "Suspendre {{name}} ?",
+          "body": "Toutes ses sessions sont fermées immédiatement et la connexion est bloquée jusqu'à la réactivation."
+        },
+        "reactivate": {
+          "title": "Réactiver {{name}} ?",
+          "body": "La connexion est de nouveau possible immédiatement."
+        }
+      },
+      "done": {
+        "promote": "{{name}} est maintenant Super administrateur",
+        "demote": "{{name}} n'est plus Super administrateur",
+        "suspend": "{{name}} est suspendu",
+        "reactivate": "{{name}} est de nouveau actif"
+      }
+    },
+    "errors": {
+      "lastSuperAdmin": "LedgerNest a besoin d'au moins un Super administrateur actif. Nommez d'abord quelqu'un d'autre.",
+      "self": "Vous ne pouvez pas suspendre votre propre compte.",
+      "inactive": "Réactivez d'abord ce compte.",
+      "forbidden": "Vous n'avez pas l'autorisation de faire cela.",
+      "notFound": "Introuvable. L'élément a peut-être été supprimé.",
+      "conflict": "Cette modification a déjà été faite. Actualisez pour voir la dernière version."
+    }
+  },
+  "invite": {
+    "youreInvited": "Vous êtes invité à rejoindre",
+    "summary": "Vous rejoindrez en tant que {{role}} avec {{email}}.",
+    "expiresOn": "L'invitation expire le {{date}}.",
+    "createAccount": "Créez votre compte",
+    "name": "Votre nom",
+    "password": "Choisissez un mot de passe",
+    "rules": {
+      "too_short": "Au moins 12 caractères",
+      "needs_lowercase": "Une minuscule",
+      "needs_uppercase": "Une majuscule",
+      "needs_number": "Un chiffre",
+      "met": "ok",
+      "notMet": "pas encore"
+    },
+    "errors": {
+      "name": "Saisissez votre nom.",
+      "password": "Votre mot de passe ne respecte pas encore toutes les règles."
+    },
+    "acceptAndJoin": "Créer le compte et rejoindre",
+    "accountNowExists": "Un compte existe déjà avec cet e-mail. Connectez-vous, puis rouvrez le lien.",
+    "signInFirst": "{{email}} a déjà un compte LedgerNest. Connectez-vous pour accepter.",
+    "signInToAccept": "Se connecter pour accepter",
+    "wrongAccount": "Vous êtes connecté en tant que {{current}}, mais cette invitation est pour {{email}}. Déconnectez-vous, puis rouvrez le lien.",
+    "joinAs": "Rejoindre avec votre compte {{email}}.",
+    "accept": "Accepter l'invitation",
+    "joined": "Vous avez rejoint {{name}}",
+    "problemTitle": "Cette invitation ne peut pas être utilisée",
+    "invalid": "Le lien n'est pas valide. Vérifiez que vous l'avez copié en entier, ou demandez-en un nouveau.",
+    "expired": "Cette invitation a expiré. Demandez-en une nouvelle.",
+    "used": "Cette invitation a déjà été utilisée. Connectez-vous.",
+    "orgSuspended": "Cette organisation est suspendue.",
+    "goToSignIn": "Aller à la connexion"
   }
 }
