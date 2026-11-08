@@ -9,6 +9,25 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    # A throwaway PostgreSQL for the API's end-to-end tests
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ledgernest_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ledgernest_test
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,9 +38,17 @@ jobs:
         run: npm ci
       - name: Build shared rules
         run: npm run build -w @ledgernest/shared
+      - name: Generate database client
+        run: npm run db:generate -w @ledgernest/api
       - name: Lint
         run: npm run lint
-      - name: Test
+      - name: Unit tests
         run: npm test
+      - name: Apply migrations to the test database
+        run: npm run db:deploy -w @ledgernest/api
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+      - name: API end-to-end tests
+        run: npm run test:e2e -w @ledgernest/api
       - name: Build apps
         run: npm run build -w @ledgernest/web && npm run build -w @ledgernest/api
