@@ -32,6 +32,11 @@ export default function Modal({
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
+  // Parents often pass a new onClose each render; keep the latest without re-running the focus setup
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -44,7 +49,7 @@ export default function Modal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
       if (e.key !== 'Tab' || !panel.current) return;
       const items = [...panel.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
@@ -68,7 +73,7 @@ export default function Modal({
       document.body.style.overflow = overflow;
       previous?.focus();
     };
-  }, [open, onClose]);
+  }, [open]); // only when opening or closing, so typing in a field never moves focus
 
   return createPortal(
     <AnimatePresence>

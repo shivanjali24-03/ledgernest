@@ -165,7 +165,7 @@ export default function PlatformUsers() {
             <EmptyState icon={<Users className="size-5" />} title={t('platform.users.noMatches')} />
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[680px] text-sm">
                   <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                     <tr>
