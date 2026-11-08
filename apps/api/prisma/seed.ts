@@ -7,6 +7,7 @@
 import argon2 from 'argon2';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import { passwordProblems } from '@ledgernest/shared';
 
 const email = process.env.SEED_SUPERADMIN_EMAIL?.trim().toLowerCase();
 const password = process.env.SEED_SUPERADMIN_PASSWORD ?? '';
@@ -19,7 +20,7 @@ function fail(message: string): never {
 
 if (!process.env.DATABASE_URL) fail('DATABASE_URL is not set.');
 if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail('SEED_SUPERADMIN_EMAIL must be a valid email address.');
-if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+if (passwordProblems(password).length) {
   fail('SEED_SUPERADMIN_PASSWORD must be at least 12 characters with upper-case, lower-case and a number.');
 }
 
