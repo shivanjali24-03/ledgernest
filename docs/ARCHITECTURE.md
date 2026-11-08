@@ -30,6 +30,19 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
 - **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
 
+## Team management
+
+An organisation's own admins manage their team under `/api/v1/organization` (`members`, `invitations`, `roles`). One rule runs through all of it: **nobody can grant more access than they have.**
+
+- To change someone's role, you must be allowed to give both their **current** role and the **new** one. So an Admin can't demote an Owner or promote anyone to Admin, and only an Owner can make another Owner.
+- Custom roles rank below Admin, and you can only build or edit a role from permissions you hold yourself.
+- Every organisation keeps at least one Owner, checked under a per-organisation database lock.
+- Nobody changes their own role or removes themselves, so nobody locks themselves out by accident.
+- Editing a custom role changes its members' access on their next request.
+- A role still assigned to people can't be deleted. Deleting one withdraws its pending invitations.
+- Resending an invitation issues a new link and kills the old one, and a revoked link stops working at once.
+- Refusals include a `details.reason` (`exceeds_your_access` with the `missing` permissions, `last_owner`, `self`, `already_member`, `already_invited`, `name_taken`, `in_use`) so the web app can explain them in any language.
+
 ## Invitations
 
 - The link holds a random token. Only its hash is stored, it expires after 7 days and it works once. Tokens travel in request bodies, never in URLs, so they don't end up in server logs.
