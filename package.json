@@ -1,0 +1,19 @@
+{
+  "name": "ledgernest",
+  "private": true,
+  "description": "Modern multi-language accounting software",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w @ledgernest/web",
+    "dev:api": "npm run start:dev -w @ledgernest/api",
+    "build": "npm run build -w @ledgernest/shared && npm run build -w @ledgernest/web && npm run build -w @ledgernest/api",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

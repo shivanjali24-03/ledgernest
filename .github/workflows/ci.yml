@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build shared rules
+        run: npm run build -w @ledgernest/shared
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+      - name: Build apps
+        run: npm run build -w @ledgernest/web && npm run build -w @ledgernest/api
