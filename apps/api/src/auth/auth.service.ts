@@ -149,6 +149,11 @@ export class AuthService {
     };
   }
 
+  /** Starts a session for a user who was verified another way (e.g. by accepting an invitation). */
+  startSession(userId: string, isSuperAdmin: boolean, ctx: RequestContext) {
+    return this.issue(userId, isSuperAdmin, randomUUID(), ctx);
+  }
+
   // ---- helpers ----
 
   private async issue(userId: string, isSuperAdmin: boolean, familyId: string, ctx: RequestContext, replaces?: string): Promise<IssuedTokens> {

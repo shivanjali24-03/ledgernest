@@ -77,6 +77,7 @@ model Role {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   memberships  Membership[]
+  invitations  Invitation[]
 
   @@unique([organizationId, name])
   @@map("roles")
@@ -117,6 +118,8 @@ model Invitation {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   invitedBy    User         @relation("InvitedBy", fields: [invitedById], references: [id])
+  /// Deleting a custom role withdraws pending invitations for it
+  customRole   Role?        @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, email])
   @@map("invitations")
