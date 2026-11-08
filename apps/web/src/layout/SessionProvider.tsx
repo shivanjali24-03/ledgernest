@@ -25,6 +25,7 @@ export default function SessionProvider({
       name,
       email,
       organization: 'Nest Demo Pvt. Ltd.',
+      organizationId: 'o-1',
       role,
       permissions: permissionsOf([BUILT_IN_ROLES[role]]),
       setRole,
