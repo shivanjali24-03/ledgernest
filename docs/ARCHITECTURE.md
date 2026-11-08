@@ -44,6 +44,15 @@ In the web app, the access token is kept in memory only (never in `localStorage`
 - Each role is a set of permissions. Custom roles are stored per organisation.
 - API endpoints declare their permission with a decorator, and a guard checks it. The web app uses the same matrix to hide what you can't do.
 
+How a request is checked:
+
+1. **Signed in?** Every endpoint requires a valid access token unless marked `@Public()`. The user is re-read from the database on each request, so a suspension or a removed Super Admin takes effect at once.
+2. **Which organisation?** Organisation endpoints need an `X-Organization-Id` header. If the caller isn't a member, the answer is `404 Organisation not found`, the same as for an id that doesn't exist, so outsiders can't probe which organisations exist.
+3. **Allowed?** `@RequirePermission('users.view')` is checked against the caller's role there. A `403` lists the missing permission. Platform permissions (`platform.*`) are only for Super Admins and can't be granted by an organisation role, even a custom one.
+4. **Scoped data.** The organisation is stored for the rest of the request. `TenantPrisma` adds it to every query on organisation tables (reads, updates, deletes and creates), overriding anything the code passes in. Without an organisation it refuses to run.
+
+**Support access:** a Super Admin can open any organisation, including suspended ones, to help a customer. Each such request is written to the audit log as `platform.support_access` with the method and path.
+
 ## Accounting rules
 
 - Amounts are integers in the smallest currency unit (e.g. paise, cents).
