@@ -18,6 +18,11 @@ export const envSchema = z.object({
   COOKIE_SAMESITE: z.enum(['strict', 'lax', 'none']).default('lax'),
   /** Sign-in attempts allowed per IP per minute */
   LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
+  /** Where the web app lives; used to build links in invitations */
+  WEB_APP_URL: z
+    .url()
+    .default('http://localhost:5173')
+    .transform((v) => v.replace(/\/+$/, '')),
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:5173')

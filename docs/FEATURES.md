@@ -8,11 +8,11 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 | Feature | What it means | Status |
 |---|---|---|
-| Super Admin console | Platform owner manages every organisation, user and global setting | 📋 |
+| Super Admin console | Platform owner manages every organisation, user and global setting | 🚧 API done (#10); screens next |
 | Organisations (multi-tenant) | Each business is a separate organisation; data is always isolated by organisation | 📋 |
 | Sign-in and sessions | Email + password (hashed with Argon2), short-lived access token, rotating refresh token, account lockout | ✅ #7 |
 | Roles and permissions | Built-in roles (below) plus **custom roles** built from a permission matrix | 🚧 Rules and API enforcement done (#3, #9); management screens in #11 |
-| Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | 📋 |
+| Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | 🚧 Accept done (#10); manage in #11 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | 📋 |
 | Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | ✅ (#5) |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 🚧 Numbers and money done (#5) |

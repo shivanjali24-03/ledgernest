@@ -21,6 +21,22 @@ Browser (React SPA)  ──HTTPS / JSON──►  NestJS API  ──Prisma──
 - The API resolves the current organisation from the signed-in user's membership and **always** filters by it.
 - Super Admins act at the platform level; organisation roles act inside one organisation.
 
+## Super Admin console
+
+Platform endpoints live under `/api/v1/platform` and need a platform permission, so only Super Admins can use them. Every change is written to the audit log with before and after values.
+
+- **Organisations:** search and filter, create, edit, suspend (members are locked out at once) and reactivate. A web address (slug) is generated from the name and made unique automatically.
+- **First Owner:** if the email already has an account, they're added as Owner straight away. Otherwise an invitation is created and its one-time link is returned to the Super Admin to share. Email delivery comes later.
+- **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
+- **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
+
+## Invitations
+
+- The link holds a random token. Only its hash is stored, it expires after 7 days and it works once. Tokens travel in request bodies, never in URLs, so they don't end up in server logs.
+- **New people** accept on the public page by choosing a name and password, and are signed in straight away.
+- **People who already have an account** accept while signed in, and only for their own email. The public page can't be used to guess an existing account's password around the sign-in lockout.
+- The invitation is claimed before anything else happens, so a double click can't create two accounts.
+
 ## Authentication
 
 - Passwords are hashed with **Argon2id**. Policy (12+ characters, upper, lower, number) lives in `packages/shared` so the web form and the API agree.

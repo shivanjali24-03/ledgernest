@@ -9,6 +9,7 @@ import type { Env } from '../config/env.js';
 import { AuthService, type IssuedTokens, type RequestContext } from './auth.service.js';
 import { CurrentActor, Public } from '../access/decorators.js';
 import type { Actor } from '../access/types.js';
+import { clearRefreshCookie, setRefreshCookie } from './session-cookie.js';
 import { REFRESH_COOKIE } from './tokens.js';
 
 // Read on each request, not at import time: .env is loaded after this file is imported.
@@ -67,23 +68,12 @@ export class AuthController {
   me(@CurrentActor() actor: Actor) {
     return this.auth.me(actor.userId);
   }
-
-  // The refresh cookie is httpOnly (JavaScript can't read it) and only sent to /api/v1/auth
-  private cookieOptions() {
-    return {
-      httpOnly: true,
-      secure: this.config.get('COOKIE_SECURE', { infer: true }),
-      sameSite: this.config.get('COOKIE_SAMESITE', { infer: true }),
-      path: '/api/v1/auth',
-    } as const;
-  }
-
   private setRefreshCookie(res: Response, tokens: IssuedTokens) {
-    res.cookie(REFRESH_COOKIE, tokens.refreshToken, { ...this.cookieOptions(), expires: tokens.refreshExpiresAt });
+    setRefreshCookie(res, this.config, tokens);
   }
 
   private clearRefreshCookie(res: Response) {
-    res.clearCookie(REFRESH_COOKIE, this.cookieOptions());
+    clearRefreshCookie(res, this.config);
   }
 }
 
