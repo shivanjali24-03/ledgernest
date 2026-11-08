@@ -79,5 +79,44 @@
     "thisPage": "Esta página",
     "body": "Forma parte de la hoja de ruta de LedgerNest. Consulta lo planificado y sigue el progreso en GitHub.",
     "cta": "Ver la lista de funciones"
+  },
+  "auth": {
+    "title": "Inicia sesión en LedgerNest",
+    "subtitle": "Hola de nuevo. Introduce tus datos para continuar.",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "tu@empresa.com",
+    "password": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "capsLock": "Bloq Mayús está activado",
+    "submit": "Iniciar sesión",
+    "submitting": "Iniciando sesión…",
+    "demoTitle": "Modo demo",
+    "demoBody": "No hay un servidor conectado, así que cualquier correo y contraseña abren la empresa de ejemplo.",
+    "demoCta": "Explorar la demo",
+    "signOut": "Cerrar sesión",
+    "account": "Cuenta",
+    "loading": "Cargando tu espacio de trabajo…",
+    "platform": "Plataforma LedgerNest",
+    "signedOut": "Has cerrado sesión.",
+    "brand": {
+      "title": "Contabilidad al ritmo de tu negocio",
+      "secure": "Inicio de sesión seguro con bloqueo automático",
+      "languages": "Disponible en 7 idiomas, incluidos los de derecha a izquierda",
+      "roles": "Roles desde Superadministrador hasta Lector",
+      "trialBalance": "Balance de comprobación",
+      "balanced": "Cuadrado"
+    },
+    "errors": {
+      "emailInvalid": "Introduce un correo electrónico válido.",
+      "passwordRequired": "Introduce tu contraseña.",
+      "invalid": "El correo o la contraseña no son correctos.",
+      "locked": "Demasiados intentos fallidos. Vuelve a intentarlo en {{minutes}} min.",
+      "suspended": "Esta cuenta está suspendida. Contacta con tu administrador.",
+      "rateLimited": "Demasiados intentos desde este dispositivo. Espera un minuto y vuelve a intentarlo.",
+      "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+      "server": "Algo ha fallado por nuestra parte. Inténtalo de nuevo.",
+      "expired": "Tu sesión ha finalizado. Vuelve a iniciar sesión."
+    }
   }
 }
