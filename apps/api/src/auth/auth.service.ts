@@ -8,9 +8,8 @@ import {
   LOCKOUT,
   TOKENS,
   isBuiltInRole,
-  isPermission,
-  type Permission,
 } from '@ledgernest/shared';
+import { membershipPermissions } from '../access/membership-permissions.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { hashToken, newRefreshToken } from './tokens.js';
 
@@ -130,9 +129,7 @@ export class AuthService {
 
     const organizations = user.memberships.map((m) => {
       const builtIn = m.builtInRole && isBuiltInRole(m.builtInRole) ? BUILT_IN_ROLES[m.builtInRole] : null;
-      const permissions: Permission[] = builtIn
-        ? [...builtIn.permissions]
-        : (m.customRole?.permissions ?? []).filter(isPermission).filter((p) => !p.startsWith('platform.'));
+      const permissions = [...membershipPermissions(m)];
       return {
         id: m.organization.id,
         name: m.organization.name,

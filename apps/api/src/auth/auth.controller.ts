@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -7,9 +7,9 @@ import { loginSchema, type LoginInput } from '@ledgernest/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { Env } from '../config/env.js';
 import { AuthService, type IssuedTokens, type RequestContext } from './auth.service.js';
-import { CurrentUser, JwtAuthGuard } from './jwt-auth.guard.js';
+import { CurrentActor, Public } from '../access/decorators.js';
+import type { Actor } from '../access/types.js';
 import { REFRESH_COOKIE } from './tokens.js';
-import type { AccessPayload } from './auth.service.js';
 
 // Read on each request, not at import time: .env is loaded after this file is imported.
 // The value itself is validated at startup in config/env.ts.
@@ -24,6 +24,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: loginLimit } })
   @ApiBody({ schema: { properties: { email: { type: 'string' }, password: { type: 'string' } }, required: ['email', 'password'] } })
@@ -37,6 +38,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOkResponse({ description: 'New access token; the refresh cookie is rotated' })
@@ -52,6 +54,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.auth.logout(cookieOf(req), ctxOf(req));
@@ -59,11 +62,10 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'The signed-in user, their organisations and permissions' })
-  me(@CurrentUser() user: AccessPayload) {
-    return this.auth.me(user.sub);
+  me(@CurrentActor() actor: Actor) {
+    return this.auth.me(actor.userId);
   }
 
   // The refresh cookie is httpOnly (JavaScript can't read it) and only sent to /api/v1/auth
