@@ -44,3 +44,9 @@ hotfix/<issue>-name ────────────────────
 - **Text:** every user-facing string goes through i18n. No hard-coded English in components.
 - **Animations:** only animate `transform` and `opacity`, and respect `prefers-reduced-motion`.
 - **Data:** use demo data only. Never commit real customer or financial data, or secrets.
+
+## Adding or changing text
+
+1. Add the English text to `apps/web/src/i18n/locales/en.json`.
+2. Add the same key to **every** other language file. CI fails if a key is missing, empty, or has different `{{placeholders}}`.
+3. Not a native speaker? Add your best translation and open the PR with the `i18n` label so a native speaker can review it.
