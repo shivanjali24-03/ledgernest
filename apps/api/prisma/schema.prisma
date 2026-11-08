@@ -130,6 +130,8 @@ model AuditLog {
   id             String   @id @default(uuid()) @db.Uuid
   organizationId String?  @map("organization_id") @db.Uuid /// null for platform-level actions
   actorId        String?  @map("actor_id") @db.Uuid /// null for system actions
+  /// Who did it, copied from the user when the entry is written (kept even if the user is later deleted)
+  actorEmail     String?  @map("actor_email")
   action         String /// e.g. organization.create, user.login.failed
   entityType     String?  @map("entity_type")
   entityId       String?  @map("entity_id")
@@ -144,6 +146,7 @@ model AuditLog {
 
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([actorId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
   @@map("audit_logs")
 }
 
