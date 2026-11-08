@@ -4,15 +4,15 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import i18n from '../i18n';
 import { routes } from '../routes';
 import { BASE, ME, fakeApi } from '../test/fakeApi';
-import AuthProvider from './AuthProvider';
+import AppProviders from '../AppProviders';
 import { createAuthClient, type AuthClient } from './client';
 
 function renderApp(path: string, client: AuthClient | null) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
-    <AuthProvider client={client}>
+    <AppProviders client={client}>
       <RouterProvider router={router} />
-    </AuthProvider>,
+    </AppProviders>,
   );
   return router;
 }

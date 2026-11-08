@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import SessionProvider from '../layout/SessionProvider';
 import { SessionContext } from '../layout/session';
 import { API_URL, ApiError, createAuthClient, type AuthClient } from './client';
 import { AuthContext, DEMO_EMAIL, nameFromEmail, type Auth, type AuthState } from './context';
 import { liveSession } from './liveSession';
+import { PlatformApiContext } from '../platform/context';
+import { createDemoPlatformApi, demoAcceptAsNewUser } from '../platform/demoApi';
+import { createLivePlatformApi } from '../platform/liveApi';
+import type { PlatformApi } from '../platform/types';
 
 const DEMO_KEY = 'ledgernest.demo';
 const CHANNEL = 'ledgernest-auth';
@@ -39,8 +44,18 @@ const broadcast = (message: 'signed-out') => {
  * - Live mode (VITE_API_URL set): restores the session from the refresh cookie on load.
  * - Demo mode: any email and password opens the sample company; nothing leaves the browser.
  */
-export default function AuthProvider({ children, client = defaultClient }: { children: ReactNode; client?: AuthClient | null }) {
+export default function AuthProvider({
+  children,
+  client = defaultClient,
+  platformApi: platformApiOverride,
+}: {
+  children: ReactNode;
+  client?: AuthClient | null;
+  /** Tests can supply their own console data source */
+  platformApi?: PlatformApi;
+}) {
   const mode = client ? 'live' : 'demo';
+  const queryClient = useQueryClient();
   const [state, setState] = useState<AuthState>(() => {
     if (client) return { status: 'loading' };
     const demoEmail = readDemo();
@@ -85,6 +100,21 @@ export default function AuthProvider({ children, client = defaultClient }: { chi
         return;
       }
       await client.login(email, password);
+      queryClient.clear(); // never show the previous user's cached data
+      setState({ status: 'signedIn', me: await client.me() });
+    },
+    [client, queryClient],
+  );
+
+  const acceptInvitation = useCallback(
+    async (token: string, name: string, password: string) => {
+      if (!client) {
+        const email = demoAcceptAsNewUser(token, name);
+        writeDemo(email);
+        setState({ status: 'signedIn', demoEmail: email });
+        return;
+      }
+      await client.acceptInvitation(token, name, password);
       setState({ status: 'signedIn', me: await client.me() });
     },
     [client],
@@ -94,10 +124,16 @@ export default function AuthProvider({ children, client = defaultClient }: { chi
     if (client) await client.logout().catch(() => {}); // signed out locally even if the network is down
     writeDemo(null);
     broadcast('signed-out');
+    queryClient.clear();
     setState({ status: 'signedOut', reason: 'signedOut' });
+  }, [client, queryClient]);
+
+  const reload = useCallback(async () => {
+    if (client) setState({ status: 'signedIn', me: await client.me() });
   }, [client]);
 
-  const auth = useMemo<Auth>(() => ({ mode, state, signIn, signOut }), [mode, state, signIn, signOut]);
+  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload }), [mode, state, signIn, acceptInvitation, signOut, reload]);
+  const platformApi = useMemo(() => platformApiOverride ?? (client ? createLivePlatformApi(client) : createDemoPlatformApi()), [client, platformApiOverride]);
   const session = useMemo(() => (state.status === 'signedIn' && state.me ? liveSession(state.me, signOut) : null), [state, signOut]);
 
   let content = children;
@@ -111,5 +147,9 @@ export default function AuthProvider({ children, client = defaultClient }: { chi
     );
   }
 
-  return <AuthContext.Provider value={auth}>{content}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={auth}>
+      <PlatformApiContext.Provider value={platformApi}>{content}</PlatformApiContext.Provider>
+    </AuthContext.Provider>
+  );
 }

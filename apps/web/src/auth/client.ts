@@ -17,24 +17,39 @@ export interface MeResponse {
 }
 
 /** Every failure is mapped to a kind, so the UI shows a translated message instead of the server's English. */
-export type ApiErrorKind = 'invalid_credentials' | 'locked' | 'suspended' | 'rate_limited' | 'validation' | 'session_expired' | 'network' | 'server';
+export type ApiErrorKind =
+  | 'invalid_credentials'
+  | 'locked'
+  | 'suspended'
+  | 'rate_limited'
+  | 'validation'
+  | 'session_expired'
+  | 'forbidden'
+  | 'not_found'
+  | 'conflict'
+  | 'gone'
+  | 'network'
+  | 'server';
 
 export class ApiError extends Error {
   readonly kind: ApiErrorKind;
   readonly status: number;
   readonly retryAfterMinutes?: number;
+  /** Extra information from the API, e.g. { field: 'slug' } or { missing: [...] } */
+  readonly details?: Record<string, unknown>;
 
-  constructor(kind: ApiErrorKind, status: number, message?: string, retryAfterMinutes?: number) {
+  constructor(kind: ApiErrorKind, status: number, message?: string, retryAfterMinutes?: number, details?: Record<string, unknown>) {
     super(message ?? kind);
     this.name = 'ApiError';
     this.kind = kind;
     this.status = status;
     this.retryAfterMinutes = retryAfterMinutes;
+    this.details = details;
   }
 }
 
 async function toApiError(res: Response, during: 'login' | 'request'): Promise<ApiError> {
-  const body = (await res.json().catch(() => ({}))) as { message?: string; details?: { retryAfterMinutes?: number } };
+  const body = (await res.json().catch(() => ({}))) as { message?: string; details?: Record<string, unknown> & { retryAfterMinutes?: number } };
   const kind: ApiErrorKind =
     res.status === 401
       ? during === 'login'
@@ -42,14 +57,23 @@ async function toApiError(res: Response, during: 'login' | 'request'): Promise<A
         : 'session_expired'
       : res.status === 423
         ? 'locked'
-        : res.status === 403 && during === 'login'
-          ? 'suspended'
+        : res.status === 403
+          ? during === 'login'
+            ? 'suspended'
+            : 'forbidden'
           : res.status === 429
             ? 'rate_limited'
             : res.status === 400
               ? 'validation'
-              : 'server';
-  return new ApiError(kind, res.status, body.message, body.details?.retryAfterMinutes);
+              : res.status === 404
+                ? 'not_found'
+                : res.status === 409
+                  ? 'conflict'
+                  : res.status === 410
+                    ? 'gone'
+                    : 'server';
+  const details = Array.isArray(body.details) ? { fields: body.details } : body.details;
+  return new ApiError(kind, res.status, body.message, body.details?.retryAfterMinutes, details);
 }
 
 /**
@@ -92,6 +116,13 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     accessToken = ((await res.json()) as { accessToken: string }).accessToken;
   }
 
+  /** Accepting an invitation as a new person also signs them in. */
+  async function acceptInvitation(token: string, name: string, password: string): Promise<void> {
+    const res = await send('/invitations/accept', { method: 'POST', body: JSON.stringify({ token, name, password }) });
+    if (!res.ok) throw await toApiError(res, 'request');
+    accessToken = ((await res.json()) as { accessToken: string }).accessToken;
+  }
+
   /** Gets a new access token from the refresh cookie. Resolves false when there is no valid session. */
   function refresh(): Promise<boolean> {
     refreshing ??= withRefreshLock(async () => {
@@ -109,8 +140,9 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     return refreshing;
   }
 
-  /** An authenticated API call. */
-  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  /** An authenticated API call. Objects passed as `json` are sent as the JSON body. */
+  async function request<T>(path: string, { json, ...init }: RequestInit & { json?: unknown } = {}): Promise<T> {
+    if (json !== undefined) init.body = JSON.stringify(json);
     let res = await send(path, init);
     if (res.status === 401 && (await refresh())) res = await send(path, init);
     if (res.status === 401) {
@@ -132,6 +164,7 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
 
   return {
     login,
+    acceptInvitation,
     refresh,
     logout,
     request,
