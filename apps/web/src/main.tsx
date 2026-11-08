@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { MotionConfig } from 'motion/react';
 import './styles/index.css';
+import './i18n';
 import AppShell from './layout/AppShell';
 import SessionProvider from './layout/SessionProvider';
 import { NAV } from './layout/nav';
