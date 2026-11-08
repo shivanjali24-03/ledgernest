@@ -40,9 +40,11 @@ docs/            Feature list, architecture and decision records
 ```bash
 npm install                 # installs every workspace
 npm run build -w @ledgernest/shared
-npm run dev:api             # API on http://localhost:3000
+npm run dev:api             # API on http://localhost:3000/api/v1 (docs at /docs)
 npm run dev:web             # web app on http://localhost:5173
 ```
+
+Full setup, including the local database and seeding the first Super Admin: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 | Script | What it does |
 |---|---|
