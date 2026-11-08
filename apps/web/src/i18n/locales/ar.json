@@ -20,7 +20,8 @@
       "audit": "سجل التدقيق",
       "settings": "الإعدادات",
       "organizations": "المؤسسات",
-      "platformUsers": "مستخدمو المنصة"
+      "platformUsers": "مستخدمو المنصة",
+      "platformOverview": "نظرة عامة على المنصة"
     },
     "soon": "قريبًا"
   },
@@ -118,5 +119,216 @@
       "server": "حدث خطأ من جهتنا. يُرجى المحاولة مجددًا.",
       "expired": "انتهت جلستك. يُرجى تسجيل الدخول مجددًا."
     }
+  },
+  "common": {
+    "all": "الكل",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "copied": "تم النسخ",
+    "copy": "نسخ",
+    "done": "تم",
+    "edit": "تعديل",
+    "save": "حفظ التغييرات",
+    "loadFailed": "تعذّر تحميل هذا.",
+    "loading": "جارٍ التحميل…",
+    "retry": "إعادة المحاولة",
+    "next": "الصفحة التالية",
+    "previous": "الصفحة السابقة",
+    "pagination": "التنقل بين الصفحات",
+    "pageOf": "صفحة {{page}} من {{pages}}",
+    "reasonOptional": "السبب (اختياري)",
+    "reasonHint": "يُحفظ في سجل التدقيق.",
+    "noAccessTitle": "ليس لديك صلاحية لهذه الصفحة",
+    "noAccessBody": "اطلبها من المشرف العام أو من مالك مؤسستك إذا احتجت إليها.",
+    "status": {
+      "ACTIVE": "نشطة",
+      "SUSPENDED": "موقوفة"
+    }
+  },
+  "platform": {
+    "eyebrow": "المشرف العام",
+    "overview": {
+      "title": "نظرة عامة على المنصة",
+      "description": "كل المؤسسات والأشخاص في LedgerNest بلمحة واحدة.",
+      "keyFigures": "الأرقام الرئيسية",
+      "organizations": "المؤسسات",
+      "activeSuspended": "{{active}} نشطة · {{suspended}} موقوفة",
+      "newThisMonth": "مؤسسات جديدة",
+      "last30Days": "آخر 30 يومًا",
+      "users": "الأشخاص",
+      "superAdmins": "المشرفون العامون: {{count}}",
+      "signIns": "عمليات الدخول",
+      "failedSignIns": "آخر 7 أيام · {{count}} فاشلة",
+      "recent": "نشاط المنصة الأخير",
+      "noActivity": "لا يوجد نشاط بعد",
+      "system": "النظام"
+    },
+    "activity": {
+      "platform_organization_create": "أنشأ",
+      "platform_organization_update": "عدّل",
+      "platform_organization_suspend": "أوقف",
+      "platform_organization_reactivate": "أعاد تفعيل",
+      "platform_user_promote": "عيّن مشرفًا عامًا",
+      "platform_user_demote": "أزال مشرفًا عامًا",
+      "platform_user_suspend": "أوقف حسابًا",
+      "platform_user_reactivate": "أعاد تفعيل حساب",
+      "invitation_accept": "قبل دعوة إلى",
+      "platform_superadmin_create": "أعدّ المنصة"
+    },
+    "organizations": {
+      "title": "المؤسسات",
+      "description": "أنشئ كل المؤسسات وابحث عنها وأدرها.",
+      "new": "مؤسسة جديدة",
+      "search": "ابحث عن مؤسسة",
+      "filter": "تصفية حسب الحالة",
+      "count": "الإجمالي: {{count}}",
+      "empty": "لا توجد مؤسسات بعد",
+      "noMatches": "لا توجد مؤسسات مطابقة",
+      "columns": {
+        "name": "المؤسسة",
+        "status": "الحالة",
+        "members": "الأعضاء",
+        "currency": "العملة",
+        "created": "تاريخ الإنشاء"
+      }
+    },
+    "create": {
+      "title": "مؤسسة جديدة",
+      "description": "أعدّ مؤسسة جديدة ومالكها الأول.",
+      "submit": "إنشاء المؤسسة",
+      "doneTitle": "{{name}} جاهزة",
+      "open": "فتح المؤسسة",
+      "ownerAdded": "كان لدى المالك حساب بالفعل وتمت إضافته.",
+      "ownerInvited": "ليس لدى {{email}} حساب بعد. أرسل له هذا الرابط للانضمام كمالك. تنتهي صلاحيته في {{date}}.",
+      "inviteLink": "رابط الدعوة",
+      "inviteOnce": "يعمل الرابط مرة واحدة. لن يُعرض مجددًا حفاظًا على الأمان."
+    },
+    "form": {
+      "name": "اسم المؤسسة",
+      "slug": "عنوان الويب",
+      "slugHint": "يُستخدم في الروابط: {{slug}}",
+      "ownerEmail": "بريد المالك",
+      "ownerHint": "يُضاف المستخدمون الحاليون فورًا، ويتلقى الآخرون رابط دعوة.",
+      "currency": "العملة الأساسية",
+      "country": "الدولة",
+      "noCountry": "غير محدد",
+      "fiscalYear": "تبدأ السنة المالية في",
+      "locale": "تنسيق الأرقام والتواريخ",
+      "localeHint": "طريقة ظهور المبالغ والتواريخ في التقارير.",
+      "errors": {
+        "name": "أدخل اسمًا من حرفين على الأقل.",
+        "slug": "استخدم أحرفًا صغيرة وأرقامًا وشرطات.",
+        "slugTaken": "عنوان الويب هذا مستخدم. جرّب عنوانًا آخر."
+      }
+    },
+    "detail": {
+      "details": "التفاصيل",
+      "people": "الأشخاص",
+      "memberCount": "الأعضاء: {{count}}",
+      "noOwner": "لا يوجد مالك بعد. الدعوة معلّقة.",
+      "pending": "دعوات معلّقة",
+      "expires": "تنتهي {{when}}",
+      "editTitle": "تعديل المؤسسة",
+      "saved": "تم حفظ التغييرات",
+      "suspend": "إيقاف",
+      "reactivate": "إعادة التفعيل",
+      "suspendTitle": "إيقاف {{name}}؟",
+      "suspendBody": "لن يتمكن أعضاؤها من استخدامها حتى تعيد تفعيلها. تبقى بياناتهم محفوظة.",
+      "reactivateTitle": "إعادة تفعيل {{name}}؟",
+      "reactivateBody": "سيتمكن أعضاؤها من استخدامها مجددًا فورًا.",
+      "suspended": "تم إيقاف {{name}}",
+      "reactivated": "{{name}} نشطة مجددًا",
+      "suspendedNote": "هذه المؤسسة موقوفة. لا يمكن لأعضائها استخدامها."
+    },
+    "users": {
+      "title": "مستخدمو المنصة",
+      "description": "كل من لديه حساب في LedgerNest. حدّد من هو المشرف العام.",
+      "search": "ابحث بالاسم أو البريد",
+      "filter": "عرض",
+      "noMatches": "لا يوجد أشخاص مطابقون",
+      "you": "أنت",
+      "member": "عضو",
+      "never": "أبدًا",
+      "actionsFor": "إجراءات {{name}}",
+      "columns": {
+        "person": "الشخص",
+        "access": "صلاحية المنصة",
+        "organizations": "المؤسسات",
+        "lastSignIn": "آخر دخول",
+        "actions": "الإجراءات"
+      },
+      "actions": {
+        "promote": "تعيين مشرفًا عامًا",
+        "demote": "إزالة المشرف العام",
+        "suspend": "إيقاف الحساب",
+        "reactivate": "إعادة تفعيل الحساب"
+      },
+      "confirm": {
+        "promote": {
+          "title": "تعيين {{name}} مشرفًا عامًا؟",
+          "body": "سيتمكن من إدارة كل المؤسسات والأشخاص في LedgerNest."
+        },
+        "demote": {
+          "title": "إزالة {{name}} من المشرفين العامين؟",
+          "body": "يبقى حسابه وأدواره في المؤسسات كما هي."
+        },
+        "suspend": {
+          "title": "إيقاف {{name}}؟",
+          "body": "سيُسجَّل خروجه من كل مكان فورًا ولن يتمكن من الدخول حتى إعادة التفعيل."
+        },
+        "reactivate": {
+          "title": "إعادة تفعيل {{name}}؟",
+          "body": "سيتمكن من الدخول مجددًا فورًا."
+        }
+      },
+      "done": {
+        "promote": "أصبح {{name}} مشرفًا عامًا",
+        "demote": "لم يعد {{name}} مشرفًا عامًا",
+        "suspend": "تم إيقاف {{name}}",
+        "reactivate": "{{name}} نشط مجددًا"
+      }
+    },
+    "errors": {
+      "lastSuperAdmin": "يحتاج LedgerNest إلى مشرف عام نشط واحد على الأقل. عيّن شخصًا آخر أولًا.",
+      "self": "لا يمكنك إيقاف حسابك.",
+      "inactive": "أعد تفعيل هذا الحساب أولًا.",
+      "forbidden": "ليست لديك صلاحية للقيام بذلك.",
+      "notFound": "تعذّر العثور عليه. ربما تمت إزالته.",
+      "conflict": "تم إجراء هذا التغيير مسبقًا. حدّث الصفحة لرؤية الأحدث."
+    }
+  },
+  "invite": {
+    "youreInvited": "أنت مدعو للانضمام إلى",
+    "summary": "ستنضم بصفة {{role}} باستخدام {{email}}.",
+    "expiresOn": "تنتهي الدعوة في {{date}}.",
+    "createAccount": "أنشئ حسابك",
+    "name": "اسمك",
+    "password": "اختر كلمة مرور",
+    "rules": {
+      "too_short": "12 حرفًا على الأقل",
+      "needs_lowercase": "حرف صغير",
+      "needs_uppercase": "حرف كبير",
+      "needs_number": "رقم",
+      "met": "مكتمل",
+      "notMet": "ليس بعد"
+    },
+    "errors": {
+      "name": "أدخل اسمك.",
+      "password": "كلمة المرور لا تستوفي كل الشروط بعد."
+    },
+    "acceptAndJoin": "إنشاء الحساب والانضمام",
+    "accountNowExists": "يوجد حساب بهذا البريد بالفعل. سجّل الدخول ثم افتح الرابط مجددًا.",
+    "signInFirst": "لدى {{email}} حساب في LedgerNest بالفعل. سجّل الدخول لقبول الدعوة.",
+    "signInToAccept": "سجّل الدخول للقبول",
+    "wrongAccount": "أنت مسجّل الدخول باسم {{current}}، لكن هذه الدعوة موجهة إلى {{email}}. سجّل الخروج ثم افتح الرابط مجددًا.",
+    "joinAs": "انضم بحسابك {{email}}.",
+    "accept": "قبول الدعوة",
+    "joined": "انضممت إلى {{name}}",
+    "problemTitle": "لا يمكن استخدام هذه الدعوة",
+    "invalid": "الرابط غير صالح. تأكد من نسخه كاملًا، أو اطلب رابطًا جديدًا.",
+    "expired": "انتهت صلاحية هذه الدعوة. اطلب دعوة جديدة.",
+    "used": "تم استخدام هذه الدعوة بالفعل. سجّل الدخول بدلًا من ذلك.",
+    "orgSuspended": "هذه المؤسسة موقوفة.",
+    "goToSignIn": "الانتقال إلى تسجيل الدخول"
   }
 }

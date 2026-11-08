@@ -17,7 +17,11 @@ export interface Auth {
   mode: 'live' | 'demo';
   state: AuthState;
   signIn: (email: string, password: string) => Promise<void>;
+  /** A new person accepts an invitation; their account is created and they're signed in. */
+  acceptInvitation: (token: string, name: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Re-reads the signed-in user, e.g. after joining an organisation. */
+  reload: () => Promise<void>;
 }
 
 export const AuthContext = createContext<Auth | null>(null);

@@ -20,7 +20,8 @@
       "audit": "Audit log",
       "settings": "Settings",
       "organizations": "Organisations",
-      "platformUsers": "Platform users"
+      "platformUsers": "Platform users",
+      "platformOverview": "Platform overview"
     },
     "soon": "Soon"
   },
@@ -118,5 +119,216 @@
       "server": "Something went wrong on our side. Please try again.",
       "expired": "Your session has ended. Please sign in again."
     }
+  },
+  "common": {
+    "all": "All",
+    "cancel": "Cancel",
+    "close": "Close",
+    "copied": "Copied",
+    "copy": "Copy",
+    "done": "Done",
+    "edit": "Edit",
+    "save": "Save changes",
+    "loadFailed": "We couldn't load this.",
+    "loading": "Loading…",
+    "retry": "Try again",
+    "next": "Next page",
+    "previous": "Previous page",
+    "pagination": "Pagination",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "reasonOptional": "Reason (optional)",
+    "reasonHint": "Saved in the audit log.",
+    "noAccessTitle": "You don't have access to this page",
+    "noAccessBody": "Ask a Super Admin or your organisation's Owner if you need it.",
+    "status": {
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended"
+    }
+  },
+  "platform": {
+    "eyebrow": "Super Admin",
+    "overview": {
+      "title": "Platform overview",
+      "description": "Every organisation and person on LedgerNest, at a glance.",
+      "keyFigures": "Key figures",
+      "organizations": "Organisations",
+      "activeSuspended": "{{active}} active · {{suspended}} suspended",
+      "newThisMonth": "New organisations",
+      "last30Days": "Last 30 days",
+      "users": "People",
+      "superAdmins": "Super Admins: {{count}}",
+      "signIns": "Sign-ins",
+      "failedSignIns": "Last 7 days · {{count}} failed",
+      "recent": "Recent platform activity",
+      "noActivity": "No activity yet",
+      "system": "System"
+    },
+    "activity": {
+      "platform_organization_create": "created",
+      "platform_organization_update": "updated",
+      "platform_organization_suspend": "suspended",
+      "platform_organization_reactivate": "reactivated",
+      "platform_user_promote": "made someone a Super Admin",
+      "platform_user_demote": "removed a Super Admin",
+      "platform_user_suspend": "suspended an account",
+      "platform_user_reactivate": "reactivated an account",
+      "invitation_accept": "accepted an invitation to",
+      "platform_superadmin_create": "set up the platform"
+    },
+    "organizations": {
+      "title": "Organisations",
+      "description": "Create, search and manage every organisation.",
+      "new": "New organisation",
+      "search": "Search organisations",
+      "filter": "Filter by status",
+      "count": "Total: {{count}}",
+      "empty": "No organisations yet",
+      "noMatches": "No organisations match",
+      "columns": {
+        "name": "Organisation",
+        "status": "Status",
+        "members": "Members",
+        "currency": "Currency",
+        "created": "Created"
+      }
+    },
+    "create": {
+      "title": "New organisation",
+      "description": "Set up a new organisation and its first Owner.",
+      "submit": "Create organisation",
+      "doneTitle": "{{name}} is ready",
+      "open": "Open organisation",
+      "ownerAdded": "The Owner already had an account and has been added.",
+      "ownerInvited": "{{email}} doesn't have an account yet. Send them this link to join as Owner. It expires on {{date}}.",
+      "inviteLink": "Invitation link",
+      "inviteOnce": "The link works once. For security it won't be shown again."
+    },
+    "form": {
+      "name": "Organisation name",
+      "slug": "Web address",
+      "slugHint": "Used in links: {{slug}}",
+      "ownerEmail": "Owner's email",
+      "ownerHint": "Existing users are added at once; anyone else gets an invitation link.",
+      "currency": "Base currency",
+      "country": "Country",
+      "noCountry": "Not set",
+      "fiscalYear": "Financial year starts in",
+      "locale": "Number and date format",
+      "localeHint": "How amounts and dates appear in reports.",
+      "errors": {
+        "name": "Enter a name of at least 2 characters.",
+        "slug": "Use lowercase letters, numbers and dashes.",
+        "slugTaken": "That web address is taken. Try another."
+      }
+    },
+    "detail": {
+      "details": "Details",
+      "people": "People",
+      "memberCount": "Members: {{count}}",
+      "noOwner": "No Owner yet. The invitation is still pending.",
+      "pending": "Pending invitations",
+      "expires": "Expires {{when}}",
+      "editTitle": "Edit organisation",
+      "saved": "Changes saved",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "suspendTitle": "Suspend {{name}}?",
+      "suspendBody": "Its members can't use it until you reactivate it. Their data is kept.",
+      "reactivateTitle": "Reactivate {{name}}?",
+      "reactivateBody": "Its members can use it again straight away.",
+      "suspended": "{{name}} is suspended",
+      "reactivated": "{{name}} is active again",
+      "suspendedNote": "This organisation is suspended. Its members can't use it."
+    },
+    "users": {
+      "title": "Platform users",
+      "description": "Everyone with a LedgerNest account. Manage who is a Super Admin.",
+      "search": "Search by name or email",
+      "filter": "Show",
+      "noMatches": "No people match",
+      "you": "You",
+      "member": "Member",
+      "never": "Never",
+      "actionsFor": "Actions for {{name}}",
+      "columns": {
+        "person": "Person",
+        "access": "Platform access",
+        "organizations": "Organisations",
+        "lastSignIn": "Last sign-in",
+        "actions": "Actions"
+      },
+      "actions": {
+        "promote": "Make Super Admin",
+        "demote": "Remove Super Admin",
+        "suspend": "Suspend account",
+        "reactivate": "Reactivate account"
+      },
+      "confirm": {
+        "promote": {
+          "title": "Make {{name}} a Super Admin?",
+          "body": "They'll be able to manage every organisation and person on LedgerNest."
+        },
+        "demote": {
+          "title": "Remove {{name}} as Super Admin?",
+          "body": "They keep their account and their organisation roles."
+        },
+        "suspend": {
+          "title": "Suspend {{name}}?",
+          "body": "They're signed out everywhere at once and can't sign in until reactivated."
+        },
+        "reactivate": {
+          "title": "Reactivate {{name}}?",
+          "body": "They can sign in again straight away."
+        }
+      },
+      "done": {
+        "promote": "{{name}} is now a Super Admin",
+        "demote": "{{name}} is no longer a Super Admin",
+        "suspend": "{{name}} is suspended",
+        "reactivate": "{{name}} is active again"
+      }
+    },
+    "errors": {
+      "lastSuperAdmin": "LedgerNest needs at least one active Super Admin. Make someone else a Super Admin first.",
+      "self": "You can't suspend your own account.",
+      "inactive": "Reactivate this account first.",
+      "forbidden": "You don't have permission to do that.",
+      "notFound": "We couldn't find that. It may have been removed.",
+      "conflict": "That change has already been made. Refresh to see the latest."
+    }
+  },
+  "invite": {
+    "youreInvited": "You're invited to join",
+    "summary": "You'll join as {{role}} with {{email}}.",
+    "expiresOn": "The invitation expires on {{date}}.",
+    "createAccount": "Create your account",
+    "name": "Your name",
+    "password": "Choose a password",
+    "rules": {
+      "too_short": "At least 12 characters",
+      "needs_lowercase": "A lowercase letter",
+      "needs_uppercase": "An uppercase letter",
+      "needs_number": "A number",
+      "met": "done",
+      "notMet": "not yet"
+    },
+    "errors": {
+      "name": "Enter your name.",
+      "password": "Your password doesn't meet every rule yet."
+    },
+    "acceptAndJoin": "Create account and join",
+    "accountNowExists": "An account with this email already exists. Sign in, then open the link again.",
+    "signInFirst": "{{email}} already has a LedgerNest account. Sign in to accept.",
+    "signInToAccept": "Sign in to accept",
+    "wrongAccount": "You're signed in as {{current}}, but this invitation is for {{email}}. Sign out, then open the link again.",
+    "joinAs": "Join with your account {{email}}.",
+    "accept": "Accept invitation",
+    "joined": "You've joined {{name}}",
+    "problemTitle": "This invitation can't be used",
+    "invalid": "The link isn't valid. Check you copied all of it, or ask for a new one.",
+    "expired": "This invitation has expired. Ask for a new one.",
+    "used": "This invitation has already been used. Sign in instead.",
+    "orgSuspended": "This organisation is suspended.",
+    "goToSignIn": "Go to sign in"
   }
 }

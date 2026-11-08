@@ -40,7 +40,7 @@ cp apps/web/.env.example apps/web/.env.local   # points at http://localhost:3000
 ```
 Then sign in with the Super Admin from your `SEED_*` settings.
 
-Without `VITE_API_URL` the web app runs in **demo mode**: any email and password opens a sample company, and you can preview every role. This is what the public GitHub Pages demo uses.
+Without `VITE_API_URL` the web app runs in **demo mode**: any email and password opens a sample company, and you can preview every role. The Super Admin console works too, on sample organisations and people stored in your browser, and follows the same rules as the API. This is what the public GitHub Pages demo uses.
 
 ## 5. Test
 ```bash
