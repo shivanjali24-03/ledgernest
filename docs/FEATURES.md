@@ -16,8 +16,8 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Audit log | Who did what, when and from where, for every change to financial data and access | 📋 |
 | Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | 📋 |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 📋 |
-| Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | 📋 |
-| Light and dark themes | System default, remembered per user | 📋 |
+| Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
+| Light and dark themes | System default, remembered per user | ✅ (#4) |
 
 ### Built-in roles
 
