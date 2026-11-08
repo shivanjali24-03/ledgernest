@@ -39,8 +39,8 @@ hotfix/<issue>-name ────────────────────
 ## Project rules
 
 - **Money** is always stored as an integer in the smallest currency unit. Never use floating point for amounts.
-- **Organisation isolation:** every database query on business data filters by organisation.
-- **Permissions:** every API endpoint declares the permission it needs. Rules live in `packages/shared` so the web app and API agree.
+- **Organisation isolation:** read and write organisation data through `TenantPrisma`, never `PrismaService`. It adds the current organisation to every query. New tables with an `organizationId` must be added to `TENANT_MODELS` (a test enforces this).
+- **Permissions:** every endpoint requires sign-in unless marked `@Public()`, and declares what it needs with `@RequirePermission(...)`. Rules live in `packages/shared` so the web app and API agree.
 - **Text:** every user-facing string goes through i18n. No hard-coded English in components.
 - **Animations:** only animate `transform` and `opacity`, and respect `prefers-reduced-motion`.
 - **Data:** use demo data only. Never commit real customer or financial data, or secrets.

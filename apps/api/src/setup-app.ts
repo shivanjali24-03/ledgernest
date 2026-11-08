@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { tenantContextMiddleware } from './access/tenant-context.js';
 import helmet from 'helmet';
 import { requestId } from './common/request-id.middleware.js';
 import type { Env } from './config/env.js';
@@ -12,6 +13,7 @@ export function setupApp(app: INestApplication) {
   app.use(requestId);
   app.use(helmet());
   app.use(cookieParser());
+  app.use(tenantContextMiddleware);
   app.enableCors({ origin: config.get('CORS_ORIGINS', { infer: true }), credentials: true });
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();
