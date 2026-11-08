@@ -11,7 +11,8 @@ import type { Env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
-type Db = Prisma.TransactionClient | PrismaService;
+/** Anything that can create an invitation: the client, a transaction, or an organisation-scoped client. */
+type Db = { invitation: { create(args: { data: Prisma.InvitationUncheckedCreateInput }): PromiseLike<{ id: string }> } };
 export type InviteRole = { builtInRole: Exclude<BuiltInRoleId, 'super_admin'> } | { customRoleId: string };
 
 const INVALID = 'This invitation link is not valid.';
