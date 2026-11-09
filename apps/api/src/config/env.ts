@@ -36,6 +36,11 @@ export const envSchema = z.object({
     .url()
     .default('http://localhost:5173')
     .transform((v) => v.replace(/\/+$/, '')),
+  /** Free daily exchange rates (the European Central Bank's reference rates, via Frankfurter; no key needed) */
+  FX_RATES_URL: z
+    .url()
+    .default('https://api.frankfurter.dev/v1')
+    .transform((v) => v.replace(/\/+$/, '')),
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:5173')

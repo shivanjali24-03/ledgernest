@@ -533,7 +533,8 @@
       "periods": "Geschäftsjahre",
       "journals": "Buchungen",
       "taxes": "Steuern",
-      "gstSlabs": "GST-Sätze"
+      "gstSlabs": "GST-Sätze",
+      "currencies": "Währungen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "GST-Satz bearbeitet",
       "platform_gst_slab_delete": "GST-Satz gelöscht",
       "org_fiscal_year_close": "Geschäftsjahr abgeschlossen",
-      "org_fiscal_year_reopen": "Geschäftsjahr wieder geöffnet"
+      "org_fiscal_year_reopen": "Geschäftsjahr wieder geöffnet",
+      "org_currency_add": "Währung aktiviert",
+      "org_currency_remove": "Währung entfernt",
+      "org_exchange_rate_set": "Wechselkurs festgelegt",
+      "org_exchange_rate_remove": "Wechselkurs entfernt",
+      "org_exchange_rate_fetch": "Wechselkurse abgerufen"
     },
     "entities": {
       "membership": "Mitglied",
@@ -610,7 +616,8 @@
       "journal": "Buchung",
       "tax_rate": "Steuersatz",
       "tax_group": "Steuergruppe",
-      "gst_slab": "GST-Satz"
+      "gst_slab": "GST-Satz",
+      "currency": "Währung"
     },
     "fields": {
       "user": "Person",
@@ -680,7 +687,13 @@
       "utgst": "UTGST",
       "state": "Bundesstaat",
       "profit": "Übertragenes Ergebnis",
-      "closingEntry": "Abschlussbuchung"
+      "closingEntry": "Abschlussbuchung",
+      "currency": "Währung",
+      "source": "Quelle",
+      "requested": "Angefragter Tag",
+      "saved": "Gespeichert",
+      "keptManual": "Behalten (von Hand eingegeben)",
+      "unsupported": "Nicht abgedeckt"
     },
     "details": {
       "when": "Wann",
@@ -750,7 +763,8 @@
       "email": "Geben Sie eine gültige E-Mail-Adresse ein.",
       "phone": "Verwenden Sie Ziffern, Leerzeichen, Klammern oder Bindestriche, optional mit + am Anfang.",
       "timeZone": "Wählen Sie eine Zeitzone aus der Liste.",
-      "invalid": "Prüfen Sie diesen Wert."
+      "invalid": "Prüfen Sie diesen Wert.",
+      "currencyEnabled": "Diese Währung ist als Fremdwährung aktiviert. Entfernen Sie sie zuerst unter Währungen."
     },
     "leave": {
       "title": "Ohne Speichern verlassen?",

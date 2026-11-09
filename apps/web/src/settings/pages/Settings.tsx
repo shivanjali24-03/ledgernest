@@ -72,6 +72,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
     },
     onError: (e) => {
       if (e instanceof ApiError && e.details?.reason === 'locked') toast(t(`settings.locked.${String(e.details.field)}`), 'error');
+      else if (e instanceof ApiError && e.details?.reason === 'currency_enabled') toast(t('settings.errors.currencyEnabled'), 'error');
       else toast(apiErrorMessage(e, t), 'error');
     },
   });

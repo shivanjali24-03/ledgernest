@@ -186,6 +186,12 @@ How a request is checked:
 - **Tax on lines.** A line picks a tax group and says whether its amount includes the tax. The API stores the line at its net value, followed by one generated line per tax component on the same side, so the entry still balances like any other. Sales (income) post output tax; purchases (expenses, assets) post input credit; a credit note runs the other way on the same account and so reduces the same tax. Each component is rounded on its own, as GST invoices show them; for an inclusive amount the net absorbs the rounding paisa so nothing is lost. Tax lines are recomputed when a draft posts, and a reversal mirrors them exactly. A database check keeps every tax line tied to its rate and the line it was charged on.
 - **Tax summary.** Per group, the taxable value and tax of outward and inward supplies; per rate, output tax, input credit and the net payable, for any date range, with CSV export.
 
+## Currencies
+
+- **Base currency and foreign currencies.** The books are kept in the organisation's base currency. Foreign currencies are enabled per organisation; the base currency can't be one of them.
+- **Exchange rates.** "1 unit of the foreign currency = rate units of the base currency" on a day, stored as `NUMERIC(20,10)` and handled as decimal strings; conversion to the base currency is integer-only and rounds half away from zero. A day without a rate uses the latest earlier one.
+- **Where rates come from.** Typed by hand, or fetched from the European Central Bank's free reference rates through Frankfurter (`FX_RATES_URL`, no key). The ECB publishes on working days, so a fetched rate is saved on the day it was published. A rate typed by hand is never overwritten by a fetch, and currencies the ECB doesn't cover (e.g. AED, SAR) are reported so they can be entered by hand. The network calls happen before the database transaction, never inside it.
+
 ## Decisions
 
 Architecture decision records live in [`docs/adr`](adr).

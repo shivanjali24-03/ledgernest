@@ -85,6 +85,8 @@ model Organization {
   taxRates      TaxRate[]
   taxGroups     TaxGroup[]
   taxGroupRates TaxGroupRate[]
+  currencies    OrganizationCurrency[]
+  exchangeRates ExchangeRate[]
 
   @@map("organizations")
 }
@@ -443,4 +445,36 @@ model TaxGroupRate {
   @@id([groupId, rateId])
   @@index([organizationId, rateId])
   @@map("tax_group_rates")
+}
+
+/// A foreign currency an organisation trades in. The base currency is never in this list.
+model OrganizationCurrency {
+  organizationId String   @map("organization_id") @db.Uuid
+  code           String   @db.Char(3)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rates        ExchangeRate[]
+
+  @@id([organizationId, code])
+  @@map("organization_currencies")
+}
+
+/// "1 unit of the currency = rate units of the base currency" on a day. A day without a rate uses the latest before it.
+model ExchangeRate {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  currency       String   @db.Char(3)
+  date           DateTime @db.Date
+  rate           Decimal  @db.Decimal(20, 10)
+  /// manual | ecb (fetched from the European Central Bank's reference rates)
+  source         String
+  createdById    String?  @map("created_by_id") @db.Uuid
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgCurrency  OrganizationCurrency @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: Cascade)
+
+  @@unique([organizationId, currency, date])
+  @@map("exchange_rates")
 }

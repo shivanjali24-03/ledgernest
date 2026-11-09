@@ -533,7 +533,8 @@
       "periods": "आर्थिक वर्षे",
       "journals": "जर्नल नोंदी",
       "taxes": "कर",
-      "gstSlabs": "जीएसटी स्लॅब"
+      "gstSlabs": "जीएसटी स्लॅब",
+      "currencies": "चलने"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "जीएसटी स्लॅब संपादित",
       "platform_gst_slab_delete": "जीएसटी स्लॅब हटवला",
       "org_fiscal_year_close": "आर्थिक वर्ष बंद",
-      "org_fiscal_year_reopen": "आर्थिक वर्ष पुन्हा उघडले"
+      "org_fiscal_year_reopen": "आर्थिक वर्ष पुन्हा उघडले",
+      "org_currency_add": "चलन सक्रिय केले",
+      "org_currency_remove": "चलन काढले",
+      "org_exchange_rate_set": "विनिमय दर सेट केला",
+      "org_exchange_rate_remove": "विनिमय दर काढला",
+      "org_exchange_rate_fetch": "विनिमय दर आणले"
     },
     "entities": {
       "membership": "सदस्य",
@@ -610,7 +616,8 @@
       "journal": "जर्नल नोंद",
       "tax_rate": "कर दर",
       "tax_group": "कर गट",
-      "gst_slab": "जीएसटी स्लॅब"
+      "gst_slab": "जीएसटी स्लॅब",
+      "currency": "चलन"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -680,7 +687,13 @@
       "utgst": "यूटीजीएसटी",
       "state": "राज्य",
       "profit": "हलवलेला नफा",
-      "closingEntry": "समापन नोंद"
+      "closingEntry": "समापन नोंद",
+      "currency": "चलन",
+      "source": "स्रोत",
+      "requested": "मागितलेला दिवस",
+      "saved": "जतन केले",
+      "keptManual": "ठेवले (हाताने लिहिलेले)",
+      "unsupported": "समाविष्ट नाही"
     },
     "details": {
       "when": "केव्हा",
@@ -750,7 +763,8 @@
       "email": "योग्य ईमेल पत्ता लिहा.",
       "phone": "अंक, स्पेस, कंस किंवा डॅश वापरा, हवे तर + ने सुरू करा.",
       "timeZone": "यादीतून वेळ क्षेत्र निवडा.",
-      "invalid": "हे मूल्य तपासा."
+      "invalid": "हे मूल्य तपासा.",
+      "currencyEnabled": "हे चलन परकीय चलन म्हणून सक्रिय आहे. आधी ते चलने मधून काढा."
     },
     "leave": {
       "title": "जतन न करता जायचे?",

@@ -107,6 +107,10 @@ export class OrganizationService {
       }
     }
 
+    if (changed.includes('baseCurrency') && (await this.prisma.organizationCurrency.findUnique({ where: { organizationId_code: { organizationId, code: wanted.baseCurrency as string } } }))) {
+      throw refuse(ConflictException, 'That currency is enabled as a foreign currency. Remove it under Currencies first.', 'currency_enabled', { field: 'baseCurrency' });
+    }
+
     const data = Object.fromEntries(changed.map((k) => [k, wanted[k]]));
     await this.prisma.$transaction(async (tx) => {
       await tx.organization.update({ where: { id: organizationId }, data });

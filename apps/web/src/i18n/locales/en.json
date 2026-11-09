@@ -533,7 +533,8 @@
       "periods": "Financial years",
       "journals": "Journal entries",
       "taxes": "Taxes",
-      "gstSlabs": "GST slabs"
+      "gstSlabs": "GST slabs",
+      "currencies": "Currencies"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "GST slab edited",
       "platform_gst_slab_delete": "GST slab deleted",
       "org_fiscal_year_close": "Financial year closed",
-      "org_fiscal_year_reopen": "Financial year reopened"
+      "org_fiscal_year_reopen": "Financial year reopened",
+      "org_currency_add": "Currency enabled",
+      "org_currency_remove": "Currency removed",
+      "org_exchange_rate_set": "Exchange rate set",
+      "org_exchange_rate_remove": "Exchange rate removed",
+      "org_exchange_rate_fetch": "Exchange rates fetched"
     },
     "entities": {
       "membership": "Member",
@@ -610,7 +616,8 @@
       "journal": "Journal entry",
       "tax_rate": "Tax rate",
       "tax_group": "Tax group",
-      "gst_slab": "GST slab"
+      "gst_slab": "GST slab",
+      "currency": "Currency"
     },
     "fields": {
       "user": "Person",
@@ -680,7 +687,13 @@
       "utgst": "UTGST",
       "state": "State",
       "profit": "Profit moved",
-      "closingEntry": "Closing entry"
+      "closingEntry": "Closing entry",
+      "currency": "Currency",
+      "source": "Source",
+      "requested": "Requested day",
+      "saved": "Saved",
+      "keptManual": "Kept (typed by hand)",
+      "unsupported": "Not covered"
     },
     "details": {
       "when": "When",
@@ -750,7 +763,8 @@
       "email": "Enter a valid email address.",
       "phone": "Use digits, spaces, brackets or dashes, optionally starting with +.",
       "timeZone": "Choose a time zone from the list.",
-      "invalid": "Check this value."
+      "invalid": "Check this value.",
+      "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first."
     },
     "leave": {
       "title": "Leave without saving?",

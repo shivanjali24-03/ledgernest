@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BookOpen, BookOpenCheck, Building2, Percent, Landmark, CalendarRange, ChevronDown, CircleDot, Download, KeyRound, LifeBuoy, LogIn, Mail, Settings, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, BookOpenCheck, Building2, Coins, Percent, Landmark, CalendarRange, ChevronDown, CircleDot, Download, KeyRound, LifeBuoy, LogIn, Mail, Settings, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 import type { TFunction } from 'i18next';
 import type { AuditActionGroup } from '@ledgernest/shared';
@@ -17,6 +17,7 @@ const ICONS: Record<AuditActionGroup, LucideIcon> = {
   journals: BookOpen,
   periods: CalendarRange,
   taxes: Percent,
+  currencies: Coins,
   gstSlabs: Landmark,
   signIns: LogIn,
   members: Users,
