@@ -21,4 +21,5 @@ export const Taxes = lazy(() => import('../taxes/pages/Taxes'));
 export const GstSlabs = lazy(() => import('../taxes/pages/GstSlabs'));
 export const Currencies = lazy(() => import('../currencies/pages/Currencies'));
 export const Contacts = lazy(() => import('../contacts/pages/Contacts'));
+export const Items = lazy(() => import('../items/pages/Items'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

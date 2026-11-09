@@ -17,6 +17,7 @@ import { ReportsModule } from './reports/reports.module.js';
 import { TaxesModule } from './taxes/taxes.module.js';
 import { CurrenciesModule } from './currencies/currencies.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
+import { ItemsModule } from './items/items.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -39,6 +40,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     TaxesModule,
     CurrenciesModule,
     ContactsModule,
+    ItemsModule,
     PlatformModule,
   ],
   providers: [

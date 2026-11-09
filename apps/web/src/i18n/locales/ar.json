@@ -27,7 +27,8 @@
       "taxes": "الضرائب",
       "gstSlabs": "شرائح ضريبة السلع والخدمات",
       "currencies": "العملات",
-      "contacts": "العملاء والموردون"
+      "contacts": "العملاء والموردون",
+      "items": "المنتجات والخدمات"
     },
     "soon": "قريبًا"
   },
@@ -537,7 +538,8 @@
       "taxes": "الضرائب",
       "gstSlabs": "شرائح ضريبة السلع والخدمات",
       "currencies": "العملات",
-      "contacts": "العملاء والموردون"
+      "contacts": "العملاء والموردون",
+      "items": "المنتجات والخدمات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -610,7 +612,12 @@
       "org_contact_update": "عُدّلت جهة اتصال",
       "org_contact_archive": "أُرشفت جهة اتصال",
       "org_contact_restore": "استُعيدت جهة اتصال",
-      "org_contact_delete": "حُذفت جهة اتصال"
+      "org_contact_delete": "حُذفت جهة اتصال",
+      "org_item_create": "أُضيف صنف",
+      "org_item_update": "عُدّل صنف",
+      "org_item_archive": "أُرشف صنف",
+      "org_item_restore": "استُعيد صنف",
+      "org_item_delete": "حُذف صنف"
     },
     "entities": {
       "membership": "عضو",
@@ -626,7 +633,8 @@
       "tax_group": "مجموعة ضريبية",
       "gst_slab": "شريحة ضريبة السلع والخدمات",
       "currency": "عملة",
-      "contact": "جهة اتصال"
+      "contact": "جهة اتصال",
+      "item": "صنف"
     },
     "fields": {
       "user": "الشخص",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "فعّل هذه العملة من العملات أولًا.",
       "already_archived": "جهة الاتصال هذه مؤرشفة بالفعل.",
       "not_archived": "جهة الاتصال هذه غير مؤرشفة."
+    }
+  },
+  "items": {
+    "title": "المنتجات والخدمات",
+    "description": "ما تبيعه وتشتريه، مع الأسعار والضرائب والحسابات التي تُسجل فيها.",
+    "add": "إضافة صنف",
+    "filter": "عرض",
+    "all": "الكل",
+    "services": "الخدمات",
+    "goods": "السلع",
+    "search": "ابحث بالاسم أو SKU أو HSN/SAC",
+    "showArchived": "عرض المؤرشف",
+    "noMatches": "لا توجد أصناف مطابقة",
+    "empty": "لا توجد منتجات أو خدمات بعد",
+    "emptyBody": "أضف ما تبيعه وتشتريه لتُملأ الفواتير تلقائيًا.",
+    "archivedPill": "مؤرشف",
+    "costs": "التكلفة {{amount}}",
+    "actionsFor": "إجراءات {{name}}",
+    "edit": "تعديل",
+    "archive": "أرشفة",
+    "restore": "استعادة",
+    "delete": "حذف",
+    "archived": "أُرشف {{name}}",
+    "restored": "استُعيد {{name}}",
+    "deleted": "حُذف {{name}}",
+    "deleteTitle": "حذف {{name}}؟",
+    "deleteBody": "يُحذف الصنف نهائيًا. بعد استخدامه في الفواتير، أرشفه بدلًا من ذلك.",
+    "saved": "حُفظ {{name}}",
+    "created": "أُضيف {{name}}",
+    "chooseLater": "اختر في كل سطر",
+    "dialog": {
+      "newTitle": "منتج أو خدمة جديدة",
+      "editTitle": "تعديل {{name}}",
+      "create": "إضافة الصنف"
+    },
+    "fields": {
+      "name": "الاسم",
+      "kind": "النوع",
+      "sku": "SKU",
+      "unit": "الوحدة",
+      "description": "الوصف",
+      "salePrice": "سعر البيع ({{currency}})",
+      "purchasePrice": "سعر الشراء ({{currency}})",
+      "taxGroup": "الضريبة المعتادة",
+      "hsn": "رمز HSN",
+      "sac": "رمز SAC",
+      "incomeAccount": "حساب الإيرادات (المبيعات)",
+      "expenseAccount": "حساب المصروفات أو الأصول (المشتريات)"
+    },
+    "kinds": {
+      "goods": "سلع",
+      "service": "خدمة"
+    },
+    "hints": {
+      "hsnSac": "4 أو 6 أو 8 أرقام، لفواتير ضريبة السلع والخدمات."
+    },
+    "validation": {
+      "name": "أدخل حرفين على الأقل.",
+      "price": "أدخل مبلغًا، مثل 2,500.",
+      "hsnSac": "استخدم رمزًا من 4 أو 6 أو 8 أرقام."
+    },
+    "errors": {
+      "name_taken": "يوجد صنف آخر بهذا الاسم.",
+      "sku_taken": "يوجد صنف آخر بهذا الرمز SKU.",
+      "income_account_type": "تذهب مبيعات الصنف إلى حساب إيرادات.",
+      "expense_account_type": "تذهب مشتريات الصنف إلى حساب مصروفات أو أصول.",
+      "tax_group_archived": "هذه المجموعة الضريبية مؤرشفة.",
+      "account_archived": "هذا الحساب مؤرشف."
     }
   }
 }

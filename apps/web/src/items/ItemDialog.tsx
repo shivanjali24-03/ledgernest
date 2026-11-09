@@ -1,0 +1,138 @@
+import { useState, type FormEvent } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { HSN_SAC_PATTERN, ITEM_KINDS, toMinor, type ItemKind, type ItemUpdateInput } from '@ledgernest/shared';
+import { useTranslation } from 'react-i18next';
+import { useAccountsApi } from '../accounts/useAccountsApi';
+import { ApiError } from '../auth/client';
+import { useSession } from '../layout/session';
+import { useMoney } from '../lib/useMoney';
+import { useTaxesApi } from '../taxes/useTaxesApi';
+import Button from '../ui/Button';
+import { SelectField, TextField } from '../ui/Field';
+import Modal from '../ui/Modal';
+import { useToast } from '../ui/toastContext';
+import { itemErrorMessage } from './errors';
+import type { Item, ItemsApi } from './types';
+
+/** Add or edit a product or service. Prices are in the base currency. */
+export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Item; api: ItemsApi; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const money = useMoney();
+  const session = useSession();
+  const accountsApi = useAccountsApi();
+  const taxesApi = useTaxesApi();
+  const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi });
+  const taxes = useQuery({ queryKey: ['taxes', session.organizationId, session.role ?? session.customRoleName], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
+  const price = (minor: number | null | undefined) => (minor ? money.plain(minor) : '');
+  const [name, setName] = useState(item?.name ?? '');
+  const [kind, setKind] = useState<ItemKind>(item?.kind ?? 'service');
+  const [sku, setSku] = useState(item?.sku ?? '');
+  const [unit, setUnit] = useState(item?.unit ?? '');
+  const [description, setDescription] = useState(item?.description ?? '');
+  const [salePrice, setSalePrice] = useState(price(item?.salePrice));
+  const [purchasePrice, setPurchasePrice] = useState(price(item?.purchasePrice));
+  const [taxGroupId, setTaxGroupId] = useState(item?.taxGroupId ?? '');
+  const [hsnSac, setHsnSac] = useState(item?.hsnSac ?? '');
+  const [incomeAccountId, setIncome] = useState(item?.incomeAccountId ?? '');
+  const [expenseAccountId, setExpense] = useState(item?.expenseAccountId ?? '');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const active = (accounts.data ?? []).filter((a) => !a.archived);
+  const values = () => ({
+    name: name.trim(),
+    kind,
+    sku: sku.trim() || null,
+    unit: unit.trim() || null,
+    description: description.trim() || null,
+    salePrice: salePrice.trim() ? toMinor(salePrice, money.digits) : null,
+    purchasePrice: purchasePrice.trim() ? toMinor(purchasePrice, money.digits) : null,
+    taxGroupId: taxGroupId || null,
+    hsnSac: hsnSac.trim() || null,
+    incomeAccountId: incomeAccountId || null,
+    expenseAccountId: expenseAccountId || null,
+  });
+  const save = useMutation({
+    mutationFn: () => {
+      const v = values() as Parameters<ItemsApi['create']>[0] & Record<string, unknown>;
+      if (!item) return api.create(v);
+      const patch = Object.fromEntries(Object.entries(v).filter(([k, x]) => x !== (item as unknown as Record<string, unknown>)[k])) as ItemUpdateInput;
+      return Object.keys(patch).length ? api.update(item.id, patch) : Promise.resolve(item);
+    },
+    onSuccess: (i) => {
+      toast(item ? t('items.saved', { name: i.name }) : t('items.created', { name: i.name }));
+      onSaved();
+    },
+    onError: (e) => {
+      const field = e instanceof ApiError && typeof e.details?.field === 'string' ? e.details.field : null;
+      if (field) setErrors({ [field]: itemErrorMessage(e, t) });
+      else toast(itemErrorMessage(e, t), 'error');
+    },
+  });
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const v = values();
+    const next: Record<string, string> = {};
+    if (v.name.length < 2) next.name = t('items.validation.name');
+    if (v.salePrice === null && salePrice.trim()) next.salePrice = t('items.validation.price');
+    if (v.purchasePrice === null && purchasePrice.trim()) next.purchasePrice = t('items.validation.price');
+    if (v.hsnSac && !HSN_SAC_PATTERN.test(v.hsnSac)) next.hsnSac = t('items.validation.hsnSac');
+    setErrors(next);
+    if (!Object.keys(next).length) save.mutate();
+  };
+  return (
+    <Modal
+      open
+      size="lg"
+      onClose={onClose}
+      title={item ? t('items.dialog.editTitle', { name: item.name }) : t('items.dialog.newTitle')}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" form="item-form" loading={save.isPending}>
+            {item ? t('common.save') : t('items.dialog.create')}
+          </Button>
+        </>
+      }
+    >
+      <form id="item-form" onSubmit={submit} noValidate className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <TextField label={t('items.fields.name')} value={name} onChange={(e) => setName(e.target.value)} error={errors.name} dir="auto" data-autofocus />
+        </div>
+        <SelectField label={t('items.fields.kind')} value={kind} onChange={(e) => setKind(e.target.value as ItemKind)} options={ITEM_KINDS.map((k) => ({ value: k, label: t(`items.kinds.${k}`) }))} />
+        <TextField label={t(kind === 'goods' ? 'items.fields.hsn' : 'items.fields.sac')} value={hsnSac} onChange={(e) => setHsnSac(e.target.value)} error={errors.hsnSac} dir="ltr" inputMode="numeric" hint={t('items.hints.hsnSac')} />
+        <TextField label={t('items.fields.sku')} value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} error={errors.sku} dir="ltr" className="font-mono" />
+        <TextField label={t('items.fields.unit')} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={kind === 'goods' ? 'nos' : 'hrs'} />
+        <div className="sm:col-span-2">
+          <TextField label={t('items.fields.description')} value={description} onChange={(e) => setDescription(e.target.value)} dir="auto" />
+        </div>
+        <TextField label={t('items.fields.salePrice', { currency: money.currency })} value={salePrice} onChange={(e) => setSalePrice(e.target.value)} error={errors.salePrice} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+        <TextField label={t('items.fields.purchasePrice', { currency: money.currency })} value={purchasePrice} onChange={(e) => setPurchasePrice(e.target.value)} error={errors.purchasePrice} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+        <SelectField
+          label={t('items.fields.taxGroup')}
+          value={taxGroupId}
+          onChange={(e) => setTaxGroupId(e.target.value)}
+          error={errors.taxGroupId}
+          options={[{ value: '', label: t('journals.tax.none') }, ...(taxes.data?.groups ?? []).filter((g) => !g.archived || g.id === taxGroupId).map((g) => ({ value: g.id, label: g.name }))]}
+        />
+        <div />
+        <SelectField
+          label={t('items.fields.incomeAccount')}
+          value={incomeAccountId}
+          onChange={(e) => setIncome(e.target.value)}
+          error={errors.incomeAccountId}
+          options={[{ value: '', label: t('items.chooseLater') }, ...active.filter((a) => a.type === 'income').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
+        />
+        <SelectField
+          label={t('items.fields.expenseAccount')}
+          value={expenseAccountId}
+          onChange={(e) => setExpense(e.target.value)}
+          error={errors.expenseAccountId}
+          options={[{ value: '', label: t('items.chooseLater') }, ...active.filter((a) => a.type === 'expense' || a.type === 'asset').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
+        />
+      </form>
+    </Modal>
+  );
+}

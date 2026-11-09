@@ -27,7 +27,8 @@
       "taxes": "कर",
       "gstSlabs": "जीएसटी स्लॅब",
       "currencies": "चलने",
-      "contacts": "ग्राहक आणि विक्रेते"
+      "contacts": "ग्राहक आणि विक्रेते",
+      "items": "उत्पादने आणि सेवा"
     },
     "soon": "लवकरच"
   },
@@ -537,7 +538,8 @@
       "taxes": "कर",
       "gstSlabs": "जीएसटी स्लॅब",
       "currencies": "चलने",
-      "contacts": "ग्राहक आणि विक्रेते"
+      "contacts": "ग्राहक आणि विक्रेते",
+      "items": "उत्पादने आणि सेवा"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -610,7 +612,12 @@
       "org_contact_update": "संपर्क संपादित",
       "org_contact_archive": "संपर्क संग्रहित",
       "org_contact_restore": "संपर्क पुनर्संचयित",
-      "org_contact_delete": "संपर्क हटवला"
+      "org_contact_delete": "संपर्क हटवला",
+      "org_item_create": "आयटम जोडला",
+      "org_item_update": "आयटम संपादित",
+      "org_item_archive": "आयटम संग्रहित",
+      "org_item_restore": "आयटम पुनर्संचयित",
+      "org_item_delete": "आयटम हटवला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -626,7 +633,8 @@
       "tax_group": "कर गट",
       "gst_slab": "जीएसटी स्लॅब",
       "currency": "चलन",
-      "contact": "संपर्क"
+      "contact": "संपर्क",
+      "item": "आयटम"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "आधी चलने मध्ये हे चलन सक्रिय करा.",
       "already_archived": "हा संपर्क आधीच संग्रहित आहे.",
       "not_archived": "हा संपर्क संग्रहित नाही."
+    }
+  },
+  "items": {
+    "title": "उत्पादने आणि सेवा",
+    "description": "तुम्ही काय विकता आणि खरेदी करता, किंमत, कर आणि ते नोंदवले जाणाऱ्या खात्यांसह.",
+    "add": "आयटम जोडा",
+    "filter": "दाखवा",
+    "all": "सर्व",
+    "services": "सेवा",
+    "goods": "वस्तू",
+    "search": "नाव, SKU किंवा HSN/SAC शोधा",
+    "showArchived": "संग्रहित दाखवा",
+    "noMatches": "कोणताही आयटम जुळत नाही",
+    "empty": "अजून उत्पादने किंवा सेवा नाहीत",
+    "emptyBody": "तुम्ही जे विकता आणि खरेदी करता ते जोडा म्हणजे बीजक आणि बिले आपोआप भरली जातील.",
+    "archivedPill": "संग्रहित",
+    "costs": "खर्च {{amount}}",
+    "actionsFor": "{{name}} साठी क्रिया",
+    "edit": "संपादित करा",
+    "archive": "संग्रहित करा",
+    "restore": "पुनर्संचयित करा",
+    "delete": "हटवा",
+    "archived": "{{name}} संग्रहित",
+    "restored": "{{name}} पुनर्संचयित",
+    "deleted": "{{name}} हटवले",
+    "deleteTitle": "{{name}} हटवायचे?",
+    "deleteBody": "आयटम कायमचा काढला जाईल. बीजक किंवा बिलात वापरल्यानंतर त्याऐवजी संग्रहित करा.",
+    "saved": "{{name}} जतन झाले",
+    "created": "{{name}} जोडले",
+    "chooseLater": "प्रत्येक ओळीवर निवडा",
+    "dialog": {
+      "newTitle": "नवीन उत्पादन किंवा सेवा",
+      "editTitle": "{{name}} संपादित करा",
+      "create": "आयटम जोडा"
+    },
+    "fields": {
+      "name": "नाव",
+      "kind": "प्रकार",
+      "sku": "SKU",
+      "unit": "एकक",
+      "description": "वर्णन",
+      "salePrice": "विक्री किंमत ({{currency}})",
+      "purchasePrice": "खरेदी किंमत ({{currency}})",
+      "taxGroup": "नेहमीचा कर",
+      "hsn": "HSN कोड",
+      "sac": "SAC कोड",
+      "incomeAccount": "उत्पन्न खाते (विक्री)",
+      "expenseAccount": "खर्च किंवा मालमत्ता खाते (खरेदी)"
+    },
+    "kinds": {
+      "goods": "वस्तू",
+      "service": "सेवा"
+    },
+    "hints": {
+      "hsnSac": "4, 6 किंवा 8 अंक, जीएसटी बीजकांसाठी."
+    },
+    "validation": {
+      "name": "किमान 2 अक्षरे लिहा.",
+      "price": "रक्कम लिहा, उदा. 2,500.",
+      "hsnSac": "4, 6 किंवा 8 अंकी कोड वापरा."
+    },
+    "errors": {
+      "name_taken": "या नावाचा दुसरा आयटम आधीच आहे.",
+      "sku_taken": "या SKU चा दुसरा आयटम आधीच आहे.",
+      "income_account_type": "आयटमची विक्री उत्पन्न खात्यात जाते.",
+      "expense_account_type": "आयटमची खरेदी खर्च किंवा मालमत्ता खात्यात जाते.",
+      "tax_group_archived": "तो कर गट संग्रहित आहे.",
+      "account_archived": "ते खाते संग्रहित आहे."
     }
   }
 }

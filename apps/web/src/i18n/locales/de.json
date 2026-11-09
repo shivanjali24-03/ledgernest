@@ -27,7 +27,8 @@
       "taxes": "Steuern",
       "gstSlabs": "GST-Sätze",
       "currencies": "Währungen",
-      "contacts": "Kunden & Lieferanten"
+      "contacts": "Kunden & Lieferanten",
+      "items": "Produkte & Leistungen"
     },
     "soon": "Bald"
   },
@@ -537,7 +538,8 @@
       "taxes": "Steuern",
       "gstSlabs": "GST-Sätze",
       "currencies": "Währungen",
-      "contacts": "Kunden und Lieferanten"
+      "contacts": "Kunden und Lieferanten",
+      "items": "Produkte und Leistungen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -610,7 +612,12 @@
       "org_contact_update": "Kontakt bearbeitet",
       "org_contact_archive": "Kontakt archiviert",
       "org_contact_restore": "Kontakt wiederhergestellt",
-      "org_contact_delete": "Kontakt gelöscht"
+      "org_contact_delete": "Kontakt gelöscht",
+      "org_item_create": "Artikel hinzugefügt",
+      "org_item_update": "Artikel bearbeitet",
+      "org_item_archive": "Artikel archiviert",
+      "org_item_restore": "Artikel wiederhergestellt",
+      "org_item_delete": "Artikel gelöscht"
     },
     "entities": {
       "membership": "Mitglied",
@@ -626,7 +633,8 @@
       "tax_group": "Steuergruppe",
       "gst_slab": "GST-Satz",
       "currency": "Währung",
-      "contact": "Kontakt"
+      "contact": "Kontakt",
+      "item": "Artikel"
     },
     "fields": {
       "user": "Person",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
       "already_archived": "Dieser Kontakt ist bereits archiviert.",
       "not_archived": "Dieser Kontakt ist nicht archiviert."
+    }
+  },
+  "items": {
+    "title": "Produkte und Leistungen",
+    "description": "Was Sie verkaufen und einkaufen, mit Preisen, Steuern und den Konten, auf die gebucht wird.",
+    "add": "Artikel hinzufügen",
+    "filter": "Anzeigen",
+    "all": "Alle",
+    "services": "Leistungen",
+    "goods": "Waren",
+    "search": "Name, SKU oder HSN/SAC suchen",
+    "showArchived": "Archivierte anzeigen",
+    "noMatches": "Keine passenden Artikel",
+    "empty": "Noch keine Produkte oder Leistungen",
+    "emptyBody": "Fügen Sie hinzu, was Sie verkaufen und einkaufen, damit sich Rechnungen selbst ausfüllen.",
+    "archivedPill": "Archiviert",
+    "costs": "Kostet {{amount}}",
+    "actionsFor": "Aktionen für {{name}}",
+    "edit": "Bearbeiten",
+    "archive": "Archivieren",
+    "restore": "Wiederherstellen",
+    "delete": "Löschen",
+    "archived": "{{name}} archiviert",
+    "restored": "{{name}} wiederhergestellt",
+    "deleted": "{{name}} gelöscht",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Der Artikel wird endgültig entfernt. Sobald Rechnungen ihn verwenden, archivieren Sie ihn stattdessen.",
+    "saved": "{{name}} gespeichert",
+    "created": "{{name}} hinzugefügt",
+    "chooseLater": "In jeder Zeile wählen",
+    "dialog": {
+      "newTitle": "Neues Produkt oder neue Leistung",
+      "editTitle": "{{name}} bearbeiten",
+      "create": "Artikel hinzufügen"
+    },
+    "fields": {
+      "name": "Name",
+      "kind": "Art",
+      "sku": "SKU",
+      "unit": "Einheit",
+      "description": "Beschreibung",
+      "salePrice": "Verkaufspreis ({{currency}})",
+      "purchasePrice": "Einkaufspreis ({{currency}})",
+      "taxGroup": "Übliche Steuer",
+      "hsn": "HSN-Code",
+      "sac": "SAC-Code",
+      "incomeAccount": "Ertragskonto (Verkäufe)",
+      "expenseAccount": "Aufwands- oder Anlagekonto (Einkäufe)"
+    },
+    "kinds": {
+      "goods": "Waren",
+      "service": "Leistung"
+    },
+    "hints": {
+      "hsnSac": "4, 6 oder 8 Ziffern, für GST-Rechnungen."
+    },
+    "validation": {
+      "name": "Geben Sie mindestens 2 Zeichen ein.",
+      "price": "Geben Sie einen Betrag ein, z. B. 2.500.",
+      "hsnSac": "Verwenden Sie einen 4-, 6- oder 8-stelligen Code."
+    },
+    "errors": {
+      "name_taken": "Ein anderer Artikel hat bereits diesen Namen.",
+      "sku_taken": "Ein anderer Artikel hat bereits diese SKU.",
+      "income_account_type": "Verkäufe eines Artikels gehen auf ein Ertragskonto.",
+      "expense_account_type": "Einkäufe eines Artikels gehen auf ein Aufwands- oder Anlagekonto.",
+      "tax_group_archived": "Diese Steuergruppe ist archiviert.",
+      "account_archived": "Dieses Konto ist archiviert."
     }
   }
 }
