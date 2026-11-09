@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { ACCOUNT_TYPES, currencyDigits, parseCsv, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare } from '@ledgernest/shared';
 import { AlertTriangle, Building2, CheckCircle2, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
@@ -24,9 +25,10 @@ import CashFlowPanel from '../CashFlowPanel';
 import { Gstr1Panel, Gstr3bPanel } from '../GstReturnsPanel';
 import { BalanceSheetPanel, ProfitAndLossPanel } from '../StatementsPanels';
 import TaxSummaryPanel from '../TaxSummaryPanel';
+import ScheduledReportsPanel from '../../scheduled-reports/ScheduledReportsPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging' | 'scheduled';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -59,7 +61,7 @@ export default function Reports() {
   const to = params.get('to') ?? today;
   const accountId = params.get('account') ?? '';
   const canExport = session.permissions.has('reports.export');
-  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title') }[tab];
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), scheduled: t('scheduledReports.tab') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -132,7 +134,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className="flex flex-wrap gap-2 print:hidden">
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', tab === 'scheduled' && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={tab === 'ledger' && !accountId}>
                 {t('reports.print')}
               </Button>
@@ -171,6 +173,7 @@ export default function Reports() {
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
+            { value: 'scheduled', label: t('scheduledReports.tab') },
           ]}
         />
       </motion.div>
@@ -348,6 +351,10 @@ export default function Reports() {
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
           </div>
           {gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
+        </motion.div>
+      ) : tab === 'scheduled' ? (
+        <motion.div variants={fadeUp} role="tabpanel">
+          <ScheduledReportsPanel />
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

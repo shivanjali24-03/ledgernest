@@ -3048,5 +3048,76 @@
       "succeeded": "zugestellt",
       "failed": "fehlgeschlagen"
     }
+  },
+  "scheduledReports": {
+    "tab": "Geplant",
+    "title": "Geplante Berichte",
+    "body": "Berichte, die wöchentlich oder monatlich entstehen, hier aufbewahrt und an die gewählten Personen gemailt werden.",
+    "new": "Bericht planen",
+    "empty": "Noch keine geplanten Berichte",
+    "emptyBody": "Lassen Sie die GuV des Monats oder die offenen Posten von selbst kommen.",
+    "failed": "Das hat nicht geklappt. Versuchen Sie es erneut.",
+    "ranEmailed": "Bericht erstellt und an {{count}} Personen gemailt",
+    "ran": "Bericht erstellt",
+    "resumed": "Plan fortgesetzt",
+    "paused": "Plan pausiert",
+    "removed": "Plan entfernt",
+    "everyWeek": "Jeden {{day}}",
+    "everyMonth": "Monatlich am {{day}}.",
+    "reports": {
+      "profit_and_loss": "Gewinn und Verlust",
+      "balance_sheet": "Bilanz",
+      "trial_balance": "Summen- und Saldenliste",
+      "receivables_aging": "Fälligkeiten Forderungen",
+      "payables_aging": "Fälligkeiten Verbindlichkeiten"
+    },
+    "pausedPill": "Pausiert",
+    "recipients": "Empfänger: {{count}}",
+    "next": "nächster {{date}}",
+    "last": "zuletzt {{when}}",
+    "actionsFor": "Aktionen für {{name}}",
+    "runs": "Frühere Läufe",
+    "runNow": "Jetzt erstellen",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "remove": "Entfernen",
+    "removeTitle": "{{name}} entfernen?",
+    "removeBody": "Es wird nichts mehr erstellt, und die bisherigen Dateien werden gelöscht.",
+    "defaultName": {
+      "weekly": "Wöchentliche {{report}}",
+      "monthly": "Monatliche {{report}}"
+    },
+    "created": "Bericht geplant",
+    "recipientsFailed": "Konnte nicht geplant werden: Prüfen Sie, ob die Empfänger Berichte sehen dürfen.",
+    "newTitle": "Bericht planen",
+    "newBody": "Er wird für den gerade beendeten Zeitraum erstellt, hier aufbewahrt und gemailt, sobald E-Mail eingerichtet ist.",
+    "create": "Planen",
+    "fields": {
+      "report": "Bericht",
+      "name": "Name",
+      "frequency": "Wie oft",
+      "weekday": "Am",
+      "dayOfMonth": "Am Tag",
+      "format": "Datei",
+      "recipients": "Senden an"
+    },
+    "frequencies": {
+      "weekly": "Wöchentlich",
+      "monthly": "Monatlich"
+    },
+    "formats": {
+      "xlsx": "Excel (XLSX)",
+      "csv": "CSV"
+    },
+    "periodHint": {
+      "weekly": "Jede Woche umfasst die sieben Tage vor dem Erstellungstag.",
+      "monthly": "Jeder Monat umfasst den vorigen Kalendermonat; Salden zu dessen letztem Tag."
+    },
+    "recipientsHint": "Nur Mitglieder, die Berichte sehen dürfen, erhalten sie.",
+    "runsTitle": "Frühere Läufe: {{name}}",
+    "noRuns": "Noch nichts erstellt.",
+    "emailedTo": "an {{count}} gemailt",
+    "notEmailed": "hier aufbewahrt (nicht gemailt)",
+    "download": "{{name}} herunterladen"
   }
 }

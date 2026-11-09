@@ -3048,5 +3048,76 @@
       "succeeded": "entregado",
       "failed": "fallido"
     }
+  },
+  "scheduledReports": {
+    "tab": "Programados",
+    "title": "Informes programados",
+    "body": "Informes hechos cada semana o mes, guardados aquí y enviados por correo a quien elijas.",
+    "new": "Programar un informe",
+    "empty": "Aún no hay informes programados",
+    "emptyBody": "Que la cuenta de resultados del mes, o quién debe qué, llegue sola.",
+    "failed": "No ha funcionado. Inténtalo de nuevo.",
+    "ranEmailed": "Informe hecho y enviado a {{count}} personas",
+    "ran": "Informe hecho",
+    "resumed": "Programación reanudada",
+    "paused": "Programación en pausa",
+    "removed": "Programación eliminada",
+    "everyWeek": "Cada {{day}}",
+    "everyMonth": "Cada mes el día {{day}}",
+    "reports": {
+      "profit_and_loss": "Pérdidas y ganancias",
+      "balance_sheet": "Balance",
+      "trial_balance": "Balance de comprobación",
+      "receivables_aging": "Antigüedad de cobros",
+      "payables_aging": "Antigüedad de pagos"
+    },
+    "pausedPill": "En pausa",
+    "recipients": "Destinatarios: {{count}}",
+    "next": "próximo {{date}}",
+    "last": "último {{when}}",
+    "actionsFor": "Acciones para {{name}}",
+    "runs": "Ejecuciones anteriores",
+    "runNow": "Hacerlo ahora",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "remove": "Eliminar",
+    "removeTitle": "¿Eliminar {{name}}?",
+    "removeBody": "No se harán más y los archivos ya hechos también se borran.",
+    "defaultName": {
+      "weekly": "{{report}} semanal",
+      "monthly": "{{report}} mensual"
+    },
+    "created": "Informe programado",
+    "recipientsFailed": "No se pudo programar: comprueba que los destinatarios pueden ver informes.",
+    "newTitle": "Programar un informe",
+    "newBody": "Se hace para el periodo recién terminado, se guarda aquí y se envía cuando el correo esté configurado.",
+    "create": "Programarlo",
+    "fields": {
+      "report": "Informe",
+      "name": "Nombre",
+      "frequency": "Frecuencia",
+      "weekday": "Día",
+      "dayOfMonth": "Día del mes",
+      "format": "Archivo",
+      "recipients": "Enviar a"
+    },
+    "frequencies": {
+      "weekly": "Semanal",
+      "monthly": "Mensual"
+    },
+    "formats": {
+      "xlsx": "Excel (XLSX)",
+      "csv": "CSV"
+    },
+    "periodHint": {
+      "weekly": "Cada semana cubre los siete días anteriores al día en que se hace.",
+      "monthly": "Cada mes cubre el mes natural anterior; los saldos son a su último día."
+    },
+    "recipientsHint": "Solo los reciben los miembros que pueden ver informes.",
+    "runsTitle": "Ejecuciones anteriores: {{name}}",
+    "noRuns": "Aún no se ha hecho nada.",
+    "emailedTo": "enviado a {{count}}",
+    "notEmailed": "guardado aquí (sin correo)",
+    "download": "Descargar {{name}}"
   }
 }

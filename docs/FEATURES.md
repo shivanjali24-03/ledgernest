@@ -89,7 +89,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Document attachments | Receipts, PDFs and photos kept with journal entries, invoices, bills, payments and bank transactions; previewed, downloaded, checked by their bytes | ✅ #138 |
 | Data import | Chart of accounts, contacts, items and opening balances from CSV or Excel: columns matched from the headers, every row checked before anything is saved | ✅ #140 |
 | API keys and webhooks | Scoped API keys shown once and revocable, acting within their maker’s permissions; signed webhooks for invoice, payment and bill events with retries and a delivery log | ✅ #142 #143 |
-| Scheduled reports | Reports emailed on a schedule | Planned |
+| Scheduled reports | Profit and loss, balance sheet, trial balance and aging made weekly or monthly as Excel or CSV, kept in the app and emailed to members who can see reports | ✅ #145 |
 | Backups and restore | An organisation's data exported and restored | Planned |
 
 ## Quality standards (apply to every feature)
