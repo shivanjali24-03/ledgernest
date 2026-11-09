@@ -571,7 +571,8 @@
       "budgets": "Budgets",
       "costCentres": "Centres de coûts",
       "inventory": "Stocks",
-      "approvals": "Approbations"
+      "approvals": "Approbations",
+      "imports": "Imports"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -714,7 +715,11 @@
       "org_payment_attach": "Fichier joint à un paiement",
       "org_payment_detach": "Fichier retiré d’un paiement",
       "org_banking_attach": "Fichier joint à une opération bancaire",
-      "org_banking_detach": "Fichier retiré d’une opération bancaire"
+      "org_banking_detach": "Fichier retiré d’une opération bancaire",
+      "org_import_accounts": "Plan comptable importé",
+      "org_import_contacts": "Contacts importés",
+      "org_import_items": "Articles importés",
+      "org_import_opening_balances": "Soldes d’ouverture importés"
     },
     "entities": {
       "membership": "Membre",

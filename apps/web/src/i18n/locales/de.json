@@ -571,7 +571,8 @@
       "budgets": "Budgets",
       "costCentres": "Kostenstellen",
       "inventory": "Lager",
-      "approvals": "Freigaben"
+      "approvals": "Freigaben",
+      "imports": "Importe"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -714,7 +715,11 @@
       "org_payment_attach": "Datei an eine Zahlung angehängt",
       "org_payment_detach": "Datei von einer Zahlung entfernt",
       "org_banking_attach": "Datei an eine Bankbuchung angehängt",
-      "org_banking_detach": "Datei von einer Bankbuchung entfernt"
+      "org_banking_detach": "Datei von einer Bankbuchung entfernt",
+      "org_import_accounts": "Kontenplan importiert",
+      "org_import_contacts": "Kontakte importiert",
+      "org_import_items": "Artikel importiert",
+      "org_import_opening_balances": "Eröffnungssalden importiert"
     },
     "entities": {
       "membership": "Mitglied",
