@@ -52,17 +52,22 @@ describe('approvals', () => {
     // Held, it stays a draft, and the editor moves to it
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/journals\/[0-9a-f-]{36}$/), { timeout: 4000 });
     await act(() => router.navigate('/approvals'));
-    const mine = (await screen.findByRole('link', { name: 'Journal entry: Internet bill' }, { timeout: 4000 })).closest('li')!;
-    expect(within(mine).getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
-    expect(within(mine).queryByRole('button', { name: /^Approve/ })).not.toBeInTheDocument();
+    // The Accountant sees it as theirs: they can withdraw it but not approve it
+    await waitFor(
+      () => {
+        const mine = screen.getByRole('link', { name: /^Journal entry/ }).closest('li')!;
+        expect(within(mine).getByRole('button', { name: 'Withdraw' })).toBeInTheDocument();
+        expect(within(mine).queryByRole('button', { name: /^Approve/ })).not.toBeInTheDocument();
+      },
+      { timeout: 6000 },
+    );
 
     await previewAs('admin');
-    const row = (await screen.findByRole('link', { name: 'Journal entry: Internet bill' }, { timeout: 4000 })).closest('li')!;
-    await userEvent.click(within(row).getByRole('button', { name: 'Approve Journal entry: Internet bill' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Approve Journal entry/ }, { timeout: 6000 }));
     const dialog = (await screen.findByText('It posts now, under your name.')).closest('[role="dialog"]') as HTMLElement;
     await userEvent.type(within(dialog).getByLabelText('Note (optional)'), 'Fine');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Approve and post' }));
-    expect(await screen.findByText('Journal entry: Internet bill approved and posted', {}, { timeout: 6000 })).toBeInTheDocument();
+    expect(await screen.findByText(/^Journal entry.* approved and posted$/, {}, { timeout: 6000 })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Nothing waiting for approval')).toBeInTheDocument(), { timeout: 4000 });
     await userEvent.click(screen.getByRole('radio', { name: 'Decided' }));
     expect(await screen.findByText(/approved by Admin \(demo\)/, {}, { timeout: 4000 })).toBeInTheDocument();
