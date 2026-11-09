@@ -671,7 +671,8 @@
       "org_banking_ignore": "Ligne bancaire écartée",
       "org_banking_unignore": "Ligne bancaire rétablie",
       "org_banking_reconcile": "Compte rapproché",
-      "org_banking_reconcile_undo": "Rapprochement annulé"
+      "org_banking_reconcile_undo": "Rapprochement annulé",
+      "org_report_export": "Rapport téléchargé"
     },
     "entities": {
       "membership": "Membre",
@@ -1425,7 +1426,11 @@
         "quantity": "Quantité",
         "documents": "13 Documents émis : {{total}} factures ({{first}} à {{last}}), {{cancelled}} annulées ; {{notes}} avoirs."
       }
-    }
+    },
+    "print": "Imprimer ou PDF",
+    "excel": "Excel",
+    "printAsOf": "Au {{date}}",
+    "printRange": "Du {{from}} au {{to}}"
   },
   "taxes": {
     "title": "Taxes",

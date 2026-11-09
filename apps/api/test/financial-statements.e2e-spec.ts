@@ -321,5 +321,9 @@ describe('Profit and loss, and balance sheet (e2e)', () => {
     await as('viewer')
       .get('/reports/balance-sheet/export?asOf=2026-05-31')
       .expect(403);
+    // Each download is audited (the refused one isn't), with the report and its options
+    const audits = await prisma.auditLog.findMany({ where: { organizationId: org, action: 'org.report.export' }, orderBy: { createdAt: 'asc' }, select: { entityId: true, after: true } });
+    expect(audits.map((a) => a.entityId)).toEqual(['profit-and-loss', 'balance-sheet']);
+    expect(audits[0]!.after).toMatchObject({ report: 'profit-and-loss', from: '2026-04-01', to: '2026-05-31' });
   });
 });

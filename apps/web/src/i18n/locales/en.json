@@ -671,7 +671,8 @@
       "org_banking_ignore": "Bank line set aside",
       "org_banking_unignore": "Bank line brought back",
       "org_banking_reconcile": "Account reconciled",
-      "org_banking_reconcile_undo": "Reconciliation undone"
+      "org_banking_reconcile_undo": "Reconciliation undone",
+      "org_report_export": "Report downloaded"
     },
     "entities": {
       "membership": "Member",
@@ -1425,7 +1426,11 @@
         "quantity": "Quantity",
         "documents": "13 Documents issued: {{total}} invoices ({{first}} to {{last}}), {{cancelled}} cancelled; {{notes}} credit notes."
       }
-    }
+    },
+    "print": "Print or PDF",
+    "excel": "Excel",
+    "printAsOf": "As of {{date}}",
+    "printRange": "{{from}} to {{to}}"
   },
   "taxes": {
     "title": "Taxes",

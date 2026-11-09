@@ -22,7 +22,7 @@ export const AUDIT_ACTION_GROUPS = {
   supportAccess: ['platform.support_access'],
   organizations: ['platform.organization.'],
   platformUsers: ['platform.user.', 'platform.superadmin.'],
-  exports: ['org.audit.export', 'platform.audit.export'],
+  exports: ['org.audit.export', 'org.report.export', 'platform.audit.export'],
 } as const satisfies Record<string, readonly string[]>;
 export type AuditActionGroup = keyof typeof AUDIT_ACTION_GROUPS;
 

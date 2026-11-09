@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -119,5 +120,22 @@ describe('reports', () => {
     const b2b = await screen.findByRole('table', { name: '4A B2B invoices' }, { timeout: 4000 });
     expect(within(b2b).getByText('Kumar Logistics').closest('tr')!).toHaveTextContent(/INV\/.*18%.*1,00,000\.00/);
     expect(screen.getByText(/^13 Documents issued/)).toBeInTheDocument();
+  });
+
+  it('downloads a report as Excel, and prints it with the organisation at the top', async () => {
+    const saved: { name: string; type: string }[] = [];
+    const create = vi.spyOn(URL, 'createObjectURL').mockImplementation((b) => (saved.push({ name: '', type: (b as Blob).type }), 'blob:x'));
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      saved[saved.length - 1]!.name = this.download;
+    });
+    renderApp('/reports?tab=pnl');
+    await screen.findByRole('table', { name: 'Profit and loss' }, { timeout: 4000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Excel' }));
+    await waitFor(() => expect(saved.at(-1)).toMatchObject({ type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', name: expect.stringMatching(/^profit-and-loss-.*\.xlsx$/) }));
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    await userEvent.click(screen.getByRole('button', { name: 'Print or PDF' }));
+    expect(print).toHaveBeenCalled();
+    expect(screen.getByText('Nest Demo Pvt. Ltd.', { selector: 'p' })).toBeInTheDocument();
+    for (const m of [create, click, print]) m.mockRestore();
   });
 });

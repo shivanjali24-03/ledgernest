@@ -671,7 +671,8 @@
       "org_banking_ignore": "جُنّب سطر بنكي",
       "org_banking_unignore": "أُعيد سطر بنكي",
       "org_banking_reconcile": "سُوّي الحساب",
-      "org_banking_reconcile_undo": "أُلغيت التسوية"
+      "org_banking_reconcile_undo": "أُلغيت التسوية",
+      "org_report_export": "نُزّل تقرير"
     },
     "entities": {
       "membership": "عضو",
@@ -1425,7 +1426,11 @@
         "quantity": "الكمية",
         "documents": "13 المستندات الصادرة: {{total}} فاتورة ({{first}} إلى {{last}})، {{cancelled}} ملغاة؛ {{notes}} إشعارات دائنة."
       }
-    }
+    },
+    "print": "طباعة أو PDF",
+    "excel": "Excel",
+    "printAsOf": "في {{date}}",
+    "printRange": "من {{from}} إلى {{to}}"
   },
   "taxes": {
     "title": "الضرائب",

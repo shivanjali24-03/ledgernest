@@ -671,7 +671,8 @@
       "org_banking_ignore": "Línea bancaria apartada",
       "org_banking_unignore": "Línea bancaria recuperada",
       "org_banking_reconcile": "Cuenta conciliada",
-      "org_banking_reconcile_undo": "Conciliación deshecha"
+      "org_banking_reconcile_undo": "Conciliación deshecha",
+      "org_report_export": "Informe descargado"
     },
     "entities": {
       "membership": "Miembro",
@@ -1425,7 +1426,11 @@
         "quantity": "Cantidad",
         "documents": "13 Documentos emitidos: {{total}} facturas ({{first}} a {{last}}), {{cancelled}} anuladas; {{notes}} notas de crédito."
       }
-    }
+    },
+    "print": "Imprimir o PDF",
+    "excel": "Excel",
+    "printAsOf": "A {{date}}",
+    "printRange": "Del {{from}} al {{to}}"
   },
   "taxes": {
     "title": "Impuestos",
