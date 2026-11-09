@@ -70,7 +70,7 @@ export const NAV: NavGroup[] = [
       { to: '/recurring', labelKey: 'nav.items.recurring', icon: Repeat, permission: 'invoices.view', ready: true, keywords: 'recurring repeat subscription schedule retainer monthly' },
       { to: '/credit-notes', labelKey: 'nav.items.creditNotes', icon: FileMinus, permission: 'invoices.view', ready: true, keywords: 'credit note refund return correction cn' },
       { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', ready: true, keywords: 'vendors suppliers payables purchases expenses input gst' },
-      { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
+      { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', ready: true, keywords: 'bank cash reconcile statement transfer spend receive money' },
       { to: '/payments', labelKey: 'nav.items.payments', icon: ArrowLeftRight, permission: 'invoices.view', ready: true, keywords: 'receipts payments money received collections bank' },
     ],
   },
