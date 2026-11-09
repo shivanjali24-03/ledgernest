@@ -12,7 +12,7 @@ const KEY = 'ledgernest.demo.accounts';
 type Stored = Omit<Account, 'normalSide' | 'system' | 'archived' | 'childCount'>;
 
 /** A stable UUID for a sample account, so ids pass the same validation as real ones and survive reloads. */
-function sampleId(code: string): string {
+export function sampleId(code: string): string {
   let h = 0xcbf29ce484222325n;
   for (const ch of code) h = BigInt.asUintN(64, (h ^ BigInt(ch.charCodeAt(0))) * 0x100000001b3n);
   const hex = h.toString(16).padStart(16, '0');

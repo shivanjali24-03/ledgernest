@@ -51,6 +51,21 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
   - The add/edit dialog only offers parents of the same type with room beneath them, never the account itself or its sub-accounts, and suggests the next free code.
   - Refusals from the API are shown next to the field they're about.
 
+## Journal entries
+
+- `GET/POST /api/v1/journals`, `GET/PATCH/DELETE /journals/:id`, `POST /journals/:id/post`, `/reverse`, and `/attachments`.
+- **Permissions:** `journals.view` to read, `journals.create` for drafts and documents, and `journals.post` and `journals.reverse` for those actions.
+- **Amounts** are integers in the smallest currency unit (`BIGINT`), so totals never round. Each line is a debit or a credit, never both.
+- **Drafts** can be saved unbalanced. Posting checks at least two lines, debits equal to credits, active accounts of this organisation, and a date in an open month of an existing financial year. It then assigns a gap-free number per year (`JV/2026-27/0007`) under a per-organisation lock.
+- **Posted entries are final.** A reversal posts the exact opposite on a date of your choice (which must be in an open month, so a closed month is corrected from a later one) and links both entries. An entry is reversed at most once, and a reversal can't be reversed.
+- **The database enforces the same:**
+  - Triggers refuse posting an unbalanced entry or one dated in a closed month.
+  - They refuse any change to a posted entry or its lines, and any deletion. Deleting the whole organisation is the only exception.
+  - Composite foreign keys keep lines on the organisation's own accounts.
+- **Attachments:** PDF or images up to 2 MB, checked by their bytes and stored with a type and size check. They're served as downloads with a locked-down CSP, and only a draft's can be removed.
+- **Side effects:** accounts used by entries can't be deleted or re-typed, and the base currency locks once anything is posted.
+- **Screens:** the list is in the organisation's currency and number format (₹1,18,000.00). The editor shows live totals, an "Out by" indicator and accounts grouped by type. A posted entry shows its reversal links and attachments.
+
 ## Financial years and periods
 
 - `GET/POST /api/v1/fiscal-years`, `POST /fiscal-years/periods/:id/close` and `/reopen`. Reading needs `accounts.view`. Adding years and closing need `periods.close`, reopening needs `periods.reopen`. Each change is audited.

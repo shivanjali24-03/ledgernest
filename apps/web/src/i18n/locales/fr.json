@@ -528,7 +528,8 @@
       "exports": "Exports",
       "settings": "Paramètres",
       "accounts": "Comptes",
-      "periods": "Exercices"
+      "periods": "Exercices",
+      "journals": "Écritures"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "Modèle appliqué",
       "org_fiscal_year_create": "Exercice ajouté",
       "org_period_close": "Mois clôturé",
-      "org_period_reopen": "Mois rouvert"
+      "org_period_reopen": "Mois rouvert",
+      "org_journal_create": "Écriture créée",
+      "org_journal_update": "Brouillon modifié",
+      "org_journal_delete": "Brouillon supprimé",
+      "org_journal_post": "Écriture validée",
+      "org_journal_reverse": "Écriture contrepassée",
+      "org_journal_attach": "Pièce jointe ajoutée",
+      "org_journal_detach": "Pièce jointe retirée"
     },
     "entities": {
       "membership": "Membre",
@@ -580,7 +588,8 @@
       "user": "Compte",
       "account": "Compte",
       "fiscal_year": "Exercice",
-      "period": "Mois"
+      "period": "Mois",
+      "journal": "Écriture"
     },
     "fields": {
       "user": "Personne",
@@ -627,7 +636,16 @@
       "accounts": "Comptes",
       "period": "Mois",
       "startDate": "Début",
-      "endDate": "Fin"
+      "endDate": "Fin",
+      "lines": "Lignes",
+      "debit": "Débits",
+      "credit": "Crédits",
+      "number": "Numéro",
+      "original": "Écriture d'origine",
+      "reversal": "Contrepassation",
+      "fileName": "Fichier",
+      "date": "Date",
+      "memo": "Libellé"
     },
     "details": {
       "when": "Quand",
@@ -936,6 +954,103 @@
       "already_open": "Ce mois est déjà ouvert.",
       "earlier_open": "Clôturez d'abord les mois précédents : les mois se clôturent dans l'ordre.",
       "later_closed": "Rouvrez d'abord les mois suivants : les mois se rouvrent dans l'ordre inverse."
+    }
+  },
+  "journals": {
+    "title": "Écritures",
+    "description": "Chaque opération sous forme de débits et crédits équilibrés. Les brouillons sont modifiables ; les écritures validées sont définitives et se corrigent par contrepassation.",
+    "new": "Nouvelle écriture",
+    "search": "Rechercher libellé ou référence",
+    "filter": "Statut",
+    "noMatches": "Aucune écriture ne correspond",
+    "empty": "Aucune écriture pour l'instant",
+    "emptyBody": "Saisissez votre première opération : ce qui est entré, ce qui est sorti.",
+    "reverses": "Contrepasse {{number}}",
+    "reversedPill": "Contrepassée",
+    "attachmentCount": "{{count}} pièces jointes",
+    "unbalancedBy": "Écart de {{amount}}",
+    "postedBy": "Validée par",
+    "total": "Total",
+    "reversalOf": "Cette écriture contrepasse",
+    "reversedBy": "Contrepassée par",
+    "reverse": "Contrepasser",
+    "reverseTitle": "Contrepasser {{number}} ?",
+    "reverseBody": "Une nouvelle écriture aux montants exactement inverses sera validée et liée à celle-ci. Cette écriture reste inchangée.",
+    "reverseDateHint": "Choisissez un jour d'un mois ouvert, par exemple aujourd'hui, pour corriger un mois clôturé.",
+    "reverseMemo": "Contrepassation de {{number}}",
+    "reversed": "Contrepassée par {{number}}",
+    "pickAccount": "Choisir un compte",
+    "lineAccount": "Compte de la ligne {{n}}",
+    "lineDescription": "Libellé de la ligne {{n}}",
+    "lineDebit": "Débit de la ligne {{n}}",
+    "lineCredit": "Crédit de la ligne {{n}}",
+    "removeLine": "Supprimer la ligne",
+    "removeLineN": "Supprimer la ligne {{n}}",
+    "addLine": "Ajouter une ligne",
+    "outBy": "Écart de {{amount}}",
+    "balanced": "Équilibrée",
+    "deleteDraft": "Supprimer le brouillon",
+    "saveDraft": "Enregistrer le brouillon",
+    "post": "Valider",
+    "deleteTitle": "Supprimer ce brouillon ?",
+    "deleteBody": "Il n'a pas été validé : il sera supprimé définitivement.",
+    "posted": "Validée sous le n° {{number}}",
+    "saved": "Brouillon enregistré",
+    "deleted": "Brouillon supprimé",
+    "newTitle": "Nouvelle écriture",
+    "draftTitle": "Brouillon d'écriture",
+    "postedHint": "Les écritures validées sont définitives. Pour en corriger une, contrepassez-la.",
+    "draftHint": "Un brouillon peut être déséquilibré ; la validation exige débits et crédits égaux.",
+    "status": {
+      "draft": "Brouillon",
+      "posted": "Validée"
+    },
+    "columns": {
+      "number": "Numéro",
+      "date": "Date",
+      "memo": "Libellé",
+      "amount": "Montant ({{currency}})"
+    },
+    "attachments": {
+      "title": "Pièces jointes",
+      "add": "Joindre",
+      "hint": "PDF, PNG, JPEG ou WebP jusqu'à 2 Mo : reçus, factures, relevés.",
+      "added": "Pièce jointe ajoutée",
+      "wrongType": "Joignez un fichier PDF, PNG, JPEG ou WebP.",
+      "tooLarge": "Joignez un fichier de moins de 2 Mo.",
+      "download": "Télécharger {{name}}",
+      "remove": "Retirer {{name}}"
+    },
+    "fields": {
+      "date": "Date",
+      "reference": "Référence",
+      "memo": "Libellé",
+      "account": "Compte",
+      "description": "Description",
+      "debit": "Débit",
+      "credit": "Crédit"
+    },
+    "problems": {
+      "invalid": "Certains montants ne sont pas des nombres.",
+      "too_few_lines": "Ajoutez au moins deux lignes.",
+      "zero": "Saisissez des montants."
+    },
+    "errors": {
+      "unbalanced": "Les débits et les crédits doivent être égaux.",
+      "too_few_lines": "Une écriture nécessite au moins deux lignes.",
+      "zero": "L'écriture n'a aucun montant.",
+      "period_closed": "Cette date est dans un mois clôturé. Rouvrez-le ou choisissez une date dans un mois ouvert.",
+      "no_period": "Aucun exercice pour cette date. Ajoutez-le dans Exercices.",
+      "account_archived": "Une ligne utilise un compte archivé.",
+      "account_not_found": "Une ligne utilise un compte qui n'existe plus.",
+      "posted": "Les écritures validées ne peuvent pas être modifiées. Contrepassez-la.",
+      "not_posted": "Seules les écritures validées peuvent être contrepassées.",
+      "already_reversed": "Cette écriture a déjà été contrepassée.",
+      "is_reversal": "Une contrepassation ne peut pas être contrepassée. Saisissez une nouvelle écriture.",
+      "type_mismatch": "Ce fichier n'est pas du type annoncé.",
+      "too_large": "Joignez un fichier de moins de 2 Mo.",
+      "invalid_amount": "Vérifiez les montants signalés.",
+      "missing_account": "Choisissez un compte pour chaque ligne."
     }
   }
 }

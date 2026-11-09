@@ -528,7 +528,8 @@
       "exports": "عمليات التصدير",
       "settings": "الإعدادات",
       "accounts": "الحسابات",
-      "periods": "السنوات المالية"
+      "periods": "السنوات المالية",
+      "journals": "قيود اليومية"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "تطبيق قالب",
       "org_fiscal_year_create": "إضافة سنة مالية",
       "org_period_close": "إغلاق شهر",
-      "org_period_reopen": "إعادة فتح شهر"
+      "org_period_reopen": "إعادة فتح شهر",
+      "org_journal_create": "إنشاء قيد",
+      "org_journal_update": "تعديل مسودة",
+      "org_journal_delete": "حذف مسودة",
+      "org_journal_post": "ترحيل قيد",
+      "org_journal_reverse": "عكس قيد",
+      "org_journal_attach": "إرفاق مستند",
+      "org_journal_detach": "إزالة مستند"
     },
     "entities": {
       "membership": "عضو",
@@ -580,7 +588,8 @@
       "user": "حساب",
       "account": "حساب",
       "fiscal_year": "سنة مالية",
-      "period": "شهر"
+      "period": "شهر",
+      "journal": "قيد يومية"
     },
     "fields": {
       "user": "الشخص",
@@ -627,7 +636,16 @@
       "accounts": "الحسابات",
       "period": "الشهر",
       "startDate": "البداية",
-      "endDate": "النهاية"
+      "endDate": "النهاية",
+      "lines": "الأسطر",
+      "debit": "المدين",
+      "credit": "الدائن",
+      "number": "الرقم",
+      "original": "القيد الأصلي",
+      "reversal": "القيد العكسي",
+      "fileName": "الملف",
+      "date": "التاريخ",
+      "memo": "البيان"
     },
     "details": {
       "when": "متى",
@@ -936,6 +954,103 @@
       "already_open": "هذا الشهر مفتوح بالفعل.",
       "earlier_open": "أغلق الأشهر السابقة أولًا: تُغلق الأشهر بالترتيب.",
       "later_closed": "أعد فتح الأشهر اللاحقة أولًا: يُعاد فتح الأشهر بترتيب عكسي."
+    }
+  },
+  "journals": {
+    "title": "قيود اليومية",
+    "description": "كل معاملة كقيد مدين ودائن متوازن. يمكن تعديل المسودات؛ القيود المرحّلة نهائية وتُصحَّح بقيد عكسي.",
+    "new": "قيد جديد",
+    "search": "ابحث في البيان أو المرجع",
+    "filter": "الحالة",
+    "noMatches": "لا توجد قيود مطابقة",
+    "empty": "لا توجد قيود يومية بعد",
+    "emptyBody": "سجّل معاملتك الأولى: ما دخل وما خرج.",
+    "reverses": "يعكس {{number}}",
+    "reversedPill": "معكوس",
+    "attachmentCount": "{{count}} مرفقات",
+    "unbalancedBy": "فرق {{amount}}",
+    "postedBy": "رحّله",
+    "total": "الإجمالي",
+    "reversalOf": "هذا القيد يعكس",
+    "reversedBy": "عُكس بالقيد",
+    "reverse": "عكس",
+    "reverseTitle": "عكس {{number}}؟",
+    "reverseBody": "سيُرحّل قيد جديد بالمبالغ المعاكسة تمامًا ويُربط بهذا القيد. يبقى هذا القيد كما هو.",
+    "reverseDateHint": "اختر يومًا في شهر مفتوح، مثل اليوم، لتصحيح شهر مغلق.",
+    "reverseMemo": "عكس القيد {{number}}",
+    "reversed": "عُكس بالقيد {{number}}",
+    "pickAccount": "اختر حسابًا",
+    "lineAccount": "حساب السطر {{n}}",
+    "lineDescription": "وصف السطر {{n}}",
+    "lineDebit": "مدين السطر {{n}}",
+    "lineCredit": "دائن السطر {{n}}",
+    "removeLine": "حذف السطر",
+    "removeLineN": "حذف السطر {{n}}",
+    "addLine": "إضافة سطر",
+    "outBy": "فرق {{amount}}",
+    "balanced": "متوازن",
+    "deleteDraft": "حذف المسودة",
+    "saveDraft": "حفظ المسودة",
+    "post": "ترحيل",
+    "deleteTitle": "حذف هذه المسودة؟",
+    "deleteBody": "لم تُرحّل بعد، لذا ستُحذف نهائيًا.",
+    "posted": "رُحّل برقم {{number}}",
+    "saved": "تم حفظ المسودة",
+    "deleted": "تم حذف المسودة",
+    "newTitle": "قيد يومية جديد",
+    "draftTitle": "مسودة قيد",
+    "postedHint": "القيود المرحّلة نهائية. لتصحيح قيد، اعكسه.",
+    "draftHint": "يمكن حفظ المسودات غير متوازنة؛ الترحيل يتطلب تساوي المدين والدائن.",
+    "status": {
+      "draft": "مسودة",
+      "posted": "مرحّل"
+    },
+    "columns": {
+      "number": "الرقم",
+      "date": "التاريخ",
+      "memo": "البيان",
+      "amount": "المبلغ ({{currency}})"
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "add": "إرفاق",
+      "hint": "PDF أو PNG أو JPEG أو WebP حتى 2 ميغابايت: إيصالات وفواتير وكشوف.",
+      "added": "تمت إضافة المرفق",
+      "wrongType": "أرفق ملف PDF أو PNG أو JPEG أو WebP.",
+      "tooLarge": "أرفق ملفًا أصغر من 2 ميغابايت.",
+      "download": "تنزيل {{name}}",
+      "remove": "إزالة {{name}}"
+    },
+    "fields": {
+      "date": "التاريخ",
+      "reference": "المرجع",
+      "memo": "البيان",
+      "account": "الحساب",
+      "description": "الوصف",
+      "debit": "مدين",
+      "credit": "دائن"
+    },
+    "problems": {
+      "invalid": "بعض المبالغ ليست أرقامًا.",
+      "too_few_lines": "أضف سطرين على الأقل.",
+      "zero": "أدخل بعض المبالغ."
+    },
+    "errors": {
+      "unbalanced": "يجب أن يتساوى المدين والدائن.",
+      "too_few_lines": "يحتاج القيد إلى سطرين على الأقل.",
+      "zero": "لا يحتوي القيد على مبالغ.",
+      "period_closed": "هذا التاريخ في شهر مغلق. أعد فتحه أو استخدم تاريخًا في شهر مفتوح.",
+      "no_period": "لا توجد سنة مالية لهذا التاريخ. أضفها في السنوات المالية.",
+      "account_archived": "يستخدم أحد الأسطر حسابًا مؤرشفًا.",
+      "account_not_found": "يستخدم أحد الأسطر حسابًا لم يعد موجودًا.",
+      "posted": "لا يمكن تعديل القيود المرحّلة. اعكس القيد بدلًا من ذلك.",
+      "not_posted": "يمكن عكس القيود المرحّلة فقط.",
+      "already_reversed": "تم عكس هذا القيد بالفعل.",
+      "is_reversal": "لا يمكن عكس قيد عكسي. رحّل قيدًا جديدًا.",
+      "type_mismatch": "هذا الملف ليس من النوع المذكور.",
+      "too_large": "أرفق ملفًا أصغر من 2 ميغابايت.",
+      "invalid_amount": "تحقق من المبالغ المميزة.",
+      "missing_account": "اختر حسابًا لكل سطر."
     }
   }
 }

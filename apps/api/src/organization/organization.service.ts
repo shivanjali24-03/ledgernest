@@ -4,6 +4,7 @@ import type { Request } from 'express';
 import { TenantPrisma } from '../access/tenant-prisma.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -67,11 +68,11 @@ export class OrganizationService {
 
   /**
    * Settings that can no longer change. The fiscal year start locks once financial years exist,
-   * because their periods were cut from it. The base currency locks once journal entries exist (#42).
+   * because their periods were cut from it. The base currency locks once anything is posted: every amount is in it.
    */
   private async locks(organizationId: string) {
-    const years = await this.prisma.fiscalYear.count({ where: { organizationId } });
-    return { baseCurrency: false, fiscalYearStartMonth: years > 0 };
+    const [years, posted] = await Promise.all([this.prisma.fiscalYear.count({ where: { organizationId } }), JournalsService.anyPosted(this.prisma, organizationId)]);
+    return { baseCurrency: posted, fiscalYearStartMonth: years > 0 };
   }
 
   async get(organizationId: string) {

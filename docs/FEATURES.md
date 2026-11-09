@@ -16,7 +16,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Audit log | Who did what, when and from where, for every change to financial data and access | ✅ Done (#12) |
 | Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | ✅ (#5) |
 | Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | ✅ #38 |
-| Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 🚧 Numbers and money done (#5) |
+| Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | ✅ Amounts follow the organisation's currency and format (#42) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
 | Light and dark themes | System default, remembered per user | ✅ (#4) |
 
@@ -38,7 +38,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 |---|---|---|
 | Chart of accounts | Assets, liabilities, equity, income and expenses, with sub-accounts and account codes | ✅ #39 |
 | Industry templates | Ready charts of accounts for retail, services, manufacturing, healthcare, education, non-profit, construction, restaurants, IT/software and agriculture | ✅ #40 |
-| Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | 📋 |
+| Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | ✅ #42 |
 | General ledger | Every posted line per account with running balance and drill-down | 📋 |
 | Trial balance | Balances of all accounts at any date | 📋 |
 | Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41 (year-end close with #42) |
