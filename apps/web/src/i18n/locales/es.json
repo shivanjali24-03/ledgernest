@@ -31,7 +31,8 @@
       "items": "Productos y servicios",
       "creditNotes": "Notas de crédito",
       "recurring": "Facturas recurrentes",
-      "fixedAssets": "Activos fijos"
+      "fixedAssets": "Activos fijos",
+      "budgets": "Presupuestos"
     },
     "soon": "Pronto"
   },
@@ -2540,6 +2541,75 @@
       "before_depreciated": "Está amortizado más allá de esta fecha. Deshaz esa amortización primero.",
       "gain_loss_account": "Elige una cuenta de ingreso o gasto para el resultado.",
       "bank_invalid": "Elige una cuenta bancaria o de caja."
+    }
+  },
+  "budgets": {
+    "title": "Presupuestos",
+    "description": "Planifica cuánto debería sumar cada cuenta de ingresos y gastos, mes a mes, y comprueba cómo va el año frente a ello.",
+    "new": "Nuevo presupuesto",
+    "empty": "Aún no hay presupuestos",
+    "emptyBody": "Empieza con las cifras del año pasado, otro presupuesto o una hoja en blanco.",
+    "budget": "Presupuesto",
+    "actionsFor": "Acciones para {{name}}",
+    "rename": "Cambiar nombre",
+    "delete": "Eliminar presupuesto",
+    "plan": "Plan",
+    "comparison": "Presupuesto frente a real",
+    "deleteTitle": "¿Eliminar {{name}}?",
+    "deleteBody": "El plan se elimina definitivamente. Tu contabilidad no se ve afectada.",
+    "deleted": "{{name}} eliminado",
+    "saved": "{{name}} guardado",
+    "created": "{{name}} creado",
+    "renamed": "Renombrado a {{name}}",
+    "planHint": "Importes de {{year}} en {{currency}}. Ingresos y gastos se introducen en positivo.",
+    "discard": "Descartar",
+    "total": "Total",
+    "cell": "{{account}}, {{month}}",
+    "yearTotal": "{{account}}, total del año",
+    "spreadHint": "Escribe el total del año para repartirlo por igual entre los meses",
+    "better": "mejor que lo presupuestado",
+    "worse": "peor que lo presupuestado",
+    "upTo": "Hasta",
+    "monthsIn": "{{count}} de 12 meses de {{year}}",
+    "nothingYet": "Aún no hay nada que comparar",
+    "nothingYetBody": "Añade importes al plan o registra ingresos y gastos.",
+    "columns": {
+      "budget": "Presupuesto",
+      "actual": "Real",
+      "variance": "Desviación"
+    },
+    "varianceHint": "Las desviaciones son positivas cuando el resultado es mejor de lo previsto: ingresos por encima o gastos por debajo.",
+    "defaultName": "Presupuesto {{year}}",
+    "newTitle": "Nuevo presupuesto",
+    "newBody": "Un plan mensual de ingresos y gastos para un ejercicio.",
+    "create": "Crear presupuesto",
+    "renameTitle": "Cambiar nombre del presupuesto",
+    "noYears": "Primero añade un ejercicio",
+    "fields": {
+      "year": "Ejercicio",
+      "name": "Nombre",
+      "startFrom": "Empezar con",
+      "adjust": "Subir o bajar (%)",
+      "budget": "Presupuesto a copiar"
+    },
+    "adjustHint": "Por ejemplo 10 para un diez por ciento más, o -5 para menos.",
+    "start": {
+      "actuals": "Datos reales del año pasado",
+      "budget": "Otro presupuesto",
+      "empty": "Una hoja en blanco"
+    },
+    "problems": {
+      "year": "Elige un ejercicio.",
+      "budget": "Elige el presupuesto a copiar.",
+      "adjust": "Introduce un porcentaje entre -100 y 1000."
+    },
+    "errors": {
+      "name_taken": "Este año ya tiene un presupuesto con ese nombre.",
+      "year_not_found": "Ese ejercicio no existe.",
+      "budget_not_found": "Ese presupuesto no existe.",
+      "not_pnl_account": "Los presupuestos son para cuentas de ingresos y gastos.",
+      "forbidden": "No tienes permiso para cambiar presupuestos.",
+      "generic": "No se pudo guardar el presupuesto. Inténtalo de nuevo."
     }
   }
 }

@@ -79,7 +79,18 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 ## Phase 6: Advanced
 
-Budgets · cost centres and projects · inventory · fixed assets and depreciation · approval workflows · document attachments · data import from spreadsheets · public API keys and webhooks · scheduled reports · backups and restore.
+| Feature | What it means | Status |
+|---|---|---|
+| Fixed assets and depreciation | A register with straight-line or written-down-value depreciation run monthly, disposals with gain or loss, and the asset schedule | ✅ #127 |
+| Budgets | A plan per financial year by account and month, started from last year's actuals, another budget or blank, and budget against actual with variances | ✅ #129 |
+| Cost centres and projects | Tag lines to a department or project and report profit by each | Planned |
+| Inventory | Stock items with quantities, valuation and cost of sales | Planned |
+| Approval workflows | Bills and payments wait for approval above a set amount | Planned |
+| Document attachments | Receipts and files attached to entries, invoices and bills | Planned |
+| Data import | Contacts, items, accounts and opening balances from spreadsheets | Planned |
+| API keys and webhooks | Scoped keys for the public API and signed webhooks on events | Planned |
+| Scheduled reports | Reports emailed on a schedule | Planned |
+| Backups and restore | An organisation's data exported and restored | Planned |
 
 ## Quality standards (apply to every feature)
 

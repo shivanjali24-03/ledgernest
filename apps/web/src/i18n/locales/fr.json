@@ -31,7 +31,8 @@
       "items": "Produits et services",
       "creditNotes": "Avoirs",
       "recurring": "Factures récurrentes",
-      "fixedAssets": "Immobilisations"
+      "fixedAssets": "Immobilisations",
+      "budgets": "Budgets"
     },
     "soon": "Bientôt"
   },
@@ -2540,6 +2541,75 @@
       "before_depreciated": "Il est amorti au-delà de cette date. Annulez d’abord cet amortissement.",
       "gain_loss_account": "Choisissez un compte de produits ou de charges pour le résultat.",
       "bank_invalid": "Choisissez un compte bancaire ou de caisse."
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "description": "Prévoyez ce que chaque compte de produits et de charges devrait atteindre, mois par mois, et suivez l’année par rapport à ce plan.",
+    "new": "Nouveau budget",
+    "empty": "Aucun budget pour l’instant",
+    "emptyBody": "Partez des chiffres de l’an dernier, d’un autre budget ou d’une feuille vierge.",
+    "budget": "Budget",
+    "actionsFor": "Actions pour {{name}}",
+    "rename": "Renommer",
+    "delete": "Supprimer le budget",
+    "plan": "Plan",
+    "comparison": "Budget et réel",
+    "deleteTitle": "Supprimer {{name}} ?",
+    "deleteBody": "Le plan disparaît définitivement. Votre comptabilité n’est pas touchée.",
+    "deleted": "{{name}} supprimé",
+    "saved": "{{name}} enregistré",
+    "created": "{{name}} créé",
+    "renamed": "Renommé en {{name}}",
+    "planHint": "Montants de {{year}} en {{currency}}. Produits et charges se saisissent en positif.",
+    "discard": "Annuler",
+    "total": "Total",
+    "cell": "{{account}}, {{month}}",
+    "yearTotal": "{{account}}, total de l’année",
+    "spreadHint": "Saisissez un total annuel pour le répartir également sur les mois",
+    "better": "mieux que le budget",
+    "worse": "moins bien que le budget",
+    "upTo": "Jusqu’au",
+    "monthsIn": "{{count}} mois sur 12 de {{year}}",
+    "nothingYet": "Rien à comparer pour l’instant",
+    "nothingYetBody": "Ajoutez des montants au plan, ou comptabilisez des produits et des charges.",
+    "columns": {
+      "budget": "Budget",
+      "actual": "Réel",
+      "variance": "Écart"
+    },
+    "varianceHint": "Les écarts sont positifs quand le résultat est meilleur que prévu : produits au-dessus du budget, ou charges en dessous.",
+    "defaultName": "Budget {{year}}",
+    "newTitle": "Nouveau budget",
+    "newBody": "Un plan mensuel des produits et charges d’un exercice.",
+    "create": "Créer le budget",
+    "renameTitle": "Renommer le budget",
+    "noYears": "Ajoutez d’abord un exercice",
+    "fields": {
+      "year": "Exercice",
+      "name": "Nom",
+      "startFrom": "Partir de",
+      "adjust": "Hausse ou baisse (%)",
+      "budget": "Budget à copier"
+    },
+    "adjustHint": "Par exemple 10 pour dix pour cent de plus, ou -5 pour moins.",
+    "start": {
+      "actuals": "Le réel de l’an dernier",
+      "budget": "Un autre budget",
+      "empty": "Une feuille vierge"
+    },
+    "problems": {
+      "year": "Choisissez un exercice.",
+      "budget": "Choisissez le budget à copier.",
+      "adjust": "Saisissez un pourcentage entre -100 et 1000."
+    },
+    "errors": {
+      "name_taken": "Cet exercice a déjà un budget de ce nom.",
+      "year_not_found": "Cet exercice n’existe pas.",
+      "budget_not_found": "Ce budget n’existe pas.",
+      "not_pnl_account": "Les budgets concernent les comptes de produits et de charges.",
+      "forbidden": "Vous n’avez pas le droit de modifier les budgets.",
+      "generic": "Le budget n’a pas pu être enregistré. Réessayez."
     }
   }
 }

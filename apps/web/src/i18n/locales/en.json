@@ -31,7 +31,8 @@
       "items": "Products & services",
       "creditNotes": "Credit notes",
       "recurring": "Recurring invoices",
-      "fixedAssets": "Fixed assets"
+      "fixedAssets": "Fixed assets",
+      "budgets": "Budgets"
     },
     "soon": "Soon"
   },
@@ -2540,6 +2541,75 @@
       "before_depreciated": "Depreciation is charged past this day. Undo that run first.",
       "gain_loss_account": "Choose an income or expense account for the gain or loss.",
       "bank_invalid": "Choose a bank or cash account."
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "description": "Plan what each income and expense account should come to, month by month, and see how the year is going against it.",
+    "new": "New budget",
+    "empty": "No budgets yet",
+    "emptyBody": "Start one from last year’s figures, another budget, or a blank sheet.",
+    "budget": "Budget",
+    "actionsFor": "Actions for {{name}}",
+    "rename": "Rename",
+    "delete": "Delete budget",
+    "plan": "Plan",
+    "comparison": "Budget vs actual",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "The plan goes for good. Your books aren’t affected.",
+    "deleted": "{{name}} deleted",
+    "saved": "{{name}} saved",
+    "created": "{{name}} created",
+    "renamed": "Renamed to {{name}}",
+    "planHint": "Amounts for {{year}} in {{currency}}. Income and expenses are both entered as positive.",
+    "discard": "Discard",
+    "total": "Total",
+    "cell": "{{account}}, {{month}}",
+    "yearTotal": "{{account}}, year total",
+    "spreadHint": "Type a year’s total to spread it evenly over the months",
+    "better": "better than budget",
+    "worse": "worse than budget",
+    "upTo": "Up to",
+    "monthsIn": "{{count}} of 12 months of {{year}}",
+    "nothingYet": "Nothing to compare yet",
+    "nothingYetBody": "Add amounts to the plan, or post some income and expenses.",
+    "columns": {
+      "budget": "Budget",
+      "actual": "Actual",
+      "variance": "Variance"
+    },
+    "varianceHint": "Variances are positive when better than planned: income above budget, or expenses below it.",
+    "defaultName": "Budget {{year}}",
+    "newTitle": "New budget",
+    "newBody": "A plan for a financial year’s income and expenses, by month.",
+    "create": "Create budget",
+    "renameTitle": "Rename budget",
+    "noYears": "Add a financial year first",
+    "fields": {
+      "year": "Financial year",
+      "name": "Name",
+      "startFrom": "Start from",
+      "adjust": "Up or down by (%)",
+      "budget": "Budget to copy"
+    },
+    "adjustHint": "For example 10 for ten per cent more, or -5 for less.",
+    "start": {
+      "actuals": "Last year’s actuals",
+      "budget": "Another budget",
+      "empty": "A blank sheet"
+    },
+    "problems": {
+      "year": "Choose a financial year.",
+      "budget": "Choose the budget to copy.",
+      "adjust": "Enter a percentage between -100 and 1000."
+    },
+    "errors": {
+      "name_taken": "This year already has a budget with that name.",
+      "year_not_found": "That financial year doesn’t exist.",
+      "budget_not_found": "That budget doesn’t exist.",
+      "not_pnl_account": "Budgets are for income and expense accounts.",
+      "forbidden": "You don’t have permission to change budgets.",
+      "generic": "The budget couldn’t be saved. Try again."
     }
   }
 }
