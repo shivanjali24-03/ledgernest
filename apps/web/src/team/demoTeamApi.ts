@@ -20,7 +20,10 @@ import type { InviteResult, Member, MemberRole, PendingInvitation, RolesResponse
  * what an Admin may and may not do.
  */
 
-const KEY = 'ledgernest.demo.team';
+// v2: role ids became UUIDs (they must pass the same validation as real ones); older saved demos start fresh
+const KEY = 'ledgernest.demo.team.v2';
+const CASHIER = 'b0000000-0000-4000-8000-000000000001';
+const TAX_CONSULTANT = 'b0000000-0000-4000-8000-000000000002';
 const DAY = 86_400_000;
 const ME = 'm-1';
 
@@ -68,11 +71,11 @@ function seed(): State {
       m('m-4', 'Arjun Kulkarni', 'arjun@nestdemo.in', 'bookkeeper', null, 120, 2),
       m('m-5', 'Fatima Sheikh', 'fatima@auditpartners.in', 'auditor', null, 60, 9),
       m('m-6', 'Vikram Singh', 'vikram@nestdemo.in', 'viewer', null, 30, null),
-      m('m-7', 'Neha Gupta', 'neha@nestdemo.in', null, 'r-cashier', 20, 3),
+      m('m-7', 'Neha Gupta', 'neha@nestdemo.in', null, CASHIER, 20, 3),
     ],
     roles: [
-      { id: 'r-cashier', name: 'Branch cashier', description: 'Records receipts and payments at the branch.', permissions: ['banking.view', 'banking.manage', 'payments.manage', 'contacts.view', 'invoices.view'] },
-      { id: 'r-tax', name: 'Tax consultant', description: 'Prepares tax filings from the books.', permissions: ['accounts.view', 'journals.view', 'reports.view', 'reports.export', 'taxes.manage'] },
+      { id: CASHIER, name: 'Branch cashier', description: 'Records receipts and payments at the branch.', permissions: ['banking.view', 'banking.manage', 'payments.manage', 'contacts.view', 'invoices.view'] },
+      { id: TAX_CONSULTANT, name: 'Tax consultant', description: 'Prepares tax filings from the books.', permissions: ['accounts.view', 'journals.view', 'reports.view', 'reports.export', 'taxes.manage'] },
     ],
     invitations: [
       { id: 'i-1', email: 'kabir@nestdemo.in', builtInRole: 'accountant', customRoleId: null, invitedBy: 'Rohan Mehta', createdAt: ago(4), expiresAt: ahead(3) },
@@ -249,7 +252,7 @@ export function createDemoTeamApi(actorRole: () => BuiltInRoleId, { latencyMs = 
         const input = parsed.data!;
         assertWithinMyAccess(input.permissions);
         assertNameFree(input.name);
-        const role: StoredRole = { id: `r-${crypto.randomUUID()}`, name: input.name, description: input.description ?? null, permissions: input.permissions };
+        const role: StoredRole = { id: crypto.randomUUID(), name: input.name, description: input.description ?? null, permissions: input.permissions };
         state.roles.push(role);
         return role;
       }),
