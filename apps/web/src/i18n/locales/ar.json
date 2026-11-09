@@ -571,7 +571,8 @@
       "budgets": "الموازنات",
       "costCentres": "مراكز التكلفة",
       "inventory": "المخزون",
-      "approvals": "الموافقات"
+      "approvals": "الموافقات",
+      "imports": "الاستيراد"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -714,7 +715,11 @@
       "org_payment_attach": "أُرفق ملف بدفعة",
       "org_payment_detach": "أُزيل ملف من دفعة",
       "org_banking_attach": "أُرفق ملف بحركة بنكية",
-      "org_banking_detach": "أُزيل ملف من حركة بنكية"
+      "org_banking_detach": "أُزيل ملف من حركة بنكية",
+      "org_import_accounts": "تم استيراد دليل الحسابات",
+      "org_import_contacts": "تم استيراد جهات الاتصال",
+      "org_import_items": "تم استيراد الأصناف",
+      "org_import_opening_balances": "تم استيراد الأرصدة الافتتاحية"
     },
     "entities": {
       "membership": "عضو",

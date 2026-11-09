@@ -30,6 +30,7 @@ import { CostCentresModule } from './cost-centres/cost-centres.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { ApprovalsModule } from './approvals/approvals.module.js';
 import { AttachmentsModule } from './attachments/attachments.module.js';
+import { ImportsModule } from './imports/imports.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -69,6 +70,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     InventoryModule,
     ApprovalsModule,
     AttachmentsModule,
+    ImportsModule,
     PlatformModule,
   ],
   providers: [

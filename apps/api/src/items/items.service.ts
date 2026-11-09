@@ -359,36 +359,39 @@ export class ItemsService {
   }
 
   async create(input: Values, ctx: Ctx) {
+    return this.prisma.$transaction((tx) => this.createInTx(tx, input, ctx));
+  }
+
+  /** The same, inside the caller's transaction (imports create many in one) */
+  async createInTx(tx: Tx, input: Values, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
-    return this.prisma.$transaction(async (tx) => {
-      await this.lock(tx, organizationId);
-      await this.check(tx, organizationId, input);
-      const i = await tx.item.create({
-        data: {
-          organizationId,
-          ...this.data(input),
-        } as Prisma.ItemUncheckedCreateInput,
-        select,
-      });
-      await this.audit.record(
-        {
-          action: 'org.item.create',
-          actorId: ctx.actor.userId,
-          organizationId,
-          entityType: 'item',
-          entityId: i.id,
-          after: {
-            name: i.name,
-            kind: i.kind,
-            sku: i.sku,
-            salePrice: input.salePrice,
-          },
-          req: ctx.req,
-        },
-        tx,
-      );
-      return this.view(i);
+    await this.lock(tx, organizationId);
+    await this.check(tx, organizationId, input);
+    const i = await tx.item.create({
+      data: {
+        organizationId,
+        ...this.data(input),
+      } as Prisma.ItemUncheckedCreateInput,
+      select,
     });
+    await this.audit.record(
+      {
+        action: 'org.item.create',
+        actorId: ctx.actor.userId,
+        organizationId,
+        entityType: 'item',
+        entityId: i.id,
+        after: {
+          name: i.name,
+          kind: i.kind,
+          sku: i.sku,
+          salePrice: input.salePrice,
+        },
+        req: ctx.req,
+      },
+      tx,
+    );
+    return this.view(i);
   }
 
   async update(id: string, input: ItemUpdateInput, ctx: Ctx) {

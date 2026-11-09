@@ -571,7 +571,8 @@
       "budgets": "Budgets",
       "costCentres": "Cost centres",
       "inventory": "Inventory",
-      "approvals": "Approvals"
+      "approvals": "Approvals",
+      "imports": "Imports"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -714,7 +715,11 @@
       "org_payment_attach": "File attached to a payment",
       "org_payment_detach": "File removed from a payment",
       "org_banking_attach": "File attached to a bank transaction",
-      "org_banking_detach": "File removed from a bank transaction"
+      "org_banking_detach": "File removed from a bank transaction",
+      "org_import_accounts": "Chart of accounts imported",
+      "org_import_contacts": "Contacts imported",
+      "org_import_items": "Items imported",
+      "org_import_opening_balances": "Opening balances imported"
     },
     "entities": {
       "membership": "Member",

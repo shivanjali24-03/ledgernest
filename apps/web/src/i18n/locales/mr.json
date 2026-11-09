@@ -571,7 +571,8 @@
       "budgets": "अंदाजपत्रके",
       "costCentres": "खर्च केंद्रे",
       "inventory": "साठा",
-      "approvals": "मंजुरी"
+      "approvals": "मंजुरी",
+      "imports": "आयात"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -714,7 +715,11 @@
       "org_payment_attach": "देयकाला फाइल जोडली",
       "org_payment_detach": "देयकामधून फाइल हटवली",
       "org_banking_attach": "बँक व्यवहाराला फाइल जोडली",
-      "org_banking_detach": "बँक व्यवहारातून फाइल हटवली"
+      "org_banking_detach": "बँक व्यवहारातून फाइल हटवली",
+      "org_import_accounts": "खात्यांचा तक्ता आयात केला",
+      "org_import_contacts": "संपर्क आयात केले",
+      "org_import_items": "वस्तू आयात केल्या",
+      "org_import_opening_balances": "प्रारंभिक शिल्लक आयात केल्या"
     },
     "entities": {
       "membership": "सदस्य",
