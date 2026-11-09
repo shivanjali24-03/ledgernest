@@ -27,7 +27,8 @@
       "taxes": "कर",
       "gstSlabs": "जीएसटी स्लैब",
       "currencies": "मुद्राएँ",
-      "contacts": "ग्राहक और विक्रेता"
+      "contacts": "ग्राहक और विक्रेता",
+      "items": "उत्पाद और सेवाएँ"
     },
     "soon": "जल्द"
   },
@@ -537,7 +538,8 @@
       "taxes": "कर",
       "gstSlabs": "जीएसटी स्लैब",
       "currencies": "मुद्राएँ",
-      "contacts": "ग्राहक और विक्रेता"
+      "contacts": "ग्राहक और विक्रेता",
+      "items": "उत्पाद और सेवाएँ"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -610,7 +612,12 @@
       "org_contact_update": "संपर्क संपादित",
       "org_contact_archive": "संपर्क संग्रहित",
       "org_contact_restore": "संपर्क बहाल",
-      "org_contact_delete": "संपर्क हटाया गया"
+      "org_contact_delete": "संपर्क हटाया गया",
+      "org_item_create": "आइटम जोड़ा गया",
+      "org_item_update": "आइटम संपादित",
+      "org_item_archive": "आइटम संग्रहित",
+      "org_item_restore": "आइटम बहाल",
+      "org_item_delete": "आइटम हटाया गया"
     },
     "entities": {
       "membership": "सदस्य",
@@ -626,7 +633,8 @@
       "tax_group": "कर समूह",
       "gst_slab": "जीएसटी स्लैब",
       "currency": "मुद्रा",
-      "contact": "संपर्क"
+      "contact": "संपर्क",
+      "item": "आइटम"
     },
     "fields": {
       "user": "व्यक्ति",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "पहले मुद्राएँ में यह मुद्रा सक्रिय करें।",
       "already_archived": "यह संपर्क पहले से संग्रहित है।",
       "not_archived": "यह संपर्क संग्रहित नहीं है।"
+    }
+  },
+  "items": {
+    "title": "उत्पाद और सेवाएँ",
+    "description": "आप क्या बेचते और ख़रीदते हैं, क़ीमत, कर और उन खातों के साथ जिनमें वे दर्ज होते हैं।",
+    "add": "आइटम जोड़ें",
+    "filter": "दिखाएँ",
+    "all": "सभी",
+    "services": "सेवाएँ",
+    "goods": "वस्तुएँ",
+    "search": "नाम, SKU या HSN/SAC खोजें",
+    "showArchived": "संग्रहित दिखाएँ",
+    "noMatches": "कोई आइटम नहीं मिला",
+    "empty": "अभी कोई उत्पाद या सेवा नहीं",
+    "emptyBody": "आप जो बेचते और ख़रीदते हैं उसे जोड़ें ताकि चालान और बिल अपने आप भरें।",
+    "archivedPill": "संग्रहित",
+    "costs": "लागत {{amount}}",
+    "actionsFor": "{{name}} के लिए कार्य",
+    "edit": "संपादित करें",
+    "archive": "संग्रहित करें",
+    "restore": "बहाल करें",
+    "delete": "हटाएँ",
+    "archived": "{{name}} संग्रहित",
+    "restored": "{{name}} बहाल",
+    "deleted": "{{name}} हटाया गया",
+    "deleteTitle": "{{name}} हटाएँ?",
+    "deleteBody": "आइटम हमेशा के लिए हट जाएगा। चालान या बिल में उपयोग होने के बाद इसके बजाय संग्रहित करें।",
+    "saved": "{{name}} सहेजा गया",
+    "created": "{{name}} जोड़ा गया",
+    "chooseLater": "हर पंक्ति पर चुनें",
+    "dialog": {
+      "newTitle": "नया उत्पाद या सेवा",
+      "editTitle": "{{name}} संपादित करें",
+      "create": "आइटम जोड़ें"
+    },
+    "fields": {
+      "name": "नाम",
+      "kind": "प्रकार",
+      "sku": "SKU",
+      "unit": "इकाई",
+      "description": "विवरण",
+      "salePrice": "बिक्री मूल्य ({{currency}})",
+      "purchasePrice": "ख़रीद मूल्य ({{currency}})",
+      "taxGroup": "सामान्य कर",
+      "hsn": "HSN कोड",
+      "sac": "SAC कोड",
+      "incomeAccount": "आय खाता (बिक्री)",
+      "expenseAccount": "व्यय या परिसंपत्ति खाता (ख़रीद)"
+    },
+    "kinds": {
+      "goods": "वस्तुएँ",
+      "service": "सेवा"
+    },
+    "hints": {
+      "hsnSac": "4, 6 या 8 अंक, जीएसटी चालान के लिए।"
+    },
+    "validation": {
+      "name": "कम से कम 2 अक्षर लिखें।",
+      "price": "राशि लिखें, जैसे 2,500।",
+      "hsnSac": "4, 6 या 8 अंकों का कोड लिखें।"
+    },
+    "errors": {
+      "name_taken": "इस नाम से एक और आइटम पहले से है।",
+      "sku_taken": "इस SKU से एक और आइटम पहले से है।",
+      "income_account_type": "आइटम की बिक्री आय खाते में जाती है।",
+      "expense_account_type": "आइटम की ख़रीद व्यय या परिसंपत्ति खाते में जाती है।",
+      "tax_group_archived": "वह कर समूह संग्रहित है।",
+      "account_archived": "वह खाता संग्रहित है।"
     }
   }
 }

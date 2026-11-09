@@ -87,6 +87,7 @@ model Organization {
   taxGroupRates TaxGroupRate[]
   currencies    OrganizationCurrency[]
   contacts      Contact[]
+  items         Item[]
   exchangeRates ExchangeRate[]
 
   @@map("organizations")
@@ -125,6 +126,8 @@ model Account {
   organization  Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orgCurrency   OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
   currencyLines JournalLine[]         @relation("LineCurrency")
+  incomeItems   Item[]                @relation("ItemIncome")
+  expenseItems  Item[]                @relation("ItemExpense")
   /// Composite key: a parent always belongs to the same organisation, enforced by the database
   parent        Account?              @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
   children      Account[]             @relation("AccountTree")
@@ -441,6 +444,7 @@ model TaxGroup {
   gstSlab      GstSlab?       @relation(fields: [gstSlabId], references: [id], onDelete: Restrict)
   rates        TaxGroupRate[]
   lines        JournalLine[]
+  items        Item[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])
@@ -528,4 +532,36 @@ model Contact {
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt])
   @@map("contacts")
+}
+
+/// A product or service to put on invoices and bills.
+model Item {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  name             String
+  kind             String /// goods | service
+  sku              String?
+  description      String?
+  unit             String?
+  /// In the base currency's smallest unit
+  salePrice        BigInt?   @map("sale_price")
+  purchasePrice    BigInt?   @map("purchase_price")
+  taxGroupId       String?   @map("tax_group_id") @db.Uuid
+  /// HSN (goods) or SAC (services), for Indian GST invoices
+  hsnSac           String?   @map("hsn_sac")
+  incomeAccountId  String?   @map("income_account_id") @db.Uuid
+  expenseAccountId String?   @map("expense_account_id") @db.Uuid
+  archivedAt       DateTime? @map("archived_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxGroup       TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  incomeAccount  Account?     @relation("ItemIncome", fields: [organizationId, incomeAccountId], references: [organizationId, id], onDelete: NoAction)
+  expenseAccount Account?     @relation("ItemExpense", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, sku])
+  @@index([organizationId, archivedAt])
+  @@map("items")
 }

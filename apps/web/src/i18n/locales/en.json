@@ -27,7 +27,8 @@
       "taxes": "Taxes",
       "gstSlabs": "GST slabs",
       "currencies": "Currencies",
-      "contacts": "Customers & vendors"
+      "contacts": "Customers & vendors",
+      "items": "Products & services"
     },
     "soon": "Soon"
   },
@@ -537,7 +538,8 @@
       "taxes": "Taxes",
       "gstSlabs": "GST slabs",
       "currencies": "Currencies",
-      "contacts": "Customers and vendors"
+      "contacts": "Customers and vendors",
+      "items": "Products and services"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -610,7 +612,12 @@
       "org_contact_update": "Contact edited",
       "org_contact_archive": "Contact archived",
       "org_contact_restore": "Contact restored",
-      "org_contact_delete": "Contact deleted"
+      "org_contact_delete": "Contact deleted",
+      "org_item_create": "Item added",
+      "org_item_update": "Item edited",
+      "org_item_archive": "Item archived",
+      "org_item_restore": "Item restored",
+      "org_item_delete": "Item deleted"
     },
     "entities": {
       "membership": "Member",
@@ -626,7 +633,8 @@
       "tax_group": "Tax group",
       "gst_slab": "GST slab",
       "currency": "Currency",
-      "contact": "Contact"
+      "contact": "Contact",
+      "item": "Item"
     },
     "fields": {
       "user": "Person",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "Enable this currency under Currencies first.",
       "already_archived": "This contact is already archived.",
       "not_archived": "This contact isn’t archived."
+    }
+  },
+  "items": {
+    "title": "Products and services",
+    "description": "What you sell and buy, with prices, tax and the accounts they post to.",
+    "add": "Add item",
+    "filter": "Show",
+    "all": "All",
+    "services": "Services",
+    "goods": "Goods",
+    "search": "Search name, SKU or HSN/SAC",
+    "showArchived": "Show archived",
+    "noMatches": "No items match",
+    "empty": "No products or services yet",
+    "emptyBody": "Add what you sell and buy so invoices and bills fill themselves in.",
+    "archivedPill": "Archived",
+    "costs": "Costs {{amount}}",
+    "actionsFor": "Actions for {{name}}",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "archived": "{{name}} archived",
+    "restored": "{{name}} restored",
+    "deleted": "{{name}} deleted",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "The item is removed for good. Once invoices or bills use it, archive it instead.",
+    "saved": "{{name}} saved",
+    "created": "{{name}} added",
+    "chooseLater": "Choose on each line",
+    "dialog": {
+      "newTitle": "New product or service",
+      "editTitle": "Edit {{name}}",
+      "create": "Add item"
+    },
+    "fields": {
+      "name": "Name",
+      "kind": "Type",
+      "sku": "SKU",
+      "unit": "Unit",
+      "description": "Description",
+      "salePrice": "Sale price ({{currency}})",
+      "purchasePrice": "Purchase price ({{currency}})",
+      "taxGroup": "Usual tax",
+      "hsn": "HSN code",
+      "sac": "SAC code",
+      "incomeAccount": "Income account (sales)",
+      "expenseAccount": "Expense or asset account (purchases)"
+    },
+    "kinds": {
+      "goods": "Goods",
+      "service": "Service"
+    },
+    "hints": {
+      "hsnSac": "4, 6 or 8 digits, for GST invoices."
+    },
+    "validation": {
+      "name": "Enter at least 2 characters.",
+      "price": "Enter an amount, like 2,500.",
+      "hsnSac": "Use a 4, 6 or 8-digit code."
+    },
+    "errors": {
+      "name_taken": "Another item already has this name.",
+      "sku_taken": "Another item already has this SKU.",
+      "income_account_type": "Sales of an item go to an income account.",
+      "expense_account_type": "Purchases of an item go to an expense or asset account.",
+      "tax_group_archived": "That tax group is archived.",
+      "account_archived": "That account is archived."
     }
   }
 }

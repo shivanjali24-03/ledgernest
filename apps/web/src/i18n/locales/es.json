@@ -27,7 +27,8 @@
       "taxes": "Impuestos",
       "gstSlabs": "Tramos de GST",
       "currencies": "Monedas",
-      "contacts": "Clientes y proveedores"
+      "contacts": "Clientes y proveedores",
+      "items": "Productos y servicios"
     },
     "soon": "Pronto"
   },
@@ -537,7 +538,8 @@
       "taxes": "Impuestos",
       "gstSlabs": "Tramos de GST",
       "currencies": "Monedas",
-      "contacts": "Clientes y proveedores"
+      "contacts": "Clientes y proveedores",
+      "items": "Productos y servicios"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -610,7 +612,12 @@
       "org_contact_update": "Contacto editado",
       "org_contact_archive": "Contacto archivado",
       "org_contact_restore": "Contacto restaurado",
-      "org_contact_delete": "Contacto eliminado"
+      "org_contact_delete": "Contacto eliminado",
+      "org_item_create": "Artículo añadido",
+      "org_item_update": "Artículo editado",
+      "org_item_archive": "Artículo archivado",
+      "org_item_restore": "Artículo restaurado",
+      "org_item_delete": "Artículo eliminado"
     },
     "entities": {
       "membership": "Miembro",
@@ -626,7 +633,8 @@
       "tax_group": "Grupo de impuestos",
       "gst_slab": "Tramo de GST",
       "currency": "Moneda",
-      "contact": "Contacto"
+      "contact": "Contacto",
+      "item": "Artículo"
     },
     "fields": {
       "user": "Persona",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "Activa primero esta moneda en Monedas.",
       "already_archived": "Este contacto ya está archivado.",
       "not_archived": "Este contacto no está archivado."
+    }
+  },
+  "items": {
+    "title": "Productos y servicios",
+    "description": "Lo que vendes y compras, con precios, impuestos y las cuentas donde se registran.",
+    "add": "Añadir artículo",
+    "filter": "Mostrar",
+    "all": "Todos",
+    "services": "Servicios",
+    "goods": "Bienes",
+    "search": "Busca nombre, SKU o HSN/SAC",
+    "showArchived": "Mostrar archivados",
+    "noMatches": "Ningún artículo coincide",
+    "empty": "Aún no hay productos ni servicios",
+    "emptyBody": "Añade lo que vendes y compras para que facturas y compras se rellenen solas.",
+    "archivedPill": "Archivado",
+    "costs": "Cuesta {{amount}}",
+    "actionsFor": "Acciones de {{name}}",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "archived": "{{name}} archivado",
+    "restored": "{{name}} restaurado",
+    "deleted": "{{name}} eliminado",
+    "deleteTitle": "¿Eliminar {{name}}?",
+    "deleteBody": "El artículo se elimina definitivamente. Cuando facturas o compras lo usen, archívalo en su lugar.",
+    "saved": "{{name}} guardado",
+    "created": "{{name}} añadido",
+    "chooseLater": "Elegir en cada línea",
+    "dialog": {
+      "newTitle": "Nuevo producto o servicio",
+      "editTitle": "Editar {{name}}",
+      "create": "Añadir artículo"
+    },
+    "fields": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "sku": "SKU",
+      "unit": "Unidad",
+      "description": "Descripción",
+      "salePrice": "Precio de venta ({{currency}})",
+      "purchasePrice": "Precio de compra ({{currency}})",
+      "taxGroup": "Impuesto habitual",
+      "hsn": "Código HSN",
+      "sac": "Código SAC",
+      "incomeAccount": "Cuenta de ingresos (ventas)",
+      "expenseAccount": "Cuenta de gasto o activo (compras)"
+    },
+    "kinds": {
+      "goods": "Bienes",
+      "service": "Servicio"
+    },
+    "hints": {
+      "hsnSac": "4, 6 u 8 dígitos, para facturas con GST."
+    },
+    "validation": {
+      "name": "Escribe al menos 2 caracteres.",
+      "price": "Escribe un importe, como 2.500.",
+      "hsnSac": "Usa un código de 4, 6 u 8 dígitos."
+    },
+    "errors": {
+      "name_taken": "Ya existe otro artículo con este nombre.",
+      "sku_taken": "Ya existe otro artículo con este SKU.",
+      "income_account_type": "Las ventas de un artículo van a una cuenta de ingresos.",
+      "expense_account_type": "Las compras de un artículo van a una cuenta de gasto o de activo.",
+      "tax_group_archived": "Ese grupo de impuestos está archivado.",
+      "account_archived": "Esa cuenta está archivada."
     }
   }
 }

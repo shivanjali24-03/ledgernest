@@ -27,7 +27,8 @@
       "taxes": "Taxes",
       "gstSlabs": "Tranches de GST",
       "currencies": "Devises",
-      "contacts": "Clients et fournisseurs"
+      "contacts": "Clients et fournisseurs",
+      "items": "Produits et services"
     },
     "soon": "Bientôt"
   },
@@ -537,7 +538,8 @@
       "taxes": "Taxes",
       "gstSlabs": "Tranches de GST",
       "currencies": "Devises",
-      "contacts": "Clients et fournisseurs"
+      "contacts": "Clients et fournisseurs",
+      "items": "Produits et services"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -610,7 +612,12 @@
       "org_contact_update": "Contact modifié",
       "org_contact_archive": "Contact archivé",
       "org_contact_restore": "Contact restauré",
-      "org_contact_delete": "Contact supprimé"
+      "org_contact_delete": "Contact supprimé",
+      "org_item_create": "Article ajouté",
+      "org_item_update": "Article modifié",
+      "org_item_archive": "Article archivé",
+      "org_item_restore": "Article restauré",
+      "org_item_delete": "Article supprimé"
     },
     "entities": {
       "membership": "Membre",
@@ -626,7 +633,8 @@
       "tax_group": "Groupe de taxes",
       "gst_slab": "Tranche de GST",
       "currency": "Devise",
-      "contact": "Contact"
+      "contact": "Contact",
+      "item": "Article"
     },
     "fields": {
       "user": "Personne",
@@ -1509,6 +1517,74 @@
       "currency_not_enabled": "Activez d’abord cette devise dans Devises.",
       "already_archived": "Ce contact est déjà archivé.",
       "not_archived": "Ce contact n’est pas archivé."
+    }
+  },
+  "items": {
+    "title": "Produits et services",
+    "description": "Ce que vous vendez et achetez, avec prix, taxes et comptes d’imputation.",
+    "add": "Ajouter un article",
+    "filter": "Afficher",
+    "all": "Tous",
+    "services": "Services",
+    "goods": "Biens",
+    "search": "Rechercher nom, SKU ou HSN/SAC",
+    "showArchived": "Afficher les archivés",
+    "noMatches": "Aucun article ne correspond",
+    "empty": "Aucun produit ni service pour l’instant",
+    "emptyBody": "Ajoutez ce que vous vendez et achetez pour pré-remplir factures et achats.",
+    "archivedPill": "Archivé",
+    "costs": "Coûte {{amount}}",
+    "actionsFor": "Actions pour {{name}}",
+    "edit": "Modifier",
+    "archive": "Archiver",
+    "restore": "Restaurer",
+    "delete": "Supprimer",
+    "archived": "{{name}} archivé",
+    "restored": "{{name}} restauré",
+    "deleted": "{{name}} supprimé",
+    "deleteTitle": "Supprimer {{name}} ?",
+    "deleteBody": "L’article est supprimé définitivement. Une fois utilisé par des factures, archivez-le plutôt.",
+    "saved": "{{name}} enregistré",
+    "created": "{{name}} ajouté",
+    "chooseLater": "Choisir sur chaque ligne",
+    "dialog": {
+      "newTitle": "Nouveau produit ou service",
+      "editTitle": "Modifier {{name}}",
+      "create": "Ajouter l’article"
+    },
+    "fields": {
+      "name": "Nom",
+      "kind": "Type",
+      "sku": "SKU",
+      "unit": "Unité",
+      "description": "Description",
+      "salePrice": "Prix de vente ({{currency}})",
+      "purchasePrice": "Prix d’achat ({{currency}})",
+      "taxGroup": "Taxe habituelle",
+      "hsn": "Code HSN",
+      "sac": "Code SAC",
+      "incomeAccount": "Compte de produits (ventes)",
+      "expenseAccount": "Compte de charges ou d’actif (achats)"
+    },
+    "kinds": {
+      "goods": "Biens",
+      "service": "Service"
+    },
+    "hints": {
+      "hsnSac": "4, 6 ou 8 chiffres, pour les factures GST."
+    },
+    "validation": {
+      "name": "Saisissez au moins 2 caractères.",
+      "price": "Saisissez un montant, par ex. 2 500.",
+      "hsnSac": "Utilisez un code à 4, 6 ou 8 chiffres."
+    },
+    "errors": {
+      "name_taken": "Un autre article porte déjà ce nom.",
+      "sku_taken": "Un autre article a déjà ce SKU.",
+      "income_account_type": "Les ventes d’un article vont dans un compte de produits.",
+      "expense_account_type": "Les achats d’un article vont dans un compte de charges ou d’actif.",
+      "tax_group_archived": "Ce groupe de taxes est archivé.",
+      "account_archived": "Ce compte est archivé."
     }
   }
 }
