@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_TYPES, MAX_ACCOUNT_DEPTH, type AccountType } from '@ledgernest/shared';
-import { Archive, ArchiveRestore, Building2, ChevronRight, ChevronsDownUp, ChevronsUpDown, ListTree, Lock, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Building2, LayoutTemplate, ChevronRight, ChevronsDownUp, ChevronsUpDown, ListTree, Lock, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../layout/session';
@@ -14,6 +14,7 @@ import { Card, EmptyState, ErrorState, PageHeader, Pill, SearchInput, Segmented,
 import RowMenu from '../../ui/RowMenu';
 import { useToast } from '../../ui/toastContext';
 import AccountDialog, { type Editing } from '../AccountDialog';
+import TemplateDialog from '../TemplateDialog';
 import { accountErrorMessage } from '../errors';
 import { flattenTree, levelOf, searchAccounts } from '../tree';
 import type { Account } from '../types';
@@ -37,6 +38,7 @@ export default function ChartOfAccounts() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Editing | null>(null);
   const [confirming, setConfirming] = useState<Confirming | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const update = useCallback(
     (patch: Record<string, string | null>) =>
@@ -128,6 +130,22 @@ export default function ChartOfAccounts() {
           }
         />
       </motion.div>
+
+      {/* A new organisation has only its system accounts: offer a ready-made chart */}
+      {canManage && query.data && all.every((a) => a.system) && (
+        <motion.div variants={fadeUp}>
+          <Card className="flex flex-wrap items-center gap-4 border-brand-200 bg-brand-50/60 p-5 dark:border-brand-900 dark:bg-brand-900/20">
+            <span className="grid size-10 place-items-center rounded-xl bg-white text-brand-700 shadow-card dark:bg-ink-900 dark:text-brand-300">
+              <LayoutTemplate className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="font-semibold">{t('accounts.templates.bannerTitle')}</h2>
+              <p className="text-sm text-ink-600 dark:text-ink-300">{t('accounts.templates.bannerBody')}</p>
+            </div>
+            <Button onClick={() => setPicking(true)}>{t('accounts.templates.use')}</Button>
+          </Card>
+        </motion.div>
+      )}
 
       <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3">
         <SearchInput value={search} onChange={onSearch} label={t('accounts.search')} />
@@ -229,6 +247,16 @@ export default function ChartOfAccounts() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            void refresh();
+          }}
+        />
+      )}
+      {picking && (
+        <TemplateDialog
+          api={api}
+          onClose={() => setPicking(false)}
+          onApplied={() => {
+            setPicking(false);
             void refresh();
           }}
         />

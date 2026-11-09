@@ -221,7 +221,10 @@
         "name": "Saisissez un nom d'au moins 2 caractères.",
         "slug": "Utilisez des minuscules, des chiffres et des tirets.",
         "slugTaken": "Cette adresse web est déjà prise. Essayez-en une autre."
-      }
+      },
+      "industry": "Secteur",
+      "noIndustry": "Démarrer vide",
+      "industryHint": "Crée un plan comptable prêt pour ce secteur, dans la langue de l'organisation."
     },
     "detail": {
       "details": "Détails",
@@ -561,7 +564,8 @@
       "org_account_update": "Compte modifié",
       "org_account_archive": "Compte archivé",
       "org_account_restore": "Compte restauré",
-      "org_account_delete": "Compte supprimé"
+      "org_account_delete": "Compte supprimé",
+      "org_account_template_apply": "Modèle appliqué"
     },
     "entities": {
       "membership": "Membre",
@@ -611,7 +615,9 @@
       "code": "Code",
       "type": "Type",
       "subtype": "Sous-type",
-      "parentId": "Compte parent"
+      "parentId": "Compte parent",
+      "industry": "Secteur",
+      "accounts": "Comptes"
     },
     "details": {
       "when": "Quand",
@@ -822,7 +828,8 @@
       "parent_archived": "Ce compte parent est archivé. Restaurez-le d'abord.",
       "parent_not_found": "Ce compte parent n'existe plus.",
       "already_archived": "Ce compte est déjà archivé.",
-      "not_archived": "Ce compte n'est pas archivé."
+      "not_archived": "Ce compte n'est pas archivé.",
+      "chart_not_empty": "Les modèles ne s'appliquent qu'à un plan comptable vide."
     },
     "validation": {
       "code": "Jusqu'à 12 lettres, chiffres, points ou tirets, comme 1100.",
@@ -830,6 +837,60 @@
       "subtype": "Choisissez un sous-type qui appartient à ce type.",
       "parentId": "Choisissez un compte parent dans la liste.",
       "description": "Restez sous 500 caractères."
+    },
+    "templates": {
+      "title": "Partir d'un modèle",
+      "description": "Choisissez votre secteur pour obtenir un plan comptable prêt. Vous pourrez modifier chaque compte ensuite.",
+      "previewTitle": "Modèle {{industry}}",
+      "previewBody": "{{count}} comptes seront créés. Vérifiez-les, puis appliquez le modèle.",
+      "back": "Retour",
+      "apply": "Appliquer le modèle",
+      "applied": "{{count}} comptes créés",
+      "use": "Utiliser un modèle",
+      "bannerTitle": "Démarrez avec un plan comptable prêt",
+      "bannerBody": "Choisissez votre secteur et obtenez les comptes qu'utilisent les entreprises comme la vôtre, dans votre langue."
+    },
+    "industries": {
+      "retail": {
+        "name": "Commerce de détail",
+        "description": "Stocks, canaux de vente, coût des marchandises vendues"
+      },
+      "services": {
+        "name": "Services professionnels",
+        "description": "Conseil, agences, indépendants"
+      },
+      "manufacturing": {
+        "name": "Industrie",
+        "description": "Matières premières, en-cours, frais d'usine"
+      },
+      "healthcare": {
+        "name": "Santé",
+        "description": "Cliniques, hôpitaux, pharmacies"
+      },
+      "education": {
+        "name": "Éducation",
+        "description": "Écoles, centres de formation"
+      },
+      "nonprofit": {
+        "name": "Associatif",
+        "description": "Dons, subventions, fonds affectés"
+      },
+      "construction": {
+        "name": "BTP",
+        "description": "Marchés, retenues de garantie, sous-traitants"
+      },
+      "restaurant": {
+        "name": "Restaurants et cafés",
+        "description": "Ventes de nourriture et boissons, plateformes de livraison"
+      },
+      "it_software": {
+        "name": "Informatique et logiciels",
+        "description": "Abonnements, produits constatés d'avance, coûts cloud"
+      },
+      "agriculture": {
+        "name": "Agriculture",
+        "description": "Cultures, élevage, matériel agricole, subventions"
+      }
     }
   }
 }

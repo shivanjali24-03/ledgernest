@@ -149,3 +149,33 @@ describe('demo data', () => {
     expect(new Set(accounts.map((a) => a.id)).size).toBe(accounts.length);
   });
 });
+
+describe('industry templates', () => {
+  const systemOnly = [
+    { id: 'c0000000-0000-4000-8000-000000000001', code: '3900', name: 'Retained earnings', type: 'equity', subtype: 'retained_earnings', description: null, parentId: null, systemKey: 'retained_earnings', archivedAt: null },
+    { id: 'c0000000-0000-4000-8000-000000000002', code: '3990', name: 'Opening balance equity', type: 'equity', subtype: 'other_equity', description: null, parentId: null, systemKey: 'opening_balance_equity', archivedAt: null },
+  ];
+
+  it('offers a template to a new organisation, previews it, and creates it', async () => {
+    localStorage.setItem('ledgernest.demo.accounts', JSON.stringify(systemOnly));
+    renderApp();
+    expect(await screen.findByText('Start with a ready chart of accounts')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Use a template' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Start from a template' });
+    await userEvent.click(within(dialog).getByRole('button', { name: /Retail and shops/ }));
+
+    const preview = await screen.findByRole('dialog', { name: 'Retail and shops template' });
+    await waitFor(() => expect(within(preview).getByText(/accounts will be created/)).not.toHaveTextContent(/^0 /));
+    const count = Number(within(preview).getByText(/accounts will be created/).textContent!.match(/\d+/)![0]);
+    expect(count).toBeGreaterThanOrEqual(25);
+    await userEvent.click(within(preview).getByRole('button', { name: 'Apply template' }));
+    expect(await screen.findByText(`${count} accounts created`)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Start with a ready chart of accounts')).not.toBeInTheDocument());
+  });
+
+  it("doesn't offer a template once the chart has accounts", async () => {
+    renderApp();
+    await row('Bank accounts');
+    expect(screen.queryByRole('button', { name: 'Use a template' })).not.toBeInTheDocument();
+  });
+});

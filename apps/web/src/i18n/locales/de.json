@@ -221,7 +221,10 @@
         "name": "Gib einen Namen mit mindestens 2 Zeichen ein.",
         "slug": "Verwende Kleinbuchstaben, Zahlen und Bindestriche.",
         "slugTaken": "Diese Webadresse ist vergeben. Versuch eine andere."
-      }
+      },
+      "industry": "Branche",
+      "noIndustry": "Leer starten",
+      "industryHint": "Legt einen fertigen Kontenplan für diese Branche in der Sprache der Organisation an."
     },
     "detail": {
       "details": "Details",
@@ -561,7 +564,8 @@
       "org_account_update": "Konto bearbeitet",
       "org_account_archive": "Konto archiviert",
       "org_account_restore": "Konto wiederhergestellt",
-      "org_account_delete": "Konto gelöscht"
+      "org_account_delete": "Konto gelöscht",
+      "org_account_template_apply": "Vorlage angewendet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -611,7 +615,9 @@
       "code": "Kontonummer",
       "type": "Typ",
       "subtype": "Untertyp",
-      "parentId": "Übergeordnetes Konto"
+      "parentId": "Übergeordnetes Konto",
+      "industry": "Branche",
+      "accounts": "Konten"
     },
     "details": {
       "when": "Wann",
@@ -822,7 +828,8 @@
       "parent_archived": "Dieses übergeordnete Konto ist archiviert. Stellen Sie es zuerst wieder her.",
       "parent_not_found": "Dieses übergeordnete Konto existiert nicht mehr.",
       "already_archived": "Dieses Konto ist bereits archiviert.",
-      "not_archived": "Dieses Konto ist nicht archiviert."
+      "not_archived": "Dieses Konto ist nicht archiviert.",
+      "chart_not_empty": "Vorlagen können nur auf einen leeren Kontenplan angewendet werden."
     },
     "validation": {
       "code": "Bis zu 12 Buchstaben, Ziffern, Punkte oder Bindestriche, z. B. 1100.",
@@ -830,6 +837,60 @@
       "subtype": "Wählen Sie einen Untertyp, der zu diesem Typ gehört.",
       "parentId": "Wählen Sie ein übergeordnetes Konto aus der Liste.",
       "description": "Bleiben Sie unter 500 Zeichen."
+    },
+    "templates": {
+      "title": "Mit einer Vorlage starten",
+      "description": "Wählen Sie Ihre Branche für einen fertigen Kontenplan. Jedes Konto lässt sich danach ändern.",
+      "previewTitle": "Vorlage {{industry}}",
+      "previewBody": "{{count}} Konten werden angelegt. Prüfen Sie sie und wenden Sie die Vorlage an.",
+      "back": "Zurück",
+      "apply": "Vorlage anwenden",
+      "applied": "{{count}} Konten angelegt",
+      "use": "Vorlage verwenden",
+      "bannerTitle": "Mit einem fertigen Kontenplan starten",
+      "bannerBody": "Wählen Sie Ihre Branche und erhalten Sie die Konten, die Unternehmen wie Ihres nutzen, in Ihrer Sprache."
+    },
+    "industries": {
+      "retail": {
+        "name": "Einzelhandel",
+        "description": "Lager, Vertriebskanäle, Wareneinsatz"
+      },
+      "services": {
+        "name": "Dienstleistungen",
+        "description": "Beratung, Agenturen, Freiberufler"
+      },
+      "manufacturing": {
+        "name": "Produktion",
+        "description": "Rohstoffe, unfertige Erzeugnisse, Fertigungskosten"
+      },
+      "healthcare": {
+        "name": "Gesundheitswesen",
+        "description": "Praxen, Kliniken, Apotheken"
+      },
+      "education": {
+        "name": "Bildung",
+        "description": "Schulen, Nachhilfezentren, Schulungen"
+      },
+      "nonprofit": {
+        "name": "Gemeinnützig",
+        "description": "Spenden, Zuschüsse, zweckgebundene Mittel"
+      },
+      "construction": {
+        "name": "Bauwesen",
+        "description": "Aufträge, Einbehalte, Subunternehmer"
+      },
+      "restaurant": {
+        "name": "Restaurants und Cafés",
+        "description": "Speisen- und Getränkeumsätze, Lieferplattformen"
+      },
+      "it_software": {
+        "name": "IT und Software",
+        "description": "Abonnements, passive Rechnungsabgrenzung, Cloud-Kosten"
+      },
+      "agriculture": {
+        "name": "Landwirtschaft",
+        "description": "Ernte, Vieh, Landmaschinen, Subventionen"
+      }
     }
   }
 }

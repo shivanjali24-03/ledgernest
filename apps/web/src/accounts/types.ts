@@ -1,4 +1,4 @@
-import type { AccountCreateInput, AccountSubtype, AccountType, AccountUpdateInput } from '@ledgernest/shared';
+import type { AccountCreateInput, AccountSubtype, AccountType, AccountUpdateInput, Industry, TemplateAccountView } from '@ledgernest/shared';
 
 export interface Account {
   id: string;
@@ -24,4 +24,6 @@ export interface AccountsApi {
   archive(id: string): Promise<Account>;
   restore(id: string): Promise<Account>;
   remove(id: string): Promise<void>;
+  previewTemplate(industry: Industry): Promise<TemplateAccountView[]>;
+  applyTemplate(industry: Industry): Promise<{ industry: Industry; created: number }>;
 }
