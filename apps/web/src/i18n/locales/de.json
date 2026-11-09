@@ -1343,6 +1343,33 @@
         "balanced": "Aktiva und Passiva stimmen überein",
         "notBalanced": "Aktiva und Passiva stimmen nicht überein"
       }
+    },
+    "cashFlow": {
+      "title": "Kapitalflussrechnung",
+      "method": "Methode",
+      "indirect": "Vom Ergebnis aus",
+      "direct": {
+        "customers": "Von Kunden erhalten",
+        "otherReceipts": "Sonstige Einzahlungen",
+        "vendors": "An Lieferanten und für Aufwand gezahlt",
+        "staff": "An Mitarbeitende gezahlt",
+        "taxes": "Gezahlte Steuern",
+        "otherPayments": "Sonstige Auszahlungen"
+      },
+      "operating": "Laufende Geschäftstätigkeit",
+      "investing": "Investitionstätigkeit",
+      "financing": "Finanzierungstätigkeit",
+      "netProfit": "Jahresergebnis",
+      "depreciation": "Plus Abschreibungen",
+      "changeIn": "Veränderung {{account}}",
+      "lessDepreciation": "Minus Abschreibungen (ohne Geldfluss)",
+      "fromOperating": "Cashflow aus laufender Geschäftstätigkeit",
+      "fromInvesting": "Cashflow aus Investitionstätigkeit",
+      "fromFinancing": "Cashflow aus Finanzierungstätigkeit",
+      "netChange": "Veränderung der liquiden Mittel",
+      "opening": "Liquide Mittel zu Beginn",
+      "closing": "Liquide Mittel am Ende",
+      "byPurpose": "Nach Zweck"
     }
   },
   "taxes": {

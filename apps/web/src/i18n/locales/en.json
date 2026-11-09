@@ -1343,6 +1343,33 @@
         "balanced": "Assets equal liabilities and equity",
         "notBalanced": "Assets don't equal liabilities and equity"
       }
+    },
+    "cashFlow": {
+      "title": "Cash flow",
+      "method": "Method",
+      "indirect": "From profit",
+      "direct": {
+        "customers": "Received from customers",
+        "otherReceipts": "Other money received",
+        "vendors": "Paid to vendors and for expenses",
+        "staff": "Paid to staff",
+        "taxes": "Taxes paid",
+        "otherPayments": "Other money paid"
+      },
+      "operating": "Operating activities",
+      "investing": "Investing activities",
+      "financing": "Financing activities",
+      "netProfit": "Net profit",
+      "depreciation": "Add back depreciation",
+      "changeIn": "Change in {{account}}",
+      "lessDepreciation": "Less depreciation (no cash moved)",
+      "fromOperating": "Cash from operating activities",
+      "fromInvesting": "Cash from investing activities",
+      "fromFinancing": "Cash from financing activities",
+      "netChange": "Net change in cash",
+      "opening": "Cash at the start",
+      "closing": "Cash at the end",
+      "byPurpose": "By what it was for"
     }
   },
   "taxes": {

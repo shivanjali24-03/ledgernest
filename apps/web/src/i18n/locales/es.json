@@ -1343,6 +1343,33 @@
         "balanced": "El activo cuadra con el pasivo y el patrimonio neto",
         "notBalanced": "El activo no cuadra con el pasivo y el patrimonio neto"
       }
+    },
+    "cashFlow": {
+      "title": "Flujo de caja",
+      "method": "Método",
+      "indirect": "Desde el resultado",
+      "direct": {
+        "customers": "Cobrado a clientes",
+        "otherReceipts": "Otros cobros",
+        "vendors": "Pagado a proveedores y gastos",
+        "staff": "Pagado al personal",
+        "taxes": "Impuestos pagados",
+        "otherPayments": "Otros pagos"
+      },
+      "operating": "Actividades de explotación",
+      "investing": "Actividades de inversión",
+      "financing": "Actividades de financiación",
+      "netProfit": "Resultado neto",
+      "depreciation": "Más amortización",
+      "changeIn": "Variación de {{account}}",
+      "lessDepreciation": "Menos amortización (sin movimiento de caja)",
+      "fromOperating": "Flujo de explotación",
+      "fromInvesting": "Flujo de inversión",
+      "fromFinancing": "Flujo de financiación",
+      "netChange": "Variación neta de caja",
+      "opening": "Caja al inicio",
+      "closing": "Caja al final",
+      "byPurpose": "Por concepto"
     }
   },
   "taxes": {

@@ -140,6 +140,22 @@ export interface Dashboard {
   setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean };
 }
 
+export interface CashFlowRow {
+  accountId: string;
+  code: string;
+  name: string;
+  amount: number;
+}
+export interface CashFlow {
+  from: string;
+  to: string;
+  openingCash: number;
+  closingCash: number;
+  netChange: number;
+  indirect: { netProfit: number; depreciation: number; workingCapital: CashFlowRow[]; operating: number; investingRows: CashFlowRow[]; investing: number; financingRows: CashFlowRow[]; financing: number; total: number };
+  direct: { customers: number; otherReceipts: number; vendors: number; staff: number; taxes: number; otherPayments: number; investing: number; financing: number; operating: number; total: number };
+}
+
 /** Reports. Live and demo both implement it. */
 export interface ReportsApi {
   trialBalance(asOf: string): Promise<TrialBalance>;
@@ -155,4 +171,6 @@ export interface ReportsApi {
   balanceSheet(asOf: string, compareAsOf: string | null): Promise<BalanceSheet>;
   exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
   dashboard(): Promise<Dashboard>;
+  cashFlow(from: string, to: string): Promise<CashFlow>;
+  exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
