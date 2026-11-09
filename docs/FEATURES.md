@@ -84,7 +84,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Fixed assets and depreciation | A register with straight-line or written-down-value depreciation run monthly, disposals with gain or loss, and the asset schedule | ✅ #127 |
 | Budgets | A plan per financial year by account and month, started from last year's actuals, another budget or blank, and budget against actual with variances | ✅ #129 |
 | Cost centres and projects | Journal, invoice, bill and bank lines tagged with a department or project; profit and loss by cost centre or for one | ✅ #131 |
-| Inventory | Stock items with quantities, valuation and cost of sales | Planned |
+| Inventory | Tracked goods bought on bills and sold on invoices at weighted average cost, cost of sales posted as stock leaves, adjustments with a reason, valuation beside the books | ✅ #134 |
 | Approval workflows | Bills and payments wait for approval above a set amount | Planned |
 | Document attachments | Receipts and files attached to entries, invoices and bills | Planned |
 | Data import | Contacts, items, accounts and opening balances from spreadsheets | Planned |

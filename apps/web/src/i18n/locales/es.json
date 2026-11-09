@@ -33,7 +33,8 @@
       "recurring": "Facturas recurrentes",
       "fixedAssets": "Activos fijos",
       "budgets": "Presupuestos",
-      "costCentres": "Centros de coste"
+      "costCentres": "Centros de coste",
+      "inventory": "Inventario"
     },
     "soon": "Pronto"
   },
@@ -2674,5 +2675,90 @@
     },
     "none": "Sin centro de coste",
     "lineLabel": "Centro de coste, línea {{n}}"
+  },
+  "inventory": {
+    "title": "Inventario",
+    "description": "Qué hay en existencias y cuánto vale a coste medio, cómo se movió cada artículo, y los ajustes.",
+    "adjust": "Ajustar existencias",
+    "asOf": "A fecha de",
+    "empty": "Aún no se controlan existencias",
+    "emptyBody": "Activa el control de existencias en un artículo de bienes para ver aquí su cantidad disponible.",
+    "goToItems": "Ir a artículos",
+    "valuation": "Valoración de existencias",
+    "columns": {
+      "item": "Artículo",
+      "onHand": "Disponible",
+      "averageCost": "Coste medio",
+      "value": "Valor",
+      "date": "Fecha",
+      "movement": "Movimiento",
+      "quantity": "Cantidad"
+    },
+    "total": "Valor total de existencias",
+    "agrees": "{{account}}: existencias {{stock}}, coincide con la contabilidad",
+    "differs": "{{account}}: existencias {{stock}}, pero la contabilidad dice {{ledger}}",
+    "movementsOf": "Movimientos de {{name}}",
+    "noMovements": "Aún no hay movimientos.",
+    "undo": "Deshacer",
+    "undoAdjustment": "Deshacer el ajuste del {{date}}",
+    "undoneToast": "Ajuste deshecho",
+    "kinds": {
+      "bill": "Factura de proveedor",
+      "bill_void": "Factura de proveedor anulada",
+      "invoice": "Factura",
+      "invoice_void": "Factura anulada",
+      "adjustment": "Ajuste",
+      "adjustment_undo": "Ajuste deshecho"
+    },
+    "onHandPill": "Disponible: {{quantity}} {{unit}}",
+    "track": "Controlar existencias",
+    "trackHint": "Lleva la cantidad disponible: las facturas de proveedor la suben, las facturas la bajan a coste medio contra el coste de ventas.",
+    "fields": {
+      "inventoryAccount": "Cuenta de existencias",
+      "cogsAccount": "Cuenta de coste de ventas",
+      "item": "Artículo",
+      "direction": "Cambio",
+      "date": "Fecha",
+      "quantity": "Cantidad",
+      "unitCost": "Coste de una unidad ({{currency}})",
+      "account": "Otra cuenta",
+      "reason": "Motivo"
+    },
+    "chooseAccount": "Elige una cuenta",
+    "adjustTitle": "Ajustar existencias",
+    "adjustBody": "Registra entradas (existencias iniciales, encontradas) o salidas (dañadas, perdidas, uso interno). El valor va a la cuenta que elijas.",
+    "noTracked": "Ningún artículo controla existencias aún",
+    "onHandHint": "Disponible: {{quantity}}, por valor de {{value}}",
+    "directions": {
+      "in": "Entrada",
+      "out": "Salida"
+    },
+    "unitCostHint": "Déjalo vacío para usar el coste medio actual.",
+    "reasonInExample": "p. ej. Existencias iniciales",
+    "reasonOutExample": "p. ej. Dañado en el almacén",
+    "addedToast": "{{quantity}} de {{item}} añadidos",
+    "writtenOffToast": "{{quantity}} de {{item}} dados de baja",
+    "problems": {
+      "item": "Elige un artículo.",
+      "quantity": "Introduce una cantidad mayor que cero, con hasta 4 decimales.",
+      "unitCost": "Introduce el coste de una unidad.",
+      "account": "Elige la otra cuenta.",
+      "reason": "Indica por qué cambiaron las existencias."
+    },
+    "errors": {
+      "insufficient_stock": "No hay existencias suficientes: solo {{onHand}} disponibles.",
+      "stock_used": "Parte de estas existencias ya se vendió o se dio de baja, así que no pueden volver.",
+      "not_tracked": "Este artículo no controla existencias.",
+      "account_invalid": "Elige otra cuenta para la contrapartida.",
+      "unit_cost_required": "No hay existencias de las que tomar el coste. Introduce el coste de una unidad.",
+      "already_undone": "Este ajuste ya se deshizo.",
+      "stock_moved": "Este artículo tiene movimientos de existencias, así que su control y su cuenta de existencias ya no pueden cambiar.",
+      "not_goods": "Solo los bienes tienen existencias.",
+      "inventory_account_required": "Elige la cuenta de existencias donde están.",
+      "cogs_account_required": "Elige la cuenta de coste de ventas a la que van al venderse.",
+      "inventory_account_type": "Las existencias van en una cuenta de activo.",
+      "cogs_account_type": "El coste de lo vendido va a una cuenta de gasto.",
+      "in_use": "Facturas, facturas de proveedor o movimientos usan este artículo. Archívalo en su lugar."
+    }
   }
 }

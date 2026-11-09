@@ -33,7 +33,8 @@
       "recurring": "Wiederkehrende Rechnungen",
       "fixedAssets": "Anlagevermögen",
       "budgets": "Budgets",
-      "costCentres": "Kostenstellen"
+      "costCentres": "Kostenstellen",
+      "inventory": "Lager"
     },
     "soon": "Bald"
   },
@@ -2674,5 +2675,90 @@
     },
     "none": "Keine Kostenstelle",
     "lineLabel": "Kostenstelle, Zeile {{n}}"
+  },
+  "inventory": {
+    "title": "Lager",
+    "description": "Was auf Lager ist und was es zu Durchschnittskosten wert ist, wie sich jeder Artikel bewegt hat, und Anpassungen.",
+    "adjust": "Bestand anpassen",
+    "asOf": "Stichtag",
+    "empty": "Noch kein Bestand geführt",
+    "emptyBody": "Schalten Sie für einen Warenartikel die Bestandsführung ein, um hier seinen Bestand zu sehen.",
+    "goToItems": "Zu den Artikeln",
+    "valuation": "Bestandsbewertung",
+    "columns": {
+      "item": "Artikel",
+      "onHand": "Bestand",
+      "averageCost": "Durchschnittskosten",
+      "value": "Wert",
+      "date": "Datum",
+      "movement": "Bewegung",
+      "quantity": "Menge"
+    },
+    "total": "Gesamtwert des Bestands",
+    "agrees": "{{account}}: Bestand {{stock}} stimmt mit der Buchhaltung überein",
+    "differs": "{{account}}: Bestand {{stock}}, aber die Buchhaltung zeigt {{ledger}}",
+    "movementsOf": "Bewegungen von {{name}}",
+    "noMovements": "Noch keine Bewegungen.",
+    "undo": "Rückgängig",
+    "undoAdjustment": "Anpassung vom {{date}} rückgängig machen",
+    "undoneToast": "Anpassung rückgängig gemacht",
+    "kinds": {
+      "bill": "Eingangsrechnung",
+      "bill_void": "Eingangsrechnung storniert",
+      "invoice": "Rechnung",
+      "invoice_void": "Rechnung storniert",
+      "adjustment": "Anpassung",
+      "adjustment_undo": "Anpassung rückgängig"
+    },
+    "onHandPill": "Bestand: {{quantity}} {{unit}}",
+    "track": "Bestand führen",
+    "trackHint": "Den Bestand führen: Eingangsrechnungen erhöhen ihn, Rechnungen buchen ihn zu Durchschnittskosten in den Wareneinsatz.",
+    "fields": {
+      "inventoryAccount": "Bestandskonto",
+      "cogsAccount": "Konto Wareneinsatz",
+      "item": "Artikel",
+      "direction": "Richtung",
+      "date": "Datum",
+      "quantity": "Menge",
+      "unitCost": "Kosten je Einheit ({{currency}})",
+      "account": "Gegenkonto",
+      "reason": "Grund"
+    },
+    "chooseAccount": "Konto wählen",
+    "adjustTitle": "Bestand anpassen",
+    "adjustBody": "Bestand zubuchen (Anfangsbestand, gefunden) oder abbuchen (beschädigt, verloren, Eigenverbrauch). Der Wert geht auf das gewählte Konto.",
+    "noTracked": "Noch kein Artikel führt Bestand",
+    "onHandHint": "Bestand: {{quantity}}, Wert {{value}}",
+    "directions": {
+      "in": "Zugang",
+      "out": "Abgang"
+    },
+    "unitCostHint": "Leer lassen, um die aktuellen Durchschnittskosten zu verwenden.",
+    "reasonInExample": "z. B. Anfangsbestand",
+    "reasonOutExample": "z. B. Im Lager beschädigt",
+    "addedToast": "{{quantity}} von {{item}} zugebucht",
+    "writtenOffToast": "{{quantity}} von {{item}} ausgebucht",
+    "problems": {
+      "item": "Wählen Sie einen Artikel.",
+      "quantity": "Geben Sie eine Menge über null mit bis zu 4 Nachkommastellen ein.",
+      "unitCost": "Geben Sie die Kosten je Einheit ein.",
+      "account": "Wählen Sie das Gegenkonto.",
+      "reason": "Geben Sie den Grund der Änderung an."
+    },
+    "errors": {
+      "insufficient_stock": "Nicht genug auf Lager: nur {{onHand}} vorhanden.",
+      "stock_used": "Ein Teil dieses Bestands wurde inzwischen verkauft oder ausgebucht und kann nicht zurück.",
+      "not_tracked": "Für diesen Artikel wird kein Bestand geführt.",
+      "account_invalid": "Wählen Sie ein anderes Gegenkonto.",
+      "unit_cost_required": "Kein Bestand vorhanden, aus dem die Kosten kommen könnten. Geben Sie die Kosten je Einheit ein.",
+      "already_undone": "Diese Anpassung wurde bereits rückgängig gemacht.",
+      "stock_moved": "Dieser Artikel hat Bestandsbewegungen: Bestandsführung und Bestandskonto können nicht mehr geändert werden.",
+      "not_goods": "Nur Waren haben einen Bestand.",
+      "inventory_account_required": "Wählen Sie das Bestandskonto, auf dem der Bestand steht.",
+      "cogs_account_required": "Wählen Sie das Konto für den Wareneinsatz beim Verkauf.",
+      "inventory_account_type": "Bestand steht auf einem Aktivkonto.",
+      "cogs_account_type": "Der Wareneinsatz geht auf ein Aufwandskonto.",
+      "in_use": "Rechnungen, Eingangsrechnungen oder Bestandsbewegungen verwenden diesen Artikel. Archivieren Sie ihn stattdessen."
+    }
   }
 }

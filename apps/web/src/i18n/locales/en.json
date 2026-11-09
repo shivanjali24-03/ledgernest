@@ -33,7 +33,8 @@
       "recurring": "Recurring invoices",
       "fixedAssets": "Fixed assets",
       "budgets": "Budgets",
-      "costCentres": "Cost centres"
+      "costCentres": "Cost centres",
+      "inventory": "Inventory"
     },
     "soon": "Soon"
   },
@@ -2674,5 +2675,90 @@
     },
     "none": "No cost centre",
     "lineLabel": "Cost centre, line {{n}}"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "description": "What’s in stock and what it’s worth at average cost, how each item moved, and adjustments.",
+    "adjust": "Adjust stock",
+    "asOf": "As of",
+    "empty": "No stock tracked yet",
+    "emptyBody": "Turn on stock tracking for a goods item to keep its quantity on hand here.",
+    "goToItems": "Go to items",
+    "valuation": "Stock valuation",
+    "columns": {
+      "item": "Item",
+      "onHand": "On hand",
+      "averageCost": "Average cost",
+      "value": "Value",
+      "date": "Date",
+      "movement": "Movement",
+      "quantity": "Quantity"
+    },
+    "total": "Total stock value",
+    "agrees": "{{account}}: stock {{stock}} agrees with the books",
+    "differs": "{{account}}: stock {{stock}}, but the books say {{ledger}}",
+    "movementsOf": "Movements of {{name}}",
+    "noMovements": "Nothing has moved yet.",
+    "undo": "Undo",
+    "undoAdjustment": "Undo the adjustment of {{date}}",
+    "undoneToast": "Adjustment undone",
+    "kinds": {
+      "bill": "Bill",
+      "bill_void": "Bill voided",
+      "invoice": "Invoice",
+      "invoice_void": "Invoice voided",
+      "adjustment": "Adjustment",
+      "adjustment_undo": "Adjustment undone"
+    },
+    "onHandPill": "On hand: {{quantity}} {{unit}}",
+    "track": "Track stock",
+    "trackHint": "Keep the quantity on hand: bills bring it in, invoices take it out at average cost to cost of sales.",
+    "fields": {
+      "inventoryAccount": "Inventory account",
+      "cogsAccount": "Cost of sales account",
+      "item": "Item",
+      "direction": "Change",
+      "date": "Date",
+      "quantity": "Quantity",
+      "unitCost": "Cost of one ({{currency}})",
+      "account": "Other account",
+      "reason": "Reason"
+    },
+    "chooseAccount": "Choose an account",
+    "adjustTitle": "Adjust stock",
+    "adjustBody": "Count stock in (opening stock, found) or out (damaged, lost, used in-house). The value goes to the account you choose.",
+    "noTracked": "No items track stock yet",
+    "onHandHint": "On hand: {{quantity}}, worth {{value}}",
+    "directions": {
+      "in": "Stock in",
+      "out": "Stock out"
+    },
+    "unitCostHint": "Leave empty to use the current average cost.",
+    "reasonInExample": "e.g. Opening stock",
+    "reasonOutExample": "e.g. Damaged in the warehouse",
+    "addedToast": "{{quantity}} of {{item}} added",
+    "writtenOffToast": "{{quantity}} of {{item}} written off",
+    "problems": {
+      "item": "Choose an item.",
+      "quantity": "Enter a quantity above zero, with up to 4 decimal places.",
+      "unitCost": "Enter what one unit cost.",
+      "account": "Choose the other account.",
+      "reason": "Say why the stock changed."
+    },
+    "errors": {
+      "insufficient_stock": "Not enough in stock: only {{onHand}} on hand.",
+      "stock_used": "Some of this stock has been sold or written off since, so it can’t go back.",
+      "not_tracked": "This item’s stock isn’t tracked.",
+      "account_invalid": "Choose another account for the other side.",
+      "unit_cost_required": "There’s none in stock to take the cost from. Enter what one cost.",
+      "already_undone": "This adjustment has already been undone.",
+      "stock_moved": "This item has stock movements, so its stock tracking and inventory account can’t change now.",
+      "not_goods": "Only goods have stock to track.",
+      "inventory_account_required": "Choose the inventory account the stock sits in.",
+      "cogs_account_required": "Choose the cost of sales account stock goes to as it sells.",
+      "inventory_account_type": "Stock sits in an asset account.",
+      "cogs_account_type": "The cost of stock sold goes to an expense account.",
+      "in_use": "Invoices, bills or stock movements use this item. Archive it instead."
+    }
   }
 }

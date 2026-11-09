@@ -17,6 +17,14 @@ export interface Item {
   expenseAccountId: string | null;
   incomeAccount: { id: string; code: string; name: string } | null;
   expenseAccount: { id: string; code: string; name: string } | null;
+  /** Goods whose quantity on hand is kept, at average cost */
+  trackStock: boolean;
+  inventoryAccountId: string | null;
+  cogsAccountId: string | null;
+  inventoryAccount: { id: string; code: string; name: string } | null;
+  cogsAccount: { id: string; code: string; name: string } | null;
+  /** For tracked goods: what's on hand, its value and average unit cost */
+  stock: { onHand: string; value: number; averageCost: number | null } | null;
   archived: boolean;
 }
 

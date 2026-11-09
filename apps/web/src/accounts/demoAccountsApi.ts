@@ -40,6 +40,7 @@ function seed(): Stored[] {
   add('1400.02', 'SGST input', 'asset', 'current_asset', '1400');
   add('1400.03', 'IGST input', 'asset', 'current_asset', '1400');
   add('1500', 'TDS receivable', 'asset', 'current_asset');
+  add('1600', 'Stock in trade', 'asset', 'inventory', undefined, { description: 'Accessories bought to resell to clients.' });
   add('1700', 'Fixed assets', 'asset', 'fixed_asset');
   add('1710', 'Computers and laptops', 'asset', 'fixed_asset', '1700');
   add('1720', 'Furniture and fixtures', 'asset', 'fixed_asset', '1700');
@@ -61,6 +62,7 @@ function seed(): Stored[] {
   add('4100.02', 'Export clients', 'income', 'operating_income', '4100');
   add('4200', 'Annual maintenance contracts', 'income', 'operating_income');
   add('4800', 'Interest income', 'income', 'other_income');
+  add('5050', 'Cost of goods sold', 'expense', 'cost_of_sales');
   add('5100', 'Cloud hosting', 'expense', 'cost_of_sales');
   add('5200', 'Salaries and wages', 'expense', 'payroll');
   add('5200.01', 'Salaries', 'expense', 'payroll', '5200');

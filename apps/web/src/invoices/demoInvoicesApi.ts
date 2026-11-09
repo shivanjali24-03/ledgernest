@@ -1,5 +1,6 @@
 import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -327,11 +328,14 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
           i.currency ? { accountId: receivable.id, description: label, currency: i.currency, foreignDebit: v.total, rate: rate! } : { accountId: receivable.id, description: label, debit: v.total },
           ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null), costCentreId: l.costCentre?.id ?? null })),
         ];
-        const draft = await journals.create({ date: i.issueDate, memo: `Invoice ${label} · ${v.contact.name}`, reference: label, lines });
+        // Tracked goods leave stock at their average cost, to cost of sales
+        const cost = demoCostOfSale(v.lines.map((l) => ({ itemId: l.item?.id ?? null, quantity: l.quantity, costCentreId: l.costCentre?.id ?? null })));
+        const draft = await journals.create({ date: i.issueDate, memo: `Invoice ${label} · ${v.contact.name}`, reference: label, lines: [...lines, ...cost.journal] });
         const posted = await journals.post(draft.id).catch(async (e: unknown) => {
           await journals.remove(draft.id);
           throw e;
         });
+        demoSaveMovements('invoice', i.id, i.issueDate, posted.id, cost.movements);
         Object.assign(i, { status: 'issued', number, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
         save(rows);
         return view(i);
@@ -344,6 +348,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         if (i.status !== 'issued') throw refuse(409, 'not_issued');
         if (i.amountPaid > 0) throw refuse(409, 'has_payments');
         const r = await createDemoJournalsApi(() => true).reverse(i.journalEntryId!, { date: input.date ?? today(), memo: `Invoice voided${input.reason ? `: ${input.reason}` : ''}` });
+        demoUndoDocument('invoice', i.id, input.date ?? today(), r.id);
         Object.assign(i, { status: 'void', voidEntryId: r.id, voidNumber: r.number });
         save(rows);
         return view(i);
