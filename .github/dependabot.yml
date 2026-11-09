@@ -6,6 +6,13 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     target-branch: develop
+    ignore:
+      # TypeScript 7.0 ships no compiler API, which the Nest CLI needs; it returns in 7.1
+      - dependency-name: typescript
+        versions: ['7.0.x']
+      # Types follow the Node.js version we run (22 on CI and Render), not the newest one
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
