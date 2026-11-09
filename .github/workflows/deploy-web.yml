@@ -53,8 +53,8 @@ jobs:
             local branch="$1" dir="$2" api="$3" tree="$RUNNER_TEMP/tree-$1-${2:-root}"
             git worktree add --detach "$tree" "origin/$branch"
             mkdir -p "$SITE/$dir"
-            if [ ! -f "$tree/packages/shared/package.json" ]; then
-              # This branch hasn't had its first release yet
+            if ! grep -q BASE_PATH "$tree/apps/web/vite.config.ts" 2>/dev/null; then
+              # This branch hasn't had its first release yet: its web app can't be served from a sub-path
               cp .github/pages/not-released.html "$SITE/$dir/index.html"
               echo "Skipped $branch → /ledgernest/${dir:+$dir/} (not released yet)"
               return
