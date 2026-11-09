@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module.js';
 import { InvitationsModule } from './invitations/invitations.module.js';
 import { OrganizationModule } from './organization/organization.module.js';
 import { AccountsModule } from './accounts/accounts.module.js';
+import { PeriodsModule } from './periods/periods.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -27,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     InvitationsModule,
     OrganizationModule,
     AccountsModule,
+    PeriodsModule,
     PlatformModule,
   ],
   providers: [

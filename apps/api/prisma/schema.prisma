@@ -40,6 +40,7 @@ model User {
   invitesSent   Invitation[]   @relation("InvitedBy")
   auditEntries  AuditLog[]
   refreshTokens RefreshToken[]
+  periodsClosed Period[]       @relation("PeriodClosedBy")
 
   @@map("users")
 }
@@ -74,6 +75,8 @@ model Organization {
   auditEntries AuditLog[]
   logo         OrganizationLogo?
   accounts     Account[]
+  fiscalYears  FiscalYear[]
+  periods      Period[]
 
   @@map("organizations")
 }
@@ -116,6 +119,46 @@ model Account {
   @@unique([organizationId, systemKey])
   @@index([organizationId, parentId])
   @@map("accounts")
+}
+
+/// A financial year, split into monthly periods. Years follow on from each other without gaps.
+model FiscalYear {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String /// e.g. FY 2026–27
+  startDate      DateTime @map("start_date") @db.Date
+  endDate        DateTime @map("end_date") @db.Date
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  periods      Period[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, startDate])
+  @@map("fiscal_years")
+}
+
+/// A month of a financial year. A closed period accepts no new, changed or reversed entries.
+model Period {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  fiscalYearId   String    @map("fiscal_year_id") @db.Uuid
+  number         Int /// 1–12 within the year
+  startDate      DateTime  @map("start_date") @db.Date
+  endDate        DateTime  @map("end_date") @db.Date
+  status         String    @default("open") /// open | closed
+  closedAt       DateTime? @map("closed_at")
+  closedById     String?   @map("closed_by_id") @db.Uuid
+  closeReason    String?   @map("close_reason")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Composite key: a period always belongs to a year of the same organisation
+  fiscalYear   FiscalYear   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: Cascade)
+  closedBy     User?        @relation("PeriodClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+
+  @@unique([fiscalYearId, number])
+  @@index([organizationId, startDate])
+  @@map("periods")
 }
 
 /// A custom role defined by an organisation. Built-in roles live in @ledgernest/shared, not here.
