@@ -564,7 +564,8 @@
       "banking": "Banque",
       "assets": "Immobilisations",
       "budgets": "Budgets",
-      "costCentres": "Centres de coûts"
+      "costCentres": "Centres de coûts",
+      "inventory": "Stocks"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "Centre de coûts modifié",
       "org_cost_centre_archive": "Centre de coûts archivé",
       "org_cost_centre_restore": "Centre de coûts restauré",
-      "org_cost_centre_delete": "Centre de coûts supprimé"
+      "org_cost_centre_delete": "Centre de coûts supprimé",
+      "org_stock_adjust": "Stock ajusté",
+      "org_stock_adjust_undo": "Ajustement de stock annulé"
     },
     "entities": {
       "membership": "Membre",

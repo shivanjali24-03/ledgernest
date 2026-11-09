@@ -913,6 +913,17 @@ export class JournalsService {
           'document_entry',
           { assetId: asset?.id, depreciationRunId: run?.id },
         );
+      if (
+        await tx.stockMovement.findFirst({
+          where: { organizationId, journalEntryId: id },
+          select: { id: true },
+        })
+      )
+        throw refuse(
+          ConflictException,
+          'This entry belongs to a stock adjustment. Undo it under Inventory instead.',
+          'document_entry',
+        );
       const banked = await tx.bankTransaction.findFirst({
         where: {
           organizationId,

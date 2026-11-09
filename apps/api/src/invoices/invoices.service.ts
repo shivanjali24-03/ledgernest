@@ -28,6 +28,7 @@ import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -199,6 +200,7 @@ export class InvoicesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
+    private readonly inventory: InventoryService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -990,6 +992,16 @@ export class InvoicesService {
           });
       }
       const contactName = i.contact.name;
+      // Tracked goods leave stock at their average cost, to cost of sales
+      const cost = await this.inventory.costOfSale(
+        tx,
+        organizationId,
+        p.lines.map((l) => ({
+          itemId: l.itemId,
+          quantity: l.quantity,
+          costCentreId: l.costCentreId ?? null,
+        })),
+      );
       const entry = await this.journals.postEntryInTx(
         tx,
         organizationId,
@@ -997,9 +1009,21 @@ export class InvoicesService {
           date: issueDate,
           memo: `Invoice ${label} · ${contactName}`,
           reference: label,
-          lines,
+          lines: [...lines, ...cost.journal],
         },
         ctx.actor.userId,
+      );
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'invoice',
+          sourceId: id,
+          date: issueDate,
+          journalEntryId: entry.id,
+          actorId: ctx.actor.userId,
+        },
+        cost.movements,
       );
       await tx.invoice.update({
         where: { id },
@@ -1065,6 +1089,15 @@ export class InvoicesService {
           date: input.date ?? today,
           memo: `Invoice ${label} voided${input.reason ? `: ${input.reason}` : ''}`,
         },
+      );
+      await this.inventory.undoDocument(
+        tx,
+        organizationId,
+        'invoice',
+        id,
+        input.date ?? today,
+        r.id,
+        ctx.actor.userId,
       );
       await tx.invoice.update({
         where: { id },

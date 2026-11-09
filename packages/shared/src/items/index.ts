@@ -48,6 +48,12 @@ const fields = {
   incomeAccountId: z.uuid().nullable(),
   /** Where purchases of it go (an expense or asset account) */
   expenseAccountId: z.uuid().nullable(),
+  /** Goods whose quantity on hand is kept: bought into the inventory account, sold at average cost */
+  trackStock: z.boolean(),
+  /** The inventory (asset) account the stock sits in */
+  inventoryAccountId: z.uuid().nullable(),
+  /** The cost of sales account stock goes to as it's sold */
+  cogsAccountId: z.uuid().nullable(),
 };
 
 export const itemCreateSchema = z.object({
@@ -62,6 +68,9 @@ export const itemCreateSchema = z.object({
   hsnSac: fields.hsnSac.optional().default(null),
   incomeAccountId: fields.incomeAccountId.optional().default(null),
   expenseAccountId: fields.expenseAccountId.optional().default(null),
+  trackStock: fields.trackStock.optional().default(false),
+  inventoryAccountId: fields.inventoryAccountId.optional().default(null),
+  cogsAccountId: fields.cogsAccountId.optional().default(null),
 });
 export type ItemCreateInput = z.input<typeof itemCreateSchema>;
 

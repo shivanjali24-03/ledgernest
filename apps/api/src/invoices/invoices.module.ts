@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { InventoryModule } from '../inventory/inventory.module.js';
 import { JournalsModule } from '../journals/journals.module.js';
 import { InvoicesController } from './invoices.controller.js';
 import { InvoicesService } from './invoices.service.js';
 
 @Module({
-  imports: [JournalsModule],
+  imports: [JournalsModule, InventoryModule],
   controllers: [InvoicesController],
   providers: [InvoicesService],
   exports: [InvoicesService],

@@ -564,7 +564,8 @@
       "banking": "الخدمات المصرفية",
       "assets": "الأصول الثابتة",
       "budgets": "الموازنات",
-      "costCentres": "مراكز التكلفة"
+      "costCentres": "مراكز التكلفة",
+      "inventory": "المخزون"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "تم تعديل مركز تكلفة",
       "org_cost_centre_archive": "تمت أرشفة مركز تكلفة",
       "org_cost_centre_restore": "تمت استعادة مركز تكلفة",
-      "org_cost_centre_delete": "تم حذف مركز تكلفة"
+      "org_cost_centre_delete": "تم حذف مركز تكلفة",
+      "org_stock_adjust": "تمت تسوية المخزون",
+      "org_stock_adjust_undo": "تم التراجع عن تسوية المخزون"
     },
     "entities": {
       "membership": "عضو",
