@@ -539,7 +539,8 @@
       "gstSlabs": "जीएसटी स्लॅब",
       "currencies": "चलने",
       "contacts": "ग्राहक आणि विक्रेते",
-      "items": "उत्पादने आणि सेवा"
+      "items": "उत्पादने आणि सेवा",
+      "invoices": "बीजके"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -617,7 +618,12 @@
       "org_item_update": "आयटम संपादित",
       "org_item_archive": "आयटम संग्रहित",
       "org_item_restore": "आयटम पुनर्संचयित",
-      "org_item_delete": "आयटम हटवला"
+      "org_item_delete": "आयटम हटवला",
+      "org_invoice_create": "बीजकाचा मसुदा तयार",
+      "org_invoice_update": "बीजक मसुदा संपादित",
+      "org_invoice_delete": "बीजक मसुदा हटवला",
+      "org_invoice_issue": "बीजक जारी केले",
+      "org_invoice_void": "बीजक रद्द केले"
     },
     "entities": {
       "membership": "सदस्य",
@@ -634,7 +640,8 @@
       "gst_slab": "जीएसटी स्लॅब",
       "currency": "चलन",
       "contact": "संपर्क",
-      "item": "आयटम"
+      "item": "आयटम",
+      "invoice": "बीजक"
     },
     "fields": {
       "user": "व्यक्ती",

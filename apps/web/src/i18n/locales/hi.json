@@ -539,7 +539,8 @@
       "gstSlabs": "जीएसटी स्लैब",
       "currencies": "मुद्राएँ",
       "contacts": "ग्राहक और विक्रेता",
-      "items": "उत्पाद और सेवाएँ"
+      "items": "उत्पाद और सेवाएँ",
+      "invoices": "चालान"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -617,7 +618,12 @@
       "org_item_update": "आइटम संपादित",
       "org_item_archive": "आइटम संग्रहित",
       "org_item_restore": "आइटम बहाल",
-      "org_item_delete": "आइटम हटाया गया"
+      "org_item_delete": "आइटम हटाया गया",
+      "org_invoice_create": "चालान का ड्राफ़्ट बना",
+      "org_invoice_update": "चालान ड्राफ़्ट संपादित",
+      "org_invoice_delete": "चालान ड्राफ़्ट हटाया गया",
+      "org_invoice_issue": "चालान जारी किया गया",
+      "org_invoice_void": "चालान रद्द किया गया"
     },
     "entities": {
       "membership": "सदस्य",
@@ -634,7 +640,8 @@
       "gst_slab": "जीएसटी स्लैब",
       "currency": "मुद्रा",
       "contact": "संपर्क",
-      "item": "आइटम"
+      "item": "आइटम",
+      "invoice": "चालान"
     },
     "fields": {
       "user": "व्यक्ति",
