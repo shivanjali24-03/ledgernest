@@ -535,7 +535,8 @@
       "journals": "Écritures",
       "taxes": "Taxes",
       "gstSlabs": "Tranches de GST",
-      "currencies": "Devises"
+      "currencies": "Devises",
+      "contacts": "Clients et fournisseurs"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -603,7 +604,12 @@
       "org_currency_remove": "Devise retirée",
       "org_exchange_rate_set": "Taux de change défini",
       "org_exchange_rate_remove": "Taux de change supprimé",
-      "org_exchange_rate_fetch": "Taux de change récupérés"
+      "org_exchange_rate_fetch": "Taux de change récupérés",
+      "org_contact_create": "Contact ajouté",
+      "org_contact_update": "Contact modifié",
+      "org_contact_archive": "Contact archivé",
+      "org_contact_restore": "Contact restauré",
+      "org_contact_delete": "Contact supprimé"
     },
     "entities": {
       "membership": "Membre",
@@ -618,7 +624,8 @@
       "tax_rate": "Taux de taxe",
       "tax_group": "Groupe de taxes",
       "gst_slab": "Tranche de GST",
-      "currency": "Devise"
+      "currency": "Devise",
+      "contact": "Contact"
     },
     "fields": {
       "user": "Personne",
@@ -694,7 +701,13 @@
       "requested": "Jour demandé",
       "saved": "Enregistrés",
       "keptManual": "Conservés (saisis à la main)",
-      "unsupported": "Non couverts"
+      "unsupported": "Non couverts",
+      "isCustomer": "Client",
+      "isVendor": "Fournisseur",
+      "billingAddress": "Adresse de facturation",
+      "shippingAddress": "Adresse de livraison",
+      "paymentTermsDays": "Délai de paiement (jours)",
+      "notes": "Notes"
     },
     "details": {
       "when": "Quand",

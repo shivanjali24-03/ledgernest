@@ -535,7 +535,8 @@
       "journals": "Buchungen",
       "taxes": "Steuern",
       "gstSlabs": "GST-Sätze",
-      "currencies": "Währungen"
+      "currencies": "Währungen",
+      "contacts": "Kunden und Lieferanten"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -603,7 +604,12 @@
       "org_currency_remove": "Währung entfernt",
       "org_exchange_rate_set": "Wechselkurs festgelegt",
       "org_exchange_rate_remove": "Wechselkurs entfernt",
-      "org_exchange_rate_fetch": "Wechselkurse abgerufen"
+      "org_exchange_rate_fetch": "Wechselkurse abgerufen",
+      "org_contact_create": "Kontakt hinzugefügt",
+      "org_contact_update": "Kontakt bearbeitet",
+      "org_contact_archive": "Kontakt archiviert",
+      "org_contact_restore": "Kontakt wiederhergestellt",
+      "org_contact_delete": "Kontakt gelöscht"
     },
     "entities": {
       "membership": "Mitglied",
@@ -618,7 +624,8 @@
       "tax_rate": "Steuersatz",
       "tax_group": "Steuergruppe",
       "gst_slab": "GST-Satz",
-      "currency": "Währung"
+      "currency": "Währung",
+      "contact": "Kontakt"
     },
     "fields": {
       "user": "Person",
@@ -694,7 +701,13 @@
       "requested": "Angefragter Tag",
       "saved": "Gespeichert",
       "keptManual": "Behalten (von Hand eingegeben)",
-      "unsupported": "Nicht abgedeckt"
+      "unsupported": "Nicht abgedeckt",
+      "isCustomer": "Kunde",
+      "isVendor": "Lieferant",
+      "billingAddress": "Rechnungsadresse",
+      "shippingAddress": "Lieferadresse",
+      "paymentTermsDays": "Zahlungsziel (Tage)",
+      "notes": "Notizen"
     },
     "details": {
       "when": "Wann",

@@ -7,7 +7,7 @@ import { currentOrganizationId } from './tenant-context.js';
  * automatically. A test fails if a model with an `organizationId` column is missing here
  * and not listed in TENANT_EXEMPT.
  */
-export const TENANT_MODELS = new Set<string>(['Role', 'Membership', 'Invitation', 'OrganizationLogo', 'Account', 'FiscalYear', 'Period', 'JournalEntry', 'JournalLine', 'JournalAttachment', 'TaxRate', 'TaxGroup', 'TaxGroupRate', 'OrganizationCurrency', 'ExchangeRate']);
+export const TENANT_MODELS = new Set<string>(['Role', 'Membership', 'Invitation', 'OrganizationLogo', 'Account', 'FiscalYear', 'Period', 'JournalEntry', 'JournalLine', 'JournalAttachment', 'TaxRate', 'TaxGroup', 'TaxGroupRate', 'OrganizationCurrency', 'ExchangeRate', 'Contact']);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */
 export const TENANT_EXEMPT: Record<string, string> = {
