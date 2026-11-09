@@ -10,6 +10,8 @@ export const AUDIT_ACTION_GROUPS = {
   accounts: ['org.account.'],
   periods: ['org.fiscal_year.', 'org.period.'],
   journals: ['org.journal.'],
+  taxes: ['org.tax_'],
+  gstSlabs: ['platform.gst_slab.'],
   supportAccess: ['platform.support_access'],
   organizations: ['platform.organization.'],
   platformUsers: ['platform.user.', 'platform.superadmin.'],
@@ -18,7 +20,7 @@ export const AUDIT_ACTION_GROUPS = {
 export type AuditActionGroup = keyof typeof AUDIT_ACTION_GROUPS;
 
 /** Groups that make sense inside one organisation (sign-ins and platform admin actions are platform-wide). */
-export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['journals', 'accounts', 'periods', 'members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
+export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['journals', 'accounts', 'periods', 'taxes', 'members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
 
 export const AUDIT_PAGE_SIZE = 50;
 export const AUDIT_EXPORT_LIMIT = 10_000;

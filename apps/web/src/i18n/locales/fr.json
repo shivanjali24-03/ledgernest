@@ -529,7 +529,9 @@
       "settings": "Paramètres",
       "accounts": "Comptes",
       "periods": "Exercices",
-      "journals": "Écritures"
+      "journals": "Écritures",
+      "taxes": "Taxes",
+      "gstSlabs": "Tranches de GST"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -578,7 +580,19 @@
       "org_journal_post": "Écriture validée",
       "org_journal_reverse": "Écriture contrepassée",
       "org_journal_attach": "Pièce jointe ajoutée",
-      "org_journal_detach": "Pièce jointe retirée"
+      "org_journal_detach": "Pièce jointe retirée",
+      "org_tax_rate_create": "Taux de taxe ajouté",
+      "org_tax_rate_update": "Taux de taxe modifié",
+      "org_tax_rate_archive": "Taux de taxe archivé",
+      "org_tax_rate_restore": "Taux de taxe restauré",
+      "org_tax_group_create": "Groupe de taxes ajouté",
+      "org_tax_group_update": "Groupe de taxes renommé",
+      "org_tax_group_archive": "Groupe de taxes archivé",
+      "org_tax_group_restore": "Groupe de taxes restauré",
+      "org_tax_setup_gst": "GST configurée",
+      "platform_gst_slab_create": "Tranche de GST ajoutée",
+      "platform_gst_slab_update": "Tranche de GST modifiée",
+      "platform_gst_slab_delete": "Tranche de GST supprimée"
     },
     "entities": {
       "membership": "Membre",
@@ -589,7 +603,10 @@
       "account": "Compte",
       "fiscal_year": "Exercice",
       "period": "Mois",
-      "journal": "Écriture"
+      "journal": "Écriture",
+      "tax_rate": "Taux de taxe",
+      "tax_group": "Groupe de taxes",
+      "gst_slab": "Tranche de GST"
     },
     "fields": {
       "user": "Personne",
@@ -645,7 +662,19 @@
       "reversal": "Contrepassation",
       "fileName": "Fichier",
       "date": "Date",
-      "memo": "Libellé"
+      "memo": "Libellé",
+      "kind": "Taxe",
+      "rate": "Taux",
+      "label": "Libellé",
+      "effectiveFrom": "En vigueur à partir du",
+      "effectiveTo": "En vigueur jusqu’au",
+      "outputAccountId": "Compte de la taxe sur les ventes",
+      "inputAccountId": "Compte de la taxe sur les achats",
+      "total": "Taux total",
+      "rates": "Taux",
+      "groups": "Groupes",
+      "utgst": "UTGST",
+      "state": "État"
     },
     "details": {
       "when": "Quand",

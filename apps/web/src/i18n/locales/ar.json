@@ -529,7 +529,9 @@
       "settings": "الإعدادات",
       "accounts": "الحسابات",
       "periods": "السنوات المالية",
-      "journals": "قيود اليومية"
+      "journals": "قيود اليومية",
+      "taxes": "الضرائب",
+      "gstSlabs": "شرائح ضريبة السلع والخدمات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -578,7 +580,19 @@
       "org_journal_post": "ترحيل قيد",
       "org_journal_reverse": "عكس قيد",
       "org_journal_attach": "إرفاق مستند",
-      "org_journal_detach": "إزالة مستند"
+      "org_journal_detach": "إزالة مستند",
+      "org_tax_rate_create": "أُضيف معدل ضريبي",
+      "org_tax_rate_update": "عُدّل معدل ضريبي",
+      "org_tax_rate_archive": "أُرشف معدل ضريبي",
+      "org_tax_rate_restore": "استُعيد معدل ضريبي",
+      "org_tax_group_create": "أُضيفت مجموعة ضريبية",
+      "org_tax_group_update": "أُعيدت تسمية مجموعة ضريبية",
+      "org_tax_group_archive": "أُرشفت مجموعة ضريبية",
+      "org_tax_group_restore": "استُعيدت مجموعة ضريبية",
+      "org_tax_setup_gst": "إعداد ضريبة السلع والخدمات",
+      "platform_gst_slab_create": "أُضيفت شريحة ضريبية",
+      "platform_gst_slab_update": "عُدّلت شريحة ضريبية",
+      "platform_gst_slab_delete": "حُذفت شريحة ضريبية"
     },
     "entities": {
       "membership": "عضو",
@@ -589,7 +603,10 @@
       "account": "حساب",
       "fiscal_year": "سنة مالية",
       "period": "شهر",
-      "journal": "قيد يومية"
+      "journal": "قيد يومية",
+      "tax_rate": "معدل ضريبي",
+      "tax_group": "مجموعة ضريبية",
+      "gst_slab": "شريحة ضريبة السلع والخدمات"
     },
     "fields": {
       "user": "الشخص",
@@ -645,7 +662,19 @@
       "reversal": "القيد العكسي",
       "fileName": "الملف",
       "date": "التاريخ",
-      "memo": "البيان"
+      "memo": "البيان",
+      "kind": "الضريبة",
+      "rate": "المعدل",
+      "label": "التسمية",
+      "effectiveFrom": "سارية من",
+      "effectiveTo": "سارية حتى",
+      "outputAccountId": "حساب الضريبة على المبيعات",
+      "inputAccountId": "حساب الضريبة على المشتريات",
+      "total": "المعدل الإجمالي",
+      "rates": "المعدلات",
+      "groups": "المجموعات",
+      "utgst": "UTGST",
+      "state": "الولاية"
     },
     "details": {
       "when": "متى",

@@ -529,7 +529,9 @@
       "settings": "Settings",
       "accounts": "Accounts",
       "periods": "Financial years",
-      "journals": "Journal entries"
+      "journals": "Journal entries",
+      "taxes": "Taxes",
+      "gstSlabs": "GST slabs"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -578,7 +580,19 @@
       "org_journal_post": "Entry posted",
       "org_journal_reverse": "Entry reversed",
       "org_journal_attach": "Document attached",
-      "org_journal_detach": "Document removed"
+      "org_journal_detach": "Document removed",
+      "org_tax_rate_create": "Tax rate added",
+      "org_tax_rate_update": "Tax rate edited",
+      "org_tax_rate_archive": "Tax rate archived",
+      "org_tax_rate_restore": "Tax rate restored",
+      "org_tax_group_create": "Tax group added",
+      "org_tax_group_update": "Tax group renamed",
+      "org_tax_group_archive": "Tax group archived",
+      "org_tax_group_restore": "Tax group restored",
+      "org_tax_setup_gst": "GST set up",
+      "platform_gst_slab_create": "GST slab added",
+      "platform_gst_slab_update": "GST slab edited",
+      "platform_gst_slab_delete": "GST slab deleted"
     },
     "entities": {
       "membership": "Member",
@@ -589,7 +603,10 @@
       "account": "Account",
       "fiscal_year": "Financial year",
       "period": "Month",
-      "journal": "Journal entry"
+      "journal": "Journal entry",
+      "tax_rate": "Tax rate",
+      "tax_group": "Tax group",
+      "gst_slab": "GST slab"
     },
     "fields": {
       "user": "Person",
@@ -645,7 +662,19 @@
       "reversal": "Reversal",
       "fileName": "File",
       "date": "Date",
-      "memo": "Memo"
+      "memo": "Memo",
+      "kind": "Tax",
+      "rate": "Rate",
+      "label": "Label",
+      "effectiveFrom": "Applies from",
+      "effectiveTo": "Applies until",
+      "outputAccountId": "Account for tax on sales",
+      "inputAccountId": "Account for tax on purchases",
+      "total": "Total rate",
+      "rates": "Rates",
+      "groups": "Groups",
+      "utgst": "UTGST",
+      "state": "State"
     },
     "details": {
       "when": "When",

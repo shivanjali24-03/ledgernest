@@ -529,7 +529,9 @@
       "settings": "सेटिंग्स",
       "accounts": "खाते",
       "periods": "वित्तीय वर्ष",
-      "journals": "जर्नल प्रविष्टियाँ"
+      "journals": "जर्नल प्रविष्टियाँ",
+      "taxes": "कर",
+      "gstSlabs": "जीएसटी स्लैब"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -578,7 +580,19 @@
       "org_journal_post": "प्रविष्टि पोस्ट की गई",
       "org_journal_reverse": "प्रविष्टि उलटी गई",
       "org_journal_attach": "दस्तावेज़ संलग्न",
-      "org_journal_detach": "दस्तावेज़ हटाया गया"
+      "org_journal_detach": "दस्तावेज़ हटाया गया",
+      "org_tax_rate_create": "कर दर जोड़ी गई",
+      "org_tax_rate_update": "कर दर संपादित",
+      "org_tax_rate_archive": "कर दर संग्रहित",
+      "org_tax_rate_restore": "कर दर बहाल",
+      "org_tax_group_create": "कर समूह जोड़ा गया",
+      "org_tax_group_update": "कर समूह का नाम बदला",
+      "org_tax_group_archive": "कर समूह संग्रहित",
+      "org_tax_group_restore": "कर समूह बहाल",
+      "org_tax_setup_gst": "जीएसटी सेट किया गया",
+      "platform_gst_slab_create": "जीएसटी स्लैब जोड़ा गया",
+      "platform_gst_slab_update": "जीएसटी स्लैब संपादित",
+      "platform_gst_slab_delete": "जीएसटी स्लैब हटाया गया"
     },
     "entities": {
       "membership": "सदस्य",
@@ -589,7 +603,10 @@
       "account": "खाता",
       "fiscal_year": "वित्तीय वर्ष",
       "period": "महीना",
-      "journal": "जर्नल प्रविष्टि"
+      "journal": "जर्नल प्रविष्टि",
+      "tax_rate": "कर दर",
+      "tax_group": "कर समूह",
+      "gst_slab": "जीएसटी स्लैब"
     },
     "fields": {
       "user": "व्यक्ति",
@@ -645,7 +662,19 @@
       "reversal": "उलट प्रविष्टि",
       "fileName": "फ़ाइल",
       "date": "तारीख",
-      "memo": "विवरण"
+      "memo": "विवरण",
+      "kind": "कर",
+      "rate": "दर",
+      "label": "नाम",
+      "effectiveFrom": "से लागू",
+      "effectiveTo": "तक लागू",
+      "outputAccountId": "बिक्री पर कर का खाता",
+      "inputAccountId": "ख़रीद पर कर का खाता",
+      "total": "कुल दर",
+      "rates": "दरें",
+      "groups": "समूह",
+      "utgst": "यूटीजीएसटी",
+      "state": "राज्य"
     },
     "details": {
       "when": "कब",

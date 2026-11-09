@@ -43,7 +43,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Trial balance | Balances of all accounts at any date | ✅ #43 |
 | Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41 (year-end close with #42) |
 | Multi-currency | Transactions in any currency, exchange rates, realised and unrealised gain/loss | 📋 |
-| Taxes | Configurable GST / VAT / sales-tax rates and groups, tax on lines, tax summary | 📋 |
+| Taxes | Configurable GST / VAT / sales-tax rates and groups, tax on lines, tax summary. India: the Super Admin keeps the GST slab list (0%, 0.25%, 3%, 5%, 18%, 40% since GST 2.0; 12% and 28% kept for older entries), and an organisation sets up CGST + SGST/UTGST and IGST groups in one step | 🚧 #45 |
 
 ## Phase 3: Sales and purchases
 
