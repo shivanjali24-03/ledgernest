@@ -2824,7 +2824,8 @@
     "documents": {
       "journal": "Écriture",
       "bill": "Facture fournisseur",
-      "payment": "Paiement fournisseur"
+      "payment": "Paiement fournisseur",
+      "bank_spend": "Dépense"
     },
     "statuses": {
       "pending": "En attente",
@@ -2858,7 +2859,8 @@
     "rules": {
       "journal": "Les écritures doivent être approuvées",
       "bill": "Les factures fournisseurs doivent être approuvées",
-      "payment": "Les paiements fournisseurs doivent être approuvés"
+      "payment": "Les paiements fournisseurs doivent être approuvés",
+      "bank_spend": "Les dépenses depuis la banque doivent être approuvées"
     },
     "atOrAbove": "À partir de ({{currency}})",
     "badAmount": "Saisissez un montant.",

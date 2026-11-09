@@ -166,6 +166,7 @@ describe('Approvals (e2e)', () => {
         minAmount: null,
       }),
       expect.objectContaining({ documentType: 'payment', enabled: false }),
+      expect.objectContaining({ documentType: 'bank_spend', enabled: false }),
     ]);
     await as().put('/approvals/rules/cheque', { minAmount: 1 }).expect(400);
     await as('viewer').get('/approvals').expect(403);
@@ -346,6 +347,52 @@ describe('Approvals (e2e)', () => {
         bankAccountId: acc.bank,
         amount: 5_000_00,
         allocations: [],
+      })
+      .expect(201);
+  });
+
+  it('holds money spent from the bank too, until someone else approves it', async () => {
+    await as()
+      .put('/approvals/rules/bank_spend', { minAmount: 10_000_00 })
+      .expect(200);
+    const spend = {
+      kind: 'spend',
+      bankAccountId: acc.bank,
+      date: '2026-05-09',
+      description: 'New laptops',
+      lines: [{ accountId: acc.rent, amount: 50_000_00 }],
+    };
+    const held = (await as('maker').post('/banking/money', spend).expect(409))
+      .body.details;
+    expect(held.reason).toBe('approval_required');
+    expect(
+      (await as('maker').get('/banking/transactions').expect(200)).body.total,
+    ).toBe(0);
+    const ok = (
+      await as('checker')
+        .post(`/approvals/${held.requestId}/approve`, {})
+        .expect(200)
+    ).body as Req;
+    expect(ok).toMatchObject({
+      status: 'approved',
+      documentType: 'bank_spend',
+      summary: expect.stringMatching(/^Money spent from .*: New laptops$/),
+    });
+    expect(
+      (await as('maker').get('/banking/transactions').expect(200)).body.total,
+    ).toBe(1);
+    // Under the limit, and money received, go straight through
+    await as('maker')
+      .post('/banking/money', {
+        ...spend,
+        lines: [{ accountId: acc.rent, amount: 5_000_00 }],
+      })
+      .expect(201);
+    await as('maker')
+      .post('/banking/money', {
+        ...spend,
+        kind: 'receive',
+        lines: [{ accountId: acc.rent, amount: 50_000_00 }],
       })
       .expect(201);
   });

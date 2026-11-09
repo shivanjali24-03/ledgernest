@@ -1,6 +1,7 @@
 import { bankMoneySchema, bankTransferSchema, currencyDigits, guessMapping, looksLikeOfx, parseCsv, splitTax, statementFingerprints, statementFromCsv, statementFromOfx, statementImportSchema, statementMappingSchema, todayIn, toBase, type StatementMapping } from '@ledgernest/shared';
+import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
-import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
+import { createDemoAccountsApi, demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
@@ -59,7 +60,8 @@ const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new Ap
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 const today = () => todayIn('Asia/Kolkata');
 
-export function createDemoBankingApi(canManage: () => boolean): BankingApi {
+/** opts.approvalsAs: spending from the app as this role, so approval rules apply (recording a statement line doesn't) */
+export function createDemoBankingApi(canManage: () => boolean, opts: { approvalsAs?: string } = {}): BankingApi {
   const guard = () => {
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['banking.manage'] });
   };
@@ -394,5 +396,16 @@ export function createDemoBankingApi(canManage: () => boolean): BankingApi {
         saveStatements(st);
       }),
   };
-  return api;
+  if (!opts.approvalsAs) return api;
+  const as = opts.approvalsAs;
+  return {
+    ...api,
+    money: async (input) => {
+      if (input.kind === 'spend') {
+        const bank = demoAccountRows().find((a) => a.id === input.bankAccountId);
+        if (bank) demoApprovalCheck('bank_spend', { documentId: null, amount: input.lines.reduce((s, l) => s + l.amount, 0), summary: `Money spent from ${bank.name}${input.description ? `: ${input.description}` : ''}`, payload: input }, as);
+      }
+      return api.money(input);
+    },
+  };
 }

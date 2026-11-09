@@ -2824,7 +2824,8 @@
     "documents": {
       "journal": "Journal entry",
       "bill": "Bill",
-      "payment": "Vendor payment"
+      "payment": "Vendor payment",
+      "bank_spend": "Money spent"
     },
     "statuses": {
       "pending": "Waiting",
@@ -2858,7 +2859,8 @@
     "rules": {
       "journal": "Journal entries need approval",
       "bill": "Bills need approval",
-      "payment": "Vendor payments need approval"
+      "payment": "Vendor payments need approval",
+      "bank_spend": "Money spent from the bank needs approval"
     },
     "atOrAbove": "At or above ({{currency}})",
     "badAmount": "Enter an amount.",

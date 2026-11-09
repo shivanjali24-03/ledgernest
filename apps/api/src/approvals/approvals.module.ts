@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BankingModule } from '../banking/banking.module.js';
 import { BillsModule } from '../bills/bills.module.js';
 import { JournalsModule } from '../journals/journals.module.js';
 import { PaymentsModule } from '../payments/payments.module.js';
@@ -7,7 +8,13 @@ import { ApprovalsController } from './approvals.controller.js';
 import { ApprovalsService } from './approvals.service.js';
 
 @Module({
-  imports: [ApprovalGateModule, JournalsModule, BillsModule, PaymentsModule],
+  imports: [
+    ApprovalGateModule,
+    JournalsModule,
+    BillsModule,
+    PaymentsModule,
+    BankingModule,
+  ],
   controllers: [ApprovalsController],
   providers: [ApprovalsService],
 })

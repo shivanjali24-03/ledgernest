@@ -85,7 +85,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Budgets | A plan per financial year by account and month, started from last year's actuals, another budget or blank, and budget against actual with variances | ✅ #129 |
 | Cost centres and projects | Journal, invoice, bill and bank lines tagged with a department or project; profit and loss by cost centre or for one | ✅ #131 |
 | Inventory | Tracked goods bought on bills and sold on invoices at weighted average cost, cost of sales posted as stock leaves, adjustments with a reason, valuation beside the books | ✅ #134 |
-| Approval workflows | Journal entries, bills and vendor payments at or above a set amount wait for someone else’s yes; approving posts them, sending back leaves a note | ✅ #136 |
+| Approval workflows | Journal entries, bills, vendor payments and money spent from the bank at or above a set amount wait for someone else’s yes; approving posts them, sending back leaves a note | ✅ #136 |
 | Document attachments | Receipts, PDFs and photos kept with journal entries, invoices, bills, payments and bank transactions; previewed, downloaded, checked by their bytes | ✅ #138 |
 | Data import | Chart of accounts, contacts, items and opening balances from CSV or Excel: columns matched from the headers, every row checked before anything is saved | ✅ #140 |
 | API keys and webhooks | Scoped API keys shown once and revocable, acting within their maker’s permissions; signed webhooks for invoice, payment and bill events with retries and a delivery log | ✅ #142 #143 |

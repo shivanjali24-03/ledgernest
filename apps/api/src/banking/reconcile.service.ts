@@ -648,6 +648,8 @@ export class ReconcileService {
         ],
       },
       ctx,
+      // The statement shows it already left the bank: nothing to approve
+      { fromStatement: true },
     );
     const bankLine = await this.prisma.journalLine.findFirst({
       where: {

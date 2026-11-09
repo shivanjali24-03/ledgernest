@@ -12,6 +12,7 @@ import {
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { BankingService } from '../banking/banking.service.js';
 import { BillsService } from '../bills/bills.service.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PaymentsService } from '../payments/payments.service.js';
@@ -51,6 +52,7 @@ export class ApprovalsService {
     private readonly journals: JournalsService,
     private readonly bills: BillsService,
     private readonly payments: PaymentsService,
+    private readonly banking: BankingService,
   ) {}
 
   // ---------- rules ----------
@@ -261,6 +263,13 @@ export class ApprovalsService {
           'document_changed',
         );
       await this.bills.record(b.id, ctx, { approved: true });
+    } else if (r.documentType === 'bank_spend') {
+      const t = await this.banking.money(
+        r.payload as unknown as Parameters<BankingService['money']>[0],
+        ctx,
+        { approved: true },
+      );
+      documentId = t.id;
     } else {
       const p = await this.payments.pay(
         r.payload as unknown as Parameters<PaymentsService['pay']>[0],
