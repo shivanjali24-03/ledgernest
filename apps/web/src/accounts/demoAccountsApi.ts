@@ -88,6 +88,9 @@ function save(rows: Stored[]) {
   }
 }
 
+/** The demo company's accounts, for other demo features (taxes check account types against them). */
+export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'archivedAt'>[] => load();
+
 /** Test helper */
 export const resetDemoAccounts = () => {
   try {

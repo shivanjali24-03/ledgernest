@@ -23,7 +23,9 @@
       "platformUsers": "Platform users",
       "platformOverview": "Platform overview",
       "platformAudit": "Platform audit log",
-      "periods": "Financial years"
+      "periods": "Financial years",
+      "taxes": "Taxes",
+      "gstSlabs": "GST slabs"
     },
     "soon": "Soon"
   },
@@ -1100,5 +1102,169 @@
     "opening": "Opening balance on {{date}}",
     "noLines": "No posted entries in these dates.",
     "closing": "Closing balance on {{date}}"
+  },
+  "taxes": {
+    "title": "Taxes",
+    "description": "GST, VAT or sales tax: the rates you charge and the accounts they post to.",
+    "addRate": "Add rate",
+    "addGroup": "Add group",
+    "rename": "Rename",
+    "restore": "Restore",
+    "archive": "Archive",
+    "edit": "Edit",
+    "archived": "{{name}} archived",
+    "restored": "{{name}} restored",
+    "actionsFor": "Actions for {{name}}",
+    "empty": "No taxes yet",
+    "emptyBody": "Add a rate such as VAT 20%, then a group that lines can pick.",
+    "emptyBodyGst": "Set GST up in one step from India’s official slabs, or add your own rates.",
+    "showArchived": "Show archived ({{count}})",
+    "groups": "Tax groups",
+    "groupsHint": "What a journal line picks. A group charges one or more rates together.",
+    "rates": "Tax rates",
+    "ratesHint": "Each rate posts tax on sales to a liability and tax on purchases to input credit.",
+    "archivedPill": "Archived",
+    "rateSaved": "{{name}} saved",
+    "rateCreated": "{{name}} added",
+    "groupSaved": "{{name}} saved",
+    "groupCreated": "{{name}} added",
+    "chooseAccount": "Choose an account",
+    "noInputAccount": "None: purchases reduce the sales tax account",
+    "fields": {
+      "name": "Name",
+      "kind": "Tax",
+      "rate": "Rate (%)",
+      "outputAccount": "Account for tax on sales",
+      "inputAccount": "Account for tax on purchases",
+      "rates": "Rates"
+    },
+    "columns": {
+      "output": "Tax on sales",
+      "input": "Input credit",
+      "actions": "Actions"
+    },
+    "hints": {
+      "rate": "A percentage, e.g. 20 or 0.125. It can’t change later.",
+      "outputAccount": "A liability: the tax you owe.",
+      "inputAccount": "An asset: tax you paid and can claim back."
+    },
+    "validation": {
+      "name": "Enter at least 2 characters.",
+      "rate": "Enter a rate between 0 and 100, with at most 4 decimals.",
+      "outputAccount": "Choose an account for tax on sales.",
+      "rates": "Choose at least one rate."
+    },
+    "kinds": {
+      "cgst": "CGST",
+      "sgst": "SGST",
+      "utgst": "UTGST",
+      "igst": "IGST",
+      "cess": "Cess",
+      "vat": "VAT",
+      "sales_tax": "Sales tax",
+      "other": "Other"
+    },
+    "supply": {
+      "intra": "Within the state",
+      "inter": "Between states"
+    },
+    "rateDialog": {
+      "newTitle": "New tax rate",
+      "editTitle": "Edit {{name}}",
+      "description": "Any tax at any percentage, with the accounts it posts to.",
+      "fixedRate": "The rate stays at {{rate}}: entries were taxed at it. For a new percentage, add a new rate.",
+      "create": "Add rate",
+      "namePlaceholder": "e.g. VAT 20%"
+    },
+    "groupDialog": {
+      "newTitle": "New tax group",
+      "editTitle": "Rename {{name}}",
+      "description": "Choose the rates a line charges together.",
+      "fixedRates": "A group’s rates can’t change: entries were taxed with them. For different rates, add a new group.",
+      "create": "Add group",
+      "namePlaceholder": "e.g. Standard rated",
+      "total": "Total: {{rate}}",
+      "noRates": "Add a tax rate first."
+    },
+    "gst": {
+      "setup": "Set up GST",
+      "stateTitle": "GST in {{state}} (state code {{code}})",
+      "noStateTitle": "GST: your state isn’t set",
+      "ruleSgst": "Sales within your state carry CGST + SGST, half the rate each. Sales to other states carry IGST at the full rate.",
+      "ruleUtgst": "You’re in a Union Territory without a legislature, so sales within it carry CGST + UTGST, half the rate each. Sales elsewhere carry IGST at the full rate.",
+      "noStateBody": "Add your state in <settings>Settings</settings> so the right tax (SGST or UTGST) is used.",
+      "pending": "Slabs in force but not set up yet ({{count}}): {{rates}}",
+      "setupTitle": "Set up GST",
+      "setupBody": "For each slab, LedgerNest adds a group for sales within your state (CGST + {{local}}) and one for sales to other states (IGST), with the accounts they post to. Anything already set up is kept.",
+      "setupConfirm": "Set up ({{count}})",
+      "inForce": "In force today",
+      "retired": "Retired (for older entries)",
+      "upcoming": "Upcoming",
+      "alreadySetUp": "Set up",
+      "appliesFrom": "From {{from}}",
+      "appliedUntil": "{{from}} to {{to}}",
+      "done": "GST set up: {{count}} groups added",
+      "nothingNew": "Everything chosen was already set up"
+    },
+    "errors": {
+      "name_taken": "Another one already has this name.",
+      "output_not_liability": "Tax on sales goes to a liability account.",
+      "input_not_asset": "Tax on purchases goes to an asset account (input credit).",
+      "same_account": "Use different accounts for tax on sales and on purchases.",
+      "account_archived": "That account is archived.",
+      "account_not_found": "That account no longer exists.",
+      "in_active_group": "Active tax groups use this rate. Archive them first.",
+      "rate_archived": "One of its rates is archived. Restore it first.",
+      "rate_not_found": "A chosen rate no longer exists.",
+      "not_india": "GST is for organisations in India. Set the country in Settings, or add your own rates.",
+      "no_slabs": "Choose at least one GST slab.",
+      "code_taken": "A GST account code is already used for something else. Change that account’s code, then try again.",
+      "overlap": "A slab of this rate already applies on some of these dates. Give that one an end date first.",
+      "in_use": "Organisations use this slab. Give it an end date instead.",
+      "slab_not_found": "A chosen slab no longer exists."
+    }
+  },
+  "gstSlabs": {
+    "eyebrow": "Platform",
+    "title": "GST slabs",
+    "description": "India’s GST rates that every Indian organisation sets its GST up from. A rate never changes: when the GST Council changes rates, give the old slab an end date and add the new one.",
+    "add": "Add slab",
+    "empty": "No slabs yet",
+    "edit": "Edit",
+    "retire": "Retire today",
+    "delete": "Delete",
+    "deleteTitle": "Delete the {{rate}} slab?",
+    "deleteBody": "No organisation uses it, so it will be removed for good.",
+    "deleted": "{{rate}} slab deleted",
+    "saved": "{{rate}} slab saved",
+    "created": "{{rate}} slab added",
+    "usage": "Used by groups: {{count}}",
+    "actionsFor": "Actions for the {{rate}} slab",
+    "newTitle": "New GST slab",
+    "newBody": "Add a rate the GST Council has notified, with the date it applies from.",
+    "editTitle": "Edit the {{rate}} slab",
+    "fixedRate": "The rate can’t change: entries were taxed at it. To change it, set an end date here and add a new slab.",
+    "status": {
+      "inForce": "In force",
+      "retired": "Retired",
+      "upcoming": "Upcoming"
+    },
+    "fields": {
+      "rate": "Rate (%)",
+      "label": "Label",
+      "description": "Description",
+      "effectiveFrom": "Applies from",
+      "effectiveTo": "Applies until"
+    },
+    "hints": {
+      "rate": "e.g. 18. Must split evenly into CGST and SGST.",
+      "description": "What it covers, e.g. most goods and services",
+      "effectiveTo": "Leave empty while it’s in force."
+    },
+    "validation": {
+      "rate": "Enter a rate between 0 and 100 that splits evenly into CGST and SGST.",
+      "label": "Enter at least 2 characters.",
+      "effectiveTo": "The end date can’t be before the start date."
+    }
   }
 }

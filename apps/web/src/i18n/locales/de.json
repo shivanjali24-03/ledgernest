@@ -23,7 +23,9 @@
       "platformUsers": "Plattformbenutzer",
       "platformOverview": "Plattformübersicht",
       "platformAudit": "Plattform-Audit-Log",
-      "periods": "Geschäftsjahre"
+      "periods": "Geschäftsjahre",
+      "taxes": "Steuern",
+      "gstSlabs": "GST-Sätze"
     },
     "soon": "Bald"
   },
@@ -1100,5 +1102,169 @@
     "opening": "Anfangssaldo am {{date}}",
     "noLines": "Keine gebuchten Einträge in diesem Zeitraum.",
     "closing": "Endsaldo am {{date}}"
+  },
+  "taxes": {
+    "title": "Steuern",
+    "description": "GST, Umsatzsteuer oder Verkaufssteuer: die Sätze, die Sie berechnen, und die Konten, auf die sie gebucht werden.",
+    "addRate": "Satz hinzufügen",
+    "addGroup": "Gruppe hinzufügen",
+    "rename": "Umbenennen",
+    "restore": "Wiederherstellen",
+    "archive": "Archivieren",
+    "edit": "Bearbeiten",
+    "archived": "{{name}} archiviert",
+    "restored": "{{name}} wiederhergestellt",
+    "actionsFor": "Aktionen für {{name}}",
+    "empty": "Noch keine Steuern",
+    "emptyBody": "Fügen Sie einen Satz wie USt 20 % hinzu, dann eine Gruppe, die Buchungszeilen wählen können.",
+    "emptyBodyGst": "Richten Sie die GST in einem Schritt aus den offiziellen Sätzen Indiens ein, oder fügen Sie eigene Sätze hinzu.",
+    "showArchived": "Archivierte anzeigen ({{count}})",
+    "groups": "Steuergruppen",
+    "groupsHint": "Was eine Buchungszeile wählt. Eine Gruppe berechnet einen oder mehrere Sätze zusammen.",
+    "rates": "Steuersätze",
+    "ratesHint": "Jeder Satz bucht Steuer auf Verkäufe auf eine Verbindlichkeit und Steuer auf Einkäufe als Vorsteuer.",
+    "archivedPill": "Archiviert",
+    "rateSaved": "{{name}} gespeichert",
+    "rateCreated": "{{name}} hinzugefügt",
+    "groupSaved": "{{name}} gespeichert",
+    "groupCreated": "{{name}} hinzugefügt",
+    "chooseAccount": "Konto wählen",
+    "noInputAccount": "Keins: Einkäufe mindern das Umsatzsteuerkonto",
+    "fields": {
+      "name": "Name",
+      "kind": "Steuer",
+      "rate": "Satz (%)",
+      "outputAccount": "Konto für Steuer auf Verkäufe",
+      "inputAccount": "Konto für Steuer auf Einkäufe",
+      "rates": "Sätze"
+    },
+    "columns": {
+      "output": "Steuer auf Verkäufe",
+      "input": "Vorsteuer",
+      "actions": "Aktionen"
+    },
+    "hints": {
+      "rate": "Ein Prozentsatz, z. B. 20 oder 0.125. Er kann später nicht geändert werden.",
+      "outputAccount": "Eine Verbindlichkeit: die Steuer, die Sie schulden.",
+      "inputAccount": "Ein Vermögenswert: gezahlte Steuer, die Sie zurückfordern können."
+    },
+    "validation": {
+      "name": "Geben Sie mindestens 2 Zeichen ein.",
+      "rate": "Geben Sie einen Satz zwischen 0 und 100 mit höchstens 4 Nachkommastellen ein.",
+      "outputAccount": "Wählen Sie ein Konto für die Steuer auf Verkäufe.",
+      "rates": "Wählen Sie mindestens einen Satz."
+    },
+    "kinds": {
+      "cgst": "CGST",
+      "sgst": "SGST",
+      "utgst": "UTGST",
+      "igst": "IGST",
+      "cess": "Cess",
+      "vat": "USt",
+      "sales_tax": "Verkaufssteuer",
+      "other": "Sonstige"
+    },
+    "supply": {
+      "intra": "Innerhalb des Bundesstaats",
+      "inter": "Zwischen Bundesstaaten"
+    },
+    "rateDialog": {
+      "newTitle": "Neuer Steuersatz",
+      "editTitle": "{{name}} bearbeiten",
+      "description": "Jede Steuer zu jedem Prozentsatz, mit den Konten, auf die sie gebucht wird.",
+      "fixedRate": "Der Satz bleibt bei {{rate}}: Buchungen wurden damit besteuert. Für einen anderen Prozentsatz fügen Sie einen neuen Satz hinzu.",
+      "create": "Satz hinzufügen",
+      "namePlaceholder": "z. B. USt 20 %"
+    },
+    "groupDialog": {
+      "newTitle": "Neue Steuergruppe",
+      "editTitle": "{{name}} umbenennen",
+      "description": "Wählen Sie die Sätze, die eine Zeile zusammen berechnet.",
+      "fixedRates": "Die Sätze einer Gruppe können sich nicht ändern: Buchungen wurden damit besteuert. Für andere Sätze fügen Sie eine neue Gruppe hinzu.",
+      "create": "Gruppe hinzufügen",
+      "namePlaceholder": "z. B. Regelsatz",
+      "total": "Gesamt: {{rate}}",
+      "noRates": "Fügen Sie zuerst einen Steuersatz hinzu."
+    },
+    "gst": {
+      "setup": "GST einrichten",
+      "stateTitle": "GST in {{state}} (Bundesstaat-Code {{code}})",
+      "noStateTitle": "GST: Ihr Bundesstaat fehlt",
+      "ruleSgst": "Verkäufe innerhalb Ihres Bundesstaats tragen CGST + SGST, je den halben Satz. Verkäufe in andere Bundesstaaten tragen IGST zum vollen Satz.",
+      "ruleUtgst": "Sie sind in einem Unionsterritorium ohne Parlament, daher tragen Verkäufe dort CGST + UTGST, je den halben Satz. Verkäufe anderswohin tragen IGST zum vollen Satz.",
+      "noStateBody": "Tragen Sie Ihren Bundesstaat in den <settings>Einstellungen</settings> ein, damit die richtige Steuer (SGST oder UTGST) gilt.",
+      "pending": "Gültige, noch nicht eingerichtete Sätze ({{count}}): {{rates}}",
+      "setupTitle": "GST einrichten",
+      "setupBody": "Für jeden Satz legt LedgerNest eine Gruppe für Verkäufe innerhalb Ihres Bundesstaats (CGST + {{local}}) und eine für Verkäufe in andere Bundesstaaten (IGST) an, mit ihren Konten. Bereits Eingerichtetes bleibt erhalten.",
+      "setupConfirm": "Einrichten ({{count}})",
+      "inForce": "Heute gültig",
+      "retired": "Abgeschafft (für ältere Buchungen)",
+      "upcoming": "Künftig",
+      "alreadySetUp": "Eingerichtet",
+      "appliesFrom": "Ab {{from}}",
+      "appliedUntil": "{{from}} bis {{to}}",
+      "done": "GST eingerichtet: {{count}} Gruppen hinzugefügt",
+      "nothingNew": "Alles Gewählte war bereits eingerichtet"
+    },
+    "errors": {
+      "name_taken": "Es gibt schon einen Eintrag mit diesem Namen.",
+      "output_not_liability": "Steuer auf Verkäufe wird auf ein Verbindlichkeitskonto gebucht.",
+      "input_not_asset": "Steuer auf Einkäufe wird auf ein Vermögenskonto (Vorsteuer) gebucht.",
+      "same_account": "Verwenden Sie unterschiedliche Konten für Steuer auf Verkäufe und Einkäufe.",
+      "account_archived": "Dieses Konto ist archiviert.",
+      "account_not_found": "Dieses Konto gibt es nicht mehr.",
+      "in_active_group": "Aktive Steuergruppen verwenden diesen Satz. Archivieren Sie sie zuerst.",
+      "rate_archived": "Einer ihrer Sätze ist archiviert. Stellen Sie ihn zuerst wieder her.",
+      "rate_not_found": "Ein gewählter Satz existiert nicht mehr.",
+      "not_india": "GST gilt für Organisationen in Indien. Legen Sie das Land in den Einstellungen fest oder fügen Sie eigene Sätze hinzu.",
+      "no_slabs": "Wählen Sie mindestens einen GST-Satz.",
+      "code_taken": "Ein GST-Kontocode wird bereits für etwas anderes verwendet. Ändern Sie den Code dieses Kontos und versuchen Sie es erneut.",
+      "overlap": "Ein Satz dieser Höhe gilt bereits an einigen dieser Tage. Geben Sie ihm zuerst ein Enddatum.",
+      "in_use": "Organisationen verwenden diesen Satz. Geben Sie ihm stattdessen ein Enddatum.",
+      "slab_not_found": "Ein gewählter Satz existiert nicht mehr."
+    }
+  },
+  "gstSlabs": {
+    "eyebrow": "Plattform",
+    "title": "GST-Sätze",
+    "description": "Indiens GST-Sätze, aus denen jede indische Organisation ihre GST einrichtet. Ein Satz ändert sich nie: Wenn der GST-Rat die Sätze ändert, geben Sie dem alten Satz ein Enddatum und fügen Sie den neuen hinzu.",
+    "add": "Satz hinzufügen",
+    "empty": "Noch keine Sätze",
+    "edit": "Bearbeiten",
+    "retire": "Ab heute abschaffen",
+    "delete": "Löschen",
+    "deleteTitle": "Den {{rate}}-Satz löschen?",
+    "deleteBody": "Keine Organisation verwendet ihn, daher wird er endgültig entfernt.",
+    "deleted": "{{rate}}-Satz gelöscht",
+    "saved": "{{rate}}-Satz gespeichert",
+    "created": "{{rate}}-Satz hinzugefügt",
+    "usage": "Verwendet von Gruppen: {{count}}",
+    "actionsFor": "Aktionen für den {{rate}}-Satz",
+    "newTitle": "Neuer GST-Satz",
+    "newBody": "Fügen Sie einen vom GST-Rat bekanntgegebenen Satz mit seinem Gültigkeitsbeginn hinzu.",
+    "editTitle": "Den {{rate}}-Satz bearbeiten",
+    "fixedRate": "Der Satz kann sich nicht ändern: Buchungen wurden damit besteuert. Um ihn zu ändern, setzen Sie hier ein Enddatum und fügen Sie einen neuen Satz hinzu.",
+    "status": {
+      "inForce": "Gültig",
+      "retired": "Abgeschafft",
+      "upcoming": "Künftig"
+    },
+    "fields": {
+      "rate": "Satz (%)",
+      "label": "Bezeichnung",
+      "description": "Beschreibung",
+      "effectiveFrom": "Gültig ab",
+      "effectiveTo": "Gültig bis"
+    },
+    "hints": {
+      "rate": "z. B. 18. Muss sich gleichmäßig auf CGST und SGST aufteilen lassen.",
+      "description": "Wofür er gilt, z. B. die meisten Waren und Dienstleistungen",
+      "effectiveTo": "Leer lassen, solange er gilt."
+    },
+    "validation": {
+      "rate": "Geben Sie einen Satz zwischen 0 und 100 ein, der sich gleichmäßig auf CGST und SGST aufteilen lässt.",
+      "label": "Geben Sie mindestens 2 Zeichen ein.",
+      "effectiveTo": "Das Enddatum darf nicht vor dem Startdatum liegen."
+    }
   }
 }

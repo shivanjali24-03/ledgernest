@@ -23,7 +23,9 @@
       "platformUsers": "Utilisateurs de la plateforme",
       "platformOverview": "Vue d'ensemble de la plateforme",
       "platformAudit": "Journal d'audit de la plateforme",
-      "periods": "Exercices"
+      "periods": "Exercices",
+      "taxes": "Taxes",
+      "gstSlabs": "Tranches de GST"
     },
     "soon": "Bientôt"
   },
@@ -1100,5 +1102,169 @@
     "opening": "Solde d'ouverture au {{date}}",
     "noLines": "Aucune écriture validée sur ces dates.",
     "closing": "Solde de clôture au {{date}}"
+  },
+  "taxes": {
+    "title": "Taxes",
+    "description": "GST, TVA ou taxe sur les ventes : les taux que vous appliquez et les comptes où ils sont enregistrés.",
+    "addRate": "Ajouter un taux",
+    "addGroup": "Ajouter un groupe",
+    "rename": "Renommer",
+    "restore": "Restaurer",
+    "archive": "Archiver",
+    "edit": "Modifier",
+    "archived": "{{name}} archivé",
+    "restored": "{{name}} restauré",
+    "actionsFor": "Actions pour {{name}}",
+    "empty": "Aucune taxe pour l’instant",
+    "emptyBody": "Ajoutez un taux comme TVA 20 %, puis un groupe que les lignes pourront choisir.",
+    "emptyBodyGst": "Configurez la GST en une étape à partir des tranches officielles de l’Inde, ou ajoutez vos propres taux.",
+    "showArchived": "Afficher les archivés ({{count}})",
+    "groups": "Groupes de taxes",
+    "groupsHint": "Ce que choisit une ligne d’écriture. Un groupe applique un ou plusieurs taux ensemble.",
+    "rates": "Taux de taxe",
+    "ratesHint": "Chaque taux enregistre la taxe sur les ventes dans un passif et celle sur les achats en crédit de taxe.",
+    "archivedPill": "Archivé",
+    "rateSaved": "{{name}} enregistré",
+    "rateCreated": "{{name}} ajouté",
+    "groupSaved": "{{name}} enregistré",
+    "groupCreated": "{{name}} ajouté",
+    "chooseAccount": "Choisissez un compte",
+    "noInputAccount": "Aucun : les achats réduisent le compte de taxe sur les ventes",
+    "fields": {
+      "name": "Nom",
+      "kind": "Taxe",
+      "rate": "Taux (%)",
+      "outputAccount": "Compte de la taxe sur les ventes",
+      "inputAccount": "Compte de la taxe sur les achats",
+      "rates": "Taux"
+    },
+    "columns": {
+      "output": "Taxe sur les ventes",
+      "input": "Crédit de taxe",
+      "actions": "Actions"
+    },
+    "hints": {
+      "rate": "Un pourcentage, par ex. 20 ou 0.125. Il ne pourra plus changer.",
+      "outputAccount": "Un passif : la taxe que vous devez.",
+      "inputAccount": "Un actif : la taxe payée que vous pouvez récupérer."
+    },
+    "validation": {
+      "name": "Saisissez au moins 2 caractères.",
+      "rate": "Saisissez un taux entre 0 et 100, avec 4 décimales au plus.",
+      "outputAccount": "Choisissez un compte pour la taxe sur les ventes.",
+      "rates": "Choisissez au moins un taux."
+    },
+    "kinds": {
+      "cgst": "CGST",
+      "sgst": "SGST",
+      "utgst": "UTGST",
+      "igst": "IGST",
+      "cess": "Cess",
+      "vat": "TVA",
+      "sales_tax": "Taxe sur les ventes",
+      "other": "Autre"
+    },
+    "supply": {
+      "intra": "Dans l’État",
+      "inter": "Entre États"
+    },
+    "rateDialog": {
+      "newTitle": "Nouveau taux de taxe",
+      "editTitle": "Modifier {{name}}",
+      "description": "N’importe quelle taxe à n’importe quel pourcentage, avec les comptes où elle est enregistrée.",
+      "fixedRate": "Le taux reste à {{rate}} : des écritures ont été taxées ainsi. Pour un autre pourcentage, ajoutez un nouveau taux.",
+      "create": "Ajouter le taux",
+      "namePlaceholder": "par ex. TVA 20 %"
+    },
+    "groupDialog": {
+      "newTitle": "Nouveau groupe de taxes",
+      "editTitle": "Renommer {{name}}",
+      "description": "Choisissez les taux qu’une ligne applique ensemble.",
+      "fixedRates": "Les taux d’un groupe ne peuvent pas changer : des écritures ont été taxées ainsi. Pour d’autres taux, ajoutez un nouveau groupe.",
+      "create": "Ajouter le groupe",
+      "namePlaceholder": "par ex. Taux normal",
+      "total": "Total : {{rate}}",
+      "noRates": "Ajoutez d’abord un taux de taxe."
+    },
+    "gst": {
+      "setup": "Configurer la GST",
+      "stateTitle": "GST en {{state}} (code d’État {{code}})",
+      "noStateTitle": "GST : votre État n’est pas renseigné",
+      "ruleSgst": "Les ventes dans votre État supportent CGST + SGST, la moitié du taux chacune. Les ventes vers d’autres États supportent l’IGST au taux plein.",
+      "ruleUtgst": "Vous êtes dans un Territoire de l’Union sans assemblée législative : les ventes sur place supportent CGST + UTGST, la moitié du taux chacune. Les ventes ailleurs supportent l’IGST au taux plein.",
+      "noStateBody": "Renseignez votre État dans les <settings>Paramètres</settings> pour appliquer la bonne taxe (SGST ou UTGST).",
+      "pending": "Tranches en vigueur pas encore configurées ({{count}}) : {{rates}}",
+      "setupTitle": "Configurer la GST",
+      "setupBody": "Pour chaque tranche, LedgerNest ajoute un groupe pour les ventes dans votre État (CGST + {{local}}) et un pour les ventes vers d’autres États (IGST), avec leurs comptes. Ce qui est déjà configuré est conservé.",
+      "setupConfirm": "Configurer ({{count}})",
+      "inForce": "En vigueur aujourd’hui",
+      "retired": "Supprimées (pour les écritures anciennes)",
+      "upcoming": "À venir",
+      "alreadySetUp": "Configurée",
+      "appliesFrom": "À partir du {{from}}",
+      "appliedUntil": "Du {{from}} au {{to}}",
+      "done": "GST configurée : {{count}} groupes ajoutés",
+      "nothingNew": "Tout ce qui a été choisi était déjà configuré"
+    },
+    "errors": {
+      "name_taken": "Un autre porte déjà ce nom.",
+      "output_not_liability": "La taxe sur les ventes va dans un compte de passif.",
+      "input_not_asset": "La taxe sur les achats va dans un compte d’actif (crédit de taxe).",
+      "same_account": "Utilisez des comptes différents pour la taxe sur les ventes et sur les achats.",
+      "account_archived": "Ce compte est archivé.",
+      "account_not_found": "Ce compte n’existe plus.",
+      "in_active_group": "Des groupes actifs utilisent ce taux. Archivez-les d’abord.",
+      "rate_archived": "Un de ses taux est archivé. Restaurez-le d’abord.",
+      "rate_not_found": "Un taux choisi n’existe plus.",
+      "not_india": "La GST concerne les organisations en Inde. Indiquez le pays dans les Paramètres, ou ajoutez vos propres taux.",
+      "no_slabs": "Choisissez au moins une tranche de GST.",
+      "code_taken": "Un code de compte de GST est déjà utilisé pour autre chose. Changez le code de ce compte, puis réessayez.",
+      "overlap": "Une tranche de ce taux s’applique déjà à certaines de ces dates. Donnez-lui d’abord une date de fin.",
+      "in_use": "Des organisations utilisent cette tranche. Donnez-lui plutôt une date de fin.",
+      "slab_not_found": "Une tranche choisie n’existe plus."
+    }
+  },
+  "gstSlabs": {
+    "eyebrow": "Plateforme",
+    "title": "Tranches de GST",
+    "description": "Les taux de GST de l’Inde à partir desquels chaque organisation indienne configure sa GST. Un taux ne change jamais : quand le Conseil de la GST modifie les taux, donnez une date de fin à l’ancienne tranche et ajoutez la nouvelle.",
+    "add": "Ajouter une tranche",
+    "empty": "Aucune tranche pour l’instant",
+    "edit": "Modifier",
+    "retire": "Supprimer à partir d’aujourd’hui",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer la tranche à {{rate}} ?",
+    "deleteBody": "Aucune organisation ne l’utilise : elle sera supprimée définitivement.",
+    "deleted": "Tranche à {{rate}} supprimée",
+    "saved": "Tranche à {{rate}} enregistrée",
+    "created": "Tranche à {{rate}} ajoutée",
+    "usage": "Groupes qui l’utilisent : {{count}}",
+    "actionsFor": "Actions pour la tranche à {{rate}}",
+    "newTitle": "Nouvelle tranche de GST",
+    "newBody": "Ajoutez un taux notifié par le Conseil de la GST, avec sa date d’application.",
+    "editTitle": "Modifier la tranche à {{rate}}",
+    "fixedRate": "Le taux ne peut pas changer : des écritures ont été taxées ainsi. Pour le changer, indiquez ici une date de fin et ajoutez une nouvelle tranche.",
+    "status": {
+      "inForce": "En vigueur",
+      "retired": "Supprimée",
+      "upcoming": "À venir"
+    },
+    "fields": {
+      "rate": "Taux (%)",
+      "label": "Libellé",
+      "description": "Description",
+      "effectiveFrom": "S’applique à partir du",
+      "effectiveTo": "S’applique jusqu’au"
+    },
+    "hints": {
+      "rate": "par ex. 18. Doit se partager à parts égales entre CGST et SGST.",
+      "description": "Ce qu’elle couvre, par ex. la plupart des biens et services",
+      "effectiveTo": "Laissez vide tant qu’elle est en vigueur."
+    },
+    "validation": {
+      "rate": "Saisissez un taux entre 0 et 100 qui se partage à parts égales entre CGST et SGST.",
+      "label": "Saisissez au moins 2 caractères.",
+      "effectiveTo": "La date de fin ne peut pas précéder la date de début."
+    }
   }
 }
