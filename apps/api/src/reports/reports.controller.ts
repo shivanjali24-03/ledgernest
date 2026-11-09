@@ -1,6 +1,17 @@
 import { Controller, Get, Header, Query, Res } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiProduces, ApiTags } from '@nestjs/swagger';
-import { isoDaySchema, todayIn } from '@ledgernest/shared';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  agingQuerySchema,
+  isoDaySchema,
+  todayIn,
+  type AgingSide,
+} from '@ledgernest/shared';
 import type { Response } from 'express';
 import { z } from 'zod';
 import { CurrentTenant, RequirePermission } from '../access/decorators.js';
@@ -9,17 +20,37 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ReportsService } from './reports.service.js';
 
-const tbQuery = new ZodValidationPipe(z.object({ asOf: isoDaySchema.optional() }));
+const tbQuery = new ZodValidationPipe(
+  z.object({ asOf: isoDaySchema.optional() }),
+);
 const ledgerQuery = new ZodValidationPipe(
-  z.object({ accountId: z.uuid(), from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' }),
+  z
+    .object({ accountId: z.uuid(), from: isoDaySchema, to: isoDaySchema })
+    .refine((q) => q.from <= q.to, {
+      path: ['to'],
+      message: 'The end date is before the start date.',
+    }),
 );
 
-const rangeQuery = new ZodValidationPipe(z.object({ from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' }));
+const agingQuery = new ZodValidationPipe(agingQuerySchema);
+
+const rangeQuery = new ZodValidationPipe(
+  z
+    .object({ from: isoDaySchema, to: isoDaySchema })
+    .refine((q) => q.from <= q.to, {
+      path: ['to'],
+      message: 'The end date is before the start date.',
+    }),
+);
 
 /** Reports over posted entries. Reading needs reports.view; downloading needs reports.export. */
 @ApiTags('reports')
 @ApiBearerAuth()
-@ApiHeader({ name: 'X-Organization-Id', required: true, description: 'The organisation to act in' })
+@ApiHeader({
+  name: 'X-Organization-Id',
+  required: true,
+  description: 'The organisation to act in',
+})
 @Controller('reports')
 export class ReportsController {
   constructor(
@@ -29,15 +60,27 @@ export class ReportsController {
 
   /** "Today" in the organisation's time zone, when no date is given. */
   private async today(organizationId: string) {
-    const { timeZone } = await this.prisma.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { timeZone: true } });
+    const { timeZone } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { timeZone: true },
+    });
     return todayIn(timeZone);
   }
 
   @Get('trial-balance')
   @RequirePermission('reports.view')
-  @ApiOkResponse({ description: 'Every account’s debits, credits and balance up to asOf (default: today)' })
-  async trialBalance(@Query(tbQuery) q: { asOf?: string }, @CurrentTenant() tenant: Tenant) {
-    return this.reports.trialBalance(tenant.organizationId, q.asOf ?? (await this.today(tenant.organizationId)));
+  @ApiOkResponse({
+    description:
+      'Every account’s debits, credits and balance up to asOf (default: today)',
+  })
+  async trialBalance(
+    @Query(tbQuery) q: { asOf?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.trialBalance(
+      tenant.organizationId,
+      q.asOf ?? (await this.today(tenant.organizationId)),
+    );
   }
 
   @Get('trial-balance/export')
@@ -45,18 +88,39 @@ export class ReportsController {
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Cache-Control', 'no-store')
   @ApiProduces('text/csv')
-  async trialBalanceCsv(@Query(tbQuery) q: { asOf?: string }, @CurrentTenant() tenant: Tenant, @Res({ passthrough: true }) res: Response) {
+  async trialBalanceCsv(
+    @Query(tbQuery) q: { asOf?: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const asOf = q.asOf ?? (await this.today(tenant.organizationId));
     const tb = await this.reports.trialBalance(tenant.organizationId, asOf);
-    res.setHeader('Content-Disposition', `attachment; filename="trial-balance-${asOf}.csv"`);
-    return this.reports.trialBalanceCsv(tb, await this.reports.decimals(tenant.organizationId));
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="trial-balance-${asOf}.csv"`,
+    );
+    return this.reports.trialBalanceCsv(
+      tb,
+      await this.reports.decimals(tenant.organizationId),
+    );
   }
 
   @Get('ledger')
   @RequirePermission('reports.view')
-  @ApiOkResponse({ description: 'An account’s posted lines with opening, running and closing balances' })
-  ledger(@Query(ledgerQuery) q: { accountId: string; from: string; to: string }, @CurrentTenant() tenant: Tenant) {
-    return this.reports.ledger(tenant.organizationId, q.accountId, q.from, q.to);
+  @ApiOkResponse({
+    description:
+      'An account’s posted lines with opening, running and closing balances',
+  })
+  ledger(
+    @Query(ledgerQuery) q: { accountId: string; from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.ledger(
+      tenant.organizationId,
+      q.accountId,
+      q.from,
+      q.to,
+    );
   }
 
   @Get('ledger/export')
@@ -64,16 +128,37 @@ export class ReportsController {
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Cache-Control', 'no-store')
   @ApiProduces('text/csv')
-  async ledgerCsv(@Query(ledgerQuery) q: { accountId: string; from: string; to: string }, @CurrentTenant() tenant: Tenant, @Res({ passthrough: true }) res: Response) {
-    const l = await this.reports.ledger(tenant.organizationId, q.accountId, q.from, q.to);
-    res.setHeader('Content-Disposition', `attachment; filename="ledger-${l.account.code}-${q.from}-${q.to}.csv"`);
-    return this.reports.ledgerCsv(l, await this.reports.decimals(tenant.organizationId));
+  async ledgerCsv(
+    @Query(ledgerQuery) q: { accountId: string; from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const l = await this.reports.ledger(
+      tenant.organizationId,
+      q.accountId,
+      q.from,
+      q.to,
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="ledger-${l.account.code}-${q.from}-${q.to}.csv"`,
+    );
+    return this.reports.ledgerCsv(
+      l,
+      await this.reports.decimals(tenant.organizationId),
+    );
   }
 
   @Get('tax-summary')
   @RequirePermission('reports.view')
-  @ApiOkResponse({ description: 'Taxable values and tax per group, and output, input and net tax per rate, for a date range' })
-  taxSummary(@Query(rangeQuery) q: { from: string; to: string }, @CurrentTenant() tenant: Tenant) {
+  @ApiOkResponse({
+    description:
+      'Taxable values and tax per group, and output, input and net tax per rate, for a date range',
+  })
+  taxSummary(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
     return this.reports.taxSummary(tenant.organizationId, q.from, q.to);
   }
 
@@ -82,9 +167,59 @@ export class ReportsController {
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Cache-Control', 'no-store')
   @ApiProduces('text/csv')
-  async taxSummaryCsv(@Query(rangeQuery) q: { from: string; to: string }, @CurrentTenant() tenant: Tenant, @Res({ passthrough: true }) res: Response) {
-    const t = await this.reports.taxSummary(tenant.organizationId, q.from, q.to);
-    res.setHeader('Content-Disposition', `attachment; filename="tax-summary-${q.from}-${q.to}.csv"`);
-    return this.reports.taxSummaryCsv(t, await this.reports.decimals(tenant.organizationId));
+  async taxSummaryCsv(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const t = await this.reports.taxSummary(
+      tenant.organizationId,
+      q.from,
+      q.to,
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="tax-summary-${q.from}-${q.to}.csv"`,
+    );
+    return this.reports.taxSummaryCsv(
+      t,
+      await this.reports.decimals(tenant.organizationId),
+    );
+  }
+
+  @Get('aging')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Receivables or payables on asOf (default: today) by days past due, per contact, with the documents',
+  })
+  async aging(
+    @Query(agingQuery) q: { side: AgingSide; asOf?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.aging(
+      tenant.organizationId,
+      q.side,
+      q.asOf ?? (await this.today(tenant.organizationId)),
+    );
+  }
+
+  @Get('aging/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async agingCsv(
+    @Query(agingQuery) q: { side: AgingSide; asOf?: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const asOf = q.asOf ?? (await this.today(tenant.organizationId));
+    const a = await this.reports.aging(tenant.organizationId, q.side, asOf);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${q.side}-aging-${asOf}.csv"`,
+    );
+    return this.reports.agingCsv(a);
   }
 }
