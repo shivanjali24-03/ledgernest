@@ -26,6 +26,7 @@ export const AUDIT_ACTION_GROUPS = {
   imports: ['org.import.'],
   integrations: ['org.api_key.', 'org.webhook.'],
   scheduledReports: ['org.scheduled_report.'],
+  backups: ['org.backup.'],
   gstSlabs: ['platform.gst_slab.'],
   supportAccess: ['platform.support_access'],
   organizations: ['platform.organization.'],
@@ -35,7 +36,7 @@ export const AUDIT_ACTION_GROUPS = {
 export type AuditActionGroup = keyof typeof AUDIT_ACTION_GROUPS;
 
 /** Groups that make sense inside one organisation (sign-ins and platform admin actions are platform-wide). */
-export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['journals', 'accounts', 'periods', 'taxes', 'currencies', 'contacts', 'items', 'invoices', 'payments', 'bills', 'banking', 'assets', 'budgets', 'costCentres', 'inventory', 'approvals', 'imports', 'integrations', 'scheduledReports', 'members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
+export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['journals', 'accounts', 'periods', 'taxes', 'currencies', 'contacts', 'items', 'invoices', 'payments', 'bills', 'banking', 'assets', 'budgets', 'costCentres', 'inventory', 'approvals', 'imports', 'integrations', 'scheduledReports', 'backups', 'members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
 
 export const AUDIT_PAGE_SIZE = 50;
 export const AUDIT_EXPORT_LIMIT = 10_000;

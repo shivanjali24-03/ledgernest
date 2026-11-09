@@ -50,6 +50,14 @@ export function setupApp(app: INestApplication) {
       attachmentJson(req, res, next);
     },
   );
+  // Restoring a backup: the whole organisation in one file
+  const backupJson = json({ limit: '50mb' });
+  app.use(
+    '/api/v1/backups/restore',
+    function backupBodyParser(req: Request, res: Response, next: NextFunction) {
+      backupJson(req, res, next);
+    },
+  );
   // Spreadsheet imports: up to 2,000 rows
   const importJson = json({ limit: '5mb' });
   app.use(

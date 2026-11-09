@@ -578,7 +578,8 @@
       "approvals": "Aprobaciones",
       "imports": "Importaciones",
       "integrations": "Integraciones",
-      "scheduledReports": "Informes programados"
+      "scheduledReports": "Informes programados",
+      "backups": "Copias de seguridad"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -733,7 +734,9 @@
       "org_webhook_delete": "Webhook eliminado",
       "org_scheduled_report_create": "Informe programado creado",
       "org_scheduled_report_update": "Informe programado modificado",
-      "org_scheduled_report_delete": "Informe programado eliminado"
+      "org_scheduled_report_delete": "Informe programado eliminado",
+      "org_backup_export": "Copia de seguridad descargada",
+      "org_backup_restore": "Restaurado desde una copia de seguridad"
     },
     "entities": {
       "membership": "Miembro",
