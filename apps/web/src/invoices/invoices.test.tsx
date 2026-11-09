@@ -141,6 +141,27 @@ describe('invoices', () => {
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/invoices\/[0-9a-f-]{36}$/), { timeout: 6000 });
   });
 
+  it('emails an issued invoice to the customer', { timeout: 20_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    await screen.findByRole('button', { name: 'Email' }, { timeout: 4000 });
+    // Open the dialog and send in one step, retried, as the header re-renders while the invoice loads
+    let sent = false;
+    await waitFor(
+      () => {
+        if (sent) return;
+        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+        const dialog = screen.getByRole('dialog', { name: /^Email INV\/.* to the customer$/ });
+        expect(within(dialog).getByLabelText('Send to')).toHaveValue('accounts@kumarlogistics.in');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Send' }));
+        sent = true;
+      },
+      { timeout: 8000 },
+    );
+    await waitFor(() => expect(screen.getByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in')).toBeInTheDocument(), { timeout: 4000 });
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^INV\// }, { timeout: 4000 });

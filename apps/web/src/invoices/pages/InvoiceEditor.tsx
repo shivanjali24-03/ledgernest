@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor } from '@ledgernest/shared';
-import { ArrowLeft, BellRing, Ban, Copy, FileMinus, HandCoins, Printer, Repeat } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileMinus, HandCoins, Mail, Printer, Repeat } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -24,6 +24,7 @@ import InvoiceDocument from '../InvoiceDocument';
 import { invoiceErrorMessage } from '../errors';
 import SalesDraftForm, { type SalesDraftPayload } from '../SalesDraftForm';
 import ReminderDialog from '../ReminderDialog';
+import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
 import { useInvoicesApi } from '../useInvoicesApi';
@@ -78,6 +79,7 @@ export default function InvoiceEditor() {
   const [crediting, setCrediting] = useState(false);
   const [repeating, setRepeating] = useState(false);
   const [reminding, setReminding] = useState(false);
+  const [emailing, setEmailing] = useState(false);
   const recurringApi = useRecurringApi();
   const creditNotesApi = useCreditNotesApi();
   const paymentsApi = usePaymentsApi();
@@ -126,6 +128,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && canManage && (
+                  <Button variant="secondary" icon={<Mail className="size-4" />} onClick={() => setEmailing(true)}>
+                    {t('invoices.email.action')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canManage && invoice.balance > 0 && (
@@ -246,6 +253,7 @@ export default function InvoiceEditor() {
         )}
         {invoice && <DocumentAttachments documentType="invoice" documentId={invoice.id} />}
       </motion.div>
+      {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       {crediting && invoice && creditNotesApi && (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reminderDue } from './index.js';
+import { invoiceRows, reminderDue } from './index.js';
 
 describe('reminderDue', () => {
   const policy = { enabled: true, firstAfterDays: 3, repeatEveryDays: 7, maxReminders: 2 };
@@ -19,5 +19,14 @@ describe('reminderDue', () => {
     // "0 days after" still means once it's overdue, not on the due date
     expect(reminderDue(inv, { ...policy, firstAfterDays: 0 }, '2026-11-01')).toBe(false);
     expect(reminderDue(inv, { ...policy, firstAfterDays: 0 }, '2026-11-02')).toBe(true);
+  });
+});
+
+describe('invoiceRows', () => {
+  it('lays out lines, tax by rate and totals, with the balance once something is paid', () => {
+    const rows = invoiceRows({ currency: 'INR', subtotal: 1_000_000, total: 1_180_000, amountPaid: 180_000, balance: 1_000_000, taxBreakdown: [{ name: 'CGST 9%', amount: 90_000 }, { name: 'SGST 9%', amount: 90_000 }], lines: [{ description: 'Development', quantity: '4', unitPrice: 250_000, discount: 0, amount: 1_000_000, taxAmount: 180_000, item: { hsnSac: '998314' } }] }, 2);
+    expect(rows[1]).toEqual(['Development', '998314', '4', '2500.00', '', '10000.00', '1800.00']);
+    expect(rows.map((r) => r[4])).toContain('CGST 9%');
+    expect(rows.at(-1)).toEqual(['', '', '', '', 'Balance due', '', '10000.00']);
   });
 });

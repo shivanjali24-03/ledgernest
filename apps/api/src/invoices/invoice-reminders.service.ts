@@ -10,6 +10,10 @@ import {
   currencyDigits,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
+  findIndianState,
+  invoiceRows,
+  pdfTableBytes,
+  type invoiceEmailSchema,
   reminderDue,
   todayIn,
   type invoiceReminderSchema,
@@ -261,5 +265,113 @@ export class InvoiceRemindersService
       req: sender.req,
     });
     return { sentTo: to, ...updated };
+  }
+
+  /** An issued invoice as a PDF to the customer (or the address given), with an optional note */
+  async emailInvoice(
+    id: string,
+    input: z.output<typeof invoiceEmailSchema>,
+    ctx: Ctx,
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    const inv = await this.invoices.get(organizationId, id);
+    if (inv.status !== 'issued')
+      throw new ConflictException({
+        message: 'Only issued invoices can be emailed.',
+        details: { reason: 'not_issued' },
+      });
+    if (!this.mail.configured)
+      throw new ConflictException({
+        message:
+          'Email isn’t set up on this server. Print the invoice and send it yourself.',
+        details: { reason: 'mail_off' },
+      });
+    const to = input.email ?? inv.contact.email;
+    if (!to)
+      throw new BadRequestException({
+        message: 'This customer has no email address. Enter one to send it to.',
+        details: { reason: 'no_email' },
+      });
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: {
+        name: true,
+        legalName: true,
+        taxId: true,
+        addressLine1: true,
+        addressLine2: true,
+        city: true,
+        region: true,
+        postalCode: true,
+        baseCurrency: true,
+      },
+    });
+    const currency = inv.currency ?? org.baseCurrency;
+    const digits = currencyDigits(currency);
+    const address = (a: Record<string, string | null | undefined>) =>
+      [a.line1, a.line2, a.city, a.region, a.postalCode]
+        .filter(Boolean)
+        .join(', ');
+    const seller = org.legalName ?? org.name;
+    const pos = inv.placeOfSupply
+      ? findIndianState(inv.placeOfSupply)
+      : undefined;
+    const pdf = Buffer.from(
+      pdfTableBytes({
+        title: `${org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
+        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
+        info: [
+          address({
+            line1: org.addressLine1,
+            line2: org.addressLine2,
+            city: org.city,
+            region: org.region,
+            postalCode: org.postalCode,
+          }),
+          `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
+          address(inv.contact.billingAddress),
+          `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
+        ].filter(Boolean),
+        footer: `${seller} · ${inv.number}`,
+        rows: invoiceRows({ ...inv, currency }, digits),
+      }),
+    );
+    const sent = await this.mail.send({
+      to: [to],
+      subject: `Invoice ${inv.number} from ${org.name}`,
+      text: [
+        `Dear ${inv.contact.name},`,
+        ...(input.message ? [input.message] : []),
+        `Please find invoice ${inv.number} attached: ${currency} ${(inv.total / 10 ** digits).toFixed(digits)}, due on ${inv.dueDate}.`,
+        ...(inv.amountPaid
+          ? [
+              `Paid so far: ${currency} ${(inv.amountPaid / 10 ** digits).toFixed(digits)}. Still to pay: ${currency} ${(inv.balance / 10 ** digits).toFixed(digits)}.`,
+            ]
+          : []),
+        org.name,
+      ].join('\n\n'),
+      attachments: [
+        {
+          filename: `invoice-${inv.number!.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+          content: pdf,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    if (!sent)
+      throw new ConflictException({
+        message: 'The email couldn’t be sent. Try again later.',
+        details: { reason: 'mail_failed' },
+      });
+    await this.audit.record({
+      action: 'org.invoice.email',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'invoice',
+      entityId: id,
+      after: { number: inv.number, email: to, total: inv.total },
+      req: ctx.req,
+    });
+    return { sentTo: to };
   }
 }

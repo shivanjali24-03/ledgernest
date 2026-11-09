@@ -752,7 +752,8 @@
       "org_quote_decline": "Presupuesto rechazado",
       "org_quote_reopen": "Presupuesto reabierto",
       "org_quote_invoice": "Presupuesto facturado",
-      "org_quote_email": "Presupuesto enviado por correo"
+      "org_quote_email": "Presupuesto enviado por correo",
+      "org_invoice_email": "Factura enviada por correo"
     },
     "entities": {
       "membership": "Miembro",
@@ -2114,7 +2115,19 @@
         "maxReminders": "De 1 a 10 recordatorios."
       }
     },
-    "duplicate": "Duplicar"
+    "duplicate": "Duplicar",
+    "email": {
+      "action": "Enviar por correo",
+      "title": "Enviar {{number}} al cliente",
+      "body": "Se envía en PDF con tu NIF y el suyo, las líneas, los impuestos por tipo y lo pendiente.",
+      "to": "Enviar a",
+      "badEmail": "Introduce un correo electrónico válido.",
+      "note": "Nota",
+      "noteHint": "Opcional: va al principio del correo.",
+      "send": "Enviar",
+      "sent": "Factura enviada a {{email}}",
+      "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}"
+    }
   },
   "payments": {
     "title": "Pagos",

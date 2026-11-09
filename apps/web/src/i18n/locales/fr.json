@@ -752,7 +752,8 @@
       "org_quote_decline": "Devis refusé",
       "org_quote_reopen": "Devis rouvert",
       "org_quote_invoice": "Devis facturé",
-      "org_quote_email": "Devis envoyé par e-mail"
+      "org_quote_email": "Devis envoyé par e-mail",
+      "org_invoice_email": "Facture envoyée par e-mail"
     },
     "entities": {
       "membership": "Membre",
@@ -2114,7 +2115,19 @@
         "maxReminders": "De 1 à 10 relances."
       }
     },
-    "duplicate": "Dupliquer"
+    "duplicate": "Dupliquer",
+    "email": {
+      "action": "Envoyer par e-mail",
+      "title": "Envoyer {{number}} au client",
+      "body": "Elle part en PDF avec vos numéros fiscaux, les lignes, les taxes par taux et le reste dû.",
+      "to": "Envoyer à",
+      "badEmail": "Saisissez une adresse e-mail valide.",
+      "note": "Note",
+      "noteHint": "Facultatif : elle figure en haut de l’e-mail.",
+      "send": "Envoyer",
+      "sent": "Facture envoyée à {{email}}",
+      "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; elle partirait à {{email}}"
+    }
   },
   "payments": {
     "title": "Paiements",

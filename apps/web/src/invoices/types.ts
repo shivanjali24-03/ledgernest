@@ -81,6 +81,8 @@ export interface InvoicesApi {
   void(id: string, input: { date?: string; reason?: string }): Promise<Invoice>;
   /** Emails the customer a payment reminder; the demo only pretends */
   remind(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; lastRemindedAt: string; reminders: number }>;
+  /** Emails an issued invoice as a PDF; the demo only pretends */
+  email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
   /** Automatic reminders for overdue invoices */
   reminderPolicy(): Promise<ReminderPolicy>;
   setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;
