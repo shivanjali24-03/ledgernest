@@ -30,6 +30,17 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
 - **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
 
+## Audit log
+
+- Every sign-in, admin change and Super Admin support visit is recorded: who, what, when, from which IP and browser, with before and after values.
+- **Append-only, enforced by PostgreSQL.** Database triggers refuse any `UPDATE`, `DELETE` or `TRUNCATE` on `audit_logs`, whatever the application does. The only allowed change is the database clearing `actor_id` or `organization_id` when that user or organisation row is deleted.
+- **Who it was is never lost:** a trigger copies the actor's email into the entry when it's written, so it survives even if the user is later deleted.
+- **Organisations** see their own log (`GET /api/v1/organization/audit`, needs `audit.view`): team and role changes, invitations, exports, and every Super Admin support visit to their data.
+- **Super Admins** see everything (`GET /api/v1/platform/audit`), including sign-ins, and can narrow it to one organisation.
+- Filters: kind of action, person, organisation and date range. Paging uses a cursor on (time, id), so it stays stable while new entries arrive.
+- **CSV export** of up to 10,000 entries. Cells that a spreadsheet would run as a formula are neutralised, and every export is itself recorded.
+- Note for development: because the log is append-only, test runs leave audit entries in the test database. That's expected, and tests never depend on them.
+
 ## Team management
 
 An organisation's own admins manage their team under `/api/v1/organization` (`members`, `invitations`, `roles`). One rule runs through all of it: **nobody can grant more access than they have.**
