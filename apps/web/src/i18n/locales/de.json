@@ -1233,7 +1233,35 @@
       "net": "Netto"
     },
     "fxAmount": "Betrag ({{code}})",
-    "fxBalance": "Saldo ({{code}})"
+    "fxBalance": "Saldo ({{code}})",
+    "aging": {
+      "title": "Fälligkeiten",
+      "side": "Anzeigen",
+      "receivables": "Forderungen",
+      "payables": "Verbindlichkeiten",
+      "hint": "Offene Rechnungen nach Stand der Bücher an diesem Tag, nach Tagen seit Fälligkeit.",
+      "empty": {
+        "receivables": "An diesem Tag schuldet niemand etwas",
+        "payables": "An diesem Tag ist an Lieferanten nichts offen"
+      },
+      "emptyBody": "Versuchen Sie ein anderes Datum oder schauen Sie wieder, sobald Rechnungen erfasst sind.",
+      "buckets": {
+        "current": "Noch nicht fällig",
+        "d1_30": "1–30 Tage",
+        "d31_60": "31–60 Tage",
+        "d61_90": "61–90 Tage",
+        "over_90": "Über 90 Tage"
+      },
+      "totalOwedToUs": "Forderungen, netto",
+      "totalWeOwe": "Verbindlichkeiten, netto",
+      "customer": "Kunde",
+      "vendor": "Lieferant",
+      "advance": "Anzahlungen",
+      "total": "Gesamt",
+      "totalIn": "Gesamt in {{currency}}",
+      "daysLate": "Fällig {{due}} · {{count}} T. überfällig",
+      "due": "Fällig {{due}}"
+    }
   },
   "taxes": {
     "title": "Steuern",

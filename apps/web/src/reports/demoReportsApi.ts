@@ -1,9 +1,10 @@
-import { compareCodes, csvCell, formatRate, NORMAL_SIDE, taxRole } from '@ledgernest/shared';
+import { AGING_BUCKETS, agingBucket, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
-import type { Ledger, ReportsApi, TaxSummary, TrialBalance } from './types';
+import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
+import type { Aging, AgingContact, Ledger, ReportsApi, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -105,6 +106,49 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     };
   };
 
+  /** Open invoices or bills on a day, less what was paid by then (loaded on demand: they need contacts and journals too) */
+  const aging = async (side: AgingSide, asOf: string): Promise<Aging> => {
+    const receivables = side === 'receivables';
+    const docs = receivables
+      ? (await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews()).filter((i) => i.status === 'issued').map((i) => ({ ...i, date: i.issueDate, vendorReference: null }))
+      : (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((b) => b.status === 'open').map((b) => ({ ...b, date: b.billDate }));
+    const { createDemoPaymentsApi } = await import('../payments/demoPaymentsApi');
+    const payments = (await createDemoPaymentsApi(() => true).list({ kind: receivables ? 'receipt' : 'payment', page: 1, pageSize: 1000 })).items.filter((p) => p.status === 'posted' && p.date <= asOf);
+    const zero = () => Object.fromEntries(AGING_BUCKETS.map((b) => [b, 0])) as Record<AgingBucket, number>;
+    const inBase = (minor: number, currency: string | null, rate: string | null) => (currency && rate ? toBase(minor, rate, currencyDigits(currency), currencyDigits(DEMO_BASE_CURRENCY)) : minor);
+    const rows = new Map<string, AgingContact>();
+    const rowFor = (contact: { id: string; name: string }, currency: string | null) => {
+      const key = `${contact.id}:${currency ?? ''}`;
+      if (!rows.has(key)) rows.set(key, { contact: { id: contact.id, name: contact.name }, currency, buckets: zero(), total: 0, advance: 0, baseTotal: 0, baseAdvance: 0, documents: [] });
+      return rows.get(key)!;
+    };
+    const totals = { buckets: zero(), total: 0, advance: 0 };
+    for (const d of docs) {
+      if (d.date > asOf || !d.number) continue;
+      const outstanding = d.total - d.payments.filter((p) => p.date <= asOf).reduce((s, p) => s + p.amount, 0);
+      if (outstanding <= 0) continue;
+      const bucket = agingBucket(d.dueDate, asOf);
+      const r = rowFor(d.contact, d.currency);
+      const base = inBase(outstanding, d.currency, d.rate);
+      r.buckets[bucket] += outstanding;
+      r.total += outstanding;
+      r.baseTotal += base;
+      totals.buckets[bucket] += base;
+      totals.total += base;
+      r.documents.push({ id: d.id, number: d.number, vendorReference: d.vendorReference, date: d.date, dueDate: d.dueDate, daysOverdue: Math.max(0, daysBetween(d.dueDate, asOf)), bucket, total: d.total, outstanding });
+    }
+    for (const p of payments.filter((x) => x.unallocated > 0)) {
+      const r = rowFor(p.contact, p.currency);
+      const base = inBase(p.unallocated, p.currency, p.rate);
+      r.advance += p.unallocated;
+      r.baseAdvance += base;
+      totals.advance += base;
+    }
+    const contacts = [...rows.values()].sort((x, y) => x.contact.name.localeCompare(y.contact.name));
+    for (const c of contacts) c.documents.sort((x, y) => x.dueDate.localeCompare(y.dueDate));
+    return { side, asOf, baseCurrency: DEMO_BASE_CURRENCY, buckets: AGING_BUCKETS, contacts, totals: { ...totals, net: totals.total - totals.advance } };
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
@@ -114,6 +158,20 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     trialBalance,
     ledger,
     taxSummary,
+    aging,
+    async exportAging(side, asOf) {
+      guard();
+      const a = await aging(side, asOf);
+      const fmt = (minor: number, currency: string) => (minor / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency));
+      const rows: unknown[][] = [['contact', 'document', 'date', 'due_date', 'days_overdue', 'currency', 'current', '1_30', '31_60', '61_90', 'over_90', 'advance', 'net']];
+      for (const c of a.contacts) {
+        const cur = c.currency ?? a.baseCurrency;
+        for (const d of c.documents) rows.push([c.contact.name, d.number, d.date, d.dueDate, d.daysOverdue, cur, ...AGING_BUCKETS.map((b) => (b === d.bucket ? fmt(d.outstanding, cur) : '')), '', fmt(d.outstanding, cur)]);
+        rows.push([`${c.contact.name} total`, '', '', '', '', cur, ...AGING_BUCKETS.map((b) => fmt(c.buckets[b], cur)), fmt(c.advance, cur), fmt(c.total - c.advance, cur)]);
+      }
+      rows.push([`Total (${a.baseCurrency})`, '', '', '', '', a.baseCurrency, ...AGING_BUCKETS.map((b) => fmt(a.totals.buckets[b], a.baseCurrency)), fmt(a.totals.advance, a.baseCurrency), fmt(a.totals.net, a.baseCurrency)]);
+      return { filename: `${side}-aging-${asOf}.csv`, blob: csv(rows) };
+    },
     async exportTaxSummary(from, to) {
       guard();
       const t = await taxSummary(from, to);

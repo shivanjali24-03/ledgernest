@@ -1233,7 +1233,35 @@
       "net": "Net"
     },
     "fxAmount": "Amount ({{code}})",
-    "fxBalance": "Balance ({{code}})"
+    "fxBalance": "Balance ({{code}})",
+    "aging": {
+      "title": "Aging",
+      "side": "Show",
+      "receivables": "Owed to us",
+      "payables": "We owe",
+      "hint": "Open invoices or bills as the books stood on the day, by how long they’ve been due.",
+      "empty": {
+        "receivables": "Nobody owes anything on this day",
+        "payables": "Nothing owed to vendors on this day"
+      },
+      "emptyBody": "Try another date, or come back once invoices and bills are recorded.",
+      "buckets": {
+        "current": "Not yet due",
+        "d1_30": "1–30 days",
+        "d31_60": "31–60 days",
+        "d61_90": "61–90 days",
+        "over_90": "Over 90 days"
+      },
+      "totalOwedToUs": "Owed to us, net",
+      "totalWeOwe": "We owe, net",
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "advance": "Advances",
+      "total": "Total",
+      "totalIn": "Total in {{currency}}",
+      "daysLate": "Due {{due}} · {{count}} d overdue",
+      "due": "Due {{due}}"
+    }
   },
   "taxes": {
     "title": "Taxes",

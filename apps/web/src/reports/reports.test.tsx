@@ -1,8 +1,11 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
 import { resetDemoAccounts } from '../accounts/demoAccountsApi';
+import { resetDemoBills } from '../bills/demoBillsApi';
+import { resetDemoInvoices } from '../invoices/demoInvoicesApi';
+import { resetDemoPayments } from '../payments/demoPaymentsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
@@ -23,6 +26,9 @@ beforeEach(() => {
   resetDemoJournals();
   resetDemoAccounts();
   resetDemoPeriods();
+  resetDemoInvoices();
+  resetDemoBills();
+  resetDemoPayments();
   sessionStorage.clear();
 });
 
@@ -57,4 +63,18 @@ describe('reports', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Export CSV' })).not.toBeInTheDocument());
     expect(await screen.findByRole('heading', { name: 'Reports' })).toBeInTheDocument();
   });
+
+  it('ages what customers owe, with each invoice on demand, and what we owe vendors', async () => {
+    renderApp('/reports?tab=aging');
+    const kumar = (await screen.findByRole('button', { name: /Kumar Logistics/ }, { timeout: 4000 })).closest('tr')!;
+    expect(within(kumar).getAllByRole('cell').at(-1)).toHaveTextContent('1,18,000.00');
+    expect(screen.getByText('Owed to us, net').closest('div')!).toHaveTextContent('₹1,18,000.00');
+    await userEvent.click(within(kumar).getByRole('button', { name: /Kumar Logistics/ }));
+    expect(screen.getByRole('link', { name: /^INV\/.*\/0001$/ })).toBeInTheDocument();
+    // Before the invoice was issued, nobody owed anything
+    fireEvent.change(screen.getByLabelText('As of'), { target: { value: '2020-01-01' } });
+    expect(await screen.findByText('Nobody owes anything on this day', {}, { timeout: 4000 })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'We owe' }));
+    expect(await screen.findByText('Nothing owed to vendors on this day', {}, { timeout: 4000 })).toBeInTheDocument();
+  }, 20_000);
 });

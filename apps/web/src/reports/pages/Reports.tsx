@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, todayIn } from '@ledgernest/shared';
+import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, todayIn, type AgingSide } from '@ledgernest/shared';
 import { AlertTriangle, Building2, CheckCircle2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -14,13 +14,14 @@ import { apiErrorMessage } from '../../platform/errors';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
-import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
+import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
+import AgingPanel from '../AgingPanel';
 import TaxSummaryPanel from '../TaxSummaryPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'ledger' | 'tax';
+type Tab = 'trial-balance' | 'ledger' | 'tax' | 'aging';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -68,9 +69,11 @@ export default function Reports() {
   const tb = useQuery({ queryKey: [...key, 'tb', asOf], queryFn: () => api!.trialBalance(asOf), enabled: !!api && tab === 'trial-balance', placeholderData: keepPreviousData });
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi && tab === 'ledger' });
   const ledger = useQuery({ queryKey: [...key, 'ledger', accountId, from, to], queryFn: () => api!.ledger(accountId, from, to), enabled: !!api && tab === 'ledger' && !!accountId && from <= to, placeholderData: keepPreviousData });
+  const side = (params.get('side') as AgingSide | null) ?? 'receivables';
+  const aging = useQuery({ queryKey: [...key, 'aging', side, asOf], queryFn: () => api!.aging(side, asOf), enabled: !!api && tab === 'aging', placeholderData: keepPreviousData });
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
+    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -115,6 +118,7 @@ export default function Reports() {
             { value: 'trial-balance', label: t('reports.trialBalance') },
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
+            { value: 'aging', label: t('reports.aging.title') },
           ]}
         />
       </motion.div>
@@ -202,6 +206,25 @@ export default function Reports() {
               </div>
             )}
           </Card>
+        </motion.div>
+      ) : tab === 'aging' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4">
+            <Segmented<AgingSide>
+              label={t('reports.aging.side')}
+              value={side}
+              onChange={(v) => set({ side: v === 'receivables' ? null : v })}
+              options={[
+                { value: 'receivables', label: t('reports.aging.receivables') },
+                { value: 'payables', label: t('reports.aging.payables') },
+              ]}
+            />
+            <div className="w-48">
+              <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
+            </div>
+            <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.aging.hint')}</p>
+          </div>
+          <AgingPanel data={aging.data} isPending={aging.isPending} isError={aging.isError} onRetry={() => void aging.refetch()} />
         </motion.div>
       ) : tab === 'tax' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
