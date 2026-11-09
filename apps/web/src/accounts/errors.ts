@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { ApiError } from '../auth/client';
 import { apiErrorMessage } from '../platform/errors';
 
-const REASONS = ['code_taken', 'name_taken', 'parent_type', 'too_deep', 'cycle', 'has_children', 'has_active_children', 'has_entries', 'subtype', 'system', 'parent_archived', 'parent_not_found', 'already_archived', 'not_archived', 'chart_not_empty'];
+const REASONS = ['code_taken', 'name_taken', 'parent_type', 'too_deep', 'cycle', 'has_children', 'has_active_children', 'has_entries', 'subtype', 'system', 'parent_archived', 'parent_not_found', 'already_archived', 'not_archived', 'chart_not_empty', 'currency_not_enabled', 'currency_type', 'used_by_tax'];
 
 /** A translated explanation for an account refusal, falling back to the general messages. */
 export function accountErrorMessage(e: unknown, t: TFunction): string {
@@ -12,11 +12,12 @@ export function accountErrorMessage(e: unknown, t: TFunction): string {
 }
 
 /** Which form field a refusal is about, so it can be shown next to it. */
-export const errorField = (e: unknown): 'code' | 'name' | 'parentId' | 'subtype' | null => {
+export const errorField = (e: unknown): 'code' | 'name' | 'parentId' | 'subtype' | 'currency' | null => {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
   if (reason === 'code_taken') return 'code';
   if (reason === 'name_taken') return 'name';
   if (reason === 'parent_type' || reason === 'too_deep' || reason === 'cycle' || reason === 'parent_archived' || reason === 'parent_not_found') return 'parentId';
   if (reason === 'subtype') return 'subtype';
+  if (reason === 'currency_not_enabled' || reason === 'currency_type') return 'currency';
   return null;
 };

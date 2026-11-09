@@ -1,5 +1,6 @@
 import { accountCreateSchema, accountUpdateSchema, MAX_ACCOUNT_DEPTH, namedTemplate, NORMAL_SIDE, subtypeBelongsTo, type AccountSubtype, type AccountType } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoEnabledCurrencies } from '../currencies/demoCurrenciesApi';
 import { heightOf, levelOf, subtreeIds } from './tree';
 import type { Account, AccountsApi } from './types';
 
@@ -8,7 +9,8 @@ import type { Account, AccountsApi } from './types';
  * It applies the same rules and refusal reasons as the API, so the screens behave the same in both.
  */
 
-const KEY = 'ledgernest.demo.accounts';
+// v2: the sample chart has USD accounts
+const KEY = 'ledgernest.demo.accounts.v2';
 type Stored = Omit<Account, 'normalSide' | 'system' | 'archived' | 'childCount'>;
 
 /** A stable UUID for a sample account, so ids pass the same validation as real ones and survive reloads. */
@@ -23,14 +25,16 @@ function seed(): Stored[] {
   const rows: Stored[] = [];
   const add = (code: string, name: string, type: AccountType, subtype: AccountSubtype, parent?: string, extra: Partial<Stored> = {}) => {
     const parentId = parent ? rows.find((r) => r.code === parent)!.id : null;
-    rows.push({ id: sampleId(code), code, name, type, subtype, description: null, parentId, systemKey: null, archivedAt: null, ...extra });
+    rows.push({ id: sampleId(code), code, name, type, subtype, description: null, parentId, systemKey: null, archivedAt: null, currency: null, ...extra });
   };
   add('1100', 'Bank accounts', 'asset', 'bank');
   add('1100.01', 'HDFC Bank current account', 'asset', 'bank', '1100');
   add('1100.02', 'ICICI Bank savings account', 'asset', 'bank', '1100');
   add('1200', 'Cash', 'asset', 'cash');
   add('1200.01', 'Petty cash – Pune office', 'asset', 'cash', '1200');
+  add('1150', 'Wise USD account', 'asset', 'bank', undefined, { currency: 'USD', description: 'Receives payments from US clients.' });
   add('1300', 'Accounts receivable', 'asset', 'accounts_receivable', undefined, { description: 'Amounts clients owe us for invoices.' });
+  add('1310', 'Receivables – export clients (USD)', 'asset', 'accounts_receivable', undefined, { currency: 'USD' });
   add('1400', 'GST input credit', 'asset', 'current_asset');
   add('1400.01', 'CGST input', 'asset', 'current_asset', '1400');
   add('1400.02', 'SGST input', 'asset', 'current_asset', '1400');
@@ -89,7 +93,7 @@ function save(rows: Stored[]) {
 }
 
 /** The demo company's accounts, for other demo features (taxes check account types against them). */
-export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'archivedAt'>[] => load();
+export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'archivedAt' | 'currency'>[] => load();
 
 /** Test helper */
 export const resetDemoAccounts = () => {
@@ -143,7 +147,8 @@ export function createDemoAccountsApi(canManage: () => boolean): AccountsApi {
         const rows = load();
         unique(rows, a);
         if (a.parentId) checkParent(rows, a.parentId, a.type, 1);
-        const row: Stored = { id: crypto.randomUUID(), code: a.code, name: a.name, type: a.type, subtype: a.subtype as AccountSubtype, description: a.description, parentId: a.parentId, systemKey: null, archivedAt: null };
+        if (a.currency && !demoEnabledCurrencies().includes(a.currency)) throw refuse(400, 'currency_not_enabled', { field: 'currency' });
+        const row: Stored = { id: crypto.randomUUID(), code: a.code, name: a.name, type: a.type, subtype: a.subtype as AccountSubtype, description: a.description, parentId: a.parentId, systemKey: null, archivedAt: null, currency: a.currency };
         rows.push(row);
         save(rows);
         return view(rows)(row);
@@ -160,6 +165,8 @@ export function createDemoAccountsApi(canManage: () => boolean): AccountsApi {
         if (a.systemKey && changed.some((k) => k === 'type' || k === 'subtype' || k === 'parentId')) throw refuse(400, 'system');
         if (changed.includes('type') && rows.some((r) => r.parentId === id)) throw refuse(409, 'has_children');
         if (!subtypeBelongsTo(next.type, next.subtype)) throw refuse(400, 'subtype');
+        if (changed.includes('currency') && next.currency && !demoEnabledCurrencies().includes(next.currency)) throw refuse(400, 'currency_not_enabled', { field: 'currency' });
+        if (next.currency && next.type !== 'asset' && next.type !== 'liability') throw refuse(400, 'currency_type', { field: 'currency' });
         unique(rows, { code: changed.includes('code') ? next.code : undefined, name: changed.includes('name') ? next.name : undefined }, id);
         if (next.parentId && (changed.includes('parentId') || changed.includes('type'))) {
           const all = rows.map(view(rows));
@@ -202,7 +209,7 @@ export function createDemoAccountsApi(canManage: () => boolean): AccountsApi {
         for (const a of template) {
           const id = crypto.randomUUID();
           ids.set(a.code, id);
-          rows.push({ id, code: a.code, name: a.name, type: a.type, subtype: a.subtype, description: null, parentId: a.parent ? ids.get(a.parent)! : null, systemKey: null, archivedAt: null });
+          rows.push({ id, code: a.code, name: a.name, type: a.type, subtype: a.subtype, description: null, parentId: a.parent ? ids.get(a.parent)! : null, systemKey: null, archivedAt: null, currency: null });
         }
         save(rows);
         return { industry, created: template.length };

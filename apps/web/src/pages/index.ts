@@ -19,4 +19,5 @@ export const JournalEditor = lazy(() => import('../journals/pages/JournalEditor'
 export const Reports = lazy(() => import('../reports/pages/Reports'));
 export const Taxes = lazy(() => import('../taxes/pages/Taxes'));
 export const GstSlabs = lazy(() => import('../taxes/pages/GstSlabs'));
+export const Currencies = lazy(() => import('../currencies/pages/Currencies'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));
