@@ -105,7 +105,7 @@ describe('invoices', () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
-    await screen.findByRole('button', { name: 'Record payment' });
+    await screen.findByRole('button', { name: 'Record payment' }, { timeout: 4000 });
     await waitFor(
       () => {
         if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Send reminder' }));

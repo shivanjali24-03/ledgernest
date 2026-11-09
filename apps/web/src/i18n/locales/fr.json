@@ -37,7 +37,8 @@
       "inventory": "Stocks",
       "approvals": "Approbations",
       "imports": "Importer",
-      "integrations": "Intégrations"
+      "integrations": "Intégrations",
+      "quotes": "Devis"
     },
     "soon": "Bientôt"
   },
@@ -741,7 +742,15 @@
       "org_backup_restore": "Restauré depuis une sauvegarde",
       "org_statement_email": "Relevé envoyé par e-mail",
       "org_invoice_remind": "Relance de paiement envoyée",
-      "org_invoice_reminder_policy": "Réglages des relances de paiement modifiés"
+      "org_invoice_reminder_policy": "Réglages des relances de paiement modifiés",
+      "org_quote_create": "Devis créé",
+      "org_quote_update": "Devis modifié",
+      "org_quote_delete": "Devis supprimé",
+      "org_quote_send": "Devis envoyé",
+      "org_quote_accept": "Devis accepté",
+      "org_quote_decline": "Devis refusé",
+      "org_quote_reopen": "Devis rouvert",
+      "org_quote_invoice": "Devis facturé"
     },
     "entities": {
       "membership": "Membre",
@@ -3242,5 +3251,71 @@
     "holds": "Contient",
     "counts": "{{rows}} lignes dans {{tables}} tables",
     "newName": "Nom de la nouvelle organisation"
+  },
+  "quotes": {
+    "title": "Devis",
+    "description": "Des devis pour vos clients, calculés comme les factures. Les devis acceptés deviennent des factures en un clic.",
+    "new": "Nouveau devis",
+    "filter": "Afficher",
+    "search": "Rechercher par numéro, client ou référence",
+    "noMatches": "Aucun devis ne correspond",
+    "empty": "Pas encore de devis",
+    "emptyBody": "Envoyez un prix au client avant de facturer : mêmes lignes, mêmes taxes.",
+    "sent": "{{number}} enregistré et marqué envoyé",
+    "saved": "{{number}} enregistré",
+    "expiryHint": "Valable {{days}} jours sauf si vous choisissez une date",
+    "save": "Enregistrer",
+    "saveSent": "Enregistrer",
+    "saveAndSend": "Enregistrer et marquer envoyé",
+    "delete": "Supprimer le devis",
+    "deleteTitle": "Supprimer ce devis brouillon ?",
+    "deleteBody": "Il disparaît définitivement. Les devis envoyés restent ; refusez-les plutôt.",
+    "deleted": "Devis supprimé",
+    "tax": "Taxes",
+    "converted": "{{number}} est maintenant une facture brouillon",
+    "newTitle": "Nouveau devis",
+    "newHint": "Choisissez le client et les lignes ; les taxes se calculent comme sur les factures.",
+    "convert": "Transformer en facture",
+    "accept": "Marquer accepté",
+    "decline": "Marquer refusé",
+    "reopen": "Rouvrir",
+    "becameInvoice": "Devenu la facture",
+    "draftInvoice": "facture brouillon",
+    "filters": {
+      "all": "Tous",
+      "open": "Ouverts",
+      "accepted": "Acceptés",
+      "expired": "Expirés",
+      "invoiced": "Facturés",
+      "declined": "Refusés"
+    },
+    "states": {
+      "draft": "Brouillon",
+      "sent": "Envoyé",
+      "accepted": "Accepté",
+      "declined": "Refusé",
+      "invoiced": "Facturé",
+      "expired": "Expiré"
+    },
+    "errors": {
+      "not_editable": "Seuls les devis brouillons ou envoyés peuvent changer.",
+      "not_draft": "Seuls les brouillons peuvent être supprimés. Refusez-le plutôt.",
+      "bad_move": "Le devis ne peut pas passer à cet état.",
+      "already_invoiced": "Ce devis est déjà une facture.",
+      "declined": "Un devis refusé ne peut pas être facturé. Marquez-le d’abord accepté."
+    },
+    "moved": {
+      "draft": "{{number}} revient en brouillon",
+      "sent": "{{number}} marqué envoyé",
+      "accepted": "{{number}} marqué accepté",
+      "declined": "{{number}} marqué refusé"
+    },
+    "columns": {
+      "number": "Devis"
+    },
+    "fields": {
+      "quoteDate": "Date du devis",
+      "expiryDate": "Valable jusqu’au"
+    }
   }
 }
