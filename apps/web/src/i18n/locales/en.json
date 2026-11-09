@@ -472,7 +472,8 @@
       "payments": "Payments",
       "banking": "Banking",
       "reports": "Reports",
-      "audit": "Audit"
+      "audit": "Audit",
+      "approvals": "Approvals"
     },
     "org_settings_view": "View settings",
     "org_settings_manage": "Change settings",
@@ -505,7 +506,9 @@
     "banking_reconcile": "Reconcile bank statements",
     "reports_view": "See reports",
     "reports_export": "Export reports",
-    "audit_view": "See the audit log"
+    "audit_view": "See the audit log",
+    "approvals_manage": "Set approval rules",
+    "approvals_approve": "Approve and send back"
   },
   "audit": {
     "title": "Audit log",
@@ -566,7 +569,8 @@
       "assets": "Fixed assets",
       "budgets": "Budgets",
       "costCentres": "Cost centres",
-      "inventory": "Inventory"
+      "inventory": "Inventory",
+      "approvals": "Approvals"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "Cost centre restored",
       "org_cost_centre_delete": "Cost centre deleted",
       "org_stock_adjust": "Stock adjusted",
-      "org_stock_adjust_undo": "Stock adjustment undone"
+      "org_stock_adjust_undo": "Stock adjustment undone",
+      "org_approval_rule": "Approval rule changed",
+      "org_approval_request": "Sent for approval",
+      "org_approval_approve": "Approved",
+      "org_approval_reject": "Sent back",
+      "org_approval_cancel": "Approval request withdrawn"
     },
     "entities": {
       "membership": "Member",

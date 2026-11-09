@@ -36,13 +36,15 @@ model User {
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
-  memberships     Membership[]
-  invitesSent     Invitation[]   @relation("InvitedBy")
-  auditEntries    AuditLog[]
-  refreshTokens   RefreshToken[]
-  periodsClosed   Period[]       @relation("PeriodClosedBy")
-  journalsCreated JournalEntry[] @relation("JournalCreatedBy")
-  journalsPosted  JournalEntry[] @relation("JournalPostedBy")
+  memberships        Membership[]
+  invitesSent        Invitation[]      @relation("InvitedBy")
+  auditEntries       AuditLog[]
+  refreshTokens      RefreshToken[]
+  periodsClosed      Period[]          @relation("PeriodClosedBy")
+  journalsCreated    JournalEntry[]    @relation("JournalCreatedBy")
+  journalsPosted     JournalEntry[]    @relation("JournalPostedBy")
+  approvalsRequested ApprovalRequest[] @relation("ApprovalRequester")
+  approvalsDecided   ApprovalRequest[] @relation("ApprovalDecider")
 
   @@map("users")
 }
@@ -110,6 +112,8 @@ model Organization {
   budgetLines        BudgetLine[]
   costCentres        CostCentre[]
   stockMovements     StockMovement[]
+  approvalRules      ApprovalRule[]
+  approvalRequests   ApprovalRequest[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -1367,4 +1371,51 @@ model StockMovement {
   @@index([organizationId, itemId, date])
   @@index([organizationId, sourceId])
   @@map("stock_movements")
+}
+
+/// Journal entries, bills or vendor payments at or above an amount need an approver's yes before they post.
+model ApprovalRule {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// journal | bill | payment
+  documentType   String   @map("document_type")
+  /// In the base currency's smallest unit
+  minAmount      BigInt   @map("min_amount")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, documentType])
+  @@map("approval_rules")
+}
+
+/// A document held for approval: approving posts it; sending it back leaves it as it was, with a note.
+model ApprovalRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  /// journal | bill | payment
+  documentType   String    @map("document_type")
+  /// The journal entry or bill held; for a payment, the payment once approved
+  documentId     String?   @map("document_id") @db.Uuid
+  /// What a held payment will be, as it was entered
+  payload        Json?
+  /// In the base currency's smallest unit
+  amount         BigInt
+  summary        String
+  /// pending | approved | rejected | cancelled
+  status         String    @default("pending")
+  requestedById  String    @map("requested_by_id") @db.Uuid
+  decidedById    String?   @map("decided_by_id") @db.Uuid
+  decidedAt      DateTime? @map("decided_at") @db.Timestamptz(3)
+  note           String?
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requestedBy  User         @relation("ApprovalRequester", fields: [requestedById], references: [id], onDelete: NoAction)
+  decidedBy    User?        @relation("ApprovalDecider", fields: [decidedById], references: [id], onDelete: NoAction)
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, documentId])
+  @@map("approval_requests")
 }

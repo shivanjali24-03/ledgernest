@@ -43,6 +43,9 @@ export const ORGANIZATION_PERMISSIONS = [
   'bills.view',
   'bills.manage',
   'payments.manage',
+  // approvals
+  'approvals.manage',
+  'approvals.approve',
   // banking
   'banking.view',
   'banking.manage',

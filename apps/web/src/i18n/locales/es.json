@@ -472,7 +472,8 @@
       "payments": "Pagos",
       "banking": "Banca",
       "reports": "Informes",
-      "audit": "Auditoría"
+      "audit": "Auditoría",
+      "approvals": "Aprobaciones"
     },
     "org_settings_view": "Ver ajustes",
     "org_settings_manage": "Cambiar ajustes",
@@ -505,7 +506,9 @@
     "banking_reconcile": "Conciliar extractos bancarios",
     "reports_view": "Ver informes",
     "reports_export": "Exportar informes",
-    "audit_view": "Ver el registro de auditoría"
+    "audit_view": "Ver el registro de auditoría",
+    "approvals_manage": "Fijar reglas de aprobación",
+    "approvals_approve": "Aprobar y devolver"
   },
   "audit": {
     "title": "Registro de auditoría",
@@ -566,7 +569,8 @@
       "assets": "Activos fijos",
       "budgets": "Presupuestos",
       "costCentres": "Centros de coste",
-      "inventory": "Inventario"
+      "inventory": "Inventario",
+      "approvals": "Aprobaciones"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "Centro de coste restaurado",
       "org_cost_centre_delete": "Centro de coste eliminado",
       "org_stock_adjust": "Existencias ajustadas",
-      "org_stock_adjust_undo": "Ajuste de existencias deshecho"
+      "org_stock_adjust_undo": "Ajuste de existencias deshecho",
+      "org_approval_rule": "Regla de aprobación cambiada",
+      "org_approval_request": "Enviado a aprobación",
+      "org_approval_approve": "Aprobado",
+      "org_approval_reject": "Devuelto",
+      "org_approval_cancel": "Solicitud de aprobación retirada"
     },
     "entities": {
       "membership": "Miembro",

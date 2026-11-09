@@ -472,7 +472,8 @@
       "payments": "المدفوعات",
       "banking": "البنوك",
       "reports": "التقارير",
-      "audit": "التدقيق"
+      "audit": "التدقيق",
+      "approvals": "الموافقات"
     },
     "org_settings_view": "عرض الإعدادات",
     "org_settings_manage": "تغيير الإعدادات",
@@ -505,7 +506,9 @@
     "banking_reconcile": "مطابقة كشوف الحساب",
     "reports_view": "عرض التقارير",
     "reports_export": "تصدير التقارير",
-    "audit_view": "عرض سجل التدقيق"
+    "audit_view": "عرض سجل التدقيق",
+    "approvals_manage": "تحديد قواعد الموافقة",
+    "approvals_approve": "الموافقة والإعادة"
   },
   "audit": {
     "title": "سجل التدقيق",
@@ -566,7 +569,8 @@
       "assets": "الأصول الثابتة",
       "budgets": "الموازنات",
       "costCentres": "مراكز التكلفة",
-      "inventory": "المخزون"
+      "inventory": "المخزون",
+      "approvals": "الموافقات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "تمت استعادة مركز تكلفة",
       "org_cost_centre_delete": "تم حذف مركز تكلفة",
       "org_stock_adjust": "تمت تسوية المخزون",
-      "org_stock_adjust_undo": "تم التراجع عن تسوية المخزون"
+      "org_stock_adjust_undo": "تم التراجع عن تسوية المخزون",
+      "org_approval_rule": "تم تغيير قاعدة الموافقة",
+      "org_approval_request": "أُرسل للموافقة",
+      "org_approval_approve": "تمت الموافقة",
+      "org_approval_reject": "أُعيد",
+      "org_approval_cancel": "تم سحب طلب الموافقة"
     },
     "entities": {
       "membership": "عضو",

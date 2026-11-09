@@ -28,6 +28,7 @@ import { AssetsModule } from './assets/assets.module.js';
 import { BudgetsModule } from './budgets/budgets.module.js';
 import { CostCentresModule } from './cost-centres/cost-centres.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { ApprovalsModule } from './approvals/approvals.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -65,6 +66,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     BudgetsModule,
     CostCentresModule,
     InventoryModule,
+    ApprovalsModule,
     PlatformModule,
   ],
   providers: [

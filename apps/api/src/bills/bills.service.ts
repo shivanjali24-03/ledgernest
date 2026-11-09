@@ -22,6 +22,7 @@ import {
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -173,6 +174,7 @@ export class BillsService {
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
     private readonly inventory: InventoryService,
+    private readonly approvals: ApprovalGate,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -802,8 +804,27 @@ export class BillsService {
    * Records a draft: works its lines out again (tax groups and accounts may have changed since it was saved),
    * gives it the next number in its financial year and posts its entry, which must fall in an open month.
    */
-  async record(id: string, ctx: Ctx) {
+  /** Records a draft. Bills an approval rule covers are held for an approver first (opts.approved: the approver recording it). */
+  async record(id: string, ctx: Ctx, opts: { approved?: boolean } = {}) {
     const organizationId = ctx.tenant.organizationId;
+    const draft = await this.get(organizationId, id);
+    if (draft.status === 'draft')
+      await this.approvals.check(
+        'bill',
+        {
+          documentId: id,
+          amount: await this.approvals.inBase(
+            organizationId,
+            draft.total,
+            draft.currency,
+            draft.billDate,
+            draft.rate,
+          ),
+          summary: `Bill from ${draft.contact.name}${draft.vendorReference ? ` · ${draft.vendorReference}` : ''}`,
+        },
+        ctx,
+        opts,
+      );
     await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       const i = await this.find(tx, organizationId, id);
