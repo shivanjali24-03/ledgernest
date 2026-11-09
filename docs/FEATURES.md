@@ -87,7 +87,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Inventory | Tracked goods bought on bills and sold on invoices at weighted average cost, cost of sales posted as stock leaves, adjustments with a reason, valuation beside the books | ✅ #134 |
 | Approval workflows | Journal entries, bills and vendor payments at or above a set amount wait for someone else’s yes; approving posts them, sending back leaves a note | ✅ #136 |
 | Document attachments | Receipts, PDFs and photos kept with journal entries, invoices, bills, payments and bank transactions; previewed, downloaded, checked by their bytes | ✅ #138 |
-| Data import | Contacts, items, accounts and opening balances from spreadsheets | Planned |
+| Data import | Chart of accounts, contacts, items and opening balances from CSV or Excel: columns matched from the headers, every row checked before anything is saved | ✅ #140 |
 | API keys and webhooks | Scoped keys for the public API and signed webhooks on events | Planned |
 | Scheduled reports | Reports emailed on a schedule | Planned |
 | Backups and restore | An organisation's data exported and restored | Planned |

@@ -1,0 +1,26 @@
+import type { ImportKind } from '@ledgernest/shared';
+
+export interface ImportRowResult {
+  row: number;
+  ok: boolean;
+  errors: { field: string | null; message: string }[];
+  /** What the row became, e.g. "1100 · Bank accounts" */
+  label?: string;
+}
+export interface ImportResult {
+  kind: ImportKind;
+  /** Only when every row was right */
+  saved: boolean;
+  rows: number;
+  valid: number;
+  results: ImportRowResult[];
+  /** Opening balances: the totals, and the draft entry made */
+  summary?: { debit: number; credit: number; difference: number };
+  journalEntry?: { id: string } | null;
+}
+
+/** Spreadsheet imports. Live and demo both implement it. */
+export interface ImportsApi {
+  preview(kind: ImportKind, rows: Record<string, string>[], date?: string): Promise<ImportResult>;
+  run(kind: ImportKind, rows: Record<string, string>[], date?: string): Promise<ImportResult>;
+}

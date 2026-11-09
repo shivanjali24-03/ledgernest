@@ -27,6 +27,7 @@ import {
   Network,
   Boxes,
   UserCheck,
+  FileUp,
 } from 'lucide-react';
 import type { Permission } from '@ledgernest/shared';
 
@@ -89,6 +90,7 @@ export const NAV: NavGroup[] = [
       { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', ready: true, keywords: 'team invite permissions roles members' },
       { to: '/approvals', labelKey: 'nav.items.approvals', icon: UserCheck, permission: 'journals.view', ready: true, keywords: 'approval approve maker checker sign off authorise authorize send back pending' },
       { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', ready: true, keywords: 'history activity log changes export' },
+      { to: '/imports', labelKey: 'nav.items.imports', icon: FileUp, permission: 'org.settings.view', ready: true, keywords: 'import spreadsheet csv excel xlsx upload chart of accounts contacts items opening balances migrate tally' },
       { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', ready: true, keywords: 'company fiscal year currency tax logo address time zone gstin vat' },
     ],
   },
