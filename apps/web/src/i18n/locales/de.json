@@ -650,7 +650,9 @@
       "org_banking_spend": "Ausgabe erfasst",
       "org_banking_receive": "Einnahme erfasst",
       "org_banking_void": "Bankbuchung storniert",
-      "org_banking_transfer": "Umbuchung zwischen Konten"
+      "org_banking_transfer": "Umbuchung zwischen Konten",
+      "org_banking_import": "Kontoauszug importiert",
+      "org_banking_import_undo": "Kontoauszug-Import rückgängig gemacht"
     },
     "entities": {
       "membership": "Mitglied",

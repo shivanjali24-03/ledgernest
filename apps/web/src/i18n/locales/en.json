@@ -650,7 +650,9 @@
       "org_banking_spend": "Money spent",
       "org_banking_receive": "Money received",
       "org_banking_void": "Bank transaction voided",
-      "org_banking_transfer": "Money transferred between accounts"
+      "org_banking_transfer": "Money transferred between accounts",
+      "org_banking_import": "Bank statement imported",
+      "org_banking_import_undo": "Bank statement import undone"
     },
     "entities": {
       "membership": "Member",

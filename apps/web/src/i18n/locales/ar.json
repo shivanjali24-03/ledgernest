@@ -650,7 +650,9 @@
       "org_banking_spend": "صُرف مبلغ",
       "org_banking_receive": "استُلم مبلغ",
       "org_banking_void": "أُلغيت حركة مصرفية",
-      "org_banking_transfer": "تحويل بين الحسابات"
+      "org_banking_transfer": "تحويل بين الحسابات",
+      "org_banking_import": "استُورد كشف حساب بنكي",
+      "org_banking_import_undo": "أُلغي استيراد كشف حساب"
     },
     "entities": {
       "membership": "عضو",

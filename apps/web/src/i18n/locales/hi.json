@@ -650,7 +650,9 @@
       "org_banking_spend": "पैसा खर्च किया",
       "org_banking_receive": "पैसा प्राप्त हुआ",
       "org_banking_void": "बैंक लेनदेन रद्द किया",
-      "org_banking_transfer": "खातों के बीच पैसा स्थानांतरित"
+      "org_banking_transfer": "खातों के बीच पैसा स्थानांतरित",
+      "org_banking_import": "बैंक विवरण आयात किया",
+      "org_banking_import_undo": "बैंक विवरण आयात वापस लिया"
     },
     "entities": {
       "membership": "सदस्य",
