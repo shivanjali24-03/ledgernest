@@ -3054,7 +3054,9 @@
       "payment_made": "Lieferant bezahlt",
       "payment_voided": "Zahlung storniert",
       "bill_recorded": "Eingangsrechnung erfasst",
-      "bill_voided": "Eingangsrechnung storniert"
+      "bill_voided": "Eingangsrechnung storniert",
+      "credit_note_issued": "Gutschrift ausgestellt",
+      "credit_note_voided": "Gutschrift storniert"
     },
     "deliveryStatuses": {
       "pending": "wartet auf erneuten Versuch",

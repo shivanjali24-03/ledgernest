@@ -3054,7 +3054,9 @@
       "payment_made": "विक्रेता को भुगतान",
       "payment_voided": "भुगतान रद्द",
       "bill_recorded": "बिल दर्ज",
-      "bill_voided": "बिल रद्द"
+      "bill_voided": "बिल रद्द",
+      "credit_note_issued": "क्रेडिट नोट जारी",
+      "credit_note_voided": "क्रेडिट नोट रद्द"
     },
     "deliveryStatuses": {
       "pending": "फिर कोशिश की प्रतीक्षा",
