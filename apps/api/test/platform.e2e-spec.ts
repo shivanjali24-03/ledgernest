@@ -72,6 +72,9 @@ describe('Super Admin console and invitations (e2e)', () => {
       expect(res.status).toBe(201);
       expect(res.body.organization).toMatchObject({ name: `Acme ${run}`, slug: `acme-${run}`, baseCurrency: 'USD', country: 'US', timeZone: 'America/New_York', status: 'ACTIVE' });
       expect(res.body.owner).toEqual({ status: 'added', userId: users.existingOwner!.id });
+      // It starts with the system accounts LedgerNest relies on
+      const system = await prisma.account.findMany({ where: { organizationId: res.body.organization.id }, select: { systemKey: true }, orderBy: { code: 'asc' } });
+      expect(system.map((a) => a.systemKey)).toEqual(['retained_earnings', 'opening_balance_equity']);
 
       const m = await prisma.membership.findFirstOrThrow({ where: { organizationId: res.body.organization.id } });
       expect(m).toMatchObject({ userId: users.existingOwner!.id, builtInRole: 'owner' });
