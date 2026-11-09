@@ -32,3 +32,4 @@ export * from './imports/index.js';
 export * from './integrations/index.js';
 export * from './xlsx/index.js';
 export * from './scheduled-reports/index.js';
+export * from './backups/index.js';
