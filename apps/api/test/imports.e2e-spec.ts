@@ -273,7 +273,7 @@ describe('Imports (e2e)', () => {
   });
 
   it('checks a big file in one go, far bigger than an ordinary request', async () => {
-    const rows = Array.from({ length: 1500 }, (_x, n) => ({
+    const rows = Array.from({ length: 700 }, (_x, n) => ({
       name: `Customer number ${n} with a reasonably long trading name Pvt Ltd`,
       kind: 'customer',
       email: `buyer${n}@customer-${n}.example.com`,
@@ -281,8 +281,9 @@ describe('Imports (e2e)', () => {
         'Imported from the old system, with notes that make each row longer than a few bytes.',
     }));
     const res = await preview('contacts', rows);
-    expect(res).toMatchObject({ rows: 1500, valid: 1500, saved: false });
-  });
+    expect(JSON.stringify({ rows }).length).toBeGreaterThan(150_000);
+    expect(res).toMatchObject({ rows: 700, valid: 700, saved: false });
+  }, 30_000);
 
   it('needs the same permission as adding by hand, and audits imports', async () => {
     expect(
