@@ -2842,5 +2842,24 @@
       "forbidden": "You don’t have permission to decide on approvals.",
       "generic": "That didn’t work. Try again."
     }
+  },
+  "attachments": {
+    "title": "Attachments",
+    "titleFor": "Attachments: {{what}}",
+    "add": "Attach file",
+    "hint": "Receipts, PDFs or photos up to 2 MB each, ten at most.",
+    "none": "Nothing attached yet.",
+    "added": "File attached",
+    "removed": "{{name}} removed",
+    "preview": "Preview {{name}}",
+    "download": "Download {{name}}",
+    "remove": "Remove {{name}}",
+    "errors": {
+      "too_large": "Attach a file under 2 MB.",
+      "type_mismatch": "That file isn’t the type it claims to be.",
+      "too_many": "Keep it to ten files per document.",
+      "wrongType": "Attach a PDF, PNG, JPEG or WebP file.",
+      "generic": "The file couldn’t be attached. Try again."
+    }
   }
 }

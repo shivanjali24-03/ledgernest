@@ -2842,5 +2842,24 @@
       "forbidden": "No tienes permiso para decidir aprobaciones.",
       "generic": "No ha funcionado. Inténtalo de nuevo."
     }
+  },
+  "attachments": {
+    "title": "Adjuntos",
+    "titleFor": "Adjuntos: {{what}}",
+    "add": "Adjuntar archivo",
+    "hint": "Recibos, PDF o fotos de hasta 2 MB cada uno, diez como máximo.",
+    "none": "Aún no hay nada adjunto.",
+    "added": "Archivo adjuntado",
+    "removed": "{{name}} quitado",
+    "preview": "Vista previa de {{name}}",
+    "download": "Descargar {{name}}",
+    "remove": "Quitar {{name}}",
+    "errors": {
+      "too_large": "Adjunta un archivo de menos de 2 MB.",
+      "type_mismatch": "Ese archivo no es del tipo que dice ser.",
+      "too_many": "Como máximo diez archivos por documento.",
+      "wrongType": "Adjunta un archivo PDF, PNG, JPEG o WebP.",
+      "generic": "No se pudo adjuntar el archivo. Inténtalo de nuevo."
+    }
   }
 }

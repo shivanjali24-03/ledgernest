@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, HandCoins, Plus, Send } from 'lucide-react';
+import { Ban, Building2, HandCoins, Paperclip, Plus, Send } from 'lucide-react';
 import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,8 @@ import { useToast } from '../../ui/toastContext';
 import ReceiptDialog from '../ReceiptDialog';
 import type { Payment } from '../types';
 import { usePaymentsApi } from '../usePaymentsApi';
+import DocumentAttachments from '../../attachments/DocumentAttachments';
+import Modal from '../../ui/Modal';
 
 const PAGE_SIZE = 25;
 
@@ -37,6 +39,7 @@ export default function Payments() {
   const [kind, setKind] = useState<'all' | PaymentKind>('all');
   const [recording, setRecording] = useState<PaymentKind | null>(null);
   const [voiding, setVoiding] = useState<Payment | null>(null);
+  const [files, setFiles] = useState<Payment | null>(null);
   const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, kind, page], queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ p, reason }: { p: Payment; reason?: string }) => api!.void(p.id, reason),
@@ -137,7 +140,10 @@ export default function Payments() {
                     {p.kind === 'payment' && '−'}
                     {amount(p, p.amount)}
                   </span>
-                  {canManage && p.status === 'posted' && <RowMenu label={t('payments.actionsFor', { number: p.number })} items={[{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }]} />}
+                  <RowMenu
+                    label={t('payments.actionsFor', { number: p.number })}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                  />
                 </li>
               ))}
             </ul>
@@ -157,6 +163,11 @@ export default function Payments() {
         onConfirm={(reason) => voiding && voidIt.mutate({ p: voiding, reason })}
         onClose={() => setVoiding(null)}
       />
+      {files && (
+        <Modal open onClose={() => setFiles(null)} title={t('attachments.titleFor', { what: files.number })}>
+          <DocumentAttachments documentType="payment" documentId={files.id} bare />
+        </Modal>
+      )}
     </motion.div>
   );
 }

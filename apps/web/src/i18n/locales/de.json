@@ -2842,5 +2842,24 @@
       "forbidden": "Sie dürfen nicht über Freigaben entscheiden.",
       "generic": "Das hat nicht geklappt. Versuchen Sie es erneut."
     }
+  },
+  "attachments": {
+    "title": "Anhänge",
+    "titleFor": "Anhänge: {{what}}",
+    "add": "Datei anhängen",
+    "hint": "Belege, PDFs oder Fotos bis je 2 MB, höchstens zehn.",
+    "none": "Noch nichts angehängt.",
+    "added": "Datei angehängt",
+    "removed": "{{name}} entfernt",
+    "preview": "Vorschau von {{name}}",
+    "download": "{{name}} herunterladen",
+    "remove": "{{name}} entfernen",
+    "errors": {
+      "too_large": "Hängen Sie eine Datei unter 2 MB an.",
+      "type_mismatch": "Diese Datei ist nicht vom angegebenen Typ.",
+      "too_many": "Höchstens zehn Dateien pro Beleg.",
+      "wrongType": "Hängen Sie eine PDF-, PNG-, JPEG- oder WebP-Datei an.",
+      "generic": "Die Datei konnte nicht angehängt werden. Versuchen Sie es erneut."
+    }
   }
 }

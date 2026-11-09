@@ -2842,5 +2842,24 @@
       "forbidden": "Vous n’avez pas le droit de décider des approbations.",
       "generic": "Cela n’a pas fonctionné. Réessayez."
     }
+  },
+  "attachments": {
+    "title": "Pièces jointes",
+    "titleFor": "Pièces jointes : {{what}}",
+    "add": "Joindre un fichier",
+    "hint": "Reçus, PDF ou photos de 2 Mo maximum chacun, dix au plus.",
+    "none": "Rien n’est joint pour l’instant.",
+    "added": "Fichier joint",
+    "removed": "{{name}} retiré",
+    "preview": "Aperçu de {{name}}",
+    "download": "Télécharger {{name}}",
+    "remove": "Retirer {{name}}",
+    "errors": {
+      "too_large": "Joignez un fichier de moins de 2 Mo.",
+      "type_mismatch": "Ce fichier n’est pas du type annoncé.",
+      "too_many": "Dix fichiers au plus par document.",
+      "wrongType": "Joignez un fichier PDF, PNG, JPEG ou WebP.",
+      "generic": "Le fichier n’a pas pu être joint. Réessayez."
+    }
   }
 }
