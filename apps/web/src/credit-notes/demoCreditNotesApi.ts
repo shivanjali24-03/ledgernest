@@ -3,6 +3,7 @@ import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { demoAdjustCredit, demoInvoiceViews, demoTrackCreditNote } from '../invoices/demoInvoicesApi';
+import { demoCheckUndo, demoSaveMovements, demoStockReturns, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
@@ -114,6 +115,8 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
         const label = creditNoteNumber(year.name, seq);
         const toInr = (minor: number) => (inv.rate ? toBase(minor, inv.rate, currencyDigits(inv.currency!), currencyDigits(DEMO_BASE_CURRENCY)) : minor);
         const receivable = inv.receivableAccount!;
+        // Goods that came back return to stock at the cost they left at
+        const returned = d.returnsStock ? demoStockReturns(inv.id, lines.map((l) => ({ itemId: l.src.item?.id ?? null, quantity: l.quantity, costCentreId: l.src.costCentre?.id ?? null }))) : { movements: [], journal: [] };
         // The invoice's entry the other way round, at its own rate
         const entry = await post({
           date: d.date,
@@ -122,12 +125,14 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
           lines: [
             ...lines.map((l, n) => ({ accountId: l.src.account!.id, description: l.src.description, debit: toInr(amounts.lines[n]!.net), taxGroupId: inv.currency ? null : (l.src.taxGroup?.id ?? null), costCentreId: l.src.costCentre?.id ?? null })).filter((l) => l.debit > 0),
             inv.currency ? { accountId: receivable.id, description: label, currency: inv.currency, foreignCredit: amounts.total, rate: inv.rate! } : { accountId: receivable.id, description: label, credit: amounts.total },
+            ...returned.journal,
           ],
         });
         const breakdown = new Map<string, number>();
         lines.forEach((l, n) => splitTax(amounts.lines[n]!.net, false, l.rates).taxes.forEach((t, k) => breakdown.set(l.rates[k]!.name, (breakdown.get(l.rates[k]!.name) ?? 0) + t.amount)));
         const onInvoice = Math.min(amounts.total, inv.balance);
         const id = crypto.randomUUID();
+        demoSaveMovements('credit_note', id, d.date, entry.id, returned.movements);
         const note: Stored = {
           id,
           number: label,
@@ -223,7 +228,9 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
         const c = find(all, id);
         if (c.status === 'void') throw refuse(409, 'already_void');
         if (c.applications.some((a) => a.kind === 'refund')) throw refuse(409, 'has_refunds');
+        demoCheckUndo('credit_note', id);
         const r = await journals().reverse(c.journalEntry.id, { date: todayIn('Asia/Kolkata'), memo: `${c.number} voided${reason ? `: ${reason}` : ''}` });
+        demoUndoDocument('credit_note', id, todayIn('Asia/Kolkata'), r.id);
         Object.assign(c, { status: 'void', voidEntry: { id: r.id, number: r.number }, remaining: 0 });
         save(all);
         for (const a of c.applications) if (a.kind === 'invoice') await demoAdjustCredit(a.invoice.id, { id: c.id, number: c.number, date: a.date, amount: a.amount }, true);

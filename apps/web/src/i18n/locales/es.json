@@ -2179,7 +2179,9 @@
       "over_applied": "Supera el crédito que queda en esta nota.",
       "has_refunds": "Parte de este crédito se reembolsó, así que no se puede anular.",
       "before_credit_note": "Un reembolso no puede ser anterior a su nota de crédito."
-    }
+    },
+    "returnsStock": "La mercancía volvió al inventario",
+    "returnsStockHint": "Los artículos controlados vuelven al coste al que salieron, fuera del coste de ventas. Déjalo desmarcado si es una corrección de precio."
   },
   "recurring": {
     "title": "Facturas recurrentes",
@@ -2748,7 +2750,9 @@
       "invoice": "Factura",
       "invoice_void": "Factura anulada",
       "adjustment": "Ajuste",
-      "adjustment_undo": "Ajuste deshecho"
+      "adjustment_undo": "Ajuste deshecho",
+      "credit_note": "Nota de crédito",
+      "credit_note_void": "Nota de crédito anulada"
     },
     "onHandPill": "Disponible: {{quantity}} {{unit}}",
     "track": "Controlar existencias",

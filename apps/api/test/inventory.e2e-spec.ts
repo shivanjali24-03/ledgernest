@@ -464,4 +464,92 @@ describe('Inventory (e2e)', () => {
       expect.arrayContaining(['org.stock.adjust', 'org.stock.adjust_undo']),
     );
   });
+
+  it('takes goods back on a credit note at the cost they left at, and out again if it’s voided', async () => {
+    const inv = (
+      await as()
+        .post('/invoices', {
+          contactId: contact.kumar,
+          issueDate: '2026-06-01',
+          lines: [
+            {
+              itemId: chair,
+              description: 'Office chair',
+              quantity: 4,
+              unitPrice: 20_000,
+            },
+          ],
+        })
+        .expect(201)
+    ).body as { id: string };
+    await as().post(`/invoices/${inv.id}/issue`).expect(200);
+    expect(await stock()).toEqual({
+      onHand: '6',
+      value: 60_000,
+      averageCost: 10_000,
+    });
+    const line = (
+      (await as().get(`/invoices/${inv.id}`).expect(200)).body as {
+        lines: { id: string }[];
+      }
+    ).lines[0]!.id;
+    // A price correction: no goods back
+    await as()
+      .post('/credit-notes', {
+        invoiceId: inv.id,
+        date: '2026-06-02',
+        reason: 'Discount agreed',
+        lines: [{ invoiceLineId: line, quantity: '1' }],
+      })
+      .expect(201);
+    expect(await stock()).toEqual({
+      onHand: '6',
+      value: 60_000,
+      averageCost: 10_000,
+    });
+    const back = (
+      await as()
+        .post('/credit-notes', {
+          invoiceId: inv.id,
+          date: '2026-06-03',
+          reason: 'One came back damaged in transit',
+          returnsStock: true,
+          lines: [{ invoiceLineId: line, quantity: '1' }],
+        })
+        .expect(201)
+    ).body as { id: string; journalEntry: { id: string } };
+    expect(await stock()).toEqual({
+      onHand: '7',
+      value: 70_000,
+      averageCost: 10_000,
+    });
+    expect(await entry(back.journalEntry.id)).toEqual(
+      expect.arrayContaining([
+        ['1500', 10_000, 0],
+        ['5000', 0, 10_000],
+      ]),
+    );
+    const list = (
+      (await as().get(`/inventory/items/${chair}/movements`).expect(200))
+        .body as {
+        movements: (Movement & {
+          document: { number: string | null } | null;
+        })[];
+      }
+    ).movements;
+    expect(list.find((m) => m.kind === 'credit_note')).toMatchObject({
+      kind: 'credit_note',
+      quantity: '1',
+      value: 10_000,
+      document: { number: expect.stringMatching(/^CN\//) },
+    });
+    await as()
+      .post(`/credit-notes/${back.id}/void`, { date: '2026-06-04' })
+      .expect(200);
+    expect(await stock()).toEqual({
+      onHand: '6',
+      value: 60_000,
+      averageCost: 10_000,
+    });
+  });
 });

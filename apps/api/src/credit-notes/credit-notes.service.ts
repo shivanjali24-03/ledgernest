@@ -25,6 +25,7 @@ import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -134,6 +135,7 @@ export class CreditNotesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
+    private readonly inventory: InventoryService,
   ) {}
 
   /** Invoices first (credit changes what they have left to pay), then payments: the order everything takes them in */
@@ -352,6 +354,7 @@ export class CreditNotesService {
               unitPrice: true,
               discountPpm: true,
               accountId: true,
+              itemId: true,
               taxGroupId: true,
               costCentreId: true,
               taxGroup: {
@@ -526,6 +529,22 @@ export class CreditNotesService {
             credit: diff < 0 ? -diff : 0,
           });
       }
+      // Goods that came back return to stock at the cost they left at
+      const returned = input.returnsStock
+        ? await this.inventory.returns(
+            tx,
+            organizationId,
+            inv.id,
+            lines.map((l) => ({
+              itemId: l.src.itemId,
+              quantity: l.quantity,
+              costCentreId: l.src.costCentreId,
+            })),
+          )
+        : { movements: [], journal: [] };
+      entryLines.push(
+        ...(returned.journal as unknown as Record<string, unknown>[]),
+      );
       const invLabel = invoiceLabel(inv)!;
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -564,6 +583,18 @@ export class CreditNotesService {
         },
         select: { id: true },
       });
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'credit_note',
+          sourceId: note.id,
+          date: input.date,
+          journalEntryId: entry.id,
+          actorId: ctx.actor.userId,
+        },
+        returned.movements,
+      );
       await tx.creditNoteLine.createMany({
         data: lines.map((l, n) => ({
           organizationId,
@@ -948,6 +979,15 @@ export class CreditNotesService {
           req: ctx.req,
         },
         tx,
+      );
+      await this.inventory.undoDocument(
+        tx,
+        organizationId,
+        'credit_note',
+        id,
+        input.date ?? today,
+        r.id,
+        ctx.actor.userId,
       );
     });
     return this.get(organizationId, id);

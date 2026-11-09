@@ -2179,7 +2179,9 @@
       "over_applied": "C’est plus que le crédit restant sur cet avoir.",
       "has_refunds": "Une partie de ce crédit a été remboursée : il ne peut pas être annulé.",
       "before_credit_note": "Un remboursement ne peut pas précéder son avoir."
-    }
+    },
+    "returnsStock": "Les marchandises sont revenues en stock",
+    "returnsStockHint": "Les articles suivis reviennent au coût auquel ils sont sortis, hors coût des ventes. Laissez décoché pour une correction de prix."
   },
   "recurring": {
     "title": "Factures récurrentes",
@@ -2748,7 +2750,9 @@
       "invoice": "Facture",
       "invoice_void": "Facture annulée",
       "adjustment": "Ajustement",
-      "adjustment_undo": "Ajustement annulé"
+      "adjustment_undo": "Ajustement annulé",
+      "credit_note": "Avoir",
+      "credit_note_void": "Avoir annulé"
     },
     "onHandPill": "En stock : {{quantity}} {{unit}}",
     "track": "Suivre le stock",

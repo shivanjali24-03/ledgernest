@@ -7,6 +7,7 @@ import {
 import {
   averageUnitCost,
   billNumber,
+  creditNoteNumber,
   costOfQuantity,
   formatQuantity,
   invoiceNumber,
@@ -198,6 +199,65 @@ export class InventoryService {
     return { movements, journal };
   }
 
+  /**
+   * For a credit note on goods that came back: each tracked line returns to stock at the cost it left at on the
+   * invoice, with the journal lines moving that back from cost of sales to stock.
+   */
+  async returns(
+    tx: Tx,
+    organizationId: string,
+    invoiceId: string,
+    lines: {
+      itemId: string | null;
+      quantity: string;
+      costCentreId?: string | null;
+    }[],
+  ) {
+    const items = await this.tracked(
+      tx,
+      organizationId,
+      lines.map((l) => l.itemId),
+    );
+    const movements: Movement[] = [];
+    const journal: EnteredLine[] = [];
+    for (const l of lines) {
+      const item = l.itemId ? items.get(l.itemId) : undefined;
+      if (!item) continue;
+      const sold = await tx.stockMovement.findFirst({
+        where: {
+          organizationId,
+          kind: 'invoice',
+          sourceId: invoiceId,
+          itemId: item.id,
+        },
+        select: { quantity: true, value: true },
+      });
+      if (!sold) continue;
+      const q = parseQuantity(l.quantity)!;
+      const value = costOfQuantity(-signed(sold.quantity), -sold.value, q);
+      movements.push({ itemId: item.id, quantity: q, value });
+      if (value > 0n) {
+        const description = `${item.name} returned`;
+        journal.push(
+          {
+            accountId: item.inventoryAccountId,
+            description,
+            debit: Number(value),
+            credit: 0,
+          },
+          {
+            accountId: item.cogsAccountId,
+            description,
+            debit: 0,
+            credit: Number(value),
+            costCentreId: l.costCentreId ?? null,
+          },
+        );
+      }
+    }
+    return { movements, journal };
+  }
+
   /** For a bill being recorded: its tracked lines come into stock at their cost (net of tax, in the base currency) */
   async receipts(
     tx: Tx,
@@ -256,7 +316,7 @@ export class InventoryService {
   async undoDocument(
     tx: Tx,
     organizationId: string,
-    kind: 'bill' | 'invoice',
+    kind: 'bill' | 'invoice' | 'credit_note',
     sourceId: string,
     date: string,
     journalEntryId: string | null,
@@ -273,7 +333,8 @@ export class InventoryService {
     });
     if (!done.length) return;
     await this.lock(tx, organizationId);
-    if (kind === 'bill') {
+    // Stock that came in (a bill, goods returned) can only go out again while it's still on hand
+    if (kind === 'bill' || kind === 'credit_note') {
       const stock = await this.onHand(tx, organizationId, [
         ...new Set(done.map((d) => d.itemId)),
       ]);
@@ -283,7 +344,7 @@ export class InventoryService {
         if (q > s.quantity)
           throw refuse(
             ConflictException,
-            `Some of the ${d.item.name} on this bill has been sold or written off.`,
+            `Some of the ${d.item.name} has been sold or written off since.`,
             'stock_used',
             { itemId: d.itemId },
           );
@@ -297,7 +358,7 @@ export class InventoryService {
       tx,
       organizationId,
       {
-        kind: kind === 'bill' ? 'bill_void' : 'invoice_void',
+        kind: `${kind}_void`,
         sourceId,
         date,
         journalEntryId,
@@ -592,12 +653,19 @@ export class InventoryService {
     for (const r of rows.filter(
       (x) =>
         x.sourceId &&
-        ['bill', 'bill_void', 'invoice', 'invoice_void'].includes(x.kind),
+        [
+          'bill',
+          'bill_void',
+          'invoice',
+          'invoice_void',
+          'credit_note',
+          'credit_note_void',
+        ].includes(x.kind),
     ))
       docs.set(r.sourceId!, null);
     if (docs.size) {
       const ids = [...docs.keys()];
-      const [bills, invoices] = await Promise.all([
+      const [bills, invoices, notes] = await Promise.all([
         this.prisma.bill.findMany({
           where: { organizationId, id: { in: ids } },
           select: {
@@ -614,7 +682,17 @@ export class InventoryService {
             fiscalYear: { select: { name: true } },
           },
         }),
+        this.prisma.creditNote.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+          },
+        }),
       ]);
+      for (const c of notes)
+        docs.set(c.id, creditNoteNumber(c.fiscalYear.name, c.number));
       for (const b of bills)
         docs.set(
           b.id,

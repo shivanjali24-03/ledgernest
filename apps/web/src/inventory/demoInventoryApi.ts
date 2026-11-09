@@ -77,6 +77,21 @@ export function demoCostOfSale(lines: { itemId: string | null; quantity: string;
   }
   return { movements, journal };
 }
+/** For a demo credit note on goods that came back: tracked lines return at the cost they left at on the invoice */
+export function demoStockReturns(invoiceId: string, lines: { itemId: string | null; quantity: string; costCentreId?: string | null }[]) {
+  const movements: { itemId: string; quantity: bigint; value: bigint }[] = [];
+  const journal: EnteredLine[] = [];
+  for (const l of lines) {
+    const item = trackedItem(l.itemId);
+    const sold = item && load().find((m) => m.kind === 'invoice' && m.sourceId === invoiceId && m.itemId === item.id);
+    if (!item || !sold) continue;
+    const n = parseQuantity(l.quantity)!;
+    const value = costOfQuantity(-q(sold.quantity), -BigInt(sold.value), n);
+    movements.push({ itemId: item.id, quantity: n, value });
+    if (value > 0n) journal.push({ accountId: item.inventoryAccountId!, description: `${item.name} returned`, debit: Number(value), credit: 0 }, { accountId: item.cogsAccountId!, description: `${item.name} returned`, debit: 0, credit: Number(value), costCentreId: l.costCentreId ?? null });
+  }
+  return { movements, journal };
+}
 /** For a demo bill being recorded: its tracked lines come into stock at their cost */
 export const demoStockReceipts = (lines: { itemId: string | null; quantity: string; value: number }[]) => lines.filter((l) => trackedItem(l.itemId)).map((l) => ({ itemId: l.itemId!, quantity: parseQuantity(l.quantity)!, value: BigInt(l.value) }));
 /** The inventory account a tracked item is bought into */
@@ -89,14 +104,14 @@ export function demoSaveMovements(kind: StockMovementKind, sourceId: string | nu
 }
 /** A demo bill or invoice voided: its stock goes back (a bill's only while it's still on hand) */
 /** Whether a demo bill's stock can go back: refuses once some of it has been sold or written off */
-export function demoCheckUndo(kind: 'bill' | 'invoice', sourceId: string) {
-  if (kind !== 'bill') return;
+export function demoCheckUndo(kind: 'bill' | 'invoice' | 'credit_note', sourceId: string) {
+  if (kind === 'invoice') return;
   for (const d of load().filter((m) => m.kind === kind && m.sourceId === sourceId)) if (q(d.quantity) > demoStockOf(d.itemId).quantity) throw refuse(409, 'stock_used', { itemId: d.itemId });
 }
-export function demoUndoDocument(kind: 'bill' | 'invoice', sourceId: string, date: string, journalEntryId: string | null) {
+export function demoUndoDocument(kind: 'bill' | 'invoice' | 'credit_note', sourceId: string, date: string, journalEntryId: string | null) {
   demoCheckUndo(kind, sourceId);
   const done = load().filter((m) => m.kind === kind && m.sourceId === sourceId);
-  demoSaveMovements(kind === 'bill' ? 'bill_void' : 'invoice_void', sourceId, date, journalEntryId, done.map((d) => ({ itemId: d.itemId, quantity: -q(d.quantity), value: -BigInt(d.value) })));
+  demoSaveMovements(`${kind}_void`, sourceId, date, journalEntryId, done.map((d) => ({ itemId: d.itemId, quantity: -q(d.quantity), value: -BigInt(d.value) })));
 }
 
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 120));

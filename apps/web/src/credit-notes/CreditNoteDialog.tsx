@@ -31,6 +31,7 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
   const [qty, setQty] = useState<Record<string, string>>({});
   const [date, setDate] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [reason, setReason] = useState('');
+  const [returnsStock, setReturnsStock] = useState(false);
 
   const room = (lineId: string) => parseQuantity(left.data?.find((l) => l.invoiceLineId === lineId)?.quantity ?? '0') ?? 0n;
   const rows = invoice.lines.map((l) => {
@@ -44,7 +45,7 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
   const problem = rows.some((r) => r.invalid) ? 'quantity' : !chosen.length ? 'nothing' : null;
 
   const save = useMutation({
-    mutationFn: () => api.create({ invoiceId: invoice.id, date, reason: reason || null, lines: chosen.map((r) => ({ invoiceLineId: r.line.id, quantity: formatQuantity(r.q!) })) }),
+    mutationFn: () => api.create({ invoiceId: invoice.id, date, reason: reason || null, returnsStock, lines: chosen.map((r) => ({ invoiceLineId: r.line.id, quantity: formatQuantity(r.q!) })) }),
     onSuccess: (c) => {
       for (const k of ['credit-notes', 'invoices', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
       toast(t('creditNotes.issued', { number: c.number }));
@@ -82,6 +83,15 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
           <TextField label={t('creditNotes.fields.date')} type="date" value={date} min={invoice.issueDate} onChange={(e) => setDate(e.target.value)} />
           <TextField label={t('creditNotes.fields.reason')} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('creditNotes.reasonPlaceholder')} dir="auto" data-autofocus />
         </div>
+        {invoice.lines.some((l) => l.item) && (
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={returnsStock} onChange={(e) => setReturnsStock(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+            <span>
+              <span className="font-medium">{t('creditNotes.returnsStock')}</span>
+              <span className="block text-xs text-ink-500">{t('creditNotes.returnsStockHint')}</span>
+            </span>
+          </label>
+        )}
         <fieldset className="space-y-2">
           <div className="flex items-center gap-2">
             <legend className="flex-1 text-sm font-semibold">{t('creditNotes.whichLines')}</legend>

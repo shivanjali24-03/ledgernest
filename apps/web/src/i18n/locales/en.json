@@ -2179,7 +2179,9 @@
       "over_applied": "That’s more credit than is left on this note.",
       "has_refunds": "Some of this credit was refunded, so it can’t be voided.",
       "before_credit_note": "A refund can’t be dated before its credit note."
-    }
+    },
+    "returnsStock": "Goods came back into stock",
+    "returnsStockHint": "Tracked items return at the cost they left at, out of cost of sales. Leave it off for a price correction."
   },
   "recurring": {
     "title": "Recurring invoices",
@@ -2748,7 +2750,9 @@
       "invoice": "Invoice",
       "invoice_void": "Invoice voided",
       "adjustment": "Adjustment",
-      "adjustment_undo": "Adjustment undone"
+      "adjustment_undo": "Adjustment undone",
+      "credit_note": "Credit note",
+      "credit_note_void": "Credit note voided"
     },
     "onHandPill": "On hand: {{quantity}} {{unit}}",
     "track": "Track stock",
