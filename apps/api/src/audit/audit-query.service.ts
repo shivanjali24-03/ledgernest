@@ -94,6 +94,21 @@ export class AuditQueryService {
     };
   }
 
+  /** People who appear in this log (for the "person" filter), most recently active first. */
+  async actors(scope: { organizationId?: string }) {
+    const groups = await this.prisma.auditLog.groupBy({
+      by: ['actorId'],
+      where: { actorId: { not: null }, ...(scope.organizationId && { organizationId: scope.organizationId }) },
+      _max: { createdAt: true },
+      orderBy: { _max: { createdAt: 'desc' } },
+      take: 200,
+    });
+    const ids = groups.map((g) => g.actorId!);
+    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return ids.flatMap((id) => byId.get(id) ?? []);
+  }
+
   /** Up to 10,000 matching entries as CSV. Cells are protected against spreadsheet formula injection. */
   async csv(f: AuditFilter, scope: { organizationId?: string }) {
     const rows = await this.prisma.auditLog.findMany({
@@ -120,6 +135,6 @@ export class AuditQueryService {
         .join(','),
     );
     // A byte-order mark so Excel opens UTF-8 (Hindi, Arabic names) correctly
-    return { body: `﻿${[header.map(csvCell).join(','), ...lines].join('\r\n')}\r\n`, count: rows.length, truncated: rows.length === AUDIT_EXPORT_LIMIT };
+    return { body: `\uFEFF${[header.map(csvCell).join(','), ...lines].join('\r\n')}\r\n`, count: rows.length, truncated: rows.length === AUDIT_EXPORT_LIMIT };
   }
 }

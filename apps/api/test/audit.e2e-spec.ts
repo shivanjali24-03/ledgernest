@@ -139,6 +139,14 @@ describe('Audit log (e2e)', () => {
       await get('owner', '/organization/audit?cursor=garbage', orgA).expect(400);
     });
 
+    it("lists the people in this organisation's log, for the person filter", async () => {
+      const res = await get('auditor', '/organization/audit/actors', orgA).expect(200);
+      const emails = res.body.map((a: { email: string }) => a.email);
+      expect(emails).toEqual(expect.arrayContaining([email('owner'), email('super')]));
+      expect(emails).not.toContain(email('ownerB'));
+      await get('viewer', '/organization/audit/actors', orgA).expect(403);
+    });
+
     it('exports CSV safely, and the export itself is audited', async () => {
       await entry('org.test.csv', { org: orgA, entityId: '=HYPERLINK("http://evil.example","click")' });
       const res = await get('owner', '/organization/audit/export?group=exports', orgA).expect(200);
@@ -146,7 +154,7 @@ describe('Audit log (e2e)', () => {
       expect(res.headers['content-disposition']).toMatch(/attachment; filename="audit-log-\d{4}-\d{2}-\d{2}\.csv"/);
 
       const all = await get('owner', '/organization/audit/export', orgA).expect(200);
-      expect(all.text.startsWith('﻿"time","action","actor","entity_type"')).toBe(true);
+      expect(all.text.startsWith('\uFEFF"time","action","actor","entity_type"')).toBe(true);
       expect(all.text).toContain(`"'=HYPERLINK(""http://evil.example"",""click"")"`);
       expect(all.text).not.toContain(`B role ${run}`);
 
@@ -165,6 +173,13 @@ describe('Audit log (e2e)', () => {
 
       const onlyA = await get('super', `/platform/audit?organizationId=${orgA}&limit=100`).expect(200);
       expect(onlyA.body.items.every((i: { organization: { id: string } | null }) => i.organization?.id === orgA)).toBe(true);
+    });
+
+    it('lists people across every organisation', async () => {
+      const res = await get('super', '/platform/audit/actors').expect(200);
+      const emails = res.body.map((a: { email: string }) => a.email);
+      expect(emails).toEqual(expect.arrayContaining([email('owner'), email('ownerB')]));
+      await get('owner', '/platform/audit/actors').expect(403);
     });
 
     it('exports with the organisation column', async () => {

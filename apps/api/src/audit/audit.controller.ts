@@ -46,6 +46,13 @@ export class OrganizationAuditController {
     return this.audit.list(q as AuditFilter, { organizationId: tenant.organizationId });
   }
 
+  @Get('actors')
+  @RequirePermission('audit.view')
+  @ApiOkResponse({ description: 'People who appear in this log, most recently active first' })
+  actors(@CurrentTenant() tenant: Tenant) {
+    return this.audit.actors({ organizationId: tenant.organizationId });
+  }
+
   @Get('export')
   @RequirePermission('audit.view')
   @Header('Content-Type', 'text/csv; charset=utf-8')
@@ -77,6 +84,13 @@ export class PlatformAuditController {
   @ApiOkResponse({ description: 'Newest first, 50 per page, with nextCursor' })
   list(@Query(filters) q: AuditQuery) {
     return this.audit.list(q as AuditFilter, {});
+  }
+
+  @Get('actors')
+  @RequirePermission('platform.audit.view')
+  @ApiOkResponse({ description: 'People who appear in the log, most recently active first' })
+  actors() {
+    return this.audit.actors({});
   }
 
   @Get('export')

@@ -14,7 +14,8 @@ export function setupApp(app: INestApplication) {
   app.use(helmet());
   app.use(cookieParser());
   app.use(tenantContextMiddleware);
-  app.enableCors({ origin: config.get('CORS_ORIGINS', { infer: true }), credentials: true });
+  // Exposed so the web app can read the export's file name and the "truncated" flag across origins
+  app.enableCors({ origin: config.get('CORS_ORIGINS', { infer: true }), credentials: true, exposedHeaders: ['Content-Disposition', 'X-Truncated'] });
   app.setGlobalPrefix('api/v1');
   app.enableShutdownHooks();
 
