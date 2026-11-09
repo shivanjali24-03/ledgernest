@@ -101,6 +101,25 @@ describe('invoices', () => {
     await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Voided by JV\//), { timeout: 8000 });
   });
 
+  it('sends a payment reminder, and remembers it', { timeout: 20_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    await screen.findByRole('button', { name: 'Record payment' });
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Send reminder' }));
+        const dialog = screen.getByRole('dialog', { name: /^Payment reminder for INV\// });
+        expect(within(dialog).getByLabelText('Send to')).toHaveValue('accounts@kumarlogistics.in');
+        expect(dialog).toHaveTextContent('1,18,000.00');
+      },
+      { timeout: 6000 },
+    );
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Send reminder' }));
+    await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Reminders sent: 1, last on/), { timeout: 8000 });
+    expect(screen.getByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in')).toBeInTheDocument();
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^INV\// }, { timeout: 4000 });

@@ -139,6 +139,13 @@ export const invoiceListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
 
+/** A payment reminder for an issued invoice with something still owed: to the customer's email unless another is given */
+export const invoiceReminderSchema = z.object({
+  email: z.email('Enter a valid email address.').optional(),
+  message: z.string().trim().max(2000).optional(),
+});
+export type InvoiceReminderInput = z.input<typeof invoiceReminderSchema>;
+
 export const invoiceVoidSchema = z.object({
   /** The day the reversal is dated; omitted = today */
   date: isoDaySchema.optional(),

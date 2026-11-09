@@ -541,4 +541,59 @@ describe('Aging reports (e2e)', () => {
       delete process.env.SMTP_URL;
     }
   });
+
+  it('sends payment reminders for invoices with something still owed', async () => {
+    process.env.SMTP_URL = 'json';
+    try {
+      // Paid in full, or voided: nothing to remind about
+      for (const id of [inv.b, inv.d])
+        expect(
+          (
+            await as()
+              .post(`/invoices/${id}/remind`, { email: 'a@kumar.example' })
+              .expect(409)
+          ).body.details,
+        ).toMatchObject({ reason: 'nothing_owed' });
+      expect(
+        (await as().post(`/invoices/${inv.c}/remind`, {}).expect(400)).body
+          .details,
+      ).toMatchObject({ reason: 'no_email' });
+      const r = await as()
+        .post(`/invoices/${inv.c}/remind`, {
+          email: 'a@kumar.example',
+          message: 'Gentle nudge.',
+        })
+        .expect(200);
+      expect(r.body).toMatchObject({ sentTo: 'a@kumar.example', reminders: 1 });
+      expect(app.get(MailService).captured.at(-1)).toEqual({
+        to: ['a@kumar.example'],
+        subject: `Payment reminder: invoice INV/2026-27/0004 from Aging ${run}`,
+        attachments: [],
+      });
+      await as()
+        .post(`/invoices/${inv.c}/remind`, { email: 'a@kumar.example' })
+        .expect(200);
+      const got = (await as().get(`/invoices/${inv.c}`).expect(200)).body;
+      expect(got.reminders).toBe(2);
+      expect(got.lastRemindedAt).toBeTruthy();
+      expect(
+        await prisma.auditLog.count({
+          where: { organizationId: org, action: 'org.invoice.remind' },
+        }),
+      ).toBe(2);
+      await as('viewer')
+        .post(`/invoices/${inv.c}/remind`, { email: 'a@kumar.example' })
+        .expect(403);
+      delete process.env.SMTP_URL;
+      expect(
+        (
+          await as()
+            .post(`/invoices/${inv.c}/remind`, { email: 'a@kumar.example' })
+            .expect(409)
+        ).body.details,
+      ).toMatchObject({ reason: 'mail_off' });
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
 });

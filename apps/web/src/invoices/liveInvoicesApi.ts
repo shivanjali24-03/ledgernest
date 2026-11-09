@@ -18,5 +18,6 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
     issue: (id) => r(`/${id}/issue`, { method: 'POST' }),
     void: (id, input) => r(`/${id}/void`, { method: 'POST', json: input }),
+    remind: (id, input) => r(`/${id}/remind`, { method: 'POST', json: input }),
   };
 }

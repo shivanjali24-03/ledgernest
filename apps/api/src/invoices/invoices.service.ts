@@ -95,6 +95,8 @@ const select = {
   amountPaid: true,
   issuedAt: true,
   voidedAt: true,
+  lastRemindedAt: true,
+  reminders: true,
   createdAt: true,
   updatedAt: true,
   receivableAccountId: true,
@@ -311,6 +313,9 @@ export class InvoicesService {
       })),
       issuedAt: i.issuedAt,
       voidedAt: i.voidedAt,
+      /** When a payment reminder last went, and how many have */
+      lastRemindedAt: i.lastRemindedAt,
+      reminders: i.reminders,
       createdAt: i.createdAt,
       lines: i.lines.map((l) => ({
         id: l.id,

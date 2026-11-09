@@ -739,7 +739,8 @@
       "org_scheduled_report_delete": "Informe programado eliminado",
       "org_backup_export": "Copia de seguridad descargada",
       "org_backup_restore": "Restaurado desde una copia de seguridad",
-      "org_statement_email": "Estado de cuenta enviado por correo"
+      "org_statement_email": "Estado de cuenta enviado por correo",
+      "org_invoice_remind": "Recordatorio de pago enviado"
     },
     "entities": {
       "membership": "Miembro",
@@ -2036,7 +2037,24 @@
       "bank_invalid": "Elige una cuenta de banco o caja activa.",
       "invoice_not_issued": "Solo las facturas emitidas pueden pagarse.",
       "invoice_currency": "Una factura está en otra moneda.",
-      "already_void": "Ya está anulado."
+      "already_void": "Ya está anulado.",
+      "nothing_owed": "Solo las facturas emitidas con algo pendiente reciben recordatorios.",
+      "no_email": "Este cliente no tiene correo electrónico. Introduce uno para enviarlo.",
+      "mail_off": "El correo no está configurado en este servidor, así que no se pueden enviar recordatorios desde aquí.",
+      "mail_failed": "No se pudo enviar el correo. Inténtalo más tarde."
+    },
+    "reminder": {
+      "action": "Enviar recordatorio",
+      "title": "Recordatorio de pago de {{number}}",
+      "body": "Un correo al cliente: lo que queda por pagar ({{amount}}), cuándo vencía y lo que ya se ha pagado.",
+      "to": "Enviar a",
+      "badEmail": "Introduce un correo electrónico válido.",
+      "note": "Nota",
+      "noteHint": "Opcional: va al principio del correo.",
+      "send": "Enviar recordatorio",
+      "sent": "Recordatorio enviado a {{email}}",
+      "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
+      "history": "Recordatorios enviados: {{count}}, el último el {{date}}"
     }
   },
   "payments": {

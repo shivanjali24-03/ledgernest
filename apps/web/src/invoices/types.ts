@@ -47,6 +47,9 @@ export interface Invoice {
   recurring?: { id: string; name: string } | null;
   /** Credit notes raised against it */
   creditNotes: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
+  /** When a payment reminder last went to the customer, and how many have */
+  lastRemindedAt: string | null;
+  reminders: number;
   lines: InvoiceLine[];
 }
 
@@ -76,4 +79,6 @@ export interface InvoicesApi {
   remove(id: string): Promise<void>;
   issue(id: string): Promise<Invoice>;
   void(id: string, input: { date?: string; reason?: string }): Promise<Invoice>;
+  /** Emails the customer a payment reminder; the demo only pretends */
+  remind(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; lastRemindedAt: string; reminders: number }>;
 }
