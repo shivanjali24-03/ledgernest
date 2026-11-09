@@ -1,0 +1,90 @@
+name: Deploy web
+
+# GitHub Pages hosts one site per repository, so every deploy rebuilds all environments:
+#   /ledgernest/          production  (main,    API_URL_PRODUCTION)
+#   /ledgernest/staging/  staging     (staging, API_URL_STAGING)
+#   /ledgernest/dev/      development (develop, API_URL_DEV)
+#   /ledgernest/demo/     demo        (main,    no API: sample data in the browser)
+# An empty API URL variable builds that environment as a demo.
+
+on:
+  push:
+    branches: [main, staging, develop]
+    paths:
+      - apps/web/**
+      - packages/shared/**
+      - package-lock.json
+      - .github/pages/**
+      - .github/workflows/deploy-web.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build every environment
+        env:
+          API_URL_PRODUCTION: ${{ vars.API_URL_PRODUCTION }}
+          API_URL_STAGING: ${{ vars.API_URL_STAGING }}
+          API_URL_DEV: ${{ vars.API_URL_DEV }}
+        run: |
+          set -euo pipefail
+          SITE="$PWD/_site"
+          mkdir -p "$SITE"
+          build() { # branch, folder ("" for the root), API URL
+            local branch="$1" dir="$2" api="$3" tree="$RUNNER_TEMP/tree-$1-${2:-root}"
+            git worktree add --detach "$tree" "origin/$branch"
+            mkdir -p "$SITE/$dir"
+            if [ ! -f "$tree/packages/shared/package.json" ]; then
+              # This branch hasn't had its first release yet
+              cp .github/pages/not-released.html "$SITE/$dir/index.html"
+              echo "Skipped $branch → /ledgernest/${dir:+$dir/} (not released yet)"
+              return
+            fi
+            (
+              cd "$tree"
+              npm ci --no-audit --no-fund
+              npm run build -w @ledgernest/shared
+              BASE_PATH="/ledgernest/${dir:+$dir/}" VITE_API_URL="$api" npm run build -w @ledgernest/web
+            )
+            cp -R "$tree/apps/web/dist/." "$SITE/$dir"
+            echo "Built $branch → /ledgernest/${dir:+$dir/} (${api:-demo})"
+          }
+          build main "" "$API_URL_PRODUCTION"
+          build staging staging "$API_URL_STAGING"
+          build develop dev "$API_URL_DEV"
+          build main demo ""
+          cp .github/pages/404.html "$SITE/404.html"
+          touch "$SITE/.nojekyll"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

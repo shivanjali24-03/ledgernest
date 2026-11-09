@@ -22,9 +22,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "node --env-file=.env --import tsx prisma/seed.ts",
+    "db:seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts",
     "prebuild": "prisma generate",
-    "pretest": "prisma generate"
+    "pretest": "prisma generate",
+    "start:render": "prisma migrate deploy && (test -z \"$SEED_SUPERADMIN_EMAIL\" || npm run db:seed) && node dist/main"
   },
   "dependencies": {
     "@ledgernest/shared": "^0.1.0",

@@ -3,11 +3,14 @@ import { Navigate, useLocation } from 'react-router';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import Logo from '../layout/Logo';
+import { useTakingLong } from '../lib/useTakingLong';
 import { useAuth } from './context';
 
 /** Shown while the session is being restored: a breathing logo (scale + opacity only). */
 export function Splash() {
   const { t } = useTranslation();
+  // Free hosting pauses the API when idle; the first request can take most of a minute
+  const waking = useTakingLong(useAuth().mode === 'live');
   return (
     <div className="grid h-dvh place-items-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4">
@@ -15,6 +18,7 @@ export function Splash() {
           <Logo className="size-12" />
         </motion.div>
         <p className="text-sm text-ink-500">{t('auth.loading')}</p>
+        {waking && <p className="max-w-xs text-center text-xs text-ink-400">{t('auth.waking')}</p>}
       </div>
     </div>
   );

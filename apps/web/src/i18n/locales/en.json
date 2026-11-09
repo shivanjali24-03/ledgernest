@@ -119,7 +119,8 @@
       "network": "Can't reach the server. Check your connection and try again.",
       "server": "Something went wrong on our side. Please try again.",
       "expired": "Your session has ended. Please sign in again."
-    }
+    },
+    "waking": "Waking up the server… Free hosting pauses it when nobody is using it, so this can take up to a minute."
   },
   "common": {
     "all": "All",
