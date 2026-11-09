@@ -1,5 +1,6 @@
 import { B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
@@ -262,6 +263,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     if (bills.length) alerts.push({ kind: 'overdue_bills', count: bills.length, amount: bills.reduce((s, b) => s + b.balance, 0) });
     const drafts = (await journals.list({ status: 'draft', page: 1, pageSize: 1 })).total;
     if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
+    const waiting = demoPendingApprovals();
+    if (waiting) alerts.push({ kind: 'approvals_waiting', count: waiting });
     return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
   };
 

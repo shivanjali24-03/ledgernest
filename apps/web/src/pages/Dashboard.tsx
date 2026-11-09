@@ -85,6 +85,7 @@ const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   recurring_due: '/recurring',
   open_periods: '/fiscal-years',
   draft_entries: '/journals',
+  approvals_waiting: '/approvals',
 };
 
 export default function Dashboard() {

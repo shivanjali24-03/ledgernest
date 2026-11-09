@@ -101,7 +101,8 @@
       "unreconciled": "{{count}} Bankzeilen abzugleichen",
       "recurring_due": "{{count}} Serienrechnungen fällig",
       "open_periods": "{{count}} vergangene Monate noch offen",
-      "draft_entries": "{{count}} Buchungsentwürfe nicht gebucht"
+      "draft_entries": "{{count}} Buchungsentwürfe nicht gebucht",
+      "approvals_waiting": "{{count}} warten auf Ihre Freigabe"
     }
   },
   "comingSoon": {

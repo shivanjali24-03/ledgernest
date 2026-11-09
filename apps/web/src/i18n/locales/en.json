@@ -101,7 +101,8 @@
       "unreconciled": "{{count}} bank lines to reconcile",
       "recurring_due": "{{count}} recurring invoices due",
       "open_periods": "{{count}} past months still open",
-      "draft_entries": "{{count}} draft entries not posted"
+      "draft_entries": "{{count}} draft entries not posted",
+      "approvals_waiting": "{{count}} waiting for your approval"
     }
   },
   "comingSoon": {

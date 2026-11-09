@@ -26,6 +26,9 @@ function save(s: State) {
     /* private mode */
   }
 }
+/** How many demo requests are waiting, for the demo's dashboard */
+export const demoPendingApprovals = () => load().requests.filter((r) => r.status === 'pending').length;
+
 export const resetDemoApprovals = () => {
   try {
     localStorage.removeItem(KEY);
