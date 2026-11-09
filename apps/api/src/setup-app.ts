@@ -39,6 +39,25 @@ export function setupApp(app: INestApplication) {
       attachmentJson(req, res, next);
     },
   );
+  // Receipts and PDFs kept with invoices, bills, payments and bank transactions: up to 2 MB as base64
+  app.use(
+    /^\/api\/v1\/attachments\/[^/]+\/[^/]+$/,
+    function documentAttachmentBodyParser(
+      req: Request,
+      res: Response,
+      next: NextFunction,
+    ) {
+      attachmentJson(req, res, next);
+    },
+  );
+  // Spreadsheet imports: up to 2,000 rows
+  const importJson = json({ limit: '5mb' });
+  app.use(
+    /^\/api\/v1\/imports\/[^/]+(\/preview)?$/,
+    function importBodyParser(req: Request, res: Response, next: NextFunction) {
+      importJson(req, res, next);
+    },
+  );
   // Bank statements: files up to 2 MB, sent as text
   const statementJson = json({ limit: '3mb' });
   app.use(
