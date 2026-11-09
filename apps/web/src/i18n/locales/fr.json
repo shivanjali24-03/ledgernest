@@ -617,5 +617,82 @@
       "noChanges": "Aucune valeur n'a été enregistrée pour cette entrée.",
       "entryId": "ID de l'entrée"
     }
+  },
+  "settings": {
+    "title": "Paramètres de l'organisation",
+    "description": "Les informations de votre entreprise, son logo, son adresse, sa devise et ses dates.",
+    "readOnly": "Seuls les propriétaires et administrateurs peuvent modifier ces paramètres",
+    "saved": "Paramètres enregistrés",
+    "unsaved": "Vous avez des modifications non enregistrées",
+    "discard": "Annuler",
+    "company": {
+      "title": "Entreprise",
+      "description": "Comment votre entreprise apparaît sur les factures et rapports."
+    },
+    "address": {
+      "title": "Adresse"
+    },
+    "money": {
+      "title": "Argent et dates",
+      "description": "Comment les montants, les dates et les exercices fonctionnent dans vos livres."
+    },
+    "fields": {
+      "name": "Nom affiché",
+      "legalName": "Raison sociale",
+      "taxId": "Numéro fiscal",
+      "email": "E-mail de la comptabilité",
+      "phone": "Téléphone",
+      "line1": "Adresse, ligne 1",
+      "line2": "Adresse, ligne 2",
+      "city": "Ville",
+      "region": "État ou région",
+      "postalCode": "Code postal",
+      "country": "Pays",
+      "baseCurrency": "Devise de base",
+      "fiscalYearStartMonth": "L'exercice commence en",
+      "locale": "Format des nombres et des dates",
+      "timeZone": "Fuseau horaire"
+    },
+    "hints": {
+      "legalName": "Telle qu'enregistrée, pour les factures et déclarations.",
+      "taxId": "Numéro de TVA, SIRET, GSTIN ou équivalent.",
+      "baseCurrency": "Vos livres sont tenus dans cette devise.",
+      "fiscalYear": "Votre exercice va de {{span}}.",
+      "timeZone": "Il y est {{time}}. Détermine le jour d'une transaction."
+    },
+    "locked": {
+      "baseCurrency": "Non modifiable une fois des écritures comptabilisées",
+      "fiscalYearStartMonth": "Non modifiable une fois des exercices créés"
+    },
+    "errors": {
+      "name": "Saisissez un nom d'au moins 2 caractères.",
+      "taxId": "Utilisez des lettres, chiffres, espaces, points, tirets ou barres obliques.",
+      "email": "Saisissez une adresse e-mail valide.",
+      "phone": "Utilisez des chiffres, espaces, parenthèses ou tirets, éventuellement précédés de +.",
+      "timeZone": "Choisissez un fuseau horaire dans la liste.",
+      "invalid": "Vérifiez cette valeur."
+    },
+    "leave": {
+      "title": "Quitter sans enregistrer ?",
+      "body": "Vos modifications des paramètres seront perdues.",
+      "confirm": "Quitter"
+    },
+    "logo": {
+      "title": "Logo",
+      "hint": "PNG, JPEG ou WebP, jusqu'à 256 Ko. Affiché sur les factures et rapports.",
+      "drop": "Déposez une image ici",
+      "none": "Pas encore de logo",
+      "upload": "Importer un logo",
+      "replace": "Remplacer",
+      "remove": "Supprimer",
+      "uploaded": "Logo mis à jour",
+      "removed": "Logo supprimé",
+      "alt": "Logo de {{name}}",
+      "problems": {
+        "type": "Utilisez une image PNG, JPEG ou WebP. Le SVG n'est pas autorisé.",
+        "size": "Utilisez une image de moins de 256 Ko.",
+        "mismatch": "Ce fichier n'est pas le type d'image qu'indique son nom."
+      }
+    }
   }
 }

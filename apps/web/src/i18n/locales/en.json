@@ -617,5 +617,82 @@
       "noChanges": "No values were recorded for this entry.",
       "entryId": "Entry ID"
     }
+  },
+  "settings": {
+    "title": "Organisation settings",
+    "description": "Your company's details, logo, address, currency and dates.",
+    "readOnly": "Only Owners and Admins can change these settings",
+    "saved": "Settings saved",
+    "unsaved": "You have unsaved changes",
+    "discard": "Discard",
+    "company": {
+      "title": "Company",
+      "description": "How your business appears on invoices and reports."
+    },
+    "address": {
+      "title": "Address"
+    },
+    "money": {
+      "title": "Money and dates",
+      "description": "How amounts, dates and financial years work in your books."
+    },
+    "fields": {
+      "name": "Display name",
+      "legalName": "Legal name",
+      "taxId": "Tax ID",
+      "email": "Accounts email",
+      "phone": "Phone",
+      "line1": "Address line 1",
+      "line2": "Address line 2",
+      "city": "City",
+      "region": "State or region",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "baseCurrency": "Base currency",
+      "fiscalYearStartMonth": "Financial year starts in",
+      "locale": "Number and date format",
+      "timeZone": "Time zone"
+    },
+    "hints": {
+      "legalName": "As registered, for invoices and tax filings.",
+      "taxId": "GSTIN, VAT number or similar.",
+      "baseCurrency": "Your books are kept in this currency.",
+      "fiscalYear": "Your financial year runs {{span}}.",
+      "timeZone": "It's {{time}} there now. Decides which day a transaction falls on."
+    },
+    "locked": {
+      "baseCurrency": "Can't change once entries are posted",
+      "fiscalYearStartMonth": "Can't change once financial years exist"
+    },
+    "errors": {
+      "name": "Enter a name of at least 2 characters.",
+      "taxId": "Use letters, numbers, spaces, dots, dashes or slashes.",
+      "email": "Enter a valid email address.",
+      "phone": "Use digits, spaces, brackets or dashes, optionally starting with +.",
+      "timeZone": "Choose a time zone from the list.",
+      "invalid": "Check this value."
+    },
+    "leave": {
+      "title": "Leave without saving?",
+      "body": "Your changes to the settings will be lost.",
+      "confirm": "Leave"
+    },
+    "logo": {
+      "title": "Logo",
+      "hint": "PNG, JPEG or WebP, up to 256 KB. Shown on invoices and reports.",
+      "drop": "Drop an image here",
+      "none": "No logo yet",
+      "upload": "Upload logo",
+      "replace": "Replace",
+      "remove": "Remove",
+      "uploaded": "Logo updated",
+      "removed": "Logo removed",
+      "alt": "{{name}} logo",
+      "problems": {
+        "type": "Use a PNG, JPEG or WebP image. SVG isn't allowed.",
+        "size": "Use an image under 256 KB.",
+        "mismatch": "That file isn't the image type its name says."
+      }
+    }
   }
 }

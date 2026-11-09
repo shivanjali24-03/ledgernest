@@ -65,7 +65,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', ready: true, keywords: 'team invite permissions roles members' },
       { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', ready: true, keywords: 'history activity log changes export' },
-      { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', keywords: 'company fiscal year currency tax' },
+      { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', ready: true, keywords: 'company fiscal year currency tax logo address time zone gstin vat' },
     ],
   },
   {
