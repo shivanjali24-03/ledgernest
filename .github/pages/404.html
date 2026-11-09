@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>LedgerNest</title>
+    <script>
+      // GitHub Pages has no app routing: a deep link such as /ledgernest/dev/users lands here.
+      // Send it to the right environment's app, which puts the address back (see apps/web/src/main.tsx).
+      (function () {
+        var repo = '/ledgernest';
+        var parts = location.pathname.slice(repo.length).split('/');
+        var env = ['staging', 'dev', 'demo'].indexOf(parts[1]) >= 0 ? '/' + parts[1] : '';
+        var base = repo + env + '/';
+        var rest = location.pathname.slice(base.length) + location.search + location.hash;
+        location.replace(base + '?__path=' + encodeURIComponent(rest));
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
