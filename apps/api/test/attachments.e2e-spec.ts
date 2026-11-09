@@ -176,6 +176,25 @@ describe('Document attachments (e2e)', () => {
     ).toMatch(/^attachment;/);
   });
 
+  it('takes files up to 2 MB, which are far bigger than an ordinary request', async () => {
+    const big = Buffer.concat([
+      Buffer.from('%PDF-1.4\n'),
+      Buffer.alloc(1_900_000, 0x20),
+    ]).toString('base64');
+    const list = (
+      await as()
+        .post(`/attachments/bill/${bill}`, {
+          fileName: 'scan.pdf',
+          type: 'application/pdf',
+          data: big,
+        })
+        .expect(201)
+    ).body as { id: string; fileName: string; size: number }[];
+    const scan = list.find((a) => a.fileName === 'scan.pdf')!;
+    expect(scan.size).toBe(1_900_009);
+    await as().delete(`/attachments/bill/${bill}/${scan.id}`).expect(204);
+  });
+
   it('needs the document’s own permissions, and the organisation’s own document', async () => {
     expect(
       (await as('viewer').get(`/attachments/bill/${bill}`).expect(403)).body
