@@ -82,6 +82,19 @@
       "coa": "Choose a chart of accounts template",
       "fiscal": "Set your fiscal year and base currency",
       "bank": "Connect a bank account"
+    },
+    "vsLastMonthAmount": "{{value}} vs last month",
+    "profitByMonth": "Profit by month",
+    "profitHint": "The last twelve months: up for profit, down for loss.",
+    "attention": "Needs attention",
+    "allClear": "Nothing needs attention",
+    "alerts": {
+      "overdue_invoices": "{{count}} overdue invoices, {{amount}}",
+      "overdue_bills": "{{count}} overdue bills, {{amount}}",
+      "unreconciled": "{{count}} bank lines to reconcile",
+      "recurring_due": "{{count}} recurring invoices due",
+      "open_periods": "{{count}} past months still open",
+      "draft_entries": "{{count}} draft entries not posted"
     }
   },
   "comingSoon": {

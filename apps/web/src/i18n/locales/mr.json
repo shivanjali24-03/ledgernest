@@ -82,6 +82,19 @@
       "coa": "खात्यांच्या यादीचा टेम्पलेट निवडा",
       "fiscal": "आर्थिक वर्ष आणि मूळ चलन ठरवा",
       "bank": "बँक खाते जोडा"
+    },
+    "vsLastMonthAmount": "मागील महिन्याच्या तुलनेत {{value}}",
+    "profitByMonth": "महिन्यानुसार नफा",
+    "profitHint": "मागील बारा महिने: वर नफा, खाली तोटा.",
+    "attention": "लक्ष द्या",
+    "allClear": "कशावरही लक्ष देण्याची गरज नाही",
+    "alerts": {
+      "overdue_invoices": "{{count}} थकीत इनव्हॉइस, {{amount}}",
+      "overdue_bills": "{{count}} थकीत बिले, {{amount}}",
+      "unreconciled": "जुळवण्यासाठी {{count}} बँक ओळी",
+      "recurring_due": "{{count}} आवर्ती इनव्हॉइस देय",
+      "open_periods": "{{count}} मागील महिने अजून उघडे",
+      "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत"
     }
   },
   "comingSoon": {

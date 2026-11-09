@@ -82,6 +82,19 @@
       "coa": "खातों की सूची का टेम्पलेट चुनें",
       "fiscal": "वित्तीय वर्ष और मूल मुद्रा तय करें",
       "bank": "बैंक खाता जोड़ें"
+    },
+    "vsLastMonthAmount": "पिछले महीने से {{value}}",
+    "profitByMonth": "महीनेवार लाभ",
+    "profitHint": "पिछले बारह महीने: ऊपर लाभ, नीचे हानि।",
+    "attention": "ध्यान दें",
+    "allClear": "किसी चीज़ पर ध्यान की ज़रूरत नहीं",
+    "alerts": {
+      "overdue_invoices": "{{count}} अतिदेय इनवॉइस, {{amount}}",
+      "overdue_bills": "{{count}} अतिदेय बिल, {{amount}}",
+      "unreconciled": "मिलान के लिए {{count}} बैंक पंक्तियाँ",
+      "recurring_due": "{{count}} आवर्ती इनवॉइस देय",
+      "open_periods": "{{count}} पिछले महीने अभी खुले",
+      "draft_entries": "{{count}} ड्राफ़्ट प्रविष्टियाँ पोस्ट नहीं"
     }
   },
   "comingSoon": {

@@ -18,6 +18,7 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     exportTaxSummary: (from, to) => file(`/tax-summary/export?from=${from}&to=${to}`, `tax-summary-${from}-${to}.csv`),
     aging: (side, asOf) => r(`/aging?side=${side}&asOf=${asOf}`),
     exportAging: (side, asOf) => file(`/aging/export?side=${side}&asOf=${asOf}`, `${side}-aging-${asOf}.csv`),
+    dashboard: () => r('/dashboard'),
     profitAndLoss: (from, to, compare) => r(`/profit-and-loss?from=${from}&to=${to}&compare=${compare}`),
     exportProfitAndLoss: (from, to, compare) => file(`/profit-and-loss/export?from=${from}&to=${to}&compare=${compare}`, `profit-and-loss-${from}-${to}.csv`),
     balanceSheet: (asOf, compareAsOf) => r(`/balance-sheet?asOf=${asOf}${compareAsOf ? `&compareAsOf=${compareAsOf}` : ''}`),
