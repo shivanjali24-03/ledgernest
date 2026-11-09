@@ -5,6 +5,7 @@ import { ACCOUNT_TYPES, currencyDigits, parseCsv, fiscalYearOf, fiscalYearSpan, 
 import { AlertTriangle, Building2, CheckCircle2, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
+import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 import { useIntlLocale } from '../../i18n';
 import { formatDate } from '../../lib/format';
 import { useMoney } from '../../lib/useMoney';
@@ -74,9 +75,11 @@ export default function Reports() {
   const tb = useQuery({ queryKey: [...key, 'tb', asOf], queryFn: () => api!.trialBalance(asOf), enabled: !!api && tab === 'trial-balance', placeholderData: keepPreviousData });
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi && tab === 'ledger' });
   const ledger = useQuery({ queryKey: [...key, 'ledger', accountId, from, to], queryFn: () => api!.ledger(accountId, from, to), enabled: !!api && tab === 'ledger' && !!accountId && from <= to, placeholderData: keepPreviousData });
+  const centres = useCostCentres(true).data ?? [];
   const compare = (params.get('compare') as PnlCompare | null) ?? 'none';
+  const costCentreId = params.get('costCentre') ?? undefined;
   const compareAsOf = params.get('compareAsOf');
-  const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare], queryFn: () => api!.profitAndLoss(from, to, compare), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
+  const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare, costCentreId], queryFn: () => api!.profitAndLoss(from, to, compare, costCentreId), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
@@ -97,7 +100,7 @@ export default function Reports() {
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
     mutationFn: async (format: 'csv' | 'xlsx') => {
-      const csvFile = await (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to));
+      const csvFile = await (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare, costCentreId) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to));
       if (format === 'csv') return csvFile;
       // Excel from the same figures, numbers as numbers
       return { filename: csvFile.filename.replace(/\.(csv|json)$/, '.xlsx'), blob: xlsx([{ name: reportTitle, rows: csvToRows(await csvFile.blob.text(), parseCsv) }]) };
@@ -265,8 +268,24 @@ export default function Reports() {
             <div className="w-44">
               <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
             </div>
-            <Segmented<PnlCompare> label={t('reports.statements.compare')} value={compare} onChange={(v) => set({ compare: v === 'none' ? null : v })} options={PNL_COMPARE.map((c) => ({ value: c, label: t(`reports.statements.compares.${c}`) }))} />
+            <Segmented<PnlCompare>
+              label={t('reports.statements.compare')}
+              value={compare}
+              onChange={(v) => set({ compare: v === 'none' ? null : v, ...(v === 'costCentres' ? { costCentre: null } : {}) })}
+              options={PNL_COMPARE.filter((c) => c !== 'costCentres' || centres.length).map((c) => ({ value: c, label: t(`reports.statements.compares.${c}`) }))}
+            />
+            {centres.length > 0 && compare !== 'costCentres' && (
+              <div className="w-56">
+                <SelectField
+                  label={t('costCentres.filter')}
+                  value={costCentreId ?? ''}
+                  onChange={(e) => set({ costCentre: e.target.value || null })}
+                  options={[{ value: '', label: t('costCentres.all') }, ...centres.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` })), { value: 'none', label: t('costCentres.unassigned') }]}
+                />
+              </div>
+            )}
           </div>
+          {pnl.data?.costCentre && <p className="hidden text-sm print:block">{pnl.data.costCentre === 'none' ? t('costCentres.unassigned') : `${pnl.data.costCentre.code} · ${pnl.data.costCentre.name}`}</p>}
           <ProfitAndLossPanel data={pnl.data} isPending={pnl.isPending} isError={pnl.isError} onRetry={() => void pnl.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id })} />
         </motion.div>
       ) : tab === 'balance-sheet' ? (

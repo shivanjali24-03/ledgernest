@@ -32,7 +32,8 @@
       "creditNotes": "Credit notes",
       "recurring": "Recurring invoices",
       "fixedAssets": "Fixed assets",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "costCentres": "Cost centres"
     },
     "soon": "Soon"
   },
@@ -1334,7 +1335,8 @@
         "none": "Nothing",
         "previous": "Previous period",
         "year": "Last year",
-        "months": "By month"
+        "months": "By month",
+        "costCentres": "By cost centre"
       },
       "compareWith": "Compare with another date",
       "compareDate": "Compared with",
@@ -2616,6 +2618,56 @@
       "not_pnl_account": "Budgets are for income and expense accounts.",
       "forbidden": "You don’t have permission to change budgets.",
       "generic": "The budget couldn’t be saved. Try again."
+    }
+  },
+  "costCentres": {
+    "title": "Cost centres and projects",
+    "description": "The departments, branches and projects you tag lines with, to see profit for each part of the business.",
+    "add": "Add cost centre",
+    "showArchived": "Show archived",
+    "profitBy": "Profit by cost centre",
+    "empty": "No cost centres yet",
+    "emptyBody": "Add a department, branch or project, then tag journal, invoice and bill lines with it.",
+    "kinds": {
+      "department": "Department",
+      "project": "Project"
+    },
+    "archivedPill": "Archived",
+    "lines": "Lines tagged: {{count}}",
+    "actionsFor": "Actions for {{name}}",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "archived": "{{name}} archived",
+    "restored": "{{name}} restored",
+    "deleted": "{{name}} deleted",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "Only a cost centre nothing has been tagged with can be deleted. Archive it to stop using it.",
+    "updated": "{{name}} saved",
+    "added": "{{name}} added",
+    "editTitle": "Edit cost centre",
+    "addTitle": "Add a cost centre",
+    "dialogBody": "Tag lines with it to see profit for this part of the business.",
+    "fields": {
+      "code": "Code",
+      "kind": "Kind",
+      "name": "Name",
+      "description": "Description"
+    },
+    "codeHint": "Short and unique, e.g. PUNE or PRJ-ALPHA",
+    "codeInvalid": "Use letters, digits, dots, dashes or underscores.",
+    "filter": "Cost centre",
+    "all": "All cost centres",
+    "unassigned": "Unassigned",
+    "field": "Cost centre",
+    "errors": {
+      "code_taken": "Another cost centre has this code.",
+      "in_use": "Lines are tagged with this cost centre. Archive it instead.",
+      "cost_centre_not_found": "That cost centre doesn’t exist.",
+      "cost_centre_archived": "That cost centre is archived. Choose another, or restore it.",
+      "forbidden": "You don’t have permission to change cost centres.",
+      "generic": "The cost centre couldn’t be saved. Try again."
     }
   }
 }

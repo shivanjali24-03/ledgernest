@@ -38,7 +38,7 @@ export function ProfitAndLossPanel({ data, ...rest }: Common & { data: ProfitAnd
   const state = <State {...rest} empty={!!data && data.sections.every((s) => !s.rows.length)} />;
   if (rest.isPending || rest.isError || !data || data.sections.every((s) => !s.rows.length)) return state;
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
-  const columns = data.columns.map((c) => (data.compare === 'months' ? new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${c.from}T00:00:00Z`)) : `${day(c.from)} – ${day(c.to)}`));
+  const columns = data.columns.map((c) => (c.costCentre !== undefined ? (c.costCentre ? `${c.costCentre.code} · ${c.costCentre.name}` : t('costCentres.unassigned')) : data.compare === 'months' ? new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${c.from}T00:00:00Z`)) : `${day(c.from)} – ${day(c.to)}`));
   const section = (key: ProfitAndLoss['sections'][number]['section']): StatementBlock[] => {
     const s = data.sections.find((x) => x.section === key)!;
     return s.rows.length ? [{ kind: 'section', key, title: t(`reports.statements.pnl.${key}`), rows: s.rows, total: s.total, totalLabel: t('reports.statements.totalOf', { section: t(`reports.statements.pnl.${key}`) }) }] : [];

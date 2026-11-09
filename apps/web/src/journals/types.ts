@@ -22,6 +22,8 @@ export interface JournalLine {
   rate: string | null;
   /** Set on an exchange-difference line generated on posting: the line it settles */
   fxSourceLine: number | null;
+  /** The cost centre or project the line belongs to */
+  costCentre?: { id: string; code: string; name: string } | null;
 }
 
 export interface JournalRef {

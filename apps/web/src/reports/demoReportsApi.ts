@@ -1,5 +1,6 @@
 import { B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
@@ -189,19 +190,29 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       .sort((x, y) => compareCodes(x.code, y.code))
       .map((a) => ({ section: sectionOf(a.type, a.subtype)!, accountId: a.id, code: a.code, name: a.name, depth: ancestors(a.id).length, parentId: a.parentId, hasChildren: a.childCount > 0, amounts: amounts.get(a.id)! }));
   };
-  const sums = async (from: string | null, to: string, given?: Awaited<ReturnType<typeof postedLines>>) => {
+  /** costCentre: undefined for every line, "none" for the untagged ones, or one cost centre's id */
+  const sums = async (from: string | null, to: string, given?: Awaited<ReturnType<typeof postedLines>>, costCentre?: string) => {
     const out = new Map<string, number>();
-    for (const l of given ?? (await postedLines())) if (l.date <= to && (!from || l.date >= from)) out.set(l.accountId, (out.get(l.accountId) ?? 0) + l.debit - l.credit);
+    for (const l of given ?? (await postedLines()))
+      if (l.date <= to && (!from || l.date >= from) && (costCentre === undefined || (l.costCentre?.id ?? 'none') === costCentre)) out.set(l.accountId, (out.get(l.accountId) ?? 0) + l.debit - l.credit);
     return out;
   };
-  const profitAndLoss = async (from: string, to: string, compare: PnlCompare): Promise<ProfitAndLoss> => {
-    const columns = pnlColumns(from, to, compare);
-    const rows = await statementRows<PnlSection>(await Promise.all(columns.map((c) => sums(c.from, c.to))), pnlSectionOf, (type) => (type === 'income' ? -1 : 1));
+  const profitAndLoss = async (from: string, to: string, compare: PnlCompare, costCentreId?: string): Promise<ProfitAndLoss> => {
+    // One read of the books for every column
+    const posted = await postedLines();
+    const accs = new Map((await accounts.list(true)).map((a) => [a.id, a.type]));
+    const used = new Map<string, { id: string; code: string; name: string }>();
+    if (compare === 'costCentres') for (const l of posted) if (l.costCentre && l.date >= from && l.date <= to && ['income', 'expense'].includes(accs.get(l.accountId) ?? '')) used.set(l.costCentre.id, l.costCentre);
+    const columns: ProfitAndLoss['columns'] = compare === 'costCentres' ? [...[...used.values()].sort((x, y) => x.code.localeCompare(y.code)).map((c) => ({ from, to, costCentre: c })), { from, to, costCentre: null }] : pnlColumns(from, to, compare);
+    const filter = costCentreId && costCentreId !== 'none' ? demoCostCentreRows().find((c) => c.id === costCentreId) : undefined;
+    if (costCentreId && costCentreId !== 'none' && !filter) throw new ApiError('not_found', 404);
+    const rows = await statementRows<PnlSection>(await Promise.all(columns.map((c) => sums(c.from, c.to, posted, c.costCentre !== undefined ? (c.costCentre?.id ?? 'none') : costCentreId))), pnlSectionOf, (type) => (type === 'income' ? -1 : 1));
     const total = (sec: PnlSection) => columns.map((_c, k) => rows.filter((r) => r.section === sec && r.depth === 0).reduce((s, r) => s + r.amounts[k]!, 0));
     const t = Object.fromEntries(PNL_SECTIONS.map((sec) => [sec, total(sec)])) as Record<PnlSection, number[]>;
     const gross = columns.map((_c, k) => t.revenue[k]! - t.costOfSales[k]!);
     const operating = columns.map((_c, k) => gross[k]! - t.operatingExpenses[k]!);
-    return { from, to, compare, columns, sections: PNL_SECTIONS.map((sec) => ({ section: sec, rows: rows.filter((r) => r.section === sec) as StatementRow[], total: t[sec] })), grossProfit: gross, operatingProfit: operating, netProfit: columns.map((_c, k) => operating[k]! + t.otherIncome[k]! - t.otherExpenses[k]!) };
+    const costCentre = costCentreId === 'none' ? ('none' as const) : filter ? { id: filter.id, code: filter.code, name: filter.name } : null;
+    return { from, to, compare, columns, costCentre, sections: PNL_SECTIONS.map((sec) => ({ section: sec, rows: rows.filter((r) => r.section === sec) as StatementRow[], total: t[sec] })), grossProfit: gross, operatingProfit: operating, netProfit: columns.map((_c, k) => operating[k]! + t.otherIncome[k]! - t.otherExpenses[k]!) };
   };
   const balanceSheet = async (asOf: string, compareAsOf: string | null): Promise<BalanceSheet> => {
     const dates = compareAsOf ? [asOf, compareAsOf] : [asOf];
@@ -407,10 +418,10 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     ledger,
     taxSummary,
     profitAndLoss,
-    async exportProfitAndLoss(from, to, compare) {
+    async exportProfitAndLoss(from, to, compare, costCentreId) {
       guard();
-      const p = await profitAndLoss(from, to, compare);
-      const rows: unknown[][] = [['section', 'code', 'account', ...p.columns.map((c) => `${c.from}..${c.to}`)]];
+      const p = await profitAndLoss(from, to, compare, costCentreId);
+      const rows: unknown[][] = [['section', 'code', 'account', ...p.columns.map((c) => (c.costCentre !== undefined ? (c.costCentre ? `${c.costCentre.code} ${c.costCentre.name}` : 'Unassigned') : `${c.from}..${c.to}`))]];
       for (const sec of p.sections) {
         for (const r of sec.rows) rows.push([sec.section, r.code, `${'  '.repeat(r.depth)}${r.name}`, ...r.amounts.map(money)]);
         rows.push([sec.section, '', `Total ${sec.section}`, ...sec.total.map(money)]);

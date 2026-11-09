@@ -24,8 +24,8 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     exportGstr1: (from, to, format) => file(`/gst/gstr-1/export?from=${from}&to=${to}&format=${format}`, `gstr-1-${from}-${to}.${format}`),
     cashFlow: (from, to) => r(`/cash-flow?from=${from}&to=${to}`),
     exportCashFlow: (from, to) => file(`/cash-flow/export?from=${from}&to=${to}`, `cash-flow-${from}-${to}.csv`),
-    profitAndLoss: (from, to, compare) => r(`/profit-and-loss?from=${from}&to=${to}&compare=${compare}`),
-    exportProfitAndLoss: (from, to, compare) => file(`/profit-and-loss/export?from=${from}&to=${to}&compare=${compare}`, `profit-and-loss-${from}-${to}.csv`),
+    profitAndLoss: (from, to, compare, costCentreId) => r(`/profit-and-loss?from=${from}&to=${to}&compare=${compare}${costCentreId ? `&costCentreId=${costCentreId}` : ''}`),
+    exportProfitAndLoss: (from, to, compare, costCentreId) => file(`/profit-and-loss/export?from=${from}&to=${to}&compare=${compare}${costCentreId ? `&costCentreId=${costCentreId}` : ''}`, `profit-and-loss-${from}-${to}.csv`),
     balanceSheet: (asOf, compareAsOf) => r(`/balance-sheet?asOf=${asOf}${compareAsOf ? `&compareAsOf=${compareAsOf}` : ''}`),
     exportBalanceSheet: (asOf, compareAsOf) => file(`/balance-sheet/export?asOf=${asOf}${compareAsOf ? `&compareAsOf=${compareAsOf}` : ''}`, `balance-sheet-${asOf}.csv`),
   };

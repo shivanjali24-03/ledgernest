@@ -32,7 +32,8 @@
       "creditNotes": "Notas de crédito",
       "recurring": "Facturas recurrentes",
       "fixedAssets": "Activos fijos",
-      "budgets": "Presupuestos"
+      "budgets": "Presupuestos",
+      "costCentres": "Centros de coste"
     },
     "soon": "Pronto"
   },
@@ -1334,7 +1335,8 @@
         "none": "Nada",
         "previous": "Periodo anterior",
         "year": "Año anterior",
-        "months": "Por mes"
+        "months": "Por mes",
+        "costCentres": "Por centro de coste"
       },
       "compareWith": "Comparar con otra fecha",
       "compareDate": "Comparado con",
@@ -2616,6 +2618,56 @@
       "not_pnl_account": "Los presupuestos son para cuentas de ingresos y gastos.",
       "forbidden": "No tienes permiso para cambiar presupuestos.",
       "generic": "No se pudo guardar el presupuesto. Inténtalo de nuevo."
+    }
+  },
+  "costCentres": {
+    "title": "Centros de coste y proyectos",
+    "description": "Los departamentos, sucursales y proyectos con los que etiquetas líneas, para ver el beneficio de cada parte del negocio.",
+    "add": "Añadir centro de coste",
+    "showArchived": "Mostrar archivados",
+    "profitBy": "Beneficio por centro de coste",
+    "empty": "Aún no hay centros de coste",
+    "emptyBody": "Añade un departamento, sucursal o proyecto y etiqueta con él líneas de asientos, facturas y facturas de proveedor.",
+    "kinds": {
+      "department": "Departamento",
+      "project": "Proyecto"
+    },
+    "archivedPill": "Archivado",
+    "lines": "Líneas etiquetadas: {{count}}",
+    "actionsFor": "Acciones para {{name}}",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "archived": "{{name}} archivado",
+    "restored": "{{name}} restaurado",
+    "deleted": "{{name}} eliminado",
+    "deleteTitle": "¿Eliminar {{name}}?",
+    "deleteBody": "Solo se puede eliminar un centro de coste sin líneas etiquetadas. Archívalo para dejar de usarlo.",
+    "updated": "{{name}} guardado",
+    "added": "{{name}} añadido",
+    "editTitle": "Editar centro de coste",
+    "addTitle": "Añadir un centro de coste",
+    "dialogBody": "Etiqueta líneas con él para ver el beneficio de esta parte del negocio.",
+    "fields": {
+      "code": "Código",
+      "kind": "Tipo",
+      "name": "Nombre",
+      "description": "Descripción"
+    },
+    "codeHint": "Corto y único, p. ej. PUNE o PRJ-ALPHA",
+    "codeInvalid": "Usa letras, dígitos, puntos, guiones o guiones bajos.",
+    "filter": "Centro de coste",
+    "all": "Todos los centros de coste",
+    "unassigned": "Sin asignar",
+    "field": "Centro de coste",
+    "errors": {
+      "code_taken": "Otro centro de coste tiene este código.",
+      "in_use": "Hay líneas etiquetadas con este centro de coste. Archívalo en su lugar.",
+      "cost_centre_not_found": "Ese centro de coste no existe.",
+      "cost_centre_archived": "Ese centro de coste está archivado. Elige otro o restáuralo.",
+      "forbidden": "No tienes permiso para cambiar centros de coste.",
+      "generic": "No se pudo guardar el centro de coste. Inténtalo de nuevo."
     }
   }
 }
