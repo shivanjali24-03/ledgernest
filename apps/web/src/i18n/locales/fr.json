@@ -1774,5 +1774,64 @@
       "allocation": "Vérifiez les montants signalés : pas plus que le reste de chaque facture.",
       "over": "Vous ne pouvez pas imputer plus que reçu."
     }
+  },
+  "bills": {
+    "title": "Factures fournisseurs",
+    "description": "Ce que l’entreprise doit à ses fournisseurs : factures à enregistrer, payer et suivre.",
+    "new": "Nouvelle facture",
+    "newTitle": "Nouvelle facture fournisseur",
+    "draftTitle": "Facture en brouillon",
+    "draftHint": "Saisissez la facture du fournisseur telle qu’imprimée. L’enregistrer comptabilise les charges, la GST déductible et la dette.",
+    "outstanding": "À payer",
+    "filter": "Afficher les factures",
+    "search": "Rechercher des factures",
+    "empty": "Aucune facture fournisseur",
+    "emptyBody": "Enregistrez la facture d’un fournisseur pour suivre vos dettes et récupérer la GST déductible.",
+    "chooseVendor": "Choisir un fournisseur",
+    "chooseAccount": "Choisir un compte",
+    "lineAccount": "Compte de la ligne {{n}}",
+    "record": "Enregistrer la facture",
+    "recorded": "Enregistrée sous {{number}}",
+    "deleteTitle": "Supprimer ce brouillon ?",
+    "void": "Annuler la facture",
+    "voidTitle": "Annuler {{number}} ?",
+    "voidBody": "Son écriture est contrepassée et elle n’est plus due. Action irréversible.",
+    "voided": "{{number}} annulée",
+    "theirNumber": "Leur numéro {{number}}",
+    "document": "Facture {{number}}",
+    "suppliedFrom": "Fourni depuis {{state}}",
+    "rate": "Taux de change",
+    "paid": "Payé",
+    "toPay": "Reste à payer",
+    "fields": {
+      "vendor": "Fournisseur",
+      "billDate": "Date de facture",
+      "vendorReference": "N° de facture du fournisseur"
+    },
+    "columns": {
+      "account": "Compte"
+    },
+    "states": {
+      "draft": "Brouillon",
+      "open": "À payer",
+      "partly_paid": "Payée en partie",
+      "paid": "Payée",
+      "overdue": "En retard",
+      "void": "Annulée"
+    },
+    "problems": {
+      "vendor": "Choisissez le fournisseur.",
+      "account": "Choisissez un compte pour chaque ligne."
+    },
+    "errors": {
+      "not_vendor": "Ce contact n’est pas un fournisseur.",
+      "not_expense": "Les factures ne vont qu’en comptes de charges ou d’actif.",
+      "no_payable_account": "Aucun compte fournisseurs dans cette devise. Ajoutez-en un au plan comptable.",
+      "payable_currency": "Ce compte fournisseurs est tenu dans une autre devise.",
+      "not_open": "Seules les factures à payer peuvent être annulées.",
+      "bill_not_open": "Seules les factures enregistrées peuvent être payées.",
+      "bill_currency": "Cette facture est dans une autre devise.",
+      "bill_not_found": "Cette facture appartient à un autre fournisseur."
+    }
   }
 }

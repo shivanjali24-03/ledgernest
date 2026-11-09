@@ -1774,5 +1774,64 @@
       "allocation": "Check the highlighted amounts: no more than each invoice has left.",
       "over": "You can’t apply more than was received."
     }
+  },
+  "bills": {
+    "title": "Bills",
+    "description": "What the business owes its vendors: bills to record, pay and keep an eye on.",
+    "new": "New bill",
+    "newTitle": "New bill",
+    "draftTitle": "Draft bill",
+    "draftHint": "Enter the vendor’s bill as printed. Recording it books the costs, the input GST and what you owe.",
+    "outstanding": "To pay",
+    "filter": "Show bills",
+    "search": "Search bills",
+    "empty": "No bills yet",
+    "emptyBody": "Record a vendor’s bill to track what you owe and claim input GST.",
+    "chooseVendor": "Choose a vendor",
+    "chooseAccount": "Choose an account",
+    "lineAccount": "Account for line {{n}}",
+    "record": "Record bill",
+    "recorded": "Recorded as {{number}}",
+    "deleteTitle": "Delete this draft bill?",
+    "void": "Void bill",
+    "voidTitle": "Void {{number}}?",
+    "voidBody": "Its entry is reversed and it no longer counts as owed. This can’t be undone.",
+    "voided": "{{number}} voided",
+    "theirNumber": "Their number {{number}}",
+    "document": "Bill {{number}}",
+    "suppliedFrom": "Supplied from {{state}}",
+    "rate": "Exchange rate",
+    "paid": "Paid",
+    "toPay": "Left to pay",
+    "fields": {
+      "vendor": "Vendor",
+      "billDate": "Bill date",
+      "vendorReference": "Vendor’s bill number"
+    },
+    "columns": {
+      "account": "Account"
+    },
+    "states": {
+      "draft": "Draft",
+      "open": "To pay",
+      "partly_paid": "Partly paid",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "void": "Void"
+    },
+    "problems": {
+      "vendor": "Choose the vendor.",
+      "account": "Choose an account for every line."
+    },
+    "errors": {
+      "not_vendor": "That contact isn’t a vendor.",
+      "not_expense": "Bills can only be booked to expense or asset accounts.",
+      "no_payable_account": "There’s no accounts payable account in this currency. Add one in the chart of accounts.",
+      "payable_currency": "That payable account is kept in another currency.",
+      "not_open": "Only bills waiting to be paid can be voided.",
+      "bill_not_open": "Only recorded bills can be paid.",
+      "bill_currency": "That bill is in a different currency.",
+      "bill_not_found": "That bill belongs to another vendor."
+    }
   }
 }

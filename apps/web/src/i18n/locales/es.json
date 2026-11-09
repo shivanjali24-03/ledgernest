@@ -1774,5 +1774,64 @@
       "allocation": "Revisa los importes marcados: no más de lo que queda en cada factura.",
       "over": "No puedes aplicar más de lo cobrado."
     }
+  },
+  "bills": {
+    "title": "Facturas de proveedor",
+    "description": "Lo que la empresa debe a sus proveedores: facturas para registrar, pagar y vigilar.",
+    "new": "Nueva factura",
+    "newTitle": "Nueva factura de proveedor",
+    "draftTitle": "Borrador de factura",
+    "draftHint": "Introduce la factura del proveedor tal como está impresa. Al registrarla se contabilizan los gastos, el GST soportado y lo que debes.",
+    "outstanding": "Por pagar",
+    "filter": "Mostrar facturas",
+    "search": "Buscar facturas",
+    "empty": "Aún no hay facturas de proveedor",
+    "emptyBody": "Registra la factura de un proveedor para saber lo que debes y deducir el GST soportado.",
+    "chooseVendor": "Elige un proveedor",
+    "chooseAccount": "Elige una cuenta",
+    "lineAccount": "Cuenta de la línea {{n}}",
+    "record": "Registrar factura",
+    "recorded": "Registrada como {{number}}",
+    "deleteTitle": "¿Eliminar este borrador?",
+    "void": "Anular factura",
+    "voidTitle": "¿Anular {{number}}?",
+    "voidBody": "Su asiento se revierte y deja de contar como deuda. No se puede deshacer.",
+    "voided": "{{number}} anulada",
+    "theirNumber": "Su número {{number}}",
+    "document": "Factura {{number}}",
+    "suppliedFrom": "Suministrado desde {{state}}",
+    "rate": "Tipo de cambio",
+    "paid": "Pagado",
+    "toPay": "Pendiente de pago",
+    "fields": {
+      "vendor": "Proveedor",
+      "billDate": "Fecha de factura",
+      "vendorReference": "N.º de factura del proveedor"
+    },
+    "columns": {
+      "account": "Cuenta"
+    },
+    "states": {
+      "draft": "Borrador",
+      "open": "Por pagar",
+      "partly_paid": "Pagada en parte",
+      "paid": "Pagada",
+      "overdue": "Vencida",
+      "void": "Anulada"
+    },
+    "problems": {
+      "vendor": "Elige el proveedor.",
+      "account": "Elige una cuenta para cada línea."
+    },
+    "errors": {
+      "not_vendor": "Ese contacto no es un proveedor.",
+      "not_expense": "Las facturas solo pueden ir a cuentas de gasto o de activo.",
+      "no_payable_account": "No hay cuenta de proveedores en esta moneda. Añádela en el plan de cuentas.",
+      "payable_currency": "Esa cuenta de proveedores está en otra moneda.",
+      "not_open": "Solo se pueden anular facturas pendientes de pago.",
+      "bill_not_open": "Solo se pueden pagar facturas registradas.",
+      "bill_currency": "Esa factura está en otra moneda.",
+      "bill_not_found": "Esa factura es de otro proveedor."
+    }
   }
 }

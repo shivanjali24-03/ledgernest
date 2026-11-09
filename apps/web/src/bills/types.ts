@@ -1,0 +1,75 @@
+import type { BillDraftInput, BillState, BillStatus } from '@ledgernest/shared';
+import type { InvoiceLine } from '../invoices/types';
+
+export type BillLine = InvoiceLine;
+
+export interface Bill {
+  id: string;
+  number: string | null;
+  status: BillStatus;
+  state: BillState;
+  billDate: string;
+  dueDate: string;
+  currency: string | null;
+  rate: string | null;
+  placeOfSupply: string | null;
+  /** The vendor's own number for it */
+  vendorReference: string | null;
+  notes: string | null;
+  contact: {
+    id: string;
+    name: string;
+    legalName: string | null;
+    taxId: string | null;
+    email: string | null;
+    billingAddress: Record<string, string | null>;
+    shippingAddress: Record<string, string | null> | null;
+    stateCode: string | null;
+  };
+  payableAccount: { id: string; code: string; name: string } | null;
+  subtotal: number;
+  taxTotal: number;
+  total: number;
+  amountPaid: number;
+  balance: number;
+  taxBreakdown: { name: string; amount: number }[];
+  journalEntry: { id: string; number: string | null } | null;
+  voidEntry: { id: string; number: string | null } | null;
+  /** Payments that settled it */
+  payments: { id: string; number: string; date: string; amount: number }[];
+  lines: BillLine[];
+}
+
+export interface BillSummary {
+  id: string;
+  number: string | null;
+  status: BillStatus;
+  state: BillState;
+  contact: { id: string; name: string };
+  billDate: string;
+  dueDate: string;
+  currency: string | null;
+  total: number;
+  amountPaid: number;
+  balance: number;
+  vendorReference: string | null;
+}
+
+export type BillFilter = BillState | 'unpaid';
+
+/** Purchase bills. Live and demo both implement it. */
+export interface BillsApi {
+  list(q: { state?: BillFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{
+    total: number;
+    page: number;
+    pageSize: number;
+    summary: { outstanding: number; overdue: number };
+    items: BillSummary[];
+  }>;
+  get(id: string): Promise<Bill>;
+  create(input: BillDraftInput): Promise<Bill>;
+  update(id: string, input: BillDraftInput): Promise<Bill>;
+  remove(id: string): Promise<void>;
+  record(id: string): Promise<Bill>;
+  void(id: string, input: { date?: string; reason?: string }): Promise<Bill>;
+}
