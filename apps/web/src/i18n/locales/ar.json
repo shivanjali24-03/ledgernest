@@ -560,7 +560,8 @@
       "payments": "المقبوضات والمدفوعات",
       "bills": "فواتير الموردين",
       "banking": "الخدمات المصرفية",
-      "assets": "الأصول الثابتة"
+      "assets": "الأصول الثابتة",
+      "budgets": "الموازنات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -680,7 +681,10 @@
       "org_asset_delete": "حُذف أصل ثابت",
       "org_asset_depreciate": "قُيّد الإهلاك",
       "org_asset_depreciate_undo": "أُلغي قيد الإهلاك",
-      "org_asset_dispose": "استُبعد أصل ثابت"
+      "org_asset_dispose": "استُبعد أصل ثابت",
+      "org_budget_create": "تم إنشاء موازنة",
+      "org_budget_update": "تم تعديل موازنة",
+      "org_budget_delete": "تم حذف موازنة"
     },
     "entities": {
       "membership": "عضو",

@@ -106,6 +106,8 @@ model Organization {
   fixedAssets        FixedAsset[]
   depreciationRuns   DepreciationRun[]
   depreciationLines  DepreciationLine[]
+  budgets            Budget[]
+  budgetLines        BudgetLine[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -168,6 +170,7 @@ model Account {
   assetsAt              FixedAsset[]          @relation("AssetCostAccount")
   assetsDepreciatedIn   FixedAsset[]          @relation("AssetAccumulatedAccount")
   assetsExpensedTo      FixedAsset[]          @relation("AssetExpenseAccount")
+  budgetLines           BudgetLine[]
 
   paymentBanks Payment[] @relation("PaymentBank")
 
@@ -200,6 +203,7 @@ model FiscalYear {
 
   invoices    Invoice[]
   creditNotes CreditNote[]
+  budgets     Budget[]
 
   payments Payment[]
 
@@ -1253,4 +1257,42 @@ model DepreciationLine {
 
   @@index([organizationId, assetId])
   @@map("depreciation_lines")
+}
+
+/// A plan for a financial year: what each income and expense account should come to, month by month.
+model Budget {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  fiscalYearId   String   @map("fiscal_year_id") @db.Uuid
+  name           String
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fiscalYear   FiscalYear   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: Cascade)
+  lines        BudgetLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, fiscalYearId, name])
+  @@map("budgets")
+}
+
+/// One account's budget for one month; income and expenses both positive
+model BudgetLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  budgetId       String   @map("budget_id") @db.Uuid
+  accountId      String   @map("account_id") @db.Uuid
+  /// The first day of the month
+  month          DateTime @db.Date
+  amount         BigInt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  budget       Budget       @relation(fields: [organizationId, budgetId], references: [organizationId, id], onDelete: Cascade)
+  account      Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([budgetId, accountId, month])
+  @@index([organizationId, budgetId])
+  @@map("budget_lines")
 }

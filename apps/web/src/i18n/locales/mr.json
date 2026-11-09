@@ -560,7 +560,8 @@
       "payments": "जमा आणि देयके",
       "bills": "बिले",
       "banking": "बँकिंग",
-      "assets": "स्थिर मालमत्ता"
+      "assets": "स्थिर मालमत्ता",
+      "budgets": "अंदाजपत्रके"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -680,7 +681,10 @@
       "org_asset_delete": "स्थिर मालमत्ता काढली",
       "org_asset_depreciate": "घसारा लावला",
       "org_asset_depreciate_undo": "घसारा मागे घेतला",
-      "org_asset_dispose": "स्थिर मालमत्तेची विल्हेवाट"
+      "org_asset_dispose": "स्थिर मालमत्तेची विल्हेवाट",
+      "org_budget_create": "अंदाजपत्रक तयार केले",
+      "org_budget_update": "अंदाजपत्रक बदलले",
+      "org_budget_delete": "अंदाजपत्रक हटवले"
     },
     "entities": {
       "membership": "सदस्य",

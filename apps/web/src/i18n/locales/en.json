@@ -560,7 +560,8 @@
       "payments": "Receipts and payments",
       "bills": "Bills",
       "banking": "Banking",
-      "assets": "Fixed assets"
+      "assets": "Fixed assets",
+      "budgets": "Budgets"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -680,7 +681,10 @@
       "org_asset_delete": "Fixed asset removed",
       "org_asset_depreciate": "Depreciation charged",
       "org_asset_depreciate_undo": "Depreciation run undone",
-      "org_asset_dispose": "Fixed asset disposed of"
+      "org_asset_dispose": "Fixed asset disposed of",
+      "org_budget_create": "Budget created",
+      "org_budget_update": "Budget changed",
+      "org_budget_delete": "Budget deleted"
     },
     "entities": {
       "membership": "Member",

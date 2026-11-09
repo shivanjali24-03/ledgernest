@@ -560,7 +560,8 @@
       "payments": "Cobros y pagos",
       "bills": "Facturas de proveedor",
       "banking": "Banca",
-      "assets": "Activos fijos"
+      "assets": "Activos fijos",
+      "budgets": "Presupuestos"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -680,7 +681,10 @@
       "org_asset_delete": "Activo fijo eliminado",
       "org_asset_depreciate": "Amortización contabilizada",
       "org_asset_depreciate_undo": "Amortización deshecha",
-      "org_asset_dispose": "Activo fijo dado de baja"
+      "org_asset_dispose": "Activo fijo dado de baja",
+      "org_budget_create": "Presupuesto creado",
+      "org_budget_update": "Presupuesto modificado",
+      "org_budget_delete": "Presupuesto eliminado"
     },
     "entities": {
       "membership": "Miembro",

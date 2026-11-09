@@ -560,7 +560,8 @@
       "payments": "Encaissements et paiements",
       "bills": "Factures fournisseurs",
       "banking": "Banque",
-      "assets": "Immobilisations"
+      "assets": "Immobilisations",
+      "budgets": "Budgets"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -680,7 +681,10 @@
       "org_asset_delete": "Immobilisation supprimée",
       "org_asset_depreciate": "Amortissement comptabilisé",
       "org_asset_depreciate_undo": "Amortissement annulé",
-      "org_asset_dispose": "Immobilisation cédée"
+      "org_asset_dispose": "Immobilisation cédée",
+      "org_budget_create": "Budget créé",
+      "org_budget_update": "Budget modifié",
+      "org_budget_delete": "Budget supprimé"
     },
     "entities": {
       "membership": "Membre",

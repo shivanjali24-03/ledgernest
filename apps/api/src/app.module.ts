@@ -25,12 +25,17 @@ import { CreditNotesModule } from './credit-notes/credit-notes.module.js';
 import { RecurringModule } from './recurring/recurring.module.js';
 import { BankingModule } from './banking/banking.module.js';
 import { AssetsModule } from './assets/assets.module.js';
+import { BudgetsModule } from './budgets/budgets.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv, cache: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+      cache: true,
+    }),
     // Default limit: 120 requests per minute per client; sensitive routes (login) set stricter limits
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
@@ -55,6 +60,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     RecurringModule,
     BankingModule,
     AssetsModule,
+    BudgetsModule,
     PlatformModule,
   ],
   providers: [
