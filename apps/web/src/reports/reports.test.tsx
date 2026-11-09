@@ -44,7 +44,8 @@ describe('reports', () => {
     await waitFor(() => expect(router.state.location.search).toContain('tab=ledger'));
     const rent = (await screen.findByText('Office rent', {}, { timeout: 4000 })).closest('tr')!;
     expect(within(rent).getAllByRole('cell')[4]).toHaveTextContent('85,000.00');
-    expect(within(rent).getAllByRole('cell')[5]).toHaveTextContent('-85,000.00');
+    // 25,00,000 of capital came in first, then the rent went out
+    expect(within(rent).getAllByRole('cell')[5]).toHaveTextContent('24,15,000.00');
     expect(within(rent).getByRole('link', { name: /^JV\// })).toBeInTheDocument();
   });
 

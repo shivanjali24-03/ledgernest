@@ -59,19 +59,19 @@ describe('journal entries', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Balanced');
     await userEvent.click(screen.getByRole('button', { name: 'Post' }));
     // Saving and posting chain several simulated round trips in the demo
-    expect(await screen.findByText(/^Posted as JV\/.+\/0007$/, {}, { timeout: 4000 })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /^JV\/.+\/0007$/ })).toBeInTheDocument();
+    expect(await screen.findByText(/^Posted as JV\/.+\/0008$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^JV\/.+\/0008$/ })).toBeInTheDocument();
   });
 
   it('reverses a posted entry with the exact opposite amounts, linked both ways', async () => {
     renderApp();
-    await userEvent.click(await screen.findByRole('link', { name: /\/0002$/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /\/0003$/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Reverse' }));
     const dialog = await screen.findByRole('dialog', { name: /^Reverse JV/ });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Reverse' }));
-    expect(await screen.findByText(/^Reversed as JV\/.+\/0007$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText(/^Reversed as JV\/.+\/0008$/, {}, { timeout: 4000 })).toBeInTheDocument();
     expect(await screen.findByText('This entry reverses')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /\/0002$/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /\/0003$/ })).toBeInTheDocument();
     // Rent was a debit in the original; it is a credit here
     const rent = screen.getByText('Office rent').closest('tr')!;
     expect(within(rent).getAllByRole('cell')[2]).toHaveTextContent('85,000.00');
