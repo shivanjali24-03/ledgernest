@@ -3,11 +3,12 @@ import { JournalsModule } from '../journals/journals.module.js';
 import { ReportsModule } from '../reports/reports.module.js';
 import { BankingController } from './banking.controller.js';
 import { BankingService } from './banking.service.js';
+import { StatementsService } from './statements.service.js';
 
 @Module({
   imports: [JournalsModule, ReportsModule],
   controllers: [BankingController],
-  providers: [BankingService],
+  providers: [BankingService, StatementsService],
   exports: [BankingService],
 })
 export class BankingModule {}

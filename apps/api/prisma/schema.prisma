@@ -98,6 +98,9 @@ model Organization {
   creditApplications CreditApplication[]
   recurringInvoices  RecurringInvoice[]
   bankTransactions   BankTransaction[]
+  statementImports   BankStatementImport[]
+  statementLines     BankStatementLine[]
+  statementLayouts   BankStatementLayout[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -146,13 +149,16 @@ model Account {
   taxInputs     TaxRate[]             @relation("TaxInputAccount")
   lines         JournalLine[]
 
-  invoiceReceivables    Invoice[]           @relation("InvoiceReceivable")
-  invoiceIncome         InvoiceLine[]       @relation("InvoiceLineAccount")
-  creditNoteReceivables CreditNote[]        @relation("CreditNoteReceivable")
-  creditNoteIncome      CreditNoteLine[]    @relation("CreditNoteLineAccount")
-  creditRefundBanks     CreditApplication[] @relation("CreditRefundBank")
-  bankTransactions      BankTransaction[]   @relation("BankTransactionAccount")
-  bankTransfersIn       BankTransaction[]   @relation("BankTransferTo")
+  invoiceReceivables    Invoice[]             @relation("InvoiceReceivable")
+  invoiceIncome         InvoiceLine[]         @relation("InvoiceLineAccount")
+  creditNoteReceivables CreditNote[]          @relation("CreditNoteReceivable")
+  creditNoteIncome      CreditNoteLine[]      @relation("CreditNoteLineAccount")
+  creditRefundBanks     CreditApplication[]   @relation("CreditRefundBank")
+  bankTransactions      BankTransaction[]     @relation("BankTransactionAccount")
+  bankTransfersIn       BankTransaction[]     @relation("BankTransferTo")
+  statementImports      BankStatementImport[]
+  statementLines        BankStatementLine[]
+  statementLayout       BankStatementLayout?
 
   paymentBanks Payment[] @relation("PaymentBank")
 
@@ -1032,4 +1038,72 @@ model BankTransaction {
   @@index([organizationId, bankAccountId, date])
   @@index([organizationId, toAccountId, date])
   @@map("bank_transactions")
+}
+
+/// One upload of a bank's statement for an account.
+model BankStatementImport {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  bankAccountId  String    @map("bank_account_id") @db.Uuid
+  fileName       String    @map("file_name")
+  format         String /// csv | ofx
+  /// Lines added, and lines already there from an earlier import
+  added          Int
+  duplicates     Int
+  /// Rows that couldn't be read (date, amount or description)
+  rejected       Int
+  firstDate      DateTime? @map("first_date") @db.Date
+  lastDate       DateTime? @map("last_date") @db.Date
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccount  Account             @relation(fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  lines        BankStatementLine[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, bankAccountId, createdAt])
+  @@map("bank_statement_imports")
+}
+
+/// A line of the bank's own record: money in (positive) or out (negative) on a day, waiting to be reconciled.
+model BankStatementLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  bankAccountId  String   @map("bank_account_id") @db.Uuid
+  importId       String   @map("import_id") @db.Uuid
+  date           DateTime @db.Date
+  description    String
+  reference      String?
+  /// In the account's currency's smallest unit: in positive, out negative
+  amount         BigInt
+  /// The running balance the bank printed, if any
+  balance        BigInt?
+  /// What makes the line itself, so the same statement never imports twice
+  fingerprint    String
+  status         String   @default("unmatched") /// unmatched | matched | ignored
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccount  Account             @relation(fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  import       BankStatementImport @relation(fields: [organizationId, importId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, bankAccountId, fingerprint])
+  @@index([organizationId, bankAccountId, status, date])
+  @@map("bank_statement_lines")
+}
+
+/// How an account's CSV statements are laid out, remembered from the last import.
+model BankStatementLayout {
+  organizationId String   @map("organization_id") @db.Uuid
+  bankAccountId  String   @map("bank_account_id") @db.Uuid
+  mapping        Json
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccount  Account      @relation(fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: Cascade)
+
+  @@id([organizationId, bankAccountId])
+  @@map("bank_statement_layouts")
 }

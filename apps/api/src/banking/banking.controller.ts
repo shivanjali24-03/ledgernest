@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -22,9 +23,11 @@ import {
   bankTransactionListQuerySchema,
   bankTransferSchema,
   bankVoidSchema,
+  statementImportSchema,
+  statementLinesQuerySchema,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
   CurrentActor,
   CurrentTenant,
@@ -33,6 +36,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { BankingService } from './banking.service.js';
+import { StatementsService } from './statements.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
 
@@ -46,7 +50,10 @@ const id = new ParseUUIDPipe({ version: '4' });
 })
 @Controller('banking')
 export class BankingController {
-  constructor(private readonly banking: BankingService) {}
+  constructor(
+    private readonly banking: BankingService,
+    private readonly statements: StatementsService,
+  ) {}
 
   @Get('accounts')
   @RequirePermission('banking.view')
@@ -138,5 +145,68 @@ export class BankingController {
     @Req() req: Request,
   ) {
     return this.banking.void(txId, body, { actor, tenant, req });
+  }
+
+  @Post('statements/preview')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('banking.manage')
+  @ApiOkResponse({
+    description:
+      'What importing the file would bring in: the layout used, its lines, duplicates and rows that can’t be read',
+  })
+  previewStatement(
+    @Body(new ZodValidationPipe(statementImportSchema))
+    body: z.output<typeof statementImportSchema>,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.statements.preview(tenant.organizationId, body);
+  }
+
+  @Post('statements/import')
+  @RequirePermission('banking.manage')
+  @ApiOkResponse({
+    description:
+      'Brings in the statement’s new lines; a CSV’s layout is remembered for the account',
+  })
+  importStatement(
+    @Body(new ZodValidationPipe(statementImportSchema))
+    body: z.output<typeof statementImportSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.statements.import(body, { actor, tenant, req });
+  }
+
+  @Get('statements/imports')
+  @RequirePermission('banking.view')
+  statementImports(
+    @Query(new ZodValidationPipe(z.object({ bankAccountId: z.uuid() })))
+    q: { bankAccountId: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.statements.imports(tenant.organizationId, q.bankAccountId);
+  }
+
+  @Get('statements/lines')
+  @RequirePermission('banking.view')
+  statementLines(
+    @Query(new ZodValidationPipe(statementLinesQuerySchema))
+    q: z.output<typeof statementLinesQuerySchema>,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.statements.lines(tenant.organizationId, q);
+  }
+
+  @Delete('statements/imports/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('banking.manage')
+  async undoImport(
+    @Param('id', id) importId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    await this.statements.undo(importId, { actor, tenant, req });
   }
 }

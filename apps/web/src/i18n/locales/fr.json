@@ -650,7 +650,9 @@
       "org_banking_spend": "Dépense enregistrée",
       "org_banking_receive": "Recette enregistrée",
       "org_banking_void": "Opération bancaire annulée",
-      "org_banking_transfer": "Virement entre comptes"
+      "org_banking_transfer": "Virement entre comptes",
+      "org_banking_import": "Relevé bancaire importé",
+      "org_banking_import_undo": "Import de relevé annulé"
     },
     "entities": {
       "membership": "Membre",

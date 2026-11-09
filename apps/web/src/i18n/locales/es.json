@@ -650,7 +650,9 @@
       "org_banking_spend": "Dinero gastado",
       "org_banking_receive": "Dinero recibido",
       "org_banking_void": "Movimiento bancario anulado",
-      "org_banking_transfer": "Transferencia entre cuentas"
+      "org_banking_transfer": "Transferencia entre cuentas",
+      "org_banking_import": "Extracto bancario importado",
+      "org_banking_import_undo": "Importación de extracto deshecha"
     },
     "entities": {
       "membership": "Miembro",
