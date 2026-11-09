@@ -26,7 +26,8 @@
       "periods": "Geschäftsjahre",
       "taxes": "Steuern",
       "gstSlabs": "GST-Sätze",
-      "currencies": "Währungen"
+      "currencies": "Währungen",
+      "contacts": "Kunden & Lieferanten"
     },
     "soon": "Bald"
   },
@@ -1436,6 +1437,78 @@
       "after": "Nachher",
       "difference": "Differenz",
       "missing": "Kein Kurs für {{list}} an diesem Tag, diese Konten blieben unverändert."
+    }
+  },
+  "contacts": {
+    "title": "Kunden und Lieferanten",
+    "description": "An wen Sie verkaufen und bei wem Sie einkaufen, mit Steuernummern, Adressen und Zahlungsbedingungen.",
+    "add": "Kontakt hinzufügen",
+    "filter": "Anzeigen",
+    "all": "Alle",
+    "customers": "Kunden",
+    "vendors": "Lieferanten",
+    "search": "Name, E-Mail oder Steuernummer suchen",
+    "showArchived": "Archivierte anzeigen",
+    "noMatches": "Keine passenden Kontakte",
+    "empty": "Noch keine Kunden oder Lieferanten",
+    "emptyBody": "Fügen Sie die Firmen hinzu, denen Sie Rechnungen stellen und die Ihnen Rechnungen stellen.",
+    "customer": "Kunde",
+    "vendor": "Lieferant",
+    "archivedPill": "Archiviert",
+    "terms": "{{days}} Tage",
+    "onReceipt": "Sofort",
+    "actionsFor": "Aktionen für {{name}}",
+    "edit": "Bearbeiten",
+    "archive": "Archivieren",
+    "restore": "Wiederherstellen",
+    "delete": "Löschen",
+    "archived": "{{name}} archiviert",
+    "restored": "{{name}} wiederhergestellt",
+    "deleted": "{{name}} gelöscht",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Der Kontakt wird endgültig entfernt. Sobald Rechnungen ihn verwenden, archivieren Sie ihn stattdessen.",
+    "saved": "{{name}} gespeichert",
+    "created": "{{name}} hinzugefügt",
+    "sameShipping": "An die Rechnungsadresse liefern",
+    "dialog": {
+      "newTitle": "Neuer Kontakt",
+      "editTitle": "{{name}} bearbeiten",
+      "create": "Kontakt hinzufügen"
+    },
+    "fields": {
+      "name": "Name",
+      "type": "Dieser Kontakt ist",
+      "legalName": "Firmenname",
+      "gstin": "GSTIN",
+      "taxId": "Steuernummer",
+      "currency": "Währung",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "paymentTerms": "Zahlungsziel (Tage)",
+      "notes": "Notizen",
+      "billingAddress": "Rechnungsadresse",
+      "shippingAddress": "Lieferadresse"
+    },
+    "hints": {
+      "gstin": "15 Zeichen; der Bundesstaat wird daraus ausgefüllt.",
+      "paymentTerms": "0 = sofort fällig"
+    },
+    "address": {
+      "line1": "Adresse",
+      "line2": "Adresszusatz",
+      "city": "Ort",
+      "state": "Bundesstaat",
+      "chooseState": "Bundesstaat wählen",
+      "region": "Bundesland oder Region",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "noCountry": "Nicht angegeben"
+    },
+    "errors": {
+      "name_taken": "Ein anderer Kontakt hat bereits diesen Namen.",
+      "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
+      "already_archived": "Dieser Kontakt ist bereits archiviert.",
+      "not_archived": "Dieser Kontakt ist nicht archiviert."
     }
   }
 }

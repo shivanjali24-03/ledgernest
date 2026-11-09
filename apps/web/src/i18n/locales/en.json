@@ -26,7 +26,8 @@
       "periods": "Financial years",
       "taxes": "Taxes",
       "gstSlabs": "GST slabs",
-      "currencies": "Currencies"
+      "currencies": "Currencies",
+      "contacts": "Customers & vendors"
     },
     "soon": "Soon"
   },
@@ -1436,6 +1437,78 @@
       "after": "After",
       "difference": "Difference",
       "missing": "No rate for {{list}} on that day, so those accounts were left alone."
+    }
+  },
+  "contacts": {
+    "title": "Customers and vendors",
+    "description": "Who you sell to and buy from, with tax IDs, addresses and payment terms.",
+    "add": "Add contact",
+    "filter": "Show",
+    "all": "All",
+    "customers": "Customers",
+    "vendors": "Vendors",
+    "search": "Search name, email or tax ID",
+    "showArchived": "Show archived",
+    "noMatches": "No contacts match",
+    "empty": "No customers or vendors yet",
+    "emptyBody": "Add the businesses you invoice and the ones that bill you.",
+    "customer": "Customer",
+    "vendor": "Vendor",
+    "archivedPill": "Archived",
+    "terms": "Net {{days}}",
+    "onReceipt": "On receipt",
+    "actionsFor": "Actions for {{name}}",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "archived": "{{name}} archived",
+    "restored": "{{name}} restored",
+    "deleted": "{{name}} deleted",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "The contact is removed for good. Once invoices or bills use a contact, archive it instead.",
+    "saved": "{{name}} saved",
+    "created": "{{name}} added",
+    "sameShipping": "Ship to the billing address",
+    "dialog": {
+      "newTitle": "New contact",
+      "editTitle": "Edit {{name}}",
+      "create": "Add contact"
+    },
+    "fields": {
+      "name": "Name",
+      "type": "This contact is a",
+      "legalName": "Legal name",
+      "gstin": "GSTIN",
+      "taxId": "Tax ID",
+      "currency": "Currency",
+      "email": "Email",
+      "phone": "Phone",
+      "paymentTerms": "Payment terms (days)",
+      "notes": "Notes",
+      "billingAddress": "Billing address",
+      "shippingAddress": "Shipping address"
+    },
+    "hints": {
+      "gstin": "15 characters; the state fills in from it.",
+      "paymentTerms": "0 = due on receipt"
+    },
+    "address": {
+      "line1": "Address",
+      "line2": "Address line 2",
+      "city": "City",
+      "state": "State",
+      "chooseState": "Choose a state",
+      "region": "State or region",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "noCountry": "Not set"
+    },
+    "errors": {
+      "name_taken": "Another contact already has this name.",
+      "currency_not_enabled": "Enable this currency under Currencies first.",
+      "already_archived": "This contact is already archived.",
+      "not_archived": "This contact isn’t archived."
     }
   }
 }

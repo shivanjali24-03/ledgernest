@@ -26,7 +26,8 @@
       "periods": "Exercices",
       "taxes": "Taxes",
       "gstSlabs": "Tranches de GST",
-      "currencies": "Devises"
+      "currencies": "Devises",
+      "contacts": "Clients et fournisseurs"
     },
     "soon": "Bientôt"
   },
@@ -1436,6 +1437,78 @@
       "after": "Après",
       "difference": "Écart",
       "missing": "Pas de taux pour {{list}} ce jour-là : ces comptes n’ont pas été modifiés."
+    }
+  },
+  "contacts": {
+    "title": "Clients et fournisseurs",
+    "description": "À qui vous vendez et chez qui vous achetez, avec numéros fiscaux, adresses et conditions de paiement.",
+    "add": "Ajouter un contact",
+    "filter": "Afficher",
+    "all": "Tous",
+    "customers": "Clients",
+    "vendors": "Fournisseurs",
+    "search": "Rechercher nom, e-mail ou numéro fiscal",
+    "showArchived": "Afficher les archivés",
+    "noMatches": "Aucun contact ne correspond",
+    "empty": "Aucun client ni fournisseur pour l’instant",
+    "emptyBody": "Ajoutez les entreprises que vous facturez et celles qui vous facturent.",
+    "customer": "Client",
+    "vendor": "Fournisseur",
+    "archivedPill": "Archivé",
+    "terms": "{{days}} jours",
+    "onReceipt": "À réception",
+    "actionsFor": "Actions pour {{name}}",
+    "edit": "Modifier",
+    "archive": "Archiver",
+    "restore": "Restaurer",
+    "delete": "Supprimer",
+    "archived": "{{name}} archivé",
+    "restored": "{{name}} restauré",
+    "deleted": "{{name}} supprimé",
+    "deleteTitle": "Supprimer {{name}} ?",
+    "deleteBody": "Le contact est supprimé définitivement. Une fois utilisé par des factures, archivez-le plutôt.",
+    "saved": "{{name}} enregistré",
+    "created": "{{name}} ajouté",
+    "sameShipping": "Livrer à l’adresse de facturation",
+    "dialog": {
+      "newTitle": "Nouveau contact",
+      "editTitle": "Modifier {{name}}",
+      "create": "Ajouter le contact"
+    },
+    "fields": {
+      "name": "Nom",
+      "type": "Ce contact est",
+      "legalName": "Raison sociale",
+      "gstin": "GSTIN",
+      "taxId": "Numéro fiscal",
+      "currency": "Devise",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "paymentTerms": "Délai de paiement (jours)",
+      "notes": "Notes",
+      "billingAddress": "Adresse de facturation",
+      "shippingAddress": "Adresse de livraison"
+    },
+    "hints": {
+      "gstin": "15 caractères ; l’État est déduit automatiquement.",
+      "paymentTerms": "0 = à réception"
+    },
+    "address": {
+      "line1": "Adresse",
+      "line2": "Complément d’adresse",
+      "city": "Ville",
+      "state": "État",
+      "chooseState": "Choisissez un État",
+      "region": "État ou région",
+      "postalCode": "Code postal",
+      "country": "Pays",
+      "noCountry": "Non renseigné"
+    },
+    "errors": {
+      "name_taken": "Un autre contact porte déjà ce nom.",
+      "currency_not_enabled": "Activez d’abord cette devise dans Devises.",
+      "already_archived": "Ce contact est déjà archivé.",
+      "not_archived": "Ce contact n’est pas archivé."
     }
   }
 }

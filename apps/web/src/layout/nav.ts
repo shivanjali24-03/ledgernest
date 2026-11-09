@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarRange,
   Coins,
+  Contact,
   Building2,
   FileText,
   Gauge,
@@ -60,6 +61,7 @@ export const NAV: NavGroup[] = [
   {
     labelKey: 'nav.groups.sales',
     items: [
+      { to: '/contacts', labelKey: 'nav.items.contacts', icon: Contact, permission: 'contacts.view', ready: true, keywords: 'customers vendors suppliers clients gstin parties' },
       { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', keywords: 'sales customers receivables' },
       { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', keywords: 'vendors payables purchases' },
       { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
