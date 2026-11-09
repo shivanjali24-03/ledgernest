@@ -533,7 +533,8 @@
       "periods": "Ejercicios fiscales",
       "journals": "Asientos contables",
       "taxes": "Impuestos",
-      "gstSlabs": "Tramos de GST"
+      "gstSlabs": "Tramos de GST",
+      "currencies": "Monedas"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "Tramo de GST editado",
       "platform_gst_slab_delete": "Tramo de GST eliminado",
       "org_fiscal_year_close": "Ejercicio cerrado",
-      "org_fiscal_year_reopen": "Ejercicio reabierto"
+      "org_fiscal_year_reopen": "Ejercicio reabierto",
+      "org_currency_add": "Moneda activada",
+      "org_currency_remove": "Moneda eliminada",
+      "org_exchange_rate_set": "Tipo de cambio fijado",
+      "org_exchange_rate_remove": "Tipo de cambio eliminado",
+      "org_exchange_rate_fetch": "Tipos de cambio obtenidos"
     },
     "entities": {
       "membership": "Miembro",
@@ -610,7 +616,8 @@
       "journal": "Asiento contable",
       "tax_rate": "Tipo impositivo",
       "tax_group": "Grupo de impuestos",
-      "gst_slab": "Tramo de GST"
+      "gst_slab": "Tramo de GST",
+      "currency": "Moneda"
     },
     "fields": {
       "user": "Persona",
@@ -680,7 +687,13 @@
       "utgst": "UTGST",
       "state": "Estado",
       "profit": "Resultado trasladado",
-      "closingEntry": "Asiento de cierre"
+      "closingEntry": "Asiento de cierre",
+      "currency": "Moneda",
+      "source": "Origen",
+      "requested": "Día solicitado",
+      "saved": "Guardados",
+      "keptManual": "Conservados (escritos a mano)",
+      "unsupported": "No disponibles"
     },
     "details": {
       "when": "Cuándo",
@@ -750,7 +763,8 @@
       "email": "Escribe un correo electrónico válido.",
       "phone": "Usa dígitos, espacios, paréntesis o guiones, opcionalmente empezando con +.",
       "timeZone": "Elige una zona horaria de la lista.",
-      "invalid": "Revisa este valor."
+      "invalid": "Revisa este valor.",
+      "currencyEnabled": "Esa moneda está activada como moneda extranjera. Quítala primero en Monedas."
     },
     "leave": {
       "title": "¿Salir sin guardar?",

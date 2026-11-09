@@ -533,7 +533,8 @@
       "periods": "Exercices",
       "journals": "Écritures",
       "taxes": "Taxes",
-      "gstSlabs": "Tranches de GST"
+      "gstSlabs": "Tranches de GST",
+      "currencies": "Devises"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "Tranche de GST modifiée",
       "platform_gst_slab_delete": "Tranche de GST supprimée",
       "org_fiscal_year_close": "Exercice clôturé",
-      "org_fiscal_year_reopen": "Exercice rouvert"
+      "org_fiscal_year_reopen": "Exercice rouvert",
+      "org_currency_add": "Devise activée",
+      "org_currency_remove": "Devise retirée",
+      "org_exchange_rate_set": "Taux de change défini",
+      "org_exchange_rate_remove": "Taux de change supprimé",
+      "org_exchange_rate_fetch": "Taux de change récupérés"
     },
     "entities": {
       "membership": "Membre",
@@ -610,7 +616,8 @@
       "journal": "Écriture",
       "tax_rate": "Taux de taxe",
       "tax_group": "Groupe de taxes",
-      "gst_slab": "Tranche de GST"
+      "gst_slab": "Tranche de GST",
+      "currency": "Devise"
     },
     "fields": {
       "user": "Personne",
@@ -680,7 +687,13 @@
       "utgst": "UTGST",
       "state": "État",
       "profit": "Résultat transféré",
-      "closingEntry": "Écriture de clôture"
+      "closingEntry": "Écriture de clôture",
+      "currency": "Devise",
+      "source": "Source",
+      "requested": "Jour demandé",
+      "saved": "Enregistrés",
+      "keptManual": "Conservés (saisis à la main)",
+      "unsupported": "Non couverts"
     },
     "details": {
       "when": "Quand",
@@ -750,7 +763,8 @@
       "email": "Saisissez une adresse e-mail valide.",
       "phone": "Utilisez des chiffres, espaces, parenthèses ou tirets, éventuellement précédés de +.",
       "timeZone": "Choisissez un fuseau horaire dans la liste.",
-      "invalid": "Vérifiez cette valeur."
+      "invalid": "Vérifiez cette valeur.",
+      "currencyEnabled": "Cette devise est activée comme devise étrangère. Retirez-la d’abord dans Devises."
     },
     "leave": {
       "title": "Quitter sans enregistrer ?",

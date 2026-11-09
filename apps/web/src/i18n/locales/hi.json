@@ -533,7 +533,8 @@
       "periods": "वित्तीय वर्ष",
       "journals": "जर्नल प्रविष्टियाँ",
       "taxes": "कर",
-      "gstSlabs": "जीएसटी स्लैब"
+      "gstSlabs": "जीएसटी स्लैब",
+      "currencies": "मुद्राएँ"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -596,7 +597,12 @@
       "platform_gst_slab_update": "जीएसटी स्लैब संपादित",
       "platform_gst_slab_delete": "जीएसटी स्लैब हटाया गया",
       "org_fiscal_year_close": "वित्तीय वर्ष बंद",
-      "org_fiscal_year_reopen": "वित्तीय वर्ष फिर से खुला"
+      "org_fiscal_year_reopen": "वित्तीय वर्ष फिर से खुला",
+      "org_currency_add": "मुद्रा सक्रिय की गई",
+      "org_currency_remove": "मुद्रा हटाई गई",
+      "org_exchange_rate_set": "विनिमय दर सेट की गई",
+      "org_exchange_rate_remove": "विनिमय दर हटाई गई",
+      "org_exchange_rate_fetch": "विनिमय दरें लाई गईं"
     },
     "entities": {
       "membership": "सदस्य",
@@ -610,7 +616,8 @@
       "journal": "जर्नल प्रविष्टि",
       "tax_rate": "कर दर",
       "tax_group": "कर समूह",
-      "gst_slab": "जीएसटी स्लैब"
+      "gst_slab": "जीएसटी स्लैब",
+      "currency": "मुद्रा"
     },
     "fields": {
       "user": "व्यक्ति",
@@ -680,7 +687,13 @@
       "utgst": "यूटीजीएसटी",
       "state": "राज्य",
       "profit": "स्थानांतरित लाभ",
-      "closingEntry": "समापन प्रविष्टि"
+      "closingEntry": "समापन प्रविष्टि",
+      "currency": "मुद्रा",
+      "source": "स्रोत",
+      "requested": "माँगा गया दिन",
+      "saved": "सहेजी गईं",
+      "keptManual": "रखी गईं (हाथ से लिखी)",
+      "unsupported": "शामिल नहीं"
     },
     "details": {
       "when": "कब",
@@ -750,7 +763,8 @@
       "email": "सही ईमेल पता दर्ज करें।",
       "phone": "अंक, स्पेस, कोष्ठक या डैश का उपयोग करें, चाहें तो + से शुरू करें।",
       "timeZone": "सूची से समय क्षेत्र चुनें।",
-      "invalid": "यह मान जाँचें।"
+      "invalid": "यह मान जाँचें।",
+      "currencyEnabled": "यह मुद्रा विदेशी मुद्रा के रूप में सक्रिय है। पहले इसे मुद्राएँ में से हटाएँ।"
     },
     "leave": {
       "title": "बिना सहेजे जाएँ?",
