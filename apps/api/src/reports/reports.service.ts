@@ -1146,4 +1146,247 @@ export class ReportsService {
     ]);
     return `\uFEFF${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
   }
+
+  /**
+   * Where the cash came from and went over a period, two ways. Indirect: net profit, depreciation added back,
+   * changes in working capital, then investing (non-current assets) and financing (non-current liabilities
+   * and equity). Direct: each movement of cash classified by the accounts on the other side of its entry
+   * (split in proportion when there are several); moves between the business's own cash accounts cancel out.
+   * Both add up to the change in cash, from the opening to the closing balance.
+   */
+  async cashFlow(organizationId: string, from: string, to: string) {
+    const accounts = await this.prisma.account.findMany({
+      where: { organizationId },
+      select: { id: true, code: true, name: true, type: true, subtype: true },
+    });
+    const isCash = (a: { type: string; subtype: string }) =>
+      a.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash');
+    const cashIds = accounts.filter(isCash).map((a) => a.id);
+    const dayBefore = new Date(Date.parse(`${from}T00:00:00Z`) - 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const [moves, opening, closing] = await Promise.all([
+      this.sums(organizationId, from, to, true),
+      this.sums(organizationId, null, dayBefore, false),
+      this.sums(organizationId, null, to, false),
+    ]);
+    const cashOf = (m: Map<string, number>) =>
+      cashIds.reduce((s, id) => s + (m.get(id) ?? 0), 0);
+    const change = (a: { id: string }) => moves.get(a.id) ?? 0;
+    const netProfit = -accounts
+      .filter((a) => a.type === 'income' || a.type === 'expense')
+      .reduce((s, a) => s + change(a), 0);
+    const depreciation = accounts
+      .filter((a) => a.type === 'expense' && a.subtype === 'depreciation')
+      .reduce((s, a) => s + change(a), 0);
+    const row = (a: (typeof accounts)[number], amount: number) => ({
+      accountId: a.id,
+      code: a.code,
+      name: a.name,
+      amount,
+    });
+    const sorted = (rows: ReturnType<typeof row>[]) =>
+      rows
+        .filter((r) => r.amount !== 0)
+        .sort((x, y) => compareCodes(x.code, y.code));
+    // An asset going up uses cash; a liability or equity going up brings it in
+    const effect = (a: (typeof accounts)[number]) => -change(a);
+    const currentAsset = (a: (typeof accounts)[number]) =>
+      a.type === 'asset' &&
+      !isCash(a) &&
+      bsSectionOf(a.type, a.subtype) === 'currentAssets';
+    const workingCapital = sorted(
+      accounts
+        .filter(
+          (a) =>
+            currentAsset(a) ||
+            (a.type === 'liability' &&
+              bsSectionOf(a.type, a.subtype) === 'currentLiabilities'),
+        )
+        .map((a) => row(a, effect(a))),
+    );
+    const operating =
+      netProfit +
+      depreciation +
+      workingCapital.reduce((s, r) => s + r.amount, 0);
+    const investingRows = sorted(
+      accounts
+        .filter(
+          (a) =>
+            a.type === 'asset' &&
+            bsSectionOf(a.type, a.subtype) === 'nonCurrentAssets',
+        )
+        .map((a) => row(a, effect(a))),
+    );
+    // Depreciation brought those assets down without any cash moving: it was added back above, so take it out here
+    const investing =
+      investingRows.reduce((s, r) => s + r.amount, 0) - depreciation;
+    const financingRows = sorted(
+      accounts
+        .filter(
+          (a) =>
+            (a.type === 'liability' &&
+              bsSectionOf(a.type, a.subtype) === 'nonCurrentLiabilities') ||
+            a.type === 'equity',
+        )
+        .map((a) => row(a, effect(a))),
+    );
+    const financing = financingRows.reduce((s, r) => s + r.amount, 0);
+
+    // Direct: the entries that moved cash, and what was on their other side
+    const lines = cashIds.length
+      ? await this.prisma.$queryRaw<
+          { entry_id: string; account_id: string; net: bigint }[]
+        >`
+          SELECT l.entry_id, l.account_id, (l.debit - l.credit)::bigint AS net
+          FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+          WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date >= ${asDate(from)}::date AND e.date <= ${asDate(to)}::date
+            AND e.id IN (SELECT entry_id FROM journal_lines WHERE organization_id = ${organizationId}::uuid AND account_id = ANY(${cashIds}::uuid[]))
+            AND e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL)`
+      : [];
+    const byId = new Map(accounts.map((a) => [a.id, a]));
+    const DIRECT = [
+      'customers',
+      'otherReceipts',
+      'vendors',
+      'staff',
+      'taxes',
+      'otherPayments',
+      'investing',
+      'financing',
+    ] as const;
+    const direct = Object.fromEntries(DIRECT.map((k) => [k, 0])) as Record<
+      (typeof DIRECT)[number],
+      number
+    >;
+    const categoryOf = (
+      a: (typeof accounts)[number],
+      cashIn: boolean,
+    ): (typeof DIRECT)[number] => {
+      if (
+        a.subtype === 'accounts_receivable' ||
+        (a.type === 'income' && a.subtype === 'operating_income')
+      )
+        return 'customers';
+      if (
+        a.subtype === 'accounts_payable' ||
+        a.subtype === 'credit_card' ||
+        ['cost_of_sales', 'operating_expense', 'other_expense'].includes(
+          a.subtype,
+        )
+      )
+        return 'vendors';
+      if (a.subtype === 'payroll') return 'staff';
+      if (a.subtype === 'tax_payable') return 'taxes';
+      const section = bsSectionOf(a.type, a.subtype);
+      if (section === 'nonCurrentAssets') return 'investing';
+      if (section === 'nonCurrentLiabilities' || section === 'equity')
+        return 'financing';
+      return cashIn ? 'otherReceipts' : 'otherPayments';
+    };
+    const entries = new Map<string, { account: string; net: number }[]>();
+    for (const l of lines)
+      entries.set(l.entry_id, [
+        ...(entries.get(l.entry_id) ?? []),
+        { account: l.account_id, net: Number(l.net) },
+      ]);
+    for (const ls of entries.values()) {
+      const cash = ls
+        .filter((l) => cashIds.includes(l.account))
+        .reduce((s, l) => s + l.net, 0);
+      const others = ls.filter(
+        (l) => !cashIds.includes(l.account) && l.net !== 0,
+      );
+      if (!cash || !others.length) continue;
+      const weight = others.reduce((s, l) => s + Math.abs(l.net), 0);
+      // Shares are rounded; the last takes what's left so the entry's cash is counted exactly once
+      let left = cash;
+      others.forEach((l, k) => {
+        const share =
+          k === others.length - 1
+            ? left
+            : Math.round((cash * Math.abs(l.net)) / weight);
+        left -= share;
+        direct[categoryOf(byId.get(l.account)!, cash > 0)] += share;
+      });
+    }
+    const directOperating =
+      direct.customers +
+      direct.otherReceipts +
+      direct.vendors +
+      direct.staff +
+      direct.taxes +
+      direct.otherPayments;
+    return {
+      from,
+      to,
+      openingCash: cashOf(opening),
+      closingCash: cashOf(closing),
+      netChange: cashOf(closing) - cashOf(opening),
+      indirect: {
+        netProfit,
+        depreciation,
+        workingCapital,
+        operating,
+        investingRows,
+        investing,
+        financingRows,
+        financing,
+        total: operating + investing + financing,
+      },
+      direct: {
+        ...direct,
+        operating: directOperating,
+        total: directOperating + direct.investing + direct.financing,
+      },
+    };
+  }
+
+  cashFlowCsv(
+    c: Awaited<ReturnType<ReportsService['cashFlow']>>,
+    minor: (n: number) => string,
+  ) {
+    const rows: (string | number)[][] = [['section', 'line', 'amount']];
+    const i = c.indirect;
+    rows.push(['operating', 'Net profit', minor(i.netProfit)]);
+    if (i.depreciation)
+      rows.push(['operating', 'Depreciation', minor(i.depreciation)]);
+    for (const r of i.workingCapital)
+      rows.push([
+        'operating',
+        `Change in ${r.code} ${r.name}`,
+        minor(r.amount),
+      ]);
+    rows.push([
+      'operating',
+      'Cash from operating activities',
+      minor(i.operating),
+    ]);
+    for (const r of i.investingRows)
+      rows.push(['investing', `${r.code} ${r.name}`, minor(r.amount)]);
+    if (i.depreciation)
+      rows.push([
+        'investing',
+        'Less depreciation (no cash)',
+        minor(-i.depreciation),
+      ]);
+    rows.push([
+      'investing',
+      'Cash from investing activities',
+      minor(i.investing),
+    ]);
+    for (const r of i.financingRows)
+      rows.push(['financing', `${r.code} ${r.name}`, minor(r.amount)]);
+    rows.push([
+      'financing',
+      'Cash from financing activities',
+      minor(i.financing),
+    ]);
+    rows.push(
+      ['', 'Net change in cash', minor(c.netChange)],
+      ['', 'Cash at the start', minor(c.openingCash)],
+      ['', 'Cash at the end', minor(c.closingCash)],
+    );
+    return `\uFEFF${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
+  }
 }
