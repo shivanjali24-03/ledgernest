@@ -522,7 +522,8 @@
       "organizations": "संस्था",
       "platformUsers": "प्लॅटफॉर्म खाती",
       "exports": "निर्यात",
-      "settings": "सेटिंग्ज"
+      "settings": "सेटिंग्ज",
+      "accounts": "खाती"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -555,14 +556,20 @@
       "platform_audit_export": "प्लॅटफॉर्म ऑडिट लॉग निर्यात केला",
       "org_settings_update": "सेटिंग्ज बदलल्या",
       "org_logo_update": "लोगो बदलला",
-      "org_logo_remove": "लोगो काढला"
+      "org_logo_remove": "लोगो काढला",
+      "org_account_create": "खाते तयार केले",
+      "org_account_update": "खाते संपादित केले",
+      "org_account_archive": "खाते संग्रहित केले",
+      "org_account_restore": "खाते पुनर्संचयित केले",
+      "org_account_delete": "खाते हटवले"
     },
     "entities": {
       "membership": "सदस्य",
       "invitation": "आमंत्रण",
       "role": "भूमिका",
       "organization": "संस्था",
-      "user": "खाते"
+      "user": "खाते",
+      "account": "खाते"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -600,7 +607,11 @@
       "region": "राज्य किंवा प्रदेश",
       "postalCode": "पिन कोड",
       "contentType": "फाइल प्रकार",
-      "bytes": "आकार (बाइट)"
+      "bytes": "आकार (बाइट)",
+      "code": "कोड",
+      "type": "प्रकार",
+      "subtype": "उप-प्रकार",
+      "parentId": "मूळ खाते"
     },
     "details": {
       "when": "केव्हा",

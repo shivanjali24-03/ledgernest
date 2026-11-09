@@ -522,7 +522,8 @@
       "organizations": "Organisations",
       "platformUsers": "Platform accounts",
       "exports": "Exports",
-      "settings": "Settings"
+      "settings": "Settings",
+      "accounts": "Accounts"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -555,14 +556,20 @@
       "platform_audit_export": "Platform audit log exported",
       "org_settings_update": "Settings changed",
       "org_logo_update": "Logo changed",
-      "org_logo_remove": "Logo removed"
+      "org_logo_remove": "Logo removed",
+      "org_account_create": "Account created",
+      "org_account_update": "Account edited",
+      "org_account_archive": "Account archived",
+      "org_account_restore": "Account restored",
+      "org_account_delete": "Account deleted"
     },
     "entities": {
       "membership": "Member",
       "invitation": "Invitation",
       "role": "Role",
       "organization": "Organisation",
-      "user": "Account"
+      "user": "Account",
+      "account": "Account"
     },
     "fields": {
       "user": "Person",
@@ -600,7 +607,11 @@
       "region": "State or region",
       "postalCode": "Postal code",
       "contentType": "File type",
-      "bytes": "Size (bytes)"
+      "bytes": "Size (bytes)",
+      "code": "Code",
+      "type": "Type",
+      "subtype": "Sub-type",
+      "parentId": "Parent account"
     },
     "details": {
       "when": "When",

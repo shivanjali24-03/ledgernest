@@ -522,7 +522,8 @@
       "organizations": "المؤسسات",
       "platformUsers": "حسابات المنصة",
       "exports": "عمليات التصدير",
-      "settings": "الإعدادات"
+      "settings": "الإعدادات",
+      "accounts": "الحسابات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -555,14 +556,20 @@
       "platform_audit_export": "تصدير سجل تدقيق المنصة",
       "org_settings_update": "تغيير الإعدادات",
       "org_logo_update": "تغيير الشعار",
-      "org_logo_remove": "إزالة الشعار"
+      "org_logo_remove": "إزالة الشعار",
+      "org_account_create": "إنشاء حساب",
+      "org_account_update": "تعديل حساب",
+      "org_account_archive": "أرشفة حساب",
+      "org_account_restore": "استعادة حساب",
+      "org_account_delete": "حذف حساب"
     },
     "entities": {
       "membership": "عضو",
       "invitation": "دعوة",
       "role": "دور",
       "organization": "مؤسسة",
-      "user": "حساب"
+      "user": "حساب",
+      "account": "حساب"
     },
     "fields": {
       "user": "الشخص",
@@ -600,7 +607,11 @@
       "region": "الولاية أو المنطقة",
       "postalCode": "الرمز البريدي",
       "contentType": "نوع الملف",
-      "bytes": "الحجم (بايت)"
+      "bytes": "الحجم (بايت)",
+      "code": "الرمز",
+      "type": "النوع",
+      "subtype": "النوع الفرعي",
+      "parentId": "الحساب الأب"
     },
     "details": {
       "when": "متى",

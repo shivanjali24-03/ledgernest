@@ -73,6 +73,7 @@ model Organization {
   invitations  Invitation[]
   auditEntries AuditLog[]
   logo         OrganizationLogo?
+  accounts     Account[]
 
   @@map("organizations")
 }
@@ -87,6 +88,34 @@ model OrganizationLogo {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("organization_logos")
+}
+
+/// An account in an organisation's chart of accounts. Sub-accounts share their parent's type.
+model Account {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  code           String /// unique per organisation, e.g. 1100 or 1100.01
+  name           String /// unique per organisation, ignoring case (enforced by an index in the migration)
+  type           String /// asset | liability | equity | income | expense
+  subtype        String
+  description    String?
+  parentId       String?   @map("parent_id") @db.Uuid
+  /// Set for accounts LedgerNest relies on (retained_earnings, opening_balance_equity); they can't be removed
+  systemKey      String?   @map("system_key")
+  archivedAt     DateTime? @map("archived_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Composite key: a parent always belongs to the same organisation, enforced by the database
+  parent       Account?     @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
+  children     Account[]    @relation("AccountTree")
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, code])
+  @@unique([organizationId, systemKey])
+  @@index([organizationId, parentId])
+  @@map("accounts")
 }
 
 /// A custom role defined by an organisation. Built-in roles live in @ledgernest/shared, not here.

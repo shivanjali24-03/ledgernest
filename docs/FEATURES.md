@@ -36,7 +36,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 | Feature | What it means | Status |
 |---|---|---|
-| Chart of accounts | Assets, liabilities, equity, income and expenses, with sub-accounts and account codes | 📋 |
+| Chart of accounts | Assets, liabilities, equity, income and expenses, with sub-accounts and account codes | 🚧 API done (#39); screens next |
 | Industry templates | Ready charts of accounts for retail, services, manufacturing, healthcare, education, non-profit, construction, restaurants, IT/software and agriculture | 📋 |
 | Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | 📋 |
 | General ledger | Every posted line per account with running balance and drill-down | 📋 |

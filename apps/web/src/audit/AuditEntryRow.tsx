@@ -1,6 +1,6 @@
 import { useId, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Building2, ChevronDown, CircleDot, Download, KeyRound, LifeBuoy, LogIn, Mail, Settings, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
+import { BookOpenCheck, Building2, ChevronDown, CircleDot, Download, KeyRound, LifeBuoy, LogIn, Mail, Settings, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 import type { TFunction } from 'i18next';
 import type { AuditActionGroup } from '@ledgernest/shared';
@@ -13,6 +13,7 @@ import { deviceOf, diffEntry, groupOf, subjectOf, toneOf, type DiffRow } from '.
 import type { AuditEntry } from './types';
 
 const ICONS: Record<AuditActionGroup, LucideIcon> = {
+  accounts: BookOpenCheck,
   signIns: LogIn,
   members: Users,
   invitations: Mail,

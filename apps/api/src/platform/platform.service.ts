@@ -6,6 +6,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { InvitationsService } from '../invitations/invitations.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AccountsService } from '../accounts/accounts.service.js';
 
 type Page = { search?: string; page: number; pageSize: number };
 const DAY = 86_400_000;
@@ -84,6 +85,8 @@ export class PlatformService {
         },
         select: orgSelect,
       });
+      // Every organisation starts with the accounts LedgerNest relies on, named in its language
+      await AccountsService.createSystemAccounts(tx, org.id, org.locale);
 
       const existing = await tx.user.findUnique({ where: { email: input.owner.email }, select: { id: true } });
       let owner: { status: 'added'; userId: string } | { status: 'invited'; email: string; inviteUrl: string; expiresAt: Date };

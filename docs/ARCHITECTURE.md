@@ -30,6 +30,19 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
 - **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
 
+## Chart of accounts
+
+- `GET/POST /api/v1/accounts`, `PATCH/DELETE /accounts/:id`, `POST /accounts/:id/archive` and `/restore`. Reading needs `accounts.view`; changes need `accounts.manage` and are audited (`org.account.*`).
+- **Types:** asset, liability, equity, income and expense, each with a normal side (debit or credit) and sub-types used by reports (bank, receivables, cost of sales…).
+- **Codes** (letters, digits, dots, dashes; up to 12) are unique per organisation and sorted numerically: 200 < 1100 < 1100.2 < 1100.10. **Names** are unique ignoring case.
+- **Sub-accounts** go up to 4 levels and share their parent's type. Moving an account checks the whole subtree: no loops, no fifth level.
+- **The database enforces the essentials as well:**
+  - A composite foreign key keeps a parent in the same organisation, and a trigger keeps the types equal.
+  - Check constraints validate the type and code, and a case-insensitive unique index covers names.
+- **System accounts** (retained earnings, opening balance equity) are created with every organisation, named in its language. They can be renamed but not re-typed, archived or deleted.
+- **Archive, don't delete:** archiving hides an account from new entries and keeps its history (sub-accounts first; restoring goes parent first). Deleting is only for unused accounts without sub-accounts. Journal entries (#42) will add "has entries" to these checks.
+- Writes take a per-organisation advisory lock, so two people creating the same code at once get one account and a clear `code_taken`, never a database error.
+
 ## Organisation settings
 
 - `GET /api/v1/organization` returns the settings, what can no longer change (`locks`) and your access. `PATCH` changes them, with `org.settings.manage` (Owners and Admins).
