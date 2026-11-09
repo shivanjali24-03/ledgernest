@@ -156,6 +156,35 @@ export interface CashFlow {
   direct: { customers: number; otherReceipts: number; vendors: number; staff: number; taxes: number; otherPayments: number; investing: number; financing: number; operating: number; total: number };
 }
 
+export type GstHeads = { igst: number; cgst: number; sgst: number; cess: number };
+export type GstRateRow = { rate: number; taxable: number } & GstHeads;
+export interface Gstr3b {
+  from: string;
+  to: string;
+  gstin: string | null;
+  outward: { taxable: number } & GstHeads;
+  outwardUntaxed: number;
+  itc: GstHeads;
+  inwardTaxable: number;
+  setOff: { cash: GstHeads; carriedForward: GstHeads; used: Record<'igst' | 'cgst' | 'sgst' | 'cess', GstHeads> };
+  payable: GstHeads;
+  carriedForward: GstHeads;
+}
+export interface Gstr1 {
+  from: string;
+  to: string;
+  gstin: string | null;
+  legalName: string;
+  b2b: { gstin: string; name: string; number: string; date: string; value: number; placeOfSupply: string | null; items: GstRateRow[] }[];
+  b2cl: { number: string; date: string; value: number; placeOfSupply: string | null; items: GstRateRow[] }[];
+  b2cs: ({ placeOfSupply: string | null; type: 'intra' | 'inter' } & GstRateRow)[];
+  exports: { number: string; date: string; value: number; currency: string | null; items: GstRateRow[] }[];
+  cdnr: { gstin: string; name: string; number: string; date: string; invoice: string | null; value: number; items: GstRateRow[] }[];
+  cdnur: { name: string; number: string; date: string; invoice: string | null; value: number; items: GstRateRow[] }[];
+  hsn: ({ hsn: string; unit: string | null; quantity: string; returned: boolean } & GstRateRow)[];
+  documents: { invoices: { first: string | null; last: string | null; total: number; cancelled: number }; creditNotes: { total: number; cancelled: number } };
+}
+
 /** Reports. Live and demo both implement it. */
 export interface ReportsApi {
   trialBalance(asOf: string): Promise<TrialBalance>;
@@ -172,5 +201,8 @@ export interface ReportsApi {
   exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
   dashboard(): Promise<Dashboard>;
   cashFlow(from: string, to: string): Promise<CashFlow>;
+  gstr3b(from: string, to: string): Promise<Gstr3b>;
+  gstr1(from: string, to: string): Promise<Gstr1>;
+  exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }

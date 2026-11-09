@@ -1370,6 +1370,61 @@
       "opening": "Trésorerie au début",
       "closing": "Trésorerie à la fin",
       "byPurpose": "Par nature"
+    },
+    "gst": {
+      "title": "Déclarations GST",
+      "return": "Déclaration",
+      "hint": "Pour un mois ou un trimestre, d’après la comptabilité. À vérifier sur le portail GST avant dépôt.",
+      "nature": "Nature des livraisons",
+      "details": "Détail",
+      "head": "Taxe",
+      "taxable": "Base taxable",
+      "rate": "Taux",
+      "heads": {
+        "igst": "IGST",
+        "cgst": "CGST",
+        "sgst": "SGST/UTGST",
+        "cess": "Cess"
+      },
+      "r3b": {
+        "outwardTitle": "3.1 Livraisons sortantes",
+        "outward": "(a) Livraisons taxables",
+        "untaxed": "(c, e) Taux zéro, exonérées, hors GST et exportations",
+        "itcTitle": "4 Crédit de taxe déductible",
+        "itc": "(A)(5) Autres ITC",
+        "paymentTitle": "6.1 Paiement de la taxe",
+        "paymentHint": "Crédit imputé dans l’ordre fixé par la GST : IGST sur IGST, puis CGST et SGST ; CGST et SGST sur leur propre taxe, puis IGST.",
+        "tax": "Taxe due",
+        "byIgst": "Par crédit IGST",
+        "byCgst": "Par crédit CGST",
+        "bySgst": "Par crédit SGST",
+        "cash": "En espèces",
+        "totalCash": "Taxe à payer en espèces",
+        "carried": "Crédit reporté : {{amounts}}"
+      },
+      "r1": {
+        "empty": "Aucune facture ni avoir sur ces dates",
+        "emptyBody": "Choisissez un autre mois ou trimestre.",
+        "json": "Télécharger le JSON pour le portail GST",
+        "b2b": "4A Factures B2B",
+        "b2bHint": "Aux acheteurs immatriculés, par GSTIN et taux",
+        "b2cl": "5A Grosses factures B2C",
+        "b2clHint": "Inter-États, à des non-immatriculés, au-delà de ₹1 lakh",
+        "b2cs": "7 Autres B2C",
+        "b2csHint": "Autres ventes à des non-immatriculés, par lieu de livraison et taux",
+        "exports": "6A Exportations",
+        "notes": "9B Avoirs",
+        "hsn": "12 Récapitulatif HSN",
+        "noHsn": "Non renseigné",
+        "party": "Acheteur",
+        "document": "Document",
+        "pos": "Lieu de livraison",
+        "supply": "Livraison",
+        "intra": "Dans l’État",
+        "inter": "Inter-États",
+        "quantity": "Quantité",
+        "documents": "13 Documents émis : {{total}} factures ({{first}} à {{last}}), {{cancelled}} annulées ; {{notes}} avoirs."
+      }
     }
   },
   "taxes": {

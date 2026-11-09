@@ -1370,6 +1370,61 @@
       "opening": "Cash at the start",
       "closing": "Cash at the end",
       "byPurpose": "By what it was for"
+    },
+    "gst": {
+      "title": "GST returns",
+      "return": "Return",
+      "hint": "For a month or a quarter, from the books. Check them against the GST portal before filing.",
+      "nature": "Nature of supplies",
+      "details": "Details",
+      "head": "Tax",
+      "taxable": "Taxable value",
+      "rate": "Rate",
+      "heads": {
+        "igst": "IGST",
+        "cgst": "CGST",
+        "sgst": "SGST/UTGST",
+        "cess": "Cess"
+      },
+      "r3b": {
+        "outwardTitle": "3.1 Outward supplies",
+        "outward": "(a) Taxable outward supplies",
+        "untaxed": "(c, e) Nil-rated, exempt and non-GST supplies, and exports",
+        "itcTitle": "4 Eligible input tax credit",
+        "itc": "(A)(5) All other ITC",
+        "paymentTitle": "6.1 Payment of tax",
+        "paymentHint": "Credit set off as GST orders it: IGST against IGST, then CGST and SGST; CGST and SGST against their own head, then IGST.",
+        "tax": "Tax payable",
+        "byIgst": "Paid by IGST credit",
+        "byCgst": "Paid by CGST credit",
+        "bySgst": "Paid by SGST credit",
+        "cash": "Paid in cash",
+        "totalCash": "Tax to pay in cash",
+        "carried": "Credit carried forward: {{amounts}}"
+      },
+      "r1": {
+        "empty": "No invoices or credit notes in these dates",
+        "emptyBody": "Choose another month or quarter.",
+        "json": "Download JSON for the GST portal",
+        "b2b": "4A B2B invoices",
+        "b2bHint": "To registered buyers, by GSTIN and rate",
+        "b2cl": "5A B2C large invoices",
+        "b2clHint": "Inter-state, to unregistered buyers, over ₹1 lakh",
+        "b2cs": "7 B2C others",
+        "b2csHint": "Other sales to unregistered buyers, by place of supply and rate",
+        "exports": "6A Exports",
+        "notes": "9B Credit notes",
+        "hsn": "12 HSN summary",
+        "noHsn": "Not given",
+        "party": "Buyer",
+        "document": "Document",
+        "pos": "Place of supply",
+        "supply": "Supply",
+        "intra": "Within the state",
+        "inter": "Inter-state",
+        "quantity": "Quantity",
+        "documents": "13 Documents issued: {{total}} invoices ({{first}} to {{last}}), {{cancelled}} cancelled; {{notes}} credit notes."
+      }
     }
   },
   "taxes": {

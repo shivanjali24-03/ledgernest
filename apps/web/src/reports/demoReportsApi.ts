@@ -1,10 +1,10 @@
-import { todayIn, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
+import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -298,12 +298,102 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return { from, to, openingCash: cashOf(opening), closingCash: cashOf(closing), netChange: cashOf(closing) - cashOf(opening), indirect: { netProfit, depreciation, workingCapital, operating, investingRows, investing, financingRows, financing, total: operating + investing + financing }, direct: { ...direct, operating: directOperating, total: directOperating + direct.investing + direct.financing } };
   };
 
+  const headOf = (kind: string): keyof GstHeads | null => (kind === 'igst' ? 'igst' : kind === 'cgst' ? 'cgst' : kind === 'sgst' || kind === 'utgst' ? 'sgst' : kind === 'cess' ? 'cess' : null);
+  /** GSTR-3B from the demo's tax summary, set off as the API does */
+  const gstr3b = async (from: string, to: string): Promise<Gstr3b> => {
+    const t = await taxSummary(from, to);
+    const output = zeroHeads();
+    const itc = zeroHeads();
+    for (const r of t.rates) {
+      const h = headOf(r.kind);
+      if (!h) continue;
+      output[h] += r.output;
+      itc[h] += r.input;
+    }
+    const setOff = gstSetOff(output, itc);
+    return { from, to, gstin: null, outward: { taxable: t.totals.outwardTaxable, ...output }, outwardUntaxed: 0, itc, inwardTaxable: t.totals.inwardTaxable, setOff, payable: setOff.cash, carriedForward: setOff.carriedForward };
+  };
+  /** GSTR-1 from the demo's invoices and credit notes */
+  const gstr1 = async (from: string, to: string): Promise<Gstr1> => {
+    const tax = demoTaxState();
+    const { demoInvoiceViews } = await import('../invoices/demoInvoicesApi');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const { demoCreditNoteRows } = await import('../credit-notes/demoCreditNotesApi');
+    const contacts = demoContactRows();
+    const invoices = (await demoInvoiceViews()).filter((i) => i.number && i.issueDate >= from && i.issueDate <= to).sort((a, b) => (a.number ?? '').localeCompare(b.number ?? ''));
+    const split = (net: number, groupId: string | null | undefined) => {
+      const g = tax.groups.find((x) => x.id === groupId);
+      const rates = (g?.rateIds ?? []).map((id) => tax.rates.find((r) => r.id === id)!);
+      const heads = zeroHeads();
+      splitTax(net, false, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((p, k) => {
+        const h = headOf(rates[k]!.kind);
+        if (h) heads[h] += p.amount;
+      });
+      return { heads, rate: rates.filter((r) => ['igst', 'cgst', 'sgst', 'utgst'].includes(r.kind)).reduce((s, r) => s + r.ratePpm, 0) / 10_000 };
+    };
+    const byRate = (lines: { amount: number; taxGroup: { id: string } | null }[]) => {
+      const m = new Map<number, GstRateRow>();
+      for (const l of lines) {
+        const s = split(l.amount, l.taxGroup?.id);
+        const row = m.get(s.rate) ?? { rate: s.rate, taxable: 0, ...zeroHeads() };
+        row.taxable += l.amount;
+        for (const k of ['igst', 'cgst', 'sgst', 'cess'] as const) row[k] += s.heads[k];
+        m.set(s.rate, row);
+      }
+      return [...m.values()];
+    };
+    const out: Gstr1 = { from, to, gstin: null, legalName: 'Nest Demo Pvt. Ltd.', b2b: [], b2cl: [], b2cs: [], exports: [], cdnr: [], cdnur: [], hsn: [], documents: { invoices: { first: invoices[0]?.number ?? null, last: invoices.at(-1)?.number ?? null, total: invoices.length, cancelled: invoices.filter((i) => i.status === 'void').length }, creditNotes: { total: 0, cancelled: 0 } } };
+    const hsn = new Map<string, Gstr1['hsn'][number]>();
+    for (const i of invoices.filter((x) => x.status === 'issued')) {
+      const items = byRate(i.lines);
+      for (const l of i.lines) {
+        const s = split(l.amount, l.taxGroup?.id);
+        const key = `${l.item?.hsnSac ?? ''}|${s.rate}`;
+        const h = hsn.get(key) ?? { hsn: l.item?.hsnSac ?? '', unit: l.item?.unit ?? null, quantity: '0', returned: false, rate: s.rate, taxable: 0, ...zeroHeads() };
+        h.quantity = String(Number(h.quantity) + Number(l.quantity));
+        h.taxable += l.amount;
+        for (const k of ['igst', 'cgst', 'sgst', 'cess'] as const) h[k] += s.heads[k];
+        hsn.set(key, h);
+      }
+      const doc = { number: i.number!, date: i.issueDate, value: i.total, items };
+      const taxId = contacts.find((c) => c.id === i.contact.id)?.taxId;
+      if (taxId && isGstin(taxId)) out.b2b.push({ gstin: taxId, name: i.contact.name, placeOfSupply: i.placeOfSupply, ...doc });
+      else if (!i.placeOfSupply) out.exports.push({ ...doc, currency: i.currency });
+      else if (i.placeOfSupply !== '27' && i.total > B2CL_THRESHOLD) out.b2cl.push({ placeOfSupply: i.placeOfSupply, ...doc });
+      else for (const r of items) out.b2cs.push({ placeOfSupply: i.placeOfSupply, type: i.placeOfSupply === '27' ? 'intra' : 'inter', ...r });
+    }
+    for (const n of demoCreditNoteRows().filter((x) => x.date >= from && x.date <= to)) {
+      out.documents.creditNotes.total++;
+      if (n.status === 'void') {
+        out.documents.creditNotes.cancelled++;
+        continue;
+      }
+      const taxId = contacts.find((c) => c.id === n.contact.id)?.taxId;
+      const doc = { name: n.contact.name, number: n.number, date: n.date, invoice: n.invoice.number, value: n.total, items: byRate(n.lines) };
+      if (taxId && isGstin(taxId)) out.cdnr.push({ gstin: taxId, ...doc });
+      else out.cdnur.push(doc);
+    }
+    out.hsn = [...hsn.values()];
+    return out;
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
     if (!canExport()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['reports.export'] });
   };
   return {
+    gstr3b,
+    gstr1,
+    async exportGstr1(from, to, format) {
+      guard();
+      const g = await gstr1(from, to);
+      if (format === 'json') return { filename: `gstr-1-${from}-${to}.json`, blob: new Blob([JSON.stringify(g, null, 2)], { type: 'application/json' }) };
+      const rows: unknown[][] = [['section', 'gstin', 'name', 'document', 'date', 'place_of_supply', 'rate', 'taxable_value', 'igst', 'cgst', 'sgst', 'cess']];
+      for (const i of g.b2b) for (const r of i.items) rows.push(['b2b', i.gstin, i.name, i.number, i.date, i.placeOfSupply, r.rate, money(r.taxable), money(r.igst), money(r.cgst), money(r.sgst), money(r.cess)]);
+      for (const r of g.b2cs) rows.push(['b2cs', '', '', '', '', r.placeOfSupply, r.rate, money(r.taxable), money(r.igst), money(r.cgst), money(r.sgst), money(r.cess)]);
+      return { filename: `gstr-1-${from}-${to}.csv`, blob: csv(rows) };
+    },
     cashFlow,
     async exportCashFlow(from, to) {
       guard();

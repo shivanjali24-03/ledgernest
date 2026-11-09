@@ -1370,6 +1370,61 @@
       "opening": "Liquide Mittel zu Beginn",
       "closing": "Liquide Mittel am Ende",
       "byPurpose": "Nach Zweck"
+    },
+    "gst": {
+      "title": "GST-Erklärungen",
+      "return": "Erklärung",
+      "hint": "Für einen Monat oder ein Quartal, aus den Büchern. Vor der Abgabe mit dem GST-Portal abgleichen.",
+      "nature": "Art der Leistungen",
+      "details": "Details",
+      "head": "Steuer",
+      "taxable": "Bemessungsgrundlage",
+      "rate": "Satz",
+      "heads": {
+        "igst": "IGST",
+        "cgst": "CGST",
+        "sgst": "SGST/UTGST",
+        "cess": "Cess"
+      },
+      "r3b": {
+        "outwardTitle": "3.1 Ausgangsleistungen",
+        "outward": "(a) Steuerpflichtige Ausgangsleistungen",
+        "untaxed": "(c, e) Nullsatz, steuerfrei, nicht GST-pflichtig und Exporte",
+        "itcTitle": "4 Abziehbare Vorsteuer",
+        "itc": "(A)(5) Sonstige ITC",
+        "paymentTitle": "6.1 Zahlung der Steuer",
+        "paymentHint": "Vorsteuer in der Reihenfolge der GST verrechnet: IGST gegen IGST, dann CGST und SGST; CGST und SGST gegen die eigene, dann IGST.",
+        "tax": "Zahllast",
+        "byIgst": "Mit IGST-Vorsteuer",
+        "byCgst": "Mit CGST-Vorsteuer",
+        "bySgst": "Mit SGST-Vorsteuer",
+        "cash": "Bar",
+        "totalCash": "Bar zu zahlende Steuer",
+        "carried": "Vorgetragene Vorsteuer: {{amounts}}"
+      },
+      "r1": {
+        "empty": "Keine Rechnungen oder Gutschriften in diesem Zeitraum",
+        "emptyBody": "Wählen Sie einen anderen Monat oder ein anderes Quartal.",
+        "json": "JSON für das GST-Portal herunterladen",
+        "b2b": "4A B2B-Rechnungen",
+        "b2bHint": "An registrierte Käufer, nach GSTIN und Satz",
+        "b2cl": "5A Große B2C-Rechnungen",
+        "b2clHint": "Zwischenstaatlich, an nicht Registrierte, über ₹1 Lakh",
+        "b2cs": "7 Sonstige B2C",
+        "b2csHint": "Übrige Verkäufe an nicht Registrierte, nach Leistungsort und Satz",
+        "exports": "6A Exporte",
+        "notes": "9B Gutschriften",
+        "hsn": "12 HSN-Übersicht",
+        "noHsn": "Nicht angegeben",
+        "party": "Käufer",
+        "document": "Beleg",
+        "pos": "Leistungsort",
+        "supply": "Leistung",
+        "intra": "Innerhalb des Staats",
+        "inter": "Zwischenstaatlich",
+        "quantity": "Menge",
+        "documents": "13 Ausgestellte Belege: {{total}} Rechnungen ({{first}} bis {{last}}), {{cancelled}} storniert; {{notes}} Gutschriften."
+      }
     }
   },
   "taxes": {
