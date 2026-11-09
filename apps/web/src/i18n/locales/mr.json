@@ -706,7 +706,15 @@
       "org_approval_request": "मंजुरीसाठी पाठवले",
       "org_approval_approve": "मंजूर",
       "org_approval_reject": "परत पाठवले",
-      "org_approval_cancel": "मंजुरी विनंती मागे घेतली"
+      "org_approval_cancel": "मंजुरी विनंती मागे घेतली",
+      "org_invoice_attach": "इनव्हॉइसला फाइल जोडली",
+      "org_invoice_detach": "इनव्हॉइसमधून फाइल हटवली",
+      "org_bill_attach": "बिलाला फाइल जोडली",
+      "org_bill_detach": "बिलामधून फाइल हटवली",
+      "org_payment_attach": "देयकाला फाइल जोडली",
+      "org_payment_detach": "देयकामधून फाइल हटवली",
+      "org_banking_attach": "बँक व्यवहाराला फाइल जोडली",
+      "org_banking_detach": "बँक व्यवहारातून फाइल हटवली"
     },
     "entities": {
       "membership": "सदस्य",

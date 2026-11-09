@@ -706,7 +706,15 @@
       "org_approval_request": "أُرسل للموافقة",
       "org_approval_approve": "تمت الموافقة",
       "org_approval_reject": "أُعيد",
-      "org_approval_cancel": "تم سحب طلب الموافقة"
+      "org_approval_cancel": "تم سحب طلب الموافقة",
+      "org_invoice_attach": "أُرفق ملف بفاتورة",
+      "org_invoice_detach": "أُزيل ملف من فاتورة",
+      "org_bill_attach": "أُرفق ملف بفاتورة مورد",
+      "org_bill_detach": "أُزيل ملف من فاتورة مورد",
+      "org_payment_attach": "أُرفق ملف بدفعة",
+      "org_payment_detach": "أُزيل ملف من دفعة",
+      "org_banking_attach": "أُرفق ملف بحركة بنكية",
+      "org_banking_detach": "أُزيل ملف من حركة بنكية"
     },
     "entities": {
       "membership": "عضو",

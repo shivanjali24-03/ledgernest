@@ -821,6 +821,9 @@ export class InvoicesService {
           'Issued invoices can’t be deleted. Void it instead.',
           'not_draft',
         );
+      await tx.documentAttachment.deleteMany({
+        where: { organizationId, documentType: 'invoice', documentId: id },
+      });
       await tx.invoice.delete({ where: { id } });
       await this.audit.record(
         {

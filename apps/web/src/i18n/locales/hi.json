@@ -706,7 +706,15 @@
       "org_approval_request": "अनुमोदन के लिए भेजा गया",
       "org_approval_approve": "अनुमोदित",
       "org_approval_reject": "वापस भेजा गया",
-      "org_approval_cancel": "अनुमोदन अनुरोध वापस लिया गया"
+      "org_approval_cancel": "अनुमोदन अनुरोध वापस लिया गया",
+      "org_invoice_attach": "इनवॉइस से फ़ाइल जोड़ी गई",
+      "org_invoice_detach": "इनवॉइस से फ़ाइल हटाई गई",
+      "org_bill_attach": "बिल से फ़ाइल जोड़ी गई",
+      "org_bill_detach": "बिल से फ़ाइल हटाई गई",
+      "org_payment_attach": "भुगतान से फ़ाइल जोड़ी गई",
+      "org_payment_detach": "भुगतान से फ़ाइल हटाई गई",
+      "org_banking_attach": "बैंक लेनदेन से फ़ाइल जोड़ी गई",
+      "org_banking_detach": "बैंक लेनदेन से फ़ाइल हटाई गई"
     },
     "entities": {
       "membership": "सदस्य",

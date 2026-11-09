@@ -73,49 +73,50 @@ model Organization {
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
-  memberships        Membership[]
-  roles              Role[]
-  invitations        Invitation[]
-  auditEntries       AuditLog[]
-  logo               OrganizationLogo?
-  accounts           Account[]
-  fiscalYears        FiscalYear[]
-  periods            Period[]
-  journals           JournalEntry[]
-  journalLines       JournalLine[]
-  journalFiles       JournalAttachment[]
-  taxRates           TaxRate[]
-  taxGroups          TaxGroup[]
-  taxGroupRates      TaxGroupRate[]
-  currencies         OrganizationCurrency[]
-  contacts           Contact[]
-  items              Item[]
-  invoices           Invoice[]
-  invoiceLines       InvoiceLine[]
-  payments           Payment[]
-  allocations        PaymentAllocation[]
-  bills              Bill[]
-  creditNotes        CreditNote[]
-  creditNoteLines    CreditNoteLine[]
-  creditApplications CreditApplication[]
-  recurringInvoices  RecurringInvoice[]
-  bankTransactions   BankTransaction[]
-  statementImports   BankStatementImport[]
-  statementLines     BankStatementLine[]
-  statementLayouts   BankStatementLayout[]
-  bankMatches        BankMatch[]
-  reconciliations    BankReconciliation[]
-  fixedAssets        FixedAsset[]
-  depreciationRuns   DepreciationRun[]
-  depreciationLines  DepreciationLine[]
-  budgets            Budget[]
-  budgetLines        BudgetLine[]
-  costCentres        CostCentre[]
-  stockMovements     StockMovement[]
-  approvalRules      ApprovalRule[]
-  approvalRequests   ApprovalRequest[]
-  billLines          BillLine[]
-  exchangeRates      ExchangeRate[]
+  memberships         Membership[]
+  roles               Role[]
+  invitations         Invitation[]
+  auditEntries        AuditLog[]
+  logo                OrganizationLogo?
+  accounts            Account[]
+  fiscalYears         FiscalYear[]
+  periods             Period[]
+  journals            JournalEntry[]
+  journalLines        JournalLine[]
+  journalFiles        JournalAttachment[]
+  taxRates            TaxRate[]
+  taxGroups           TaxGroup[]
+  taxGroupRates       TaxGroupRate[]
+  currencies          OrganizationCurrency[]
+  contacts            Contact[]
+  items               Item[]
+  invoices            Invoice[]
+  invoiceLines        InvoiceLine[]
+  payments            Payment[]
+  allocations         PaymentAllocation[]
+  bills               Bill[]
+  creditNotes         CreditNote[]
+  creditNoteLines     CreditNoteLine[]
+  creditApplications  CreditApplication[]
+  recurringInvoices   RecurringInvoice[]
+  bankTransactions    BankTransaction[]
+  statementImports    BankStatementImport[]
+  statementLines      BankStatementLine[]
+  statementLayouts    BankStatementLayout[]
+  bankMatches         BankMatch[]
+  reconciliations     BankReconciliation[]
+  fixedAssets         FixedAsset[]
+  depreciationRuns    DepreciationRun[]
+  depreciationLines   DepreciationLine[]
+  budgets             Budget[]
+  budgetLines         BudgetLine[]
+  costCentres         CostCentre[]
+  stockMovements      StockMovement[]
+  approvalRules       ApprovalRule[]
+  approvalRequests    ApprovalRequest[]
+  documentAttachments DocumentAttachment[]
+  billLines           BillLine[]
+  exchangeRates       ExchangeRate[]
 
   @@map("organizations")
 }
@@ -1418,4 +1419,24 @@ model ApprovalRequest {
   @@index([organizationId, status, createdAt])
   @@index([organizationId, documentId])
   @@map("approval_requests")
+}
+
+/// A receipt, PDF or photo kept with an invoice, bill, payment or bank transaction (journal entries have their own).
+model DocumentAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// invoice | bill | payment | bank_transaction
+  documentType   String   @map("document_type")
+  documentId     String   @map("document_id") @db.Uuid
+  fileName       String   @map("file_name")
+  contentType    String   @map("content_type")
+  size           Int
+  data           Bytes
+  uploadedById   String?  @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, documentType, documentId])
+  @@map("document_attachments")
 }
