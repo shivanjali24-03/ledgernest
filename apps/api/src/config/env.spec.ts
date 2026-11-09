@@ -26,6 +26,16 @@ describe('validateEnv', () => {
     expect(validateEnv(base)).toMatchObject({ COOKIE_SECURE: true, COOKIE_SAMESITE: 'lax', LOGIN_RATE_LIMIT: 10 });
   });
 
+  it('supports a web app on another site: partitioned SameSite=None cookie behind one proxy', () => {
+    const env = validateEnv({ ...base, NODE_ENV: 'production', COOKIE_SAMESITE: 'none', COOKIE_PARTITIONED: 'true', TRUST_PROXY: '1' });
+    expect(env).toMatchObject({ COOKIE_SAMESITE: 'none', COOKIE_SECURE: true, COOKIE_PARTITIONED: true, TRUST_PROXY: 1 });
+    expect(validateEnv(base)).toMatchObject({ COOKIE_PARTITIONED: false, TRUST_PROXY: 0 });
+  });
+
+  it('refuses SameSite=None without Secure, which browsers would silently drop', () => {
+    expect(() => validateEnv({ ...base, COOKIE_SAMESITE: 'none', COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE/);
+  });
+
   it('requires a database URL', () => {
     expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
   });

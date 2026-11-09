@@ -10,6 +10,7 @@ const options = (config: ConfigService<Env, true>) =>
     httpOnly: true,
     secure: config.get('COOKIE_SECURE', { infer: true }),
     sameSite: config.get('COOKIE_SAMESITE', { infer: true }),
+    partitioned: config.get('COOKIE_PARTITIONED', { infer: true }),
     path: '/api/v1/auth',
   }) as const;
 

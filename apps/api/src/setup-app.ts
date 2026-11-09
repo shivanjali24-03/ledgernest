@@ -10,6 +10,9 @@ import type { Env } from './config/env.js';
 /** Shared by main.ts and the end-to-end tests, so tests run the real HTTP setup. */
 export function setupApp(app: INestApplication) {
   const config = app.get<ConfigService<Env, true>>(ConfigService);
+  // Behind Render's proxy the client's address arrives in X-Forwarded-For; trust exactly that many hops
+  const hops = config.get('TRUST_PROXY', { infer: true });
+  if (hops > 0) (app.getHttpAdapter().getInstance() as { set(k: string, v: unknown): void }).set('trust proxy', hops);
   app.use(requestId);
   app.use(helmet());
   app.use(cookieParser());

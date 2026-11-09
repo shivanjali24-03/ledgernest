@@ -16,6 +16,19 @@ export const envSchema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   COOKIE_SAMESITE: z.enum(['strict', 'lax', 'none']).default('lax'),
+  /**
+   * Partitioned (CHIPS) refresh cookie. Needed when the web app and API are on different sites
+   * (e.g. github.io and onrender.com): browsers that block third-party cookies still keep a partitioned one.
+   */
+  COOKIE_PARTITIONED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  /**
+   * How many proxies sit in front of the API (Render: 1). With 0, the client IP for rate limits and the
+   * audit log is the connecting address; behind a proxy that would be the proxy's for everyone.
+   */
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
   /** Sign-in attempts allowed per IP per minute */
   LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
   /** Where the web app lives; used to build links in invitations */
@@ -32,6 +45,9 @@ export const envSchema = z.object({
         .map((s) => s.trim())
         .filter(Boolean),
     ),
+}).refine((env) => env.COOKIE_SAMESITE !== 'none' || env.COOKIE_SECURE, {
+  path: ['COOKIE_SECURE'],
+  message: 'COOKIE_SECURE must be true when COOKIE_SAMESITE is none (browsers drop the cookie otherwise)',
 });
 
 export type Env = z.infer<typeof envSchema>;
