@@ -661,6 +661,8 @@ model Item {
   trackStock         Boolean   @default(false) @map("track_stock")
   inventoryAccountId String?   @map("inventory_account_id") @db.Uuid
   cogsAccountId      String?   @map("cogs_account_id") @db.Uuid
+  /// Stock at or below this is low (tracked goods only)
+  reorderLevel       Decimal?  @map("reorder_level") @db.Decimal(13, 4)
   archivedAt         DateTime? @map("archived_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")

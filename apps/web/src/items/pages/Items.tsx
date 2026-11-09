@@ -120,6 +120,7 @@ export default function Items() {
                       <Pill>{t(`items.kinds.${i.kind}`)}</Pill>
                       {i.taxGroup && <Pill tone="brand">{i.taxGroup.name}</Pill>}
                       {i.stock && <Pill tone="brand">{t('inventory.onHandPill', { quantity: i.stock.onHand, unit: i.unit ?? '' })}</Pill>}
+                      {i.stock?.low && <Pill>{t('inventory.lowPill')}</Pill>}
                       {i.archived && <Pill>{t('items.archivedPill')}</Pill>}
                     </span>
                     <span className="block truncate text-sm text-ink-500" dir="auto">

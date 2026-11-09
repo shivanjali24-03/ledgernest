@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} आवर्ती इनव्हॉइस देय",
       "open_periods": "{{count}} मागील महिने अजून उघडे",
       "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत",
-      "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत"
+      "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत",
+      "low_stock": "{{count}} वस्तूंचा साठा कमी"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "प्रमाण",
       "unitCost": "एकाचा खर्च ({{currency}})",
       "account": "दुसरे खाते",
-      "reason": "कारण"
+      "reason": "कारण",
+      "reorderLevel": "पुन्हा मागणी पातळी"
     },
     "chooseAccount": "खाते निवडा",
     "adjustTitle": "साठा समायोजित करा",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "साठा मालमत्ता खात्यात राहतो.",
       "cogs_account_type": "विकलेल्या साठ्याचा खर्च खर्च खात्यात जातो.",
       "in_use": "इनव्हॉइस, बिले किंवा साठा हालचाली ही वस्तू वापरतात. त्याऐवजी ती संग्रहित करा."
-    }
+    },
+    "reorderHint": "साठा इतका किंवा कमी झाल्यावर कमी दाखवला जातो. नको असल्यास रिकामे ठेवा.",
+    "lowPill": "कमी",
+    "reorderAt": "{{quantity}} वर पुन्हा मागणी"
   },
   "approvals": {
     "title": "मंजुरी",

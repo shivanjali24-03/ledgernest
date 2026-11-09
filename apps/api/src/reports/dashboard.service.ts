@@ -221,6 +221,15 @@ export class DashboardService {
       });
       if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
     }
+    if (permissions.has('invoices.view')) {
+      // Tracked goods at or below their reorder level
+      const [low] = await this.prisma.$queryRaw<{ n: bigint }[]>`
+        SELECT count(*)::bigint AS n FROM items i
+        WHERE i.organization_id = ${organizationId}::uuid AND i.track_stock AND i.archived_at IS NULL AND i.reorder_level IS NOT NULL
+          AND coalesce((SELECT sum(m.quantity) FROM stock_movements m WHERE m.item_id = i.id), 0) <= i.reorder_level`;
+      if (low && Number(low.n))
+        alerts.push({ kind: 'low_stock', count: Number(low.n) });
+    }
     if (permissions.has('approvals.approve')) {
       const waiting = await this.prisma.approvalRequest.count({
         where: {

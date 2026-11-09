@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} فواتير متكررة مستحقة",
       "open_periods": "{{count}} أشهر سابقة ما زالت مفتوحة",
       "draft_entries": "{{count}} قيود مسودة غير مرحّلة",
-      "approvals_waiting": "{{count}} بانتظار موافقتك"
+      "approvals_waiting": "{{count}} بانتظار موافقتك",
+      "low_stock": "{{count}} أصناف مخزونها منخفض"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "الكمية",
       "unitCost": "تكلفة الوحدة ({{currency}})",
       "account": "الحساب المقابل",
-      "reason": "السبب"
+      "reason": "السبب",
+      "reorderLevel": "حد إعادة الطلب"
     },
     "chooseAccount": "اختر حسابًا",
     "adjustTitle": "تسوية المخزون",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "يوجد المخزون في حساب أصول.",
       "cogs_account_type": "تذهب تكلفة المخزون المباع إلى حساب مصروفات.",
       "in_use": "تستخدم فواتير أو فواتير موردين أو حركات مخزون هذا الصنف. أرشفه بدلًا من ذلك."
-    }
+    },
+    "reorderHint": "يُعلَّم منخفضًا عندما ينزل المخزون إلى هذا الحد أو أقل. اتركه فارغًا إن لم ترده.",
+    "lowPill": "منخفض",
+    "reorderAt": "إعادة الطلب عند {{quantity}}"
   },
   "approvals": {
     "title": "الموافقات",

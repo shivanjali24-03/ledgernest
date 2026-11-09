@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} Serienrechnungen fällig",
       "open_periods": "{{count}} vergangene Monate noch offen",
       "draft_entries": "{{count}} Buchungsentwürfe nicht gebucht",
-      "approvals_waiting": "{{count}} warten auf Ihre Freigabe"
+      "approvals_waiting": "{{count}} warten auf Ihre Freigabe",
+      "low_stock": "{{count}} Artikel mit niedrigem Bestand"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "Menge",
       "unitCost": "Kosten je Einheit ({{currency}})",
       "account": "Gegenkonto",
-      "reason": "Grund"
+      "reason": "Grund",
+      "reorderLevel": "Meldebestand"
     },
     "chooseAccount": "Konto wählen",
     "adjustTitle": "Bestand anpassen",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "Bestand steht auf einem Aktivkonto.",
       "cogs_account_type": "Der Wareneinsatz geht auf ein Aufwandskonto.",
       "in_use": "Rechnungen, Eingangsrechnungen oder Bestandsbewegungen verwenden diesen Artikel. Archivieren Sie ihn stattdessen."
-    }
+    },
+    "reorderHint": "Als niedrig markiert, wenn der Bestand darauf oder darunter fällt. Leer lassen für keinen.",
+    "lowPill": "Niedrig",
+    "reorderAt": "nachbestellen bei {{quantity}}"
   },
   "approvals": {
     "title": "Freigaben",

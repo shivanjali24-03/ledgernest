@@ -39,6 +39,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [trackStock, setTrackStock] = useState(item?.trackStock ?? false);
   const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
   const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
+  const [reorderLevel, setReorderLevel] = useState(item?.reorderLevel ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const active = (accounts.data ?? []).filter((a) => !a.archived);
@@ -57,6 +58,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     trackStock: kind === 'goods' && trackStock,
     inventoryAccountId: kind === 'goods' && trackStock ? inventoryAccountId || null : null,
     cogsAccountId: kind === 'goods' && trackStock ? cogsAccountId || null : null,
+    reorderLevel: kind === 'goods' && trackStock ? reorderLevel.trim() || null : null,
   });
   const save = useMutation({
     mutationFn: () => {
@@ -85,6 +87,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     if (v.hsnSac && !HSN_SAC_PATTERN.test(v.hsnSac)) next.hsnSac = t('items.validation.hsnSac');
     if (v.trackStock && !v.inventoryAccountId) next.inventoryAccountId = t('inventory.errors.inventory_account_required');
     if (v.trackStock && !v.cogsAccountId) next.cogsAccountId = t('inventory.errors.cogs_account_required');
+    if (v.reorderLevel && !/^\d{1,9}(\.\d{1,4})?$/.test(v.reorderLevel)) next.reorderLevel = t('inventory.problems.quantity');
     setErrors(next);
     if (!Object.keys(next).length) save.mutate();
   };
@@ -165,6 +168,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
                   error={errors.cogsAccountId}
                   options={[{ value: '', label: t('inventory.chooseAccount') }, ...active.filter((a) => a.type === 'expense' && a.subtype === 'cost_of_sales').concat(active.filter((a) => a.type === 'expense' && a.subtype !== 'cost_of_sales')).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
                 />
+                <TextField label={t('inventory.fields.reorderLevel')} value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} error={errors.reorderLevel} hint={t('inventory.reorderHint')} inputMode="decimal" dir="ltr" className="text-end font-mono" />
               </div>
             )}
           </fieldset>

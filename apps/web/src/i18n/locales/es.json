@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} facturas recurrentes pendientes",
       "open_periods": "{{count}} meses pasados aún abiertos",
       "draft_entries": "{{count}} asientos en borrador sin contabilizar",
-      "approvals_waiting": "{{count}} esperando tu aprobación"
+      "approvals_waiting": "{{count}} esperando tu aprobación",
+      "low_stock": "{{count}} artículos con pocas existencias"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "Cantidad",
       "unitCost": "Coste de una unidad ({{currency}})",
       "account": "Otra cuenta",
-      "reason": "Motivo"
+      "reason": "Motivo",
+      "reorderLevel": "Nivel de reposición"
     },
     "chooseAccount": "Elige una cuenta",
     "adjustTitle": "Ajustar existencias",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "Las existencias van en una cuenta de activo.",
       "cogs_account_type": "El coste de lo vendido va a una cuenta de gasto.",
       "in_use": "Facturas, facturas de proveedor o movimientos usan este artículo. Archívalo en su lugar."
-    }
+    },
+    "reorderHint": "Se marca bajo cuando las existencias bajan a esto o menos. Déjalo vacío si no quieres.",
+    "lowPill": "Bajo",
+    "reorderAt": "reponer en {{quantity}}"
   },
   "approvals": {
     "title": "Aprobaciones",

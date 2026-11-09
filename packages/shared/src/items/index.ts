@@ -54,6 +54,13 @@ const fields = {
   inventoryAccountId: z.uuid().nullable(),
   /** The cost of sales account stock goes to as it's sold */
   cogsAccountId: z.uuid().nullable(),
+  /** Stock at or below this is low, e.g. "10" */
+  reorderLevel: z
+    .string()
+    .trim()
+    .regex(/^$|^\d{1,9}(\.\d{1,4})?$/, 'Enter a quantity with up to 4 decimal places.')
+    .transform((v) => v || null)
+    .nullable(),
 };
 
 export const itemCreateSchema = z.object({
@@ -71,6 +78,7 @@ export const itemCreateSchema = z.object({
   trackStock: fields.trackStock.optional().default(false),
   inventoryAccountId: fields.inventoryAccountId.optional().default(null),
   cogsAccountId: fields.cogsAccountId.optional().default(null),
+  reorderLevel: fields.reorderLevel.optional().default(null),
 });
 export type ItemCreateInput = z.input<typeof itemCreateSchema>;
 

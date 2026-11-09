@@ -139,7 +139,7 @@ export interface Dashboard {
   baseCurrency: string;
   kpis: { cash: DashboardKpi; receivables: DashboardKpi; payables: DashboardKpi; profit: DashboardKpi & { since: string } };
   monthly: { month: string; income: number; expenses: number; profit: number; cash: number }[];
-  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting'; count: number; amount?: number }[];
+  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock'; count: number; amount?: number }[];
   setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean };
 }
 

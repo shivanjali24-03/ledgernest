@@ -93,3 +93,15 @@ describe('goods returned on a credit note (demo)', () => {
     expect(demoStockOf(set.id)).toEqual({ quantity: 70_000n, value: 1_120_000n });
   }, 30_000);
 });
+
+describe('reorder levels (demo)', () => {
+  it('flag an item low once stock is at or below its level', async () => {
+    const { createDemoItemsApi, demoItemRows } = await import('../items/demoItemsApi');
+    const set = demoItemRows().find((i) => i.trackStock)!;
+    expect(set.stock?.low).toBe(false);
+    await createDemoItemsApi(() => true).update(set.id, { reorderLevel: '5' });
+    expect(demoItemRows().find((i) => i.id === set.id)!.stock?.low).toBe(true);
+    const v = await (await import('./demoInventoryApi')).createDemoInventoryApi(() => true).valuation();
+    expect(v.rows.find((r) => r.itemId === set.id)).toMatchObject({ reorderLevel: '5', low: true });
+  });
+});

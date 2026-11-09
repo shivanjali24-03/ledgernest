@@ -12,7 +12,7 @@ import type { InventoryApi, StockMovement } from './types';
  */
 const KEY = 'ledgernest.demo.stock';
 type Stored = { id: string; itemId: string; date: string; kind: StockMovementKind; sourceId: string | null; quantity: string; value: number; reason: string | null; journalEntryId: string | null; createdAt: string };
-type TrackedItem = { id: string; name: string; trackStock: boolean; inventoryAccountId: string | null; cogsAccountId: string | null };
+type TrackedItem = { id: string; name: string; trackStock: boolean; inventoryAccountId: string | null; cogsAccountId: string | null; reorderLevel?: string | null };
 
 function load(): Stored[] {
   try {
@@ -151,7 +151,7 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
           .map((i) => {
             const s = demoStockOf(i.id, day);
             const a = accounts.find((x) => x.id === i.inventoryAccountId);
-            return { itemId: i.id, name: i.name, sku: null, unit: null, archived: false, account: a ? { id: a.id, code: a.code, name: a.name } : null, quantity: qtyText(s.quantity), averageCost: averageUnitCost(s.quantity, s.value), value: Number(s.value) };
+            return { itemId: i.id, name: i.name, sku: null, unit: null, archived: false, account: a ? { id: a.id, code: a.code, name: a.name } : null, quantity: qtyText(s.quantity), reorderLevel: i.reorderLevel ?? null, low: !!i.reorderLevel && s.quantity <= (parseQuantity(i.reorderLevel) ?? 0n), averageCost: averageUnitCost(s.quantity, s.value), value: Number(s.value) };
           });
         const ids = [...new Set(rows.map((r) => r.account?.id).filter((x): x is string => !!x))];
         const { items } = await journals().list({ status: 'posted', page: 1, pageSize: 1000 });
