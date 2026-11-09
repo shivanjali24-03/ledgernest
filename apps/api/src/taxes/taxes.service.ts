@@ -48,6 +48,8 @@ const groupSelect = {
 type GroupRow = Prisma.TaxGroupGetPayload<{ select: typeof groupSelect }>;
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
+/** Within the state (CGST + SGST) before between states (IGST), then groups of the organisation's own */
+const supplyOrder = (s: string | null) => (s === 'intra' ? 0 : s === 'inter' ? 1 : 2);
 
 /**
  * An organisation's tax rates and groups. Rates hold a percentage and the accounts it posts to;
@@ -107,7 +109,7 @@ export class TaxesService {
       this.prisma.taxGroup.findMany({ where: { organizationId }, orderBy: [{ archivedAt: { sort: 'desc', nulls: 'first' } }, { name: 'asc' }], select: groupSelect }),
     ]);
     const views = groups.map((g) => this.groupView(g));
-    views.sort((a, b) => Number(a.archived) - Number(b.archived) || a.totalPpm - b.totalPpm || (a.supply ?? '').localeCompare(b.supply ?? '') || a.name.localeCompare(b.name));
+    views.sort((a, b) => Number(a.archived) - Number(b.archived) || a.totalPpm - b.totalPpm || supplyOrder(a.supply) - supplyOrder(b.supply) || a.name.localeCompare(b.name));
     return { rates: rates.map((r) => this.rateView(r)), groups: views, gst: org.country === 'IN' ? await this.gstStatus(organizationId, org) : null };
   }
 

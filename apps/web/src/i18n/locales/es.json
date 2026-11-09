@@ -23,7 +23,9 @@
       "platformUsers": "Usuarios de la plataforma",
       "platformOverview": "Resumen de la plataforma",
       "platformAudit": "Registro de auditoría de la plataforma",
-      "periods": "Ejercicios fiscales"
+      "periods": "Ejercicios fiscales",
+      "taxes": "Impuestos",
+      "gstSlabs": "Tramos de GST"
     },
     "soon": "Pronto"
   },
@@ -1100,5 +1102,169 @@
     "opening": "Saldo inicial al {{date}}",
     "noLines": "No hay asientos contabilizados en estas fechas.",
     "closing": "Saldo final al {{date}}"
+  },
+  "taxes": {
+    "title": "Impuestos",
+    "description": "GST, IVA o impuesto sobre ventas: los tipos que cobras y las cuentas donde se registran.",
+    "addRate": "Añadir tipo",
+    "addGroup": "Añadir grupo",
+    "rename": "Renombrar",
+    "restore": "Restaurar",
+    "archive": "Archivar",
+    "edit": "Editar",
+    "archived": "{{name}} archivado",
+    "restored": "{{name}} restaurado",
+    "actionsFor": "Acciones de {{name}}",
+    "empty": "Aún no hay impuestos",
+    "emptyBody": "Añade un tipo como IVA 20 % y luego un grupo que las líneas puedan elegir.",
+    "emptyBodyGst": "Configura el GST en un paso con los tramos oficiales de la India, o añade tus propios tipos.",
+    "showArchived": "Mostrar archivados ({{count}})",
+    "groups": "Grupos de impuestos",
+    "groupsHint": "Lo que elige una línea del asiento. Un grupo aplica uno o más tipos juntos.",
+    "rates": "Tipos impositivos",
+    "ratesHint": "Cada tipo registra el impuesto de ventas en un pasivo y el de compras como crédito fiscal.",
+    "archivedPill": "Archivado",
+    "rateSaved": "{{name}} guardado",
+    "rateCreated": "{{name}} añadido",
+    "groupSaved": "{{name}} guardado",
+    "groupCreated": "{{name}} añadido",
+    "chooseAccount": "Elige una cuenta",
+    "noInputAccount": "Ninguna: las compras reducen la cuenta del impuesto de ventas",
+    "fields": {
+      "name": "Nombre",
+      "kind": "Impuesto",
+      "rate": "Tipo (%)",
+      "outputAccount": "Cuenta del impuesto en ventas",
+      "inputAccount": "Cuenta del impuesto en compras",
+      "rates": "Tipos"
+    },
+    "columns": {
+      "output": "Impuesto en ventas",
+      "input": "Crédito fiscal",
+      "actions": "Acciones"
+    },
+    "hints": {
+      "rate": "Un porcentaje, p. ej. 20 o 0.125. No podrá cambiar después.",
+      "outputAccount": "Un pasivo: el impuesto que debes.",
+      "inputAccount": "Un activo: impuesto pagado que puedes recuperar."
+    },
+    "validation": {
+      "name": "Escribe al menos 2 caracteres.",
+      "rate": "Escribe un tipo entre 0 y 100, con 4 decimales como máximo.",
+      "outputAccount": "Elige una cuenta para el impuesto en ventas.",
+      "rates": "Elige al menos un tipo."
+    },
+    "kinds": {
+      "cgst": "CGST",
+      "sgst": "SGST",
+      "utgst": "UTGST",
+      "igst": "IGST",
+      "cess": "Recargo (cess)",
+      "vat": "IVA",
+      "sales_tax": "Impuesto sobre ventas",
+      "other": "Otro"
+    },
+    "supply": {
+      "intra": "Dentro del estado",
+      "inter": "Entre estados"
+    },
+    "rateDialog": {
+      "newTitle": "Nuevo tipo impositivo",
+      "editTitle": "Editar {{name}}",
+      "description": "Cualquier impuesto a cualquier porcentaje, con las cuentas donde se registra.",
+      "fixedRate": "El tipo se queda en {{rate}}: los asientos se gravaron con él. Para otro porcentaje, añade un tipo nuevo.",
+      "create": "Añadir tipo",
+      "namePlaceholder": "p. ej. IVA 20 %"
+    },
+    "groupDialog": {
+      "newTitle": "Nuevo grupo de impuestos",
+      "editTitle": "Renombrar {{name}}",
+      "description": "Elige los tipos que una línea aplica juntos.",
+      "fixedRates": "Los tipos de un grupo no pueden cambiar: los asientos se gravaron con ellos. Para otros tipos, añade un grupo nuevo.",
+      "create": "Añadir grupo",
+      "namePlaceholder": "p. ej. Tipo general",
+      "total": "Total: {{rate}}",
+      "noRates": "Añade primero un tipo impositivo."
+    },
+    "gst": {
+      "setup": "Configurar GST",
+      "stateTitle": "GST en {{state}} (código de estado {{code}})",
+      "noStateTitle": "GST: tu estado no está indicado",
+      "ruleSgst": "Las ventas dentro de tu estado llevan CGST + SGST, la mitad del tipo cada uno. Las ventas a otros estados llevan IGST al tipo completo.",
+      "ruleUtgst": "Estás en un Territorio de la Unión sin asamblea legislativa, así que las ventas dentro de él llevan CGST + UTGST, la mitad del tipo cada uno. Las ventas fuera llevan IGST al tipo completo.",
+      "noStateBody": "Indica tu estado en <settings>Ajustes</settings> para usar el impuesto correcto (SGST o UTGST).",
+      "pending": "Tramos vigentes aún sin configurar ({{count}}): {{rates}}",
+      "setupTitle": "Configurar GST",
+      "setupBody": "Para cada tramo, LedgerNest añade un grupo para ventas dentro de tu estado (CGST + {{local}}) y otro para ventas a otros estados (IGST), con sus cuentas. Lo ya configurado se conserva.",
+      "setupConfirm": "Configurar ({{count}})",
+      "inForce": "Vigentes hoy",
+      "retired": "Retirados (para asientos antiguos)",
+      "upcoming": "Próximos",
+      "alreadySetUp": "Configurado",
+      "appliesFrom": "Desde el {{from}}",
+      "appliedUntil": "Del {{from}} al {{to}}",
+      "done": "GST configurado: {{count}} grupos añadidos",
+      "nothingNew": "Todo lo elegido ya estaba configurado"
+    },
+    "errors": {
+      "name_taken": "Ya existe otro con este nombre.",
+      "output_not_liability": "El impuesto en ventas va a una cuenta de pasivo.",
+      "input_not_asset": "El impuesto en compras va a una cuenta de activo (crédito fiscal).",
+      "same_account": "Usa cuentas distintas para el impuesto en ventas y en compras.",
+      "account_archived": "Esa cuenta está archivada.",
+      "account_not_found": "Esa cuenta ya no existe.",
+      "in_active_group": "Hay grupos activos que usan este tipo. Archívalos primero.",
+      "rate_archived": "Uno de sus tipos está archivado. Restáuralo primero.",
+      "rate_not_found": "Un tipo elegido ya no existe.",
+      "not_india": "El GST es para organizaciones de la India. Indica el país en Ajustes o añade tus propios tipos.",
+      "no_slabs": "Elige al menos un tramo de GST.",
+      "code_taken": "Un código de cuenta del GST ya se usa para otra cosa. Cambia el código de esa cuenta y vuelve a intentarlo.",
+      "overlap": "Ya hay un tramo de este tipo vigente en algunas de estas fechas. Ponle primero una fecha de fin.",
+      "in_use": "Hay organizaciones que usan este tramo. Ponle una fecha de fin en su lugar.",
+      "slab_not_found": "Un tramo elegido ya no existe."
+    }
+  },
+  "gstSlabs": {
+    "eyebrow": "Plataforma",
+    "title": "Tramos de GST",
+    "description": "Los tipos de GST de la India con los que cada organización india configura su GST. Un tipo nunca cambia: cuando el Consejo del GST cambie los tipos, pon fecha de fin al tramo antiguo y añade el nuevo.",
+    "add": "Añadir tramo",
+    "empty": "Aún no hay tramos",
+    "edit": "Editar",
+    "retire": "Retirar hoy",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar el tramo del {{rate}}?",
+    "deleteBody": "Ninguna organización lo usa, así que se eliminará definitivamente.",
+    "deleted": "Tramo del {{rate}} eliminado",
+    "saved": "Tramo del {{rate}} guardado",
+    "created": "Tramo del {{rate}} añadido",
+    "usage": "Grupos que lo usan: {{count}}",
+    "actionsFor": "Acciones del tramo del {{rate}}",
+    "newTitle": "Nuevo tramo de GST",
+    "newBody": "Añade un tipo notificado por el Consejo del GST, con la fecha desde la que se aplica.",
+    "editTitle": "Editar el tramo del {{rate}}",
+    "fixedRate": "El tipo no puede cambiar: los asientos se gravaron con él. Para cambiarlo, pon aquí una fecha de fin y añade un tramo nuevo.",
+    "status": {
+      "inForce": "Vigente",
+      "retired": "Retirado",
+      "upcoming": "Próximo"
+    },
+    "fields": {
+      "rate": "Tipo (%)",
+      "label": "Etiqueta",
+      "description": "Descripción",
+      "effectiveFrom": "Se aplica desde",
+      "effectiveTo": "Se aplica hasta"
+    },
+    "hints": {
+      "rate": "p. ej. 18. Debe dividirse por igual entre CGST y SGST.",
+      "description": "Lo que cubre, p. ej. la mayoría de bienes y servicios",
+      "effectiveTo": "Déjalo vacío mientras esté vigente."
+    },
+    "validation": {
+      "rate": "Escribe un tipo entre 0 y 100 que se divida por igual entre CGST y SGST.",
+      "label": "Escribe al menos 2 caracteres.",
+      "effectiveTo": "La fecha de fin no puede ser anterior a la de inicio."
+    }
   }
 }

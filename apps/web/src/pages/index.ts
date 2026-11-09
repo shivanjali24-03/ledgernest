@@ -17,4 +17,6 @@ export const FiscalYears = lazy(() => import('../periods/pages/FiscalYears'));
 export const Journals = lazy(() => import('../journals/pages/Journals'));
 export const JournalEditor = lazy(() => import('../journals/pages/JournalEditor'));
 export const Reports = lazy(() => import('../reports/pages/Reports'));
+export const Taxes = lazy(() => import('../taxes/pages/Taxes'));
+export const GstSlabs = lazy(() => import('../taxes/pages/GstSlabs'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));
