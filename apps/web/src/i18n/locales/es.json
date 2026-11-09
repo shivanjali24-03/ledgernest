@@ -540,7 +540,8 @@
       "currencies": "Monedas",
       "contacts": "Clientes y proveedores",
       "items": "Productos y servicios",
-      "invoices": "Facturas"
+      "invoices": "Facturas",
+      "payments": "Cobros y pagos"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -623,7 +624,9 @@
       "org_invoice_update": "Borrador de factura editado",
       "org_invoice_delete": "Borrador de factura eliminado",
       "org_invoice_issue": "Factura emitida",
-      "org_invoice_void": "Factura anulada"
+      "org_invoice_void": "Factura anulada",
+      "org_payment_receive": "Cobro registrado",
+      "org_payment_void": "Pago anulado"
     },
     "entities": {
       "membership": "Miembro",
@@ -641,7 +644,8 @@
       "currency": "Moneda",
       "contact": "Contacto",
       "item": "Artículo",
-      "invoice": "Factura"
+      "invoice": "Factura",
+      "payment": "Pago"
     },
     "fields": {
       "user": "Persona",
