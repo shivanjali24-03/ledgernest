@@ -40,7 +40,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 apps/web         React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · i18next
 apps/api         NestJS · Prisma · PostgreSQL · JWT · role-based access control
 packages/shared  Roles, permissions and accounting rules used by both apps
-docs/            Feature list, architecture, deployment and decision records
+docs/            Feature list, architecture, deployment, integrations and decision records
 ```
 
 ## Getting started
