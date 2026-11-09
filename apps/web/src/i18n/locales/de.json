@@ -1081,7 +1081,19 @@
       "type_mismatch": "Diese Datei hat nicht den angegebenen Typ.",
       "too_large": "Hängen Sie eine Datei unter 2 MB an.",
       "invalid_amount": "Prüfen Sie die markierten Beträge.",
-      "missing_account": "Wählen Sie für jede Zeile ein Konto."
+      "missing_account": "Wählen Sie für jede Zeile ein Konto.",
+      "tax_group_archived": "Eine Zeile verwendet eine archivierte Steuergruppe.",
+      "tax_group_not_found": "Eine Zeile verwendet eine Steuergruppe, die es nicht mehr gibt.",
+      "tax_too_small": "Dieser Betrag ist zu klein für die Steuer."
+    },
+    "tax": {
+      "column": "Steuer",
+      "lineTax": "Steuer Zeile {{n}}",
+      "none": "Keine Steuer",
+      "inclusive": "Betrag enthält Steuer",
+      "net": "Nettobetrag",
+      "groupInclusive": "{{name}}, inkl. Steuer",
+      "lineFor": "{{name}} auf Zeile {{n}}"
     }
   },
   "reports": {
@@ -1101,7 +1113,26 @@
     "balance": "Saldo",
     "opening": "Anfangssaldo am {{date}}",
     "noLines": "Keine gebuchten Einträge in diesem Zeitraum.",
-    "closing": "Endsaldo am {{date}}"
+    "closing": "Endsaldo am {{date}}",
+    "tax": {
+      "title": "Steuerübersicht",
+      "hint": "Nur gebuchte Einträge. Gutschriften und Stornos werden verrechnet.",
+      "empty": "Keine besteuerten Buchungen in diesem Zeitraum",
+      "emptyBody": "Wählen Sie auf einer Buchungszeile eine Steuergruppe; nach dem Buchen erscheint sie hier.",
+      "output": "Steuer auf Verkäufe",
+      "input": "Vorsteuer",
+      "payable": "Zu zahlende Nettosteuer",
+      "credit": "Vorgetragenes Nettoguthaben",
+      "byGroup": "Nach Steuergruppe",
+      "group": "Steuergruppe",
+      "salesValue": "Verkaufswert",
+      "salesTax": "Steuer auf Verkäufe",
+      "purchaseValue": "Einkaufswert",
+      "purchaseTax": "Steuer auf Einkäufe",
+      "byRate": "Nach Steuer",
+      "rate": "Steuer",
+      "net": "Netto"
+    }
   },
   "taxes": {
     "title": "Steuern",

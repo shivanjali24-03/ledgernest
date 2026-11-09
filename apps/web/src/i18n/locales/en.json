@@ -1081,7 +1081,19 @@
       "type_mismatch": "That file isn't the type it claims to be.",
       "too_large": "Attach a file under 2 MB.",
       "invalid_amount": "Check the highlighted amounts.",
-      "missing_account": "Choose an account for every line."
+      "missing_account": "Choose an account for every line.",
+      "tax_group_archived": "A line uses an archived tax group.",
+      "tax_group_not_found": "A line uses a tax group that no longer exists.",
+      "tax_too_small": "This amount is too small to carry the tax."
+    },
+    "tax": {
+      "column": "Tax",
+      "lineTax": "Line {{n}} tax",
+      "none": "No tax",
+      "inclusive": "Amount includes tax",
+      "net": "Net amount",
+      "groupInclusive": "{{name}}, tax included",
+      "lineFor": "{{name}} on line {{n}}"
     }
   },
   "reports": {
@@ -1101,7 +1113,26 @@
     "balance": "Balance",
     "opening": "Opening balance on {{date}}",
     "noLines": "No posted entries in these dates.",
-    "closing": "Closing balance on {{date}}"
+    "closing": "Closing balance on {{date}}",
+    "tax": {
+      "title": "Tax summary",
+      "hint": "Posted entries only. Credit notes and reversals are netted.",
+      "empty": "No taxed entries in this period",
+      "emptyBody": "Pick a tax group on a journal line and it shows up here once posted.",
+      "output": "Tax on sales",
+      "input": "Input tax credit",
+      "payable": "Net tax payable",
+      "credit": "Net credit carried forward",
+      "byGroup": "By tax group",
+      "group": "Tax group",
+      "salesValue": "Sales value",
+      "salesTax": "Tax on sales",
+      "purchaseValue": "Purchase value",
+      "purchaseTax": "Tax on purchases",
+      "byRate": "By tax",
+      "rate": "Tax",
+      "net": "Net"
+    }
   },
   "taxes": {
     "title": "Taxes",

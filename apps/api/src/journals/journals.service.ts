@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ATTACHMENT_MAX_BYTES, journalNumber, postingProblem, sniffAttachmentType, splitTax, taxRole, totals, type AttachmentType } from '@ledgernest/shared';
+import { ATTACHMENT_MAX_BYTES, enteredLines, expandTax, journalNumber, postingProblem, sniffAttachmentType, totals, type AttachmentType, type ExpandedLine } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -11,7 +11,7 @@ type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
 type LineIn = { accountId: string; description: string | null; debit: number; credit: number; taxGroupId?: string | null; taxInclusive?: boolean };
 /** A line as stored: what was entered (with its net amount when taxed) or a tax line generated from it */
-type LineRow = { lineNo: number; accountId: string; description: string | null; debit: number; credit: number; taxGroupId: string | null; taxInclusive: boolean; taxRateId: string | null; taxSourceLine: number | null };
+type LineRow = ExpandedLine;
 type DraftIn = { date: string; memo: string | null; reference: string | null; lines: LineIn[] };
 
 const refuse = (Ex: typeof ConflictException | typeof BadRequestException, message: string, reason: string, extra: object = {}) =>
@@ -177,28 +177,8 @@ export class JournalsService {
     if (groups.length !== groupIds.length) throw refuse(BadRequestException, 'A line uses a tax group that doesn’t exist.', 'tax_group_not_found');
     if (groups.some((g) => g.archivedAt)) throw refuse(BadRequestException, 'A line uses an archived tax group.', 'tax_group_archived');
     const byId = new Map(groups.map((g) => [g.id, g.rates.map((r) => r.rate)]));
-
-    const rows: LineRow[] = [];
-    lines.forEach((l, index) => {
-      const lineNo = rows.length + 1;
-      if (!l.taxGroupId) {
-        rows.push({ lineNo, accountId: l.accountId, description: l.description, debit: l.debit, credit: l.credit, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null });
-        return;
-      }
-      const rates = byId.get(l.taxGroupId)!;
-      const onDebit = l.debit > 0;
-      const split = splitTax(onDebit ? l.debit : l.credit, !!l.taxInclusive, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })));
-      if (split.net <= 0) throw refuse(BadRequestException, 'This amount is too small to carry the tax.', 'tax_too_small', { line: index + 1 });
-      const side = (amount: number) => (onDebit ? { debit: amount, credit: 0 } : { debit: 0, credit: amount });
-      rows.push({ lineNo, accountId: l.accountId, description: l.description, ...side(split.net), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxInclusive, taxRateId: null, taxSourceLine: null });
-      const role = taxRole(types.get(l.accountId)!);
-      split.taxes.forEach((t, i) => {
-        if (!t.amount) return; // a 0% slab records the taxable value on the line and adds no tax line
-        const rate = rates[i]!;
-        const accountId = role === 'input' ? (rate.inputAccountId ?? rate.outputAccountId) : rate.outputAccountId;
-        rows.push({ lineNo: rows.length + 1, accountId, description: null, ...side(t.amount), taxGroupId: null, taxInclusive: false, taxRateId: rate.id, taxSourceLine: lineNo });
-      });
-    });
+    const { rows, tooSmall } = expandTax(lines, (id) => byId.get(id), (id) => types.get(id));
+    if (tooSmall !== null) throw refuse(BadRequestException, 'This amount is too small to carry the tax.', 'tax_too_small', { line: tooSmall });
     // The tax accounts must be usable too
     await this.checkAccounts(tx, organizationId, rows.filter((r) => r.taxRateId));
     return rows;
@@ -219,14 +199,7 @@ export class JournalsService {
 
   /** The lines as they were entered, from the stored ones (inclusive amounts get their tax added back). */
   private static entered(lines: EntryRow['lines']): LineIn[] {
-    return lines
-      .filter((l) => !l.taxRateId)
-      .map((l) => {
-        const tax = l.taxInclusive ? lines.filter((t) => t.taxSourceLine === l.lineNo).reduce((s, t) => s + Number(t.debit) + Number(t.credit), 0) : 0;
-        const debit = Number(l.debit);
-        const credit = Number(l.credit);
-        return { accountId: l.accountId, description: l.description, debit: debit ? debit + tax : 0, credit: credit ? credit + tax : 0, taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive };
-      });
+    return enteredLines(lines.map((l) => ({ ...l, debit: Number(l.debit), credit: Number(l.credit) })));
   }
 
   async createDraft(input: DraftIn, ctx: Ctx) {

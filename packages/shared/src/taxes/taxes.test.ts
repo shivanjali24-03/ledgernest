@@ -110,3 +110,37 @@ describe('updates', () => {
     expect(gstSlabUpdateSchema.parse({ label: 'Standard' })).toEqual({ label: 'Standard' });
   });
 });
+
+describe('expanding lines', () => {
+  const rates = { g18: [{ id: 'c', ratePpm: 90_000, outputAccountId: 'cOut', inputAccountId: 'cIn' }, { id: 's', ratePpm: 90_000, outputAccountId: 'sOut', inputAccountId: 'sIn' }], g0: [{ id: 'z', ratePpm: 0, outputAccountId: 'zOut', inputAccountId: null }] };
+  const types: Record<string, string> = { bank: 'asset', sales: 'income', rent: 'expense' };
+  const expand = async (lines: Parameters<typeof import('./index.js').expandTax>[0]) => (await import('./index.js')).expandTax(lines, (g) => rates[g as keyof typeof rates], (a) => types[a]);
+
+  it('follows a taxed sale with its tax lines, and a purchase claims input credit', async () => {
+    const { rows } = await expand([
+      { accountId: 'bank', description: null, debit: 11_800, credit: 0 },
+      { accountId: 'sales', description: 'Sale', debit: 0, credit: 10_000, taxGroupId: 'g18' },
+      { accountId: 'rent', description: null, debit: 1_180, credit: 0, taxGroupId: 'g18', taxInclusive: true },
+    ]);
+    expect(rows.map((r) => [r.lineNo, r.accountId, r.debit, r.credit, r.taxRateId, r.taxSourceLine])).toEqual([
+      [1, 'bank', 11_800, 0, null, null],
+      [2, 'sales', 0, 10_000, null, null],
+      [3, 'cOut', 0, 900, 'c', 2],
+      [4, 'sOut', 0, 900, 's', 2],
+      [5, 'rent', 1_000, 0, null, null],
+      [6, 'cIn', 90, 0, 'c', 5],
+      [7, 'sIn', 90, 0, 's', 5],
+    ]);
+  });
+
+  it('adds no line for a 0% tax, and round-trips back to what was entered', async () => {
+    const { enteredLines } = await import('./index.js');
+    const entered = [
+      { accountId: 'sales', description: null, debit: 0, credit: 5_000, taxGroupId: 'g0', taxInclusive: false },
+      { accountId: 'rent', description: null, debit: 1_181, credit: 0, taxGroupId: 'g18', taxInclusive: true },
+    ];
+    const { rows } = await expand(entered);
+    expect(rows.filter((r) => r.taxRateId)).toHaveLength(2);
+    expect(enteredLines(rows)).toEqual(entered.map((l) => ({ ...l })));
+  });
+});

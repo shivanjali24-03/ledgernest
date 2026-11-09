@@ -17,9 +17,10 @@ import { SelectField, TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
+import TaxSummaryPanel from '../TaxSummaryPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'ledger';
+type Tab = 'trial-balance' | 'ledger' | 'tax';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -47,7 +48,8 @@ export default function Reports() {
   const today = todayIn(settings?.timeZone ?? 'Asia/Kolkata');
   const year = fiscalYearSpan(fiscalYearOf(today, settings?.fiscalYearStartMonth ?? 4), settings?.fiscalYearStartMonth ?? 4);
   const asOf = params.get('asOf') ?? today;
-  const from = params.get('from') ?? year.startDate;
+  // Tax is filed monthly, so its default range is this month
+  const from = params.get('from') ?? (tab === 'tax' ? `${today.slice(0, 8)}01` : year.startDate);
   const to = params.get('to') ?? today;
   const accountId = params.get('account') ?? '';
   const canExport = session.permissions.has('reports.export');
@@ -66,8 +68,9 @@ export default function Reports() {
   const tb = useQuery({ queryKey: [...key, 'tb', asOf], queryFn: () => api!.trialBalance(asOf), enabled: !!api && tab === 'trial-balance', placeholderData: keepPreviousData });
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi && tab === 'ledger' });
   const ledger = useQuery({ queryKey: [...key, 'ledger', accountId, from, to], queryFn: () => api!.ledger(accountId, from, to), enabled: !!api && tab === 'ledger' && !!accountId && from <= to, placeholderData: keepPreviousData });
+  const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : api!.exportLedger(accountId, from, to)),
+    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -109,6 +112,7 @@ export default function Reports() {
           tabs={[
             { value: 'trial-balance', label: t('reports.trialBalance') },
             { value: 'ledger', label: t('reports.ledger') },
+            { value: 'tax', label: t('reports.tax.title') },
           ]}
         />
       </motion.div>
@@ -196,6 +200,15 @@ export default function Reports() {
               </div>
             )}
           </Card>
+        </motion.div>
+      ) : tab === 'tax' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="grid gap-4 sm:grid-cols-[11rem_11rem_minmax(0,1fr)]">
+            <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
+            <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
+            <p className="self-end pb-2 text-sm text-ink-500">{t('reports.tax.hint')}</p>
+          </div>
+          <TaxSummaryPanel data={tax.data} isPending={tax.isPending} isError={tax.isError} onRetry={() => void tax.refetch()} />
         </motion.div>
       ) : (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

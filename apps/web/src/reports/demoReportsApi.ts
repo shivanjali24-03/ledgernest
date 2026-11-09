@@ -1,8 +1,9 @@
-import { compareCodes, csvCell, NORMAL_SIDE } from '@ledgernest/shared';
+import { compareCodes, csvCell, formatRate, NORMAL_SIDE, taxRole } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
-import type { Ledger, ReportsApi, TrialBalance } from './types';
+import { demoTaxState } from '../taxes/demoTaxesApi';
+import type { Ledger, ReportsApi, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -12,7 +13,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   const postedLines = async () => {
     const { items } = await journals.list({ status: 'posted', page: 1, pageSize: 1000 });
     const entries = await Promise.all(items.map((e) => journals.get(e.id)));
-    return entries.flatMap((e) => e.lines.map((l) => ({ ...l, entryId: e.id, number: e.number, date: e.date, memo: e.memo, reference: e.reference })));
+    return entries.flatMap((e) => e.lines.map((l) => ({ ...l, entryId: e.id, number: e.number, date: e.date, memo: e.memo, reference: e.reference, source: l.taxSourceLine ? e.lines.find((s) => s.lineNo === l.taxSourceLine) : undefined })));
   };
 
   const trialBalance = async (asOf: string): Promise<TrialBalance> => {
@@ -55,6 +56,50 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     };
   };
 
+  /** The same figures as the API: each taxed line counts on the side its account is on (sales out, purchases in). */
+  const taxSummary = async (from: string, to: string): Promise<TaxSummary> => {
+    const lines = (await postedLines()).filter((l) => l.date >= from && l.date <= to);
+    const tax = demoTaxState();
+    const groupIds = [...new Set(lines.map((l) => l.taxGroup?.id).filter((x): x is string => !!x))];
+    const groups = groupIds
+      .map((id) => {
+        const g = tax.groups.find((x) => x.id === id)!;
+        const totalPpm = g.rateIds.reduce((s, rid) => s + (tax.rates.find((r) => r.id === rid)?.ratePpm ?? 0), 0);
+        const sum = (role: 'input' | 'output') => {
+          const src = lines.filter((l) => l.taxGroup?.id === id && taxRole(l.account.type) === role);
+          const sign = role === 'output' ? 1 : -1;
+          const taxable = src.reduce((s, l) => s + sign * (l.credit - l.debit), 0);
+          const taxAmount = lines.filter((t) => t.taxRate && src.some((l) => l.entryId === t.entryId && l.lineNo === t.taxSourceLine)).reduce((s, t) => s + sign * (t.credit - t.debit), 0);
+          return { taxable, tax: taxAmount };
+        };
+        return { id, name: g.name, supply: g.supply, totalPpm, total: formatRate(totalPpm), outward: sum('output'), inward: sum('input') };
+      })
+      .sort((a, b) => a.totalPpm - b.totalPpm || a.name.localeCompare(b.name));
+    const rateIds = [...new Set(lines.map((l) => l.taxRate?.id).filter((x): x is string => !!x))];
+    const rates = rateIds
+      .map((id) => {
+        const r = tax.rates.find((x) => x.id === id)!;
+        const mine = lines.filter((l) => l.taxRate?.id === id);
+        const output = mine.filter((l) => taxRole(l.source?.account.type ?? 'income') === 'output').reduce((s, l) => s + l.credit - l.debit, 0);
+        const input = mine.filter((l) => taxRole(l.source?.account.type ?? 'income') === 'input').reduce((s, l) => s + l.debit - l.credit, 0);
+        return { id, name: r.name, kind: r.kind, rate: formatRate(r.ratePpm), ratePpm: r.ratePpm, output, input, net: output - input };
+      })
+      .sort((a, b) => a.kind.localeCompare(b.kind) || a.ratePpm - b.ratePpm);
+    return {
+      from,
+      to,
+      groups,
+      rates,
+      totals: {
+        outwardTaxable: groups.reduce((s, g) => s + g.outward.taxable, 0),
+        inwardTaxable: groups.reduce((s, g) => s + g.inward.taxable, 0),
+        output: rates.reduce((s, r) => s + r.output, 0),
+        input: rates.reduce((s, r) => s + r.input, 0),
+        net: rates.reduce((s, r) => s + r.net, 0),
+      },
+    };
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
@@ -63,6 +108,21 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   return {
     trialBalance,
     ledger,
+    taxSummary,
+    async exportTaxSummary(from, to) {
+      guard();
+      const t = await taxSummary(from, to);
+      return {
+        filename: `tax-summary-${from}-${to}.csv`,
+        blob: csv([
+          ['tax_group', 'rate', 'outward_taxable_value', 'output_tax', 'inward_taxable_value', 'input_tax'],
+          ...t.groups.map((g) => [g.name, g.total, money(g.outward.taxable), money(g.outward.tax), money(g.inward.taxable), money(g.inward.tax)]),
+          [],
+          ['tax', 'rate', 'output_tax', 'input_tax', 'net_payable'],
+          ...t.rates.map((r) => [r.name, r.rate, money(r.output), money(r.input), money(r.net)]),
+        ]),
+      };
+    },
     async exportTrialBalance(asOf) {
       guard();
       const tb = await trialBalance(asOf);
