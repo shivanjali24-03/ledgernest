@@ -1,0 +1,311 @@
+import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { ApiError } from '../auth/client';
+import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { demoContactRows } from '../contacts/demoContactsApi';
+import { demoRateOn } from '../currencies/demoCurrenciesApi';
+import { demoItemRows } from '../items/demoItemsApi';
+import { createDemoJournalsApi } from '../journals/demoJournalsApi';
+import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
+import { demoTaxState } from '../taxes/demoTaxesApi';
+import { groupForSupply, supplyFor } from './gst';
+import type { Invoice, InvoicesApi } from './types';
+
+/**
+ * Invoices in demo mode for the sample company in Pune (Maharashtra, GST state 27): the month's invoice to
+ * Kumar Logistics (already in the books) and a draft for Bluewave Clinics in Karnataka, which takes IGST.
+ */
+const KEY = 'ledgernest.demo.invoices';
+const ORG_STATE = '27';
+type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string };
+type Stored = {
+  id: string;
+  number: number | null;
+  yearName: string | null;
+  status: InvoiceStatus;
+  contactId: string;
+  issueDate: string;
+  dueDate: string;
+  currency: string | null;
+  rate: string | null;
+  placeOfSupply: string | null;
+  reference: string | null;
+  notes: string | null;
+  amountPaid: number;
+  journalEntryId: string | null;
+  journalNumber: string | null;
+  voidEntryId: string | null;
+  voidNumber: string | null;
+  lines: StoredLine[];
+};
+const today = () => todayIn('Asia/Kolkata');
+const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
+
+async function seed(): Promise<Stored[]> {
+  const contacts = demoContactRows();
+  const kumar = contacts.find((c) => c.name === 'Kumar Logistics')!;
+  const bluewave = contacts.find((c) => c.name === 'Bluewave Clinics')!;
+  const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')?.id ?? null;
+  const dev = demoItemRows().find((i) => i.sku === 'DEV-HR');
+  const journals = createDemoJournalsApi(() => true);
+  // The month's sale to Kumar Logistics is already posted in the sample books: link it
+  const posted = (await journals.list({ status: 'posted', search: 'Kumar Logistics', page: 1, pageSize: 5 })).items.find((e) => e.memo?.startsWith('Invoice'));
+  const yearName = posted?.number ? `FY ${posted.number.split('/')[1]!.replace('-', '–')}` : null;
+  const rows: Stored[] = [];
+  if (posted && yearName) {
+    rows.push({ id: crypto.randomUUID(), number: 1, yearName, status: 'issued', contactId: kumar.id, issueDate: thisMonth(2), dueDate: dueDateFor(thisMonth(2), kumar.paymentTermsDays), currency: null, rate: null, placeOfSupply: kumar.stateCode, reference: 'PO-4471', notes: null, amountPaid: 0, journalEntryId: posted.id, journalNumber: posted.number, voidEntryId: null, voidNumber: null, lines: [{ itemId: dev?.id ?? null, description: 'Software development, sprint 14', quantity: '40', unitPrice: 250_000, discountPpm: 0, taxGroupId: gst18, accountId: sampleId('4100.01') }] });
+  }
+  rows.push({
+    id: crypto.randomUUID(),
+    number: null,
+    yearName: null,
+    status: 'draft',
+    contactId: bluewave.id,
+    issueDate: today(),
+    dueDate: dueDateFor(today(), bluewave.paymentTermsDays),
+    currency: null,
+    rate: null,
+    placeOfSupply: bluewave.stateCode,
+    reference: null,
+    notes: 'Thank you for your business.',
+    amountPaid: 0,
+    journalEntryId: null,
+    journalNumber: null,
+    voidEntryId: null,
+    voidNumber: null,
+    lines: [
+      { itemId: dev?.id ?? null, description: 'Appointment app: design and build', quantity: '24', unitPrice: 250_000, discountPpm: 0, taxGroupId: gst18, accountId: sampleId('4100.01') },
+      { itemId: null, description: 'Annual maintenance, first year', quantity: '1', unitPrice: 12_000_000, discountPpm: 100_000, taxGroupId: gst18, accountId: sampleId('4200') },
+    ],
+  });
+  return rows;
+}
+async function load(): Promise<Stored[]> {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw) as Stored[];
+  } catch {
+    /* fall through */
+  }
+  const s = await seed();
+  save(s);
+  return s;
+}
+function save(rows: Stored[]) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(rows));
+  } catch {
+    /* private mode */
+  }
+}
+export const resetDemoInvoices = () => {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* nothing stored */
+  }
+};
+
+const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });
+const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
+
+/** A group with its rates, from the demo's taxes */
+function groupOf(id: string | null) {
+  if (!id) return null;
+  const tax = demoTaxState();
+  const g = tax.groups.find((x) => x.id === id);
+  if (!g) return null;
+  const rates = g.rateIds.map((rid) => tax.rates.find((r) => r.id === rid)!);
+  return { id: g.id, name: g.name, gstSlabId: g.gstSlabId, supply: g.supply, archived: !!g.archivedAt, rates };
+}
+function allGroups() {
+  return demoTaxState().groups.map((g) => groupOf(g.id)!);
+}
+
+function view(i: Stored): Invoice {
+  const contact = demoContactRows().find((c) => c.id === i.contactId)!;
+  const accounts = demoAccountRows();
+  const items = demoItemRows();
+  const groups = i.lines.map((l) => groupOf(l.taxGroupId));
+  const a = invoiceAmounts(i.lines.map((l, n) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discountPpm, rates: (groups[n]?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })));
+  const breakdown = new Map<string, number>();
+  i.lines.forEach((_l, n) => {
+    const g = groups[n];
+    if (!g) return;
+    splitTax(a.lines[n]!.net, false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => breakdown.set(g.rates[k]!.name, (breakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
+  });
+  const receivable = accounts.find((x) => x.type === 'asset' && (x.currency ?? null) === i.currency && /receivable/i.test(x.name));
+  const base = {
+    id: i.id,
+    number: i.number && i.yearName ? invoiceNumber(i.yearName, i.number) : null,
+    status: i.status,
+    issueDate: i.issueDate,
+    dueDate: i.dueDate,
+    currency: i.currency,
+    rate: i.rate,
+    placeOfSupply: i.placeOfSupply,
+    reference: i.reference,
+    notes: i.notes,
+    contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
+    receivableAccount: receivable ? { id: receivable.id, code: receivable.code, name: receivable.name } : null,
+    subtotal: a.subtotal,
+    taxTotal: a.tax,
+    total: a.total,
+    amountPaid: i.amountPaid,
+    balance: a.total - i.amountPaid,
+    taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
+    journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
+    voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
+    lines: i.lines.map((l, n) => {
+      const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
+      const acc = accounts.find((x) => x.id === l.accountId);
+      const g = groups[n];
+      return {
+        id: `${i.id}-${n}`,
+        lineNo: n + 1,
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discount: l.discountPpm / 10_000,
+        amount: a.lines[n]!.net,
+        taxAmount: a.lines[n]!.tax,
+        item: item ? { id: item.id, name: item.name, hsnSac: item.hsnSac, unit: item.unit } : null,
+        account: acc ? { id: acc.id, code: acc.code, name: acc.name } : null,
+        taxGroup: g ? { id: g.id, name: g.name, supply: g.supply } : null,
+      };
+    }),
+  };
+  return { ...base, state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today()) };
+}
+
+export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
+  const guard = () => {
+    if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['invoices.manage'] });
+  };
+  const find = (rows: Stored[], iid: string) => {
+    const i = rows.find((r) => r.id === iid);
+    if (!i) throw new ApiError('not_found', 404);
+    return i;
+  };
+  /** The same checks and line rules as the API */
+  const prepare = (input: unknown): Omit<Stored, 'id' | 'number' | 'yearName' | 'status' | 'amountPaid' | 'journalEntryId' | 'journalNumber' | 'voidEntryId' | 'voidNumber'> => {
+    const p = invoiceDraftSchema.safeParse(input);
+    if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+    const d = p.data;
+    const contact = demoContactRows().find((c) => c.id === d.contactId);
+    if (!contact) throw refuse(400, 'contact_not_found', { field: 'contactId' });
+    if (!contact.isCustomer) throw refuse(400, 'not_customer', { field: 'contactId' });
+    if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
+    const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
+    const supply = supplyFor(ORG_STATE, placeOfSupply);
+    const items = demoItemRows();
+    const accounts = demoAccountRows();
+    const groups = allGroups();
+    const lines = d.lines.map((l, n) => {
+      const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
+      if (l.itemId && !item) throw refuse(400, 'item_not_found');
+      const accountId = l.accountId ?? item?.incomeAccountId ?? null;
+      if (!accountId) throw refuse(400, 'account_required', { line: n + 1 });
+      if (accounts.find((a) => a.id === accountId)?.type !== 'income') throw refuse(400, 'not_income', { line: n + 1 });
+      let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
+      if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
+      if (group) group = groupForSupply(group, supply, groups);
+      return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId };
+    });
+    return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines };
+  };
+  return {
+    list: (q) =>
+      wait(async () => {
+        const all = (await load()).map(view);
+        const s = q.search?.trim().toLowerCase();
+        const items = all
+          .filter((i) => !q.state || (q.state === 'unpaid' ? i.status === 'issued' && i.balance > 0 : q.state === 'issued' ? i.status === 'issued' : i.state === q.state))
+          .filter((i) => !q.contactId || i.contact.id === q.contactId)
+          .filter((i) => !s || [i.number, i.reference, i.contact.name].some((x) => x?.toLowerCase().includes(s)))
+          .sort((a, b) => b.issueDate.localeCompare(a.issueDate) || (b.number ?? '').localeCompare(a.number ?? ''));
+        const open = all.filter((i) => i.status === 'issued' && i.balance > 0 && !i.currency);
+        return {
+          total: items.length,
+          page: q.page,
+          pageSize: q.pageSize,
+          summary: { outstanding: open.reduce((t, i) => t + i.balance, 0), overdue: open.filter((i) => i.dueDate < today()).reduce((t, i) => t + i.balance, 0) },
+          items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((i) => ({ id: i.id, number: i.number, status: i.status, state: i.state, contact: { id: i.contact.id, name: i.contact.name }, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency, total: i.total, amountPaid: i.amountPaid, balance: i.balance, reference: i.reference })),
+        };
+      }),
+    get: (iid) => wait(async () => view(find(await load(), iid))),
+    create: (input) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i: Stored = { id: crypto.randomUUID(), number: null, yearName: null, status: 'draft', amountPaid: 0, journalEntryId: null, journalNumber: null, voidEntryId: null, voidNumber: null, ...prepare(input) };
+        rows.push(i);
+        save(rows);
+        return view(i);
+      }),
+    update: (iid, input) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        if (i.status !== 'draft') throw refuse(409, 'not_draft');
+        Object.assign(i, prepare(input));
+        save(rows);
+        return view(i);
+      }),
+    remove: (iid) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        if (find(rows, iid).status !== 'draft') throw refuse(409, 'not_draft');
+        save(rows.filter((r) => r.id !== iid));
+      }),
+    issue: (iid) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        if (i.status !== 'draft') throw refuse(409, 'not_draft');
+        const v = view(i);
+        if (v.total <= 0) throw refuse(400, 'zero_total');
+        const receivable = v.receivableAccount;
+        if (!receivable) throw refuse(409, 'no_receivable_account', { currency: i.currency });
+        const { years } = await createDemoPeriodsApi(() => true).list();
+        const year = years.find((y) => y.startDate <= i.issueDate && i.issueDate <= y.endDate);
+        if (!year) throw refuse(409, 'no_period');
+        const number = Math.max(0, ...rows.filter((r) => r.yearName === year.name && r.number).map((r) => r.number!)) + 1;
+        const label = invoiceNumber(year.name, number);
+        let rate: string | null = null;
+        if (i.currency) {
+          rate = i.rate ?? demoRateOn(i.currency, i.issueDate);
+          if (!rate) throw refuse(400, 'no_rate', { currency: i.currency, date: i.issueDate });
+        }
+        const journals = createDemoJournalsApi(() => true);
+        // Foreign invoices keep the receivable in their currency; income is in rupees at the same rate
+        const toInr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor);
+        const lines = [
+          i.currency ? { accountId: receivable.id, description: label, currency: i.currency, foreignDebit: v.total, rate: rate! } : { accountId: receivable.id, description: label, debit: v.total },
+          ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null) })),
+        ];
+        const draft = await journals.create({ date: i.issueDate, memo: `Invoice ${label} · ${v.contact.name}`, reference: label, lines });
+        const posted = await journals.post(draft.id).catch(async (e: unknown) => {
+          await journals.remove(draft.id);
+          throw e;
+        });
+        Object.assign(i, { status: 'issued', number, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
+        save(rows);
+        return view(i);
+      }),
+    void: (iid, input) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        if (i.status !== 'issued') throw refuse(409, 'not_issued');
+        if (i.amountPaid > 0) throw refuse(409, 'has_payments');
+        const r = await createDemoJournalsApi(() => true).reverse(i.journalEntryId!, { date: input.date ?? today(), memo: `Invoice voided${input.reason ? `: ${input.reason}` : ''}` });
+        Object.assign(i, { status: 'void', voidEntryId: r.id, voidNumber: r.number });
+        save(rows);
+        return view(i);
+      }),
+  };
+}

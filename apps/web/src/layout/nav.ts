@@ -64,7 +64,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/contacts', labelKey: 'nav.items.contacts', icon: Contact, permission: 'contacts.view', ready: true, keywords: 'customers vendors suppliers clients gstin parties' },
       { to: '/items', labelKey: 'nav.items.items', icon: Package, permission: 'invoices.view', ready: true, keywords: 'products services catalogue price list sku hsn sac' },
-      { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', keywords: 'sales customers receivables' },
+      { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', ready: true, keywords: 'sales customers receivables bill gst tax invoice' },
       { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', keywords: 'vendors payables purchases' },
       { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
       { to: '/transactions', labelKey: 'nav.items.payments', icon: ArrowLeftRight, permission: 'banking.view', keywords: 'receipts payments transfers' },

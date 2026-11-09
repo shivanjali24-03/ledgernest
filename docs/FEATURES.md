@@ -51,7 +51,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 |---|---|---|
 | Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms and balances | 🚧 #64 |
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
-| Quotes → invoices | Branded PDF invoices, numbering, due dates, partial payments | 📋 |
+| Quotes → invoices | Printable (PDF) GST invoices, numbering, due dates, place of supply, partial payments | ✅ #66 (payments #69) |
 | Recurring invoices | Weekly, monthly or yearly schedules | 📋 |
 | Credit notes and refunds | Linked to the original invoice | 📋 |
 | Bills and payments | Record vendor bills and payments made | 📋 |

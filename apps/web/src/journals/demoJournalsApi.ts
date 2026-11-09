@@ -1,4 +1,4 @@
-import { currencyDigits, enteredLines, expandTax, journalDraftSchema, journalNumber, postingProblem, realisedDifferences, sniffAttachmentType, todayIn, toBase, totals, type EnteredLine } from '@ledgernest/shared';
+import { currencyDigits, enteredLines, invoiceNumber, expandTax, journalDraftSchema, journalNumber, postingProblem, realisedDifferences, sniffAttachmentType, todayIn, toBase, totals, type EnteredLine } from '@ledgernest/shared';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi, demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
@@ -90,7 +90,8 @@ function seed(yearName: string): Stored[] {
     ['1100.01', 250000000, 0],
     ['3100', 0, 250000000],
   ]);
-  const sale = entry(thisMonth(2), 'Invoice INV-1042 · Kumar Logistics', 'INV-1042', [
+  // Invoice 1 of the year (the demo's Invoices page shows it)
+  const sale = entry(thisMonth(2), `Invoice ${invoiceNumber(yearName, 1)} · Kumar Logistics`, invoiceNumber(yearName, 1), [
     ['1300', 11800000, 0],
     ['4100.01', 0, 10000000, 'Software development, sprint 14'],
   ]);
