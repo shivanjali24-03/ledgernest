@@ -540,7 +540,8 @@
       "currencies": "Währungen",
       "contacts": "Kunden und Lieferanten",
       "items": "Produkte und Leistungen",
-      "invoices": "Rechnungen"
+      "invoices": "Rechnungen",
+      "payments": "Zahlungseingänge und Zahlungen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -623,7 +624,9 @@
       "org_invoice_update": "Rechnungsentwurf bearbeitet",
       "org_invoice_delete": "Rechnungsentwurf gelöscht",
       "org_invoice_issue": "Rechnung ausgestellt",
-      "org_invoice_void": "Rechnung storniert"
+      "org_invoice_void": "Rechnung storniert",
+      "org_payment_receive": "Zahlungseingang erfasst",
+      "org_payment_void": "Zahlung storniert"
     },
     "entities": {
       "membership": "Mitglied",
@@ -641,7 +644,8 @@
       "currency": "Währung",
       "contact": "Kontakt",
       "item": "Artikel",
-      "invoice": "Rechnung"
+      "invoice": "Rechnung",
+      "payment": "Zahlung"
     },
     "fields": {
       "user": "Person",

@@ -540,7 +540,8 @@
       "currencies": "Currencies",
       "contacts": "Customers and vendors",
       "items": "Products and services",
-      "invoices": "Invoices"
+      "invoices": "Invoices",
+      "payments": "Receipts and payments"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -623,7 +624,9 @@
       "org_invoice_update": "Invoice draft edited",
       "org_invoice_delete": "Invoice draft deleted",
       "org_invoice_issue": "Invoice issued",
-      "org_invoice_void": "Invoice voided"
+      "org_invoice_void": "Invoice voided",
+      "org_payment_receive": "Receipt recorded",
+      "org_payment_void": "Payment voided"
     },
     "entities": {
       "membership": "Member",
@@ -641,7 +644,8 @@
       "currency": "Currency",
       "contact": "Contact",
       "item": "Item",
-      "invoice": "Invoice"
+      "invoice": "Invoice",
+      "payment": "Payment"
     },
     "fields": {
       "user": "Person",

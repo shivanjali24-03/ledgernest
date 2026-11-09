@@ -61,8 +61,23 @@ export class ContactsService {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'contacts:' + organizationId}))`;
   }
 
-  private view(c: Row) {
-    return { ...c, billingAddress: c.billingAddress as ContactAddress, shippingAddress: c.shippingAddress as ContactAddress | null, archived: !!c.archivedAt };
+  private view(c: Row, receivable = 0) {
+    return { ...c, billingAddress: c.billingAddress as ContactAddress, shippingAddress: c.shippingAddress as ContactAddress | null, archived: !!c.archivedAt, receivable };
+  }
+
+  /**
+   * What each customer owes, in their currency: unpaid issued invoices, less receipts not yet allocated
+   * (advances). Negative = they're in credit.
+   */
+  private async receivables(organizationId: string, ids: string[]) {
+    if (!ids.length) return new Map<string, number>();
+    const rows = await this.prisma.$queryRaw<{ contact_id: string; owed: bigint }[]>`
+      SELECT c.id AS contact_id,
+             coalesce((SELECT sum(i.total - i.amount_paid) FROM invoices i WHERE i.organization_id = c.organization_id AND i.contact_id = c.id AND i.status = 'issued'), 0)
+           - coalesce((SELECT sum(p.amount - p.allocated) FROM payments p WHERE p.organization_id = c.organization_id AND p.contact_id = c.id AND p.kind = 'receipt' AND p.status = 'posted'), 0) AS owed
+      FROM contacts c
+      WHERE c.organization_id = ${organizationId}::uuid AND c.id = ANY(${ids}::uuid[])`;
+    return new Map(rows.map((r) => [r.contact_id, Number(r.owed)]));
   }
 
   private async find(tx: Tx | PrismaService, organizationId: string, id: string) {
@@ -90,11 +105,13 @@ export class ContactsService {
       this.prisma.contact.count({ where }),
       this.prisma.contact.findMany({ where, orderBy: { name: 'asc' }, skip: (q.page - 1) * q.pageSize, take: q.pageSize, select }),
     ]);
-    return { total, page: q.page, pageSize: q.pageSize, items: rows.map((r) => this.view(r)) };
+    const owed = await this.receivables(organizationId, rows.map((r) => r.id));
+    return { total, page: q.page, pageSize: q.pageSize, items: rows.map((r) => this.view(r, owed.get(r.id) ?? 0)) };
   }
 
   async get(organizationId: string, id: string) {
-    return this.view(await this.find(this.prisma, organizationId, id));
+    const c = await this.find(this.prisma, organizationId, id);
+    return this.view(c, (await this.receivables(organizationId, [id])).get(id) ?? 0);
   }
 
   /** The checks a whole contact must pass: a unique name, an enabled currency, and the GSTIN rules. */

@@ -369,6 +369,8 @@ export class JournalsService {
       await this.lock(tx, organizationId);
       const invoice = await tx.invoice.findFirst({ where: { organizationId, OR: [{ journalEntryId: id }, { voidEntryId: id }] }, select: { id: true } });
       if (invoice) throw refuse(ConflictException, 'This entry belongs to an invoice. Void the invoice instead.', 'document_entry', { invoiceId: invoice.id });
+      const payment = await tx.payment.findFirst({ where: { organizationId, OR: [{ journalEntryId: id }, { voidEntryId: id }] }, select: { id: true } });
+      if (payment) throw refuse(ConflictException, 'This entry belongs to a receipt or payment. Void that instead.', 'document_entry', { paymentId: payment.id });
       if (await tx.fiscalYear.findFirst({ where: { organizationId, closingEntryId: id }, select: { id: true } })) {
         throw refuse(ConflictException, 'This entry closed a financial year. Reopen the year’s last month instead, which reverses it.', 'closing_entry');
       }

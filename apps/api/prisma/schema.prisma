@@ -90,6 +90,8 @@ model Organization {
   items         Item[]
   invoices      Invoice[]
   invoiceLines  InvoiceLine[]
+  payments      Payment[]
+  allocations   PaymentAllocation[]
   exchangeRates ExchangeRate[]
 
   @@map("organizations")
@@ -140,6 +142,8 @@ model Account {
   invoiceReceivables Invoice[]     @relation("InvoiceReceivable")
   invoiceIncome      InvoiceLine[] @relation("InvoiceLineAccount")
 
+  paymentBanks Payment[] @relation("PaymentBank")
+
   @@unique([organizationId, id])
   @@unique([organizationId, code])
   @@unique([organizationId, systemKey])
@@ -165,6 +169,8 @@ model FiscalYear {
   closingEntry JournalEntry?  @relation("YearClosingEntry", fields: [organizationId, closingEntryId], references: [organizationId, id], onDelete: NoAction)
 
   invoices Invoice[]
+
+  payments Payment[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, startDate])
@@ -226,6 +232,9 @@ model JournalEntry {
 
   invoice       Invoice? @relation("InvoiceEntry")
   voidedInvoice Invoice? @relation("InvoiceVoidEntry")
+
+  payment       Payment? @relation("PaymentEntry")
+  voidedPayment Payment? @relation("PaymentVoidEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -543,6 +552,8 @@ model Contact {
 
   invoices Invoice[]
 
+  payments Payment[]
+
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt])
   @@map("contacts")
@@ -623,6 +634,8 @@ model Invoice {
   voidEntry         JournalEntry? @relation("InvoiceVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
   lines             InvoiceLine[]
 
+  allocations PaymentAllocation[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
@@ -656,4 +669,60 @@ model InvoiceLine {
 
   @@unique([invoiceId, lineNo])
   @@map("invoice_lines")
+}
+
+/// Money in from a customer (receipt) or out to a vendor (payment), allocated to what it settles.
+model Payment {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  kind           String /// receipt | payment
+  number         Int
+  fiscalYearId   String    @map("fiscal_year_id") @db.Uuid
+  status         String    @default("posted") /// posted | void
+  contactId      String    @map("contact_id") @db.Uuid
+  date           DateTime  @db.Date
+  bankAccountId  String    @map("bank_account_id") @db.Uuid
+  /// The documents' currency; null = the base currency
+  currency       String?   @db.Char(3)
+  rate           Decimal?  @db.Decimal(20, 10)
+  /// In that currency's smallest unit
+  amount         BigInt
+  allocated      BigInt    @default(0)
+  reference      String?
+  notes          String?
+  journalEntryId String    @map("journal_entry_id") @db.Uuid
+  voidEntryId    String?   @map("void_entry_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  voidedAt       DateTime? @map("voided_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact             @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  fiscalYear   FiscalYear          @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  bankAccount  Account             @relation("PaymentBank", fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry JournalEntry        @relation("PaymentEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry    JournalEntry?       @relation("PaymentVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+  allocations  PaymentAllocation[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, kind, fiscalYearId, number])
+  @@unique([organizationId, journalEntryId])
+  @@unique([organizationId, voidEntryId])
+  @@index([organizationId, contactId])
+  @@map("payments")
+}
+
+model PaymentAllocation {
+  organizationId String @map("organization_id") @db.Uuid
+  paymentId      String @map("payment_id") @db.Uuid
+  invoiceId      String @map("invoice_id") @db.Uuid
+  amount         BigInt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payment      Payment      @relation(fields: [organizationId, paymentId], references: [organizationId, id], onDelete: Cascade)
+  invoice      Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
+
+  @@id([paymentId, invoiceId])
+  @@index([organizationId, invoiceId])
+  @@map("payment_allocations")
 }

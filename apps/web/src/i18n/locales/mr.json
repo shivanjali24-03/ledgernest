@@ -540,7 +540,8 @@
       "currencies": "चलने",
       "contacts": "ग्राहक आणि विक्रेते",
       "items": "उत्पादने आणि सेवा",
-      "invoices": "बीजके"
+      "invoices": "बीजके",
+      "payments": "जमा आणि देयके"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -623,7 +624,9 @@
       "org_invoice_update": "बीजक मसुदा संपादित",
       "org_invoice_delete": "बीजक मसुदा हटवला",
       "org_invoice_issue": "बीजक जारी केले",
-      "org_invoice_void": "बीजक रद्द केले"
+      "org_invoice_void": "बीजक रद्द केले",
+      "org_payment_receive": "जमा नोंदवली",
+      "org_payment_void": "देयक रद्द केले"
     },
     "entities": {
       "membership": "सदस्य",
@@ -641,7 +644,8 @@
       "currency": "चलन",
       "contact": "संपर्क",
       "item": "आयटम",
-      "invoice": "बीजक"
+      "invoice": "बीजक",
+      "payment": "देयक"
     },
     "fields": {
       "user": "व्यक्ती",

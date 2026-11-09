@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { currencyDigits, dueDateFor, findIndianState, formatQuantity, invoiceAmounts, invoiceNumber, invoiceState, parseQuantity, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { currencyDigits, dueDateFor, paymentNumber, findIndianState, formatQuantity, invoiceAmounts, invoiceNumber, invoiceState, parseQuantity, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
@@ -45,6 +45,7 @@ const select = {
   receivableAccount: { select: { id: true, code: true, name: true } },
   journalEntry: { select: { id: true, number: true, fiscalYear: { select: { name: true } } } },
   voidEntry: { select: { id: true, number: true, fiscalYear: { select: { name: true } } } },
+  allocations: { where: { payment: { status: 'posted' } }, select: { amount: true, payment: { select: { id: true, kind: true, number: true, date: true, fiscalYear: { select: { name: true } } } } } },
   lines: {
     orderBy: { lineNo: 'asc' as const },
     select: {
@@ -124,6 +125,8 @@ export class InvoicesService {
       taxBreakdown: [...breakdown].map(([name, value]) => ({ name, amount: value })),
       journalEntry: i.journalEntry && { id: i.journalEntry.id, number: entryLabel(i.journalEntry) },
       voidEntry: i.voidEntry && { id: i.voidEntry.id, number: entryLabel(i.voidEntry) },
+      /** Receipts that paid it */
+      payments: i.allocations.map((a) => ({ id: a.payment.id, number: paymentNumber(a.payment.kind as 'receipt', a.payment.fiscalYear.name, a.payment.number), date: iso(a.payment.date), amount: amount(a.amount) })),
       issuedAt: i.issuedAt,
       voidedAt: i.voidedAt,
       createdAt: i.createdAt,

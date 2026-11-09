@@ -540,7 +540,8 @@
       "currencies": "العملات",
       "contacts": "العملاء والموردون",
       "items": "المنتجات والخدمات",
-      "invoices": "الفواتير"
+      "invoices": "الفواتير",
+      "payments": "المقبوضات والمدفوعات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -623,7 +624,9 @@
       "org_invoice_update": "عُدّلت مسودة فاتورة",
       "org_invoice_delete": "حُذفت مسودة فاتورة",
       "org_invoice_issue": "أُصدرت فاتورة",
-      "org_invoice_void": "أُلغيت فاتورة"
+      "org_invoice_void": "أُلغيت فاتورة",
+      "org_payment_receive": "سُجّل مقبوض",
+      "org_payment_void": "أُلغي دفع"
     },
     "entities": {
       "membership": "عضو",
@@ -641,7 +644,8 @@
       "currency": "عملة",
       "contact": "جهة اتصال",
       "item": "صنف",
-      "invoice": "فاتورة"
+      "invoice": "فاتورة",
+      "payment": "دفعة"
     },
     "fields": {
       "user": "الشخص",
