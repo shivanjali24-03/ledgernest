@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { slugify, type OrganizationCreateInput, type OrganizationUpdateInput } from '@ledgernest/shared';
+import { DEFAULT_TIME_ZONES, slugify, type OrganizationCreateInput, type OrganizationUpdateInput } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -13,7 +13,7 @@ const DAY = 86_400_000;
 /** Serialises changes to who is a Super Admin, so two admins can't demote each other at the same moment. */
 const SUPER_ADMIN_LOCK = 7_310_001;
 
-const orgSelect = { id: true, name: true, slug: true, status: true, baseCurrency: true, locale: true, country: true, fiscalYearStartMonth: true, createdAt: true } as const;
+const orgSelect = { id: true, name: true, slug: true, status: true, baseCurrency: true, locale: true, timeZone: true, country: true, fiscalYearStartMonth: true, createdAt: true } as const;
 const userSelect = { id: true, name: true, email: true, status: true, isSuperAdmin: true, lastLoginAt: true, createdAt: true } as const;
 
 @Injectable()
@@ -72,7 +72,16 @@ export class PlatformService {
 
     return this.prisma.$transaction(async (tx) => {
       const org = await tx.organization.create({
-        data: { name: input.name, slug, baseCurrency: input.baseCurrency, locale: input.locale, country: input.country, fiscalYearStartMonth: input.fiscalYearStartMonth },
+        data: {
+          name: input.name,
+          slug,
+          baseCurrency: input.baseCurrency,
+          locale: input.locale,
+          country: input.country,
+          // The country's time zone; the organisation can change it in its settings
+          timeZone: (input.country && DEFAULT_TIME_ZONES[input.country]) || 'Asia/Kolkata',
+          fiscalYearStartMonth: input.fiscalYearStartMonth,
+        },
         select: orgSelect,
       });
 

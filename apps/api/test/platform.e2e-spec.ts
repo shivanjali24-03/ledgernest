@@ -70,7 +70,7 @@ describe('Super Admin console and invitations (e2e)', () => {
     it('creates an organisation and adds an existing user as Owner straight away', async () => {
       const res = await createOrg({ name: `Acme ${run}`, baseCurrency: 'usd', country: 'us', owner: { email: users.existingOwner!.email.toUpperCase() } });
       expect(res.status).toBe(201);
-      expect(res.body.organization).toMatchObject({ name: `Acme ${run}`, slug: `acme-${run}`, baseCurrency: 'USD', country: 'US', status: 'ACTIVE' });
+      expect(res.body.organization).toMatchObject({ name: `Acme ${run}`, slug: `acme-${run}`, baseCurrency: 'USD', country: 'US', timeZone: 'America/New_York', status: 'ACTIVE' });
       expect(res.body.owner).toEqual({ status: 'added', userId: users.existingOwner!.id });
 
       const m = await prisma.membership.findFirstOrThrow({ where: { organizationId: res.body.organization.id } });
