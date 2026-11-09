@@ -21,6 +21,7 @@ import { CurrentTenant, RequirePermission } from '../access/decorators.js';
 import type { Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { DashboardService } from './dashboard.service.js';
 import { ReportsService } from './reports.service.js';
 
 const tbQuery = new ZodValidationPipe(
@@ -59,6 +60,7 @@ export class ReportsController {
   constructor(
     private readonly reports: ReportsService,
     private readonly prisma: PrismaService,
+    private readonly dashboards: DashboardService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -315,5 +317,15 @@ export class ReportsController {
       b,
       await this.reports.decimals(tenant.organizationId),
     );
+  }
+
+  @Get('dashboard')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Cash, receivables, payables and profit with twelve months of trend, alerts the reader may see, and set-up progress',
+  })
+  dashboard(@CurrentTenant() tenant: Tenant) {
+    return this.dashboards.dashboard(tenant.organizationId, tenant.permissions);
   }
 }
