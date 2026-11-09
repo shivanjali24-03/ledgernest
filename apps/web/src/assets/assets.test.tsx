@@ -42,7 +42,8 @@ describe('fixed assets', () => {
     await userEvent.click(post);
     expect(await screen.findByText(/of depreciation posted to/, {}, { timeout: 4000 })).toBeInTheDocument();
     await waitFor(() => expect(within(screen.getByRole('table', { name: 'Register' })).getByText('Dell Latitude laptops (3)').closest('tr')!).toHaveTextContent(inr(21_600_000 - expected)), { timeout: 4000 });
-    await userEvent.click(screen.getByRole('button', { name: /^Undo the run to / }));
+    // The undo button appears once the run's summary has re-rendered
+    await userEvent.click(await screen.findByRole('button', { name: /^Undo the run to / }, { timeout: 4000 }));
     await waitFor(() => expect(screen.getByText('No depreciation charged yet.')).toBeInTheDocument(), { timeout: 4000 });
   }, 30_000);
 
