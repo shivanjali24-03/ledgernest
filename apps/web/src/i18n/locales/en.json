@@ -1857,7 +1857,9 @@
     "owes": "Owes {{amount}}",
     "inCredit": "In credit {{amount}}",
     "weOwe": "We owe {{amount}}",
-    "paidAhead": "Paid ahead {{amount}}"
+    "paidAhead": "Paid ahead {{amount}}",
+    "customerStatement": "Statement of account",
+    "vendorStatement": "Vendor statement"
   },
   "items": {
     "title": "Products and services",

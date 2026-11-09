@@ -1857,7 +1857,9 @@
     "owes": "Doit {{amount}}",
     "inCredit": "Crédit {{amount}}",
     "weOwe": "Nous devons {{amount}}",
-    "paidAhead": "Avance de {{amount}}"
+    "paidAhead": "Avance de {{amount}}",
+    "customerStatement": "Relevé de compte",
+    "vendorStatement": "Relevé fournisseur"
   },
   "items": {
     "title": "Produits et services",

@@ -1857,7 +1857,9 @@
     "owes": "مدين بـ {{amount}}",
     "inCredit": "دائن بـ {{amount}}",
     "weOwe": "علينا {{amount}}",
-    "paidAhead": "مدفوع مقدمًا {{amount}}"
+    "paidAhead": "مدفوع مقدمًا {{amount}}",
+    "customerStatement": "كشف الحساب",
+    "vendorStatement": "كشف حساب المورد"
   },
   "items": {
     "title": "المنتجات والخدمات",

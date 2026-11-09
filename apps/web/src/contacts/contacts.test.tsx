@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -89,6 +89,20 @@ describe('customers and vendors', () => {
     await userEvent.click(await screen.findByRole('link', { name: 'Customers & vendors' }));
     await row('Kumar Logistics');
     expect(screen.queryByRole('button', { name: 'Add contact' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Actions for Kumar Logistics' })).not.toBeInTheDocument();
+    // Auditors read reports: the menu only takes them to the statement
+    await waitFor(() => {
+      if (!screen.queryByRole('menu')) fireEvent.click(screen.getByRole('button', { name: 'Actions for Kumar Logistics' }));
+      expect(screen.getByRole('menuitem', { name: 'Statement of account' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('menuitem', { name: 'Edit' })).not.toBeInTheDocument();
+  });
+
+  it("opens a customer's statement of account from their row", async () => {
+    const router = renderApp();
+    await userEvent.click(within(await row('Kumar Logistics')).getByRole('button', { name: 'Actions for Kumar Logistics' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Statement of account' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/reports'));
+    expect(router.state.location.search).toMatch(/tab=statement&contact=/);
+    expect(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 6000 })).toBeInTheDocument();
   });
 });
