@@ -52,6 +52,8 @@ export const TENANT_MODELS = new Set<string>([
   'ApprovalRequest',
   'DocumentAttachment',
   'ApiKey',
+  'WebhookEndpoint',
+  'WebhookDelivery',
 ]);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */
