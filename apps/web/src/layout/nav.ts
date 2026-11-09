@@ -20,8 +20,8 @@ import {
   ShieldCheck,
   Users,
   type LucideIcon,
-} from 'lucide-react';
-import type { Permission } from '@ledgernest/shared';
+} from "lucide-react";
+import type { Permission } from "@ledgernest/shared";
 
 export interface NavItem {
   to: string;
@@ -45,51 +45,205 @@ export interface NavGroup {
 
 export const NAV: NavGroup[] = [
   {
-    labelKey: 'nav.groups.overview',
-    items: [{ to: '/', labelKey: 'nav.items.dashboard', icon: LayoutDashboard, ready: true, keywords: 'home summary kpi' }],
-  },
-  {
-    labelKey: 'nav.groups.accounting',
+    labelKey: "nav.groups.overview",
     items: [
-      { to: '/accounts', labelKey: 'nav.items.accounts', icon: ListTree, permission: 'accounts.view', ready: true, keywords: 'coa ledger codes chart sub-accounts' },
-      { to: '/periods', labelKey: 'nav.items.periods', icon: CalendarRange, permission: 'accounts.view', ready: true, keywords: 'financial year fiscal period month close lock' },
-      { to: '/journals', labelKey: 'nav.items.journals', icon: BookOpen, permission: 'journals.view', ready: true, keywords: 'debit credit posting voucher jv reverse' },
-      { to: '/taxes', labelKey: 'nav.items.taxes', icon: Percent, permission: 'accounts.view', ready: true, keywords: 'gst vat sales tax cgst sgst igst utgst rates slabs' },
-      { to: '/currencies', labelKey: 'nav.items.currencies', icon: Coins, permission: 'accounts.view', ready: true, keywords: 'foreign currency exchange rate usd eur forex fx ecb revalue' },
-      { to: '/reports', labelKey: 'nav.items.reports', icon: BarChart3, permission: 'reports.view', ready: true, keywords: 'trial balance general ledger profit loss balance sheet' },
+      {
+        to: "/",
+        labelKey: "nav.items.dashboard",
+        icon: LayoutDashboard,
+        ready: true,
+        keywords: "home summary kpi",
+      },
     ],
   },
   {
-    labelKey: 'nav.groups.sales',
+    labelKey: "nav.groups.accounting",
     items: [
-      { to: '/contacts', labelKey: 'nav.items.contacts', icon: Contact, permission: 'contacts.view', ready: true, keywords: 'customers vendors suppliers clients gstin parties' },
-      { to: '/items', labelKey: 'nav.items.items', icon: Package, permission: 'invoices.view', ready: true, keywords: 'products services catalogue price list sku hsn sac' },
-      { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', ready: true, keywords: 'sales customers receivables bill gst tax invoice' },
-      { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', keywords: 'vendors payables purchases' },
-      { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', keywords: 'bank reconcile statement' },
-      { to: '/payments', labelKey: 'nav.items.payments', icon: ArrowLeftRight, permission: 'invoices.view', ready: true, keywords: 'receipts payments money received collections bank' },
+      {
+        to: "/accounts",
+        labelKey: "nav.items.accounts",
+        icon: ListTree,
+        permission: "accounts.view",
+        ready: true,
+        keywords: "coa ledger codes chart sub-accounts",
+      },
+      {
+        to: "/periods",
+        labelKey: "nav.items.periods",
+        icon: CalendarRange,
+        permission: "accounts.view",
+        ready: true,
+        keywords: "financial year fiscal period month close lock",
+      },
+      {
+        to: "/journals",
+        labelKey: "nav.items.journals",
+        icon: BookOpen,
+        permission: "journals.view",
+        ready: true,
+        keywords: "debit credit posting voucher jv reverse",
+      },
+      {
+        to: "/taxes",
+        labelKey: "nav.items.taxes",
+        icon: Percent,
+        permission: "accounts.view",
+        ready: true,
+        keywords: "gst vat sales tax cgst sgst igst utgst rates slabs",
+      },
+      {
+        to: "/currencies",
+        labelKey: "nav.items.currencies",
+        icon: Coins,
+        permission: "accounts.view",
+        ready: true,
+        keywords: "foreign currency exchange rate usd eur forex fx ecb revalue",
+      },
+      {
+        to: "/reports",
+        labelKey: "nav.items.reports",
+        icon: BarChart3,
+        permission: "reports.view",
+        ready: true,
+        keywords: "trial balance general ledger profit loss balance sheet",
+      },
     ],
   },
   {
-    labelKey: 'nav.groups.organisation',
+    labelKey: "nav.groups.sales",
     items: [
-      { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', ready: true, keywords: 'team invite permissions roles members' },
-      { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', ready: true, keywords: 'history activity log changes export' },
-      { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', ready: true, keywords: 'company fiscal year currency tax logo address time zone gstin vat' },
+      {
+        to: "/contacts",
+        labelKey: "nav.items.contacts",
+        icon: Contact,
+        permission: "contacts.view",
+        ready: true,
+        keywords: "customers vendors suppliers clients gstin parties",
+      },
+      {
+        to: "/items",
+        labelKey: "nav.items.items",
+        icon: Package,
+        permission: "invoices.view",
+        ready: true,
+        keywords: "products services catalogue price list sku hsn sac",
+      },
+      {
+        to: "/invoices",
+        labelKey: "nav.items.invoices",
+        icon: FileText,
+        permission: "invoices.view",
+        ready: true,
+        keywords: "sales customers receivables bill gst tax invoice",
+      },
+      {
+        to: "/bills",
+        labelKey: "nav.items.bills",
+        icon: Receipt,
+        permission: "bills.view",
+        ready: true,
+        keywords: "vendors suppliers payables purchases expenses input gst",
+      },
+      {
+        to: "/banking",
+        labelKey: "nav.items.banking",
+        icon: Landmark,
+        permission: "banking.view",
+        keywords: "bank reconcile statement",
+      },
+      {
+        to: "/payments",
+        labelKey: "nav.items.payments",
+        icon: ArrowLeftRight,
+        permission: "invoices.view",
+        ready: true,
+        keywords: "receipts payments money received collections bank",
+      },
     ],
   },
   {
-    labelKey: 'nav.groups.platform',
+    labelKey: "nav.groups.organisation",
     items: [
-      { to: '/platform', labelKey: 'nav.items.platformOverview', icon: Gauge, permission: 'platform.organizations.view', ready: true, end: true, keywords: 'super admin stats console' },
-      { to: '/platform/organizations', labelKey: 'nav.items.organizations', icon: Building2, permission: 'platform.organizations.view', ready: true, keywords: 'tenants companies super admin' },
-      { to: '/platform/users', labelKey: 'nav.items.platformUsers', icon: ShieldCheck, permission: 'platform.users.view', ready: true, keywords: 'super admin accounts' },
-      { to: '/platform/gst-slabs', labelKey: 'nav.items.gstSlabs', icon: Percent, permission: 'platform.settings.manage', ready: true, keywords: 'super admin gst slabs rates india council' },
-      { to: '/platform/audit', labelKey: 'nav.items.platformAudit', icon: History, permission: 'platform.audit.view', ready: true, keywords: 'super admin history sign-ins security log' },
+      {
+        to: "/users",
+        labelKey: "nav.items.users",
+        icon: Users,
+        permission: "users.view",
+        ready: true,
+        keywords: "team invite permissions roles members",
+      },
+      {
+        to: "/audit",
+        labelKey: "nav.items.audit",
+        icon: ScrollText,
+        permission: "audit.view",
+        ready: true,
+        keywords: "history activity log changes export",
+      },
+      {
+        to: "/settings",
+        labelKey: "nav.items.settings",
+        icon: Settings,
+        permission: "org.settings.view",
+        ready: true,
+        keywords:
+          "company fiscal year currency tax logo address time zone gstin vat",
+      },
+    ],
+  },
+  {
+    labelKey: "nav.groups.platform",
+    items: [
+      {
+        to: "/platform",
+        labelKey: "nav.items.platformOverview",
+        icon: Gauge,
+        permission: "platform.organizations.view",
+        ready: true,
+        end: true,
+        keywords: "super admin stats console",
+      },
+      {
+        to: "/platform/organizations",
+        labelKey: "nav.items.organizations",
+        icon: Building2,
+        permission: "platform.organizations.view",
+        ready: true,
+        keywords: "tenants companies super admin",
+      },
+      {
+        to: "/platform/users",
+        labelKey: "nav.items.platformUsers",
+        icon: ShieldCheck,
+        permission: "platform.users.view",
+        ready: true,
+        keywords: "super admin accounts",
+      },
+      {
+        to: "/platform/gst-slabs",
+        labelKey: "nav.items.gstSlabs",
+        icon: Percent,
+        permission: "platform.settings.manage",
+        ready: true,
+        keywords: "super admin gst slabs rates india council",
+      },
+      {
+        to: "/platform/audit",
+        labelKey: "nav.items.platformAudit",
+        icon: History,
+        permission: "platform.audit.view",
+        ready: true,
+        keywords: "super admin history sign-ins security log",
+      },
     ],
   },
 ];
 
 /** The navigation a user with these permissions may see (empty groups removed). */
 export const visibleNav = (permissions: ReadonlySet<Permission>): NavGroup[] =>
-  NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.permission || permissions.has(i.permission)) })).filter((g) => g.items.length);
+  NAV.map((g) => ({
+    ...g,
+    items: g.items.filter(
+      (i) => !i.permission || permissions.has(i.permission),
+    ),
+  })).filter((g) => g.items.length);

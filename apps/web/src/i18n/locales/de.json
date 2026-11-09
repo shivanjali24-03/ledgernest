@@ -1774,5 +1774,64 @@
       "allocation": "Prüfen Sie die markierten Beträge: nicht mehr als jeweils offen.",
       "over": "Sie können nicht mehr verteilen, als eingegangen ist."
     }
+  },
+  "bills": {
+    "title": "Eingangsrechnungen",
+    "description": "Was das Unternehmen seinen Lieferanten schuldet: Rechnungen erfassen, bezahlen und im Blick behalten.",
+    "new": "Neue Rechnung",
+    "newTitle": "Neue Eingangsrechnung",
+    "draftTitle": "Rechnungsentwurf",
+    "draftHint": "Erfassen Sie die Lieferantenrechnung wie gedruckt. Beim Erfassen werden Aufwand, Vorsteuer (GST) und Verbindlichkeit gebucht.",
+    "outstanding": "Zu zahlen",
+    "filter": "Rechnungen anzeigen",
+    "search": "Rechnungen suchen",
+    "empty": "Noch keine Eingangsrechnungen",
+    "emptyBody": "Erfassen Sie eine Lieferantenrechnung, um Verbindlichkeiten zu verfolgen und Vorsteuer zu ziehen.",
+    "chooseVendor": "Lieferant wählen",
+    "chooseAccount": "Konto wählen",
+    "lineAccount": "Konto für Zeile {{n}}",
+    "record": "Rechnung erfassen",
+    "recorded": "Erfasst als {{number}}",
+    "deleteTitle": "Diesen Entwurf löschen?",
+    "void": "Rechnung stornieren",
+    "voidTitle": "{{number}} stornieren?",
+    "voidBody": "Die Buchung wird storniert und die Rechnung gilt nicht mehr als offen. Das lässt sich nicht rückgängig machen.",
+    "voided": "{{number}} storniert",
+    "theirNumber": "Deren Nummer {{number}}",
+    "document": "Rechnung {{number}}",
+    "suppliedFrom": "Geliefert aus {{state}}",
+    "rate": "Wechselkurs",
+    "paid": "Bezahlt",
+    "toPay": "Noch zu zahlen",
+    "fields": {
+      "vendor": "Lieferant",
+      "billDate": "Rechnungsdatum",
+      "vendorReference": "Rechnungsnr. des Lieferanten"
+    },
+    "columns": {
+      "account": "Konto"
+    },
+    "states": {
+      "draft": "Entwurf",
+      "open": "Zu zahlen",
+      "partly_paid": "Teilweise bezahlt",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "void": "Storniert"
+    },
+    "problems": {
+      "vendor": "Wählen Sie den Lieferanten.",
+      "account": "Wählen Sie für jede Zeile ein Konto."
+    },
+    "errors": {
+      "not_vendor": "Dieser Kontakt ist kein Lieferant.",
+      "not_expense": "Rechnungen können nur auf Aufwands- oder Anlagekonten gebucht werden.",
+      "no_payable_account": "Kein Verbindlichkeitenkonto in dieser Währung. Legen Sie eines im Kontenplan an.",
+      "payable_currency": "Dieses Verbindlichkeitenkonto wird in einer anderen Währung geführt.",
+      "not_open": "Nur offene Rechnungen können storniert werden.",
+      "bill_not_open": "Nur erfasste Rechnungen können bezahlt werden.",
+      "bill_currency": "Diese Rechnung ist in einer anderen Währung.",
+      "bill_not_found": "Diese Rechnung gehört zu einem anderen Lieferanten."
+    }
   }
 }

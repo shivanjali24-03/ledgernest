@@ -1,28 +1,46 @@
-import { lazy } from 'react';
+import { lazy } from "react";
 
 // Pages load on demand, so the first screen downloads only what it needs
-export const Dashboard = lazy(() => import('./Dashboard'));
-export const SignIn = lazy(() => import('./SignIn'));
-export const AcceptInvite = lazy(() => import('./AcceptInvite'));
-export const PlatformOverview = lazy(() => import('../platform/pages/PlatformOverview'));
-export const Organizations = lazy(() => import('../platform/pages/Organizations'));
-export const OrganizationDetail = lazy(() => import('../platform/pages/OrganizationDetail'));
-export const PlatformUsers = lazy(() => import('../platform/pages/PlatformUsers'));
-export const Team = lazy(() => import('../team/pages/Team'));
-export const OrganizationAudit = lazy(() => import('../audit/pages/OrganizationAudit'));
-export const PlatformAudit = lazy(() => import('../audit/pages/PlatformAudit'));
-export const Settings = lazy(() => import('../settings/pages/Settings'));
-export const ChartOfAccounts = lazy(() => import('../accounts/pages/ChartOfAccounts'));
-export const FiscalYears = lazy(() => import('../periods/pages/FiscalYears'));
-export const Journals = lazy(() => import('../journals/pages/Journals'));
-export const JournalEditor = lazy(() => import('../journals/pages/JournalEditor'));
-export const Reports = lazy(() => import('../reports/pages/Reports'));
-export const Taxes = lazy(() => import('../taxes/pages/Taxes'));
-export const GstSlabs = lazy(() => import('../taxes/pages/GstSlabs'));
-export const Currencies = lazy(() => import('../currencies/pages/Currencies'));
-export const Contacts = lazy(() => import('../contacts/pages/Contacts'));
-export const Items = lazy(() => import('../items/pages/Items'));
-export const Invoices = lazy(() => import('../invoices/pages/Invoices'));
-export const InvoiceEditor = lazy(() => import('../invoices/pages/InvoiceEditor'));
-export const Payments = lazy(() => import('../payments/pages/Payments'));
-export const ComingSoon = lazy(() => import('./ComingSoon'));
+export const Dashboard = lazy(() => import("./Dashboard"));
+export const SignIn = lazy(() => import("./SignIn"));
+export const AcceptInvite = lazy(() => import("./AcceptInvite"));
+export const PlatformOverview = lazy(
+  () => import("../platform/pages/PlatformOverview"),
+);
+export const Organizations = lazy(
+  () => import("../platform/pages/Organizations"),
+);
+export const OrganizationDetail = lazy(
+  () => import("../platform/pages/OrganizationDetail"),
+);
+export const PlatformUsers = lazy(
+  () => import("../platform/pages/PlatformUsers"),
+);
+export const Team = lazy(() => import("../team/pages/Team"));
+export const OrganizationAudit = lazy(
+  () => import("../audit/pages/OrganizationAudit"),
+);
+export const PlatformAudit = lazy(() => import("../audit/pages/PlatformAudit"));
+export const Settings = lazy(() => import("../settings/pages/Settings"));
+export const ChartOfAccounts = lazy(
+  () => import("../accounts/pages/ChartOfAccounts"),
+);
+export const FiscalYears = lazy(() => import("../periods/pages/FiscalYears"));
+export const Journals = lazy(() => import("../journals/pages/Journals"));
+export const JournalEditor = lazy(
+  () => import("../journals/pages/JournalEditor"),
+);
+export const Reports = lazy(() => import("../reports/pages/Reports"));
+export const Taxes = lazy(() => import("../taxes/pages/Taxes"));
+export const GstSlabs = lazy(() => import("../taxes/pages/GstSlabs"));
+export const Currencies = lazy(() => import("../currencies/pages/Currencies"));
+export const Contacts = lazy(() => import("../contacts/pages/Contacts"));
+export const Items = lazy(() => import("../items/pages/Items"));
+export const Invoices = lazy(() => import("../invoices/pages/Invoices"));
+export const InvoiceEditor = lazy(
+  () => import("../invoices/pages/InvoiceEditor"),
+);
+export const Payments = lazy(() => import("../payments/pages/Payments"));
+export const Bills = lazy(() => import("../bills/pages/Bills"));
+export const BillEditor = lazy(() => import("../bills/pages/BillEditor"));
+export const ComingSoon = lazy(() => import("./ComingSoon"));
