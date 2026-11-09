@@ -577,7 +577,8 @@
       "inventory": "Stocks",
       "approvals": "Approbations",
       "imports": "Imports",
-      "integrations": "Intégrations"
+      "integrations": "Intégrations",
+      "scheduledReports": "Rapports planifiés"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "Clé d’API révoquée",
       "org_webhook_create": "Webhook ajouté",
       "org_webhook_update": "Webhook modifié",
-      "org_webhook_delete": "Webhook supprimé"
+      "org_webhook_delete": "Webhook supprimé",
+      "org_scheduled_report_create": "Rapport planifié créé",
+      "org_scheduled_report_update": "Rapport planifié modifié",
+      "org_scheduled_report_delete": "Rapport planifié supprimé"
     },
     "entities": {
       "membership": "Membre",

@@ -577,7 +577,8 @@
       "inventory": "साठा",
       "approvals": "मंजुरी",
       "imports": "आयात",
-      "integrations": "एकत्रीकरण"
+      "integrations": "एकत्रीकरण",
+      "scheduledReports": "नियोजित अहवाल"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "API की रद्द केली",
       "org_webhook_create": "वेबहुक जोडला",
       "org_webhook_update": "वेबहुक बदलला",
-      "org_webhook_delete": "वेबहुक हटवला"
+      "org_webhook_delete": "वेबहुक हटवला",
+      "org_scheduled_report_create": "नियोजित अहवाल तयार केला",
+      "org_scheduled_report_update": "नियोजित अहवाल बदलला",
+      "org_scheduled_report_delete": "नियोजित अहवाल हटवला"
     },
     "entities": {
       "membership": "सदस्य",

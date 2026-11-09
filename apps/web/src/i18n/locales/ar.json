@@ -577,7 +577,8 @@
       "inventory": "المخزون",
       "approvals": "الموافقات",
       "imports": "الاستيراد",
-      "integrations": "التكاملات"
+      "integrations": "التكاملات",
+      "scheduledReports": "التقارير المجدولة"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "تم إلغاء مفتاح API",
       "org_webhook_create": "تمت إضافة Webhook",
       "org_webhook_update": "تم تعديل Webhook",
-      "org_webhook_delete": "تمت إزالة Webhook"
+      "org_webhook_delete": "تمت إزالة Webhook",
+      "org_scheduled_report_create": "تم إعداد تقرير مجدول",
+      "org_scheduled_report_update": "تم تعديل تقرير مجدول",
+      "org_scheduled_report_delete": "تمت إزالة تقرير مجدول"
     },
     "entities": {
       "membership": "عضو",

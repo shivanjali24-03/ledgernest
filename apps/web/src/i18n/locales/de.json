@@ -577,7 +577,8 @@
       "inventory": "Lager",
       "approvals": "Freigaben",
       "imports": "Importe",
-      "integrations": "Integrationen"
+      "integrations": "Integrationen",
+      "scheduledReports": "Geplante Berichte"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "API-Schlüssel widerrufen",
       "org_webhook_create": "Webhook hinzugefügt",
       "org_webhook_update": "Webhook geändert",
-      "org_webhook_delete": "Webhook entfernt"
+      "org_webhook_delete": "Webhook entfernt",
+      "org_scheduled_report_create": "Geplanter Bericht eingerichtet",
+      "org_scheduled_report_update": "Geplanter Bericht geändert",
+      "org_scheduled_report_delete": "Geplanter Bericht entfernt"
     },
     "entities": {
       "membership": "Mitglied",

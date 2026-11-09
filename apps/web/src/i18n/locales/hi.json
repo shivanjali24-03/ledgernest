@@ -577,7 +577,8 @@
       "inventory": "इन्वेंटरी",
       "approvals": "अनुमोदन",
       "imports": "आयात",
-      "integrations": "एकीकरण"
+      "integrations": "एकीकरण",
+      "scheduledReports": "निर्धारित रिपोर्ट"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "API कुंजी रद्द की गई",
       "org_webhook_create": "वेबहुक जोड़ा गया",
       "org_webhook_update": "वेबहुक बदला गया",
-      "org_webhook_delete": "वेबहुक हटाया गया"
+      "org_webhook_delete": "वेबहुक हटाया गया",
+      "org_scheduled_report_create": "निर्धारित रिपोर्ट बनाई गई",
+      "org_scheduled_report_update": "निर्धारित रिपोर्ट बदली गई",
+      "org_scheduled_report_delete": "निर्धारित रिपोर्ट हटाई गई"
     },
     "entities": {
       "membership": "सदस्य",
