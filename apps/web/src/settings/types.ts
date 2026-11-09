@@ -14,6 +14,8 @@ export interface OrganizationSettings {
   taxId: string | null;
   email: string | null;
   phone: string | null;
+  /** Printed at the foot of invoices and quotes: payment terms, bank details */
+  invoiceTerms?: string | null;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

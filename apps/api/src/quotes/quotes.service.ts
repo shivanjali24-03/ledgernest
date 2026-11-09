@@ -549,13 +549,14 @@ export class QuotesService {
       );
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { name: true, baseCurrency: true },
+      select: { name: true, baseCurrency: true, invoiceTerms: true },
     });
     const currency = q.currency ?? org.baseCurrency;
     const pdf = Buffer.from(
       pdfTableBytes({
         title: `Quote ${q.number}`,
         subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
+        after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
         footer: `${org.name} · ${q.number}`,
         rows: quoteRows({ ...q, currency }, currencyDigits(currency)),
       }),

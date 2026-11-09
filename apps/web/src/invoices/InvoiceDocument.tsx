@@ -185,6 +185,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           {i.notes}
         </p>
       )}
+      {org?.invoiceTerms && (
+        <p className="mt-6 whitespace-pre-line text-xs text-ink-500" dir="auto" data-testid="invoice-terms">
+          {org.invoiceTerms}
+        </p>
+      )}
     </article>
   );
 }

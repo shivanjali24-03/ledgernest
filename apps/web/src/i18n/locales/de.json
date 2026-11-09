@@ -906,14 +906,16 @@
       "baseCurrency": "Basiswährung",
       "fiscalYearStartMonth": "Geschäftsjahr beginnt im",
       "locale": "Zahlen- und Datumsformat",
-      "timeZone": "Zeitzone"
+      "timeZone": "Zeitzone",
+      "invoiceTerms": "Bedingungen und Bankverbindung"
     },
     "hints": {
       "legalName": "Wie eingetragen, für Rechnungen und Steuererklärungen.",
       "taxId": "USt-IdNr., GSTIN oder Ähnliches.",
       "baseCurrency": "Ihre Bücher werden in dieser Währung geführt.",
       "fiscalYear": "Ihr Geschäftsjahr läuft {{span}}.",
-      "timeZone": "Dort ist es jetzt {{time}}. Bestimmt, auf welchen Tag eine Buchung fällt."
+      "timeZone": "Dort ist es jetzt {{time}}. Bestimmt, auf welchen Tag eine Buchung fällt.",
+      "invoiceTerms": "Steht am Fuß von Rechnungen und Angeboten, auf dem Bildschirm und in versendeten PDFs: Zahlungsbedingungen, Bankverbindung, ein Dankeschön. Bis zu 1.000 Zeichen."
     },
     "locked": {
       "baseCurrency": "Nach dem Buchen von Einträgen nicht mehr änderbar",
@@ -949,6 +951,10 @@
         "size": "Verwenden Sie ein Bild unter 256 KB.",
         "mismatch": "Diese Datei ist nicht der Bildtyp, den ihr Name angibt."
       }
+    },
+    "documents": {
+      "title": "Rechnungen und Angebote",
+      "description": "Was am Fuß jeder Rechnung und jedes Angebots steht."
     }
   },
   "accounts": {

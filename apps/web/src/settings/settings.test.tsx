@@ -71,6 +71,15 @@ describe('organisation settings', () => {
     expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings).toMatchObject({ legalName: 'Nest Demo Pvt Ltd', fiscalYearStartMonth: 1 });
   });
 
+  it('keeps the terms printed on invoices and quotes', async () => {
+    renderApp();
+    const terms = await field('Terms and bank details');
+    fireEvent.change(terms, { target: { value: 'Payment within 15 days.\nHDFC Bank · IFSC HDFC0001234' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Settings saved')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.invoiceTerms).toBe('Payment within 15 days.\nHDFC Bank · IFSC HDFC0001234');
+  });
+
   it('shows problems next to the field, with the same rules as the API, and discards changes', async () => {
     renderApp();
     const tax = await field('Tax ID');

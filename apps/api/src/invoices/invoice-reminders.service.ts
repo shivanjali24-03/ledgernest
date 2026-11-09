@@ -304,6 +304,7 @@ export class InvoiceRemindersService
         region: true,
         postalCode: true,
         baseCurrency: true,
+        invoiceTerms: true,
       },
     });
     const currency = inv.currency ?? org.baseCurrency;
@@ -332,6 +333,7 @@ export class InvoiceRemindersService
           address(inv.contact.billingAddress),
           `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
         ].filter(Boolean),
+        after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
         footer: `${seller} · ${inv.number}`,
         rows: invoiceRows({ ...inv, currency }, digits),
       }),

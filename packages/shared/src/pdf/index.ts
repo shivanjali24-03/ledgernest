@@ -12,6 +12,8 @@ export interface PdfTable {
   subtitle?: string;
   /** More lines under the subtitle on the first page (who it's from and to, dates, tax numbers) */
   info?: string[];
+  /** Text after the table (terms, bank details), wrapped to the page; on a page of its own if it doesn't fit */
+  after?: string[];
   /** Bottom-left of every page */
   footer?: string;
   /** The first row is the header */
@@ -91,6 +93,27 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     rest = rest.slice(n);
   } while (rest.length);
 
+  // Text after the table: wrapped by words to the page, then on the last page if it fits, else a page of its own
+  const wrap = (text: string) => {
+    const out: string[] = [];
+    let cur = '';
+    for (const word of encode(text).split(' ')) {
+      const next = cur ? `${cur} ${word}` : word;
+      if (cur && width(next, 8.5) > pw - margin * 2) {
+        out.push(cur);
+        cur = word;
+      } else cur = next;
+    }
+    out.push(cur);
+    return out;
+  };
+  const after = (table.after ?? []).flatMap((t) => (t.trim() ? wrap(t) : [''])).slice(0, 60);
+  const lastRows = pages[pages.length - 1]!.length;
+  const lastTop = pages.length === 1 ? firstY : top;
+  const room = lastTop - rowH - lastRows * rowH - (margin + 24);
+  const afterOwnPage = after.length > 0 && room < 12 + after.length * 11;
+  if (afterOwnPage) pages.push([]);
+
   const line = (cells: string[], y: number, bold: boolean) => {
     let x = margin;
     let out = '';
@@ -117,13 +140,21 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
       });
       y = firstY;
     }
-    s += line(header, y - 9, true);
-    s += `0.6 G 0.5 w ${margin} ${num(y - rowH + 1)} m ${num(pw - margin)} ${num(y - rowH + 1)} l S\n`;
-    y -= rowH;
-    for (const r of pageRows) {
-      s += line(r, y - 9, false);
+    const last = p === pages.length - 1;
+    if (!(last && afterOwnPage)) {
+      s += line(header, y - 9, true);
+      s += `0.6 G 0.5 w ${margin} ${num(y - rowH + 1)} m ${num(pw - margin)} ${num(y - rowH + 1)} l S\n`;
       y -= rowH;
+      for (const r of pageRows) {
+        s += line(r, y - 9, false);
+        y -= rowH;
+      }
+      y -= 12;
     }
+    if (last)
+      after.forEach((l, k) => {
+        if (l) s += `0 g BT /F1 8.5 Tf ${margin} ${num(y - 9 - k * 11)} Td ${literal(l)} Tj ET\n`;
+      });
     s += `0.4 g BT /F1 7 Tf ${margin} ${margin - 16} Td ${literal(encode(table.footer ?? ''))} Tj ET\n`;
     const pn = encode(`Page ${p + 1} of ${pages.length}`);
     s += `BT /F1 7 Tf ${num(pw - margin - width(pn, 7))} ${margin - 16} Td ${literal(pn)} Tj ET\n`;
