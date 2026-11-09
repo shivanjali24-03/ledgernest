@@ -118,18 +118,23 @@ model Account {
   archivedAt     DateTime? @map("archived_at")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+  /// A foreign-currency account (assets and liabilities only); its lines are in this currency
+  currency       String?   @db.Char(3)
 
-  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization  Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgCurrency   OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
+  currencyLines JournalLine[]         @relation("LineCurrency")
   /// Composite key: a parent always belongs to the same organisation, enforced by the database
-  parent       Account?      @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
-  children     Account[]     @relation("AccountTree")
-  taxOutputs   TaxRate[]     @relation("TaxOutputAccount")
-  taxInputs    TaxRate[]     @relation("TaxInputAccount")
-  lines        JournalLine[]
+  parent        Account?              @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
+  children      Account[]             @relation("AccountTree")
+  taxOutputs    TaxRate[]             @relation("TaxOutputAccount")
+  taxInputs     TaxRate[]             @relation("TaxInputAccount")
+  lines         JournalLine[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, code])
   @@unique([organizationId, systemKey])
+  @@unique([organizationId, id, currency])
   @@index([organizationId, parentId])
   @@map("accounts")
 }
@@ -219,28 +224,37 @@ model JournalEntry {
 
 /// One debit or credit. Amounts are integers in the smallest currency unit.
 model JournalLine {
-  id             String  @id @default(uuid()) @db.Uuid
-  organizationId String  @map("organization_id") @db.Uuid
-  entryId        String  @map("entry_id") @db.Uuid
-  lineNo         Int     @map("line_no")
-  accountId      String  @map("account_id") @db.Uuid
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  entryId        String   @map("entry_id") @db.Uuid
+  lineNo         Int      @map("line_no")
+  accountId      String   @map("account_id") @db.Uuid
   description    String?
-  debit          BigInt  @default(0)
-  credit         BigInt  @default(0)
+  debit          BigInt   @default(0)
+  credit         BigInt   @default(0)
   /// The tax group charged on this line (its amount is then the net value)
-  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  taxGroupId     String?  @map("tax_group_id") @db.Uuid
   /// Whether the amount entered included the tax (kept so the draft can be edited as entered)
-  taxInclusive   Boolean @default(false) @map("tax_inclusive")
+  taxInclusive   Boolean  @default(false) @map("tax_inclusive")
   /// Set on a tax line the system generated: the rate it charges, and the line it was charged on
-  taxRateId      String? @map("tax_rate_id") @db.Uuid
-  taxSourceLine  Int?    @map("tax_source_line")
+  taxRateId      String?  @map("tax_rate_id") @db.Uuid
+  taxSourceLine  Int?     @map("tax_source_line")
+  /// A line on a foreign-currency account: the amount in that currency and the rate it was converted at
+  currency       String?  @db.Char(3)
+  foreignDebit   BigInt   @default(0) @map("foreign_debit")
+  foreignCredit  BigInt   @default(0) @map("foreign_credit")
+  rate           Decimal? @db.Decimal(20, 10)
+  /// Set on an exchange-difference line generated on posting: the line whose settlement it records
+  fxSourceLine   Int?     @map("fx_source_line")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  entry        JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
-  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
-  taxRate      TaxRate?     @relation(fields: [organizationId, taxRateId], references: [organizationId, id], onDelete: NoAction)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entry           JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
+  taxGroup        TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  taxRate         TaxRate?     @relation(fields: [organizationId, taxRateId], references: [organizationId, id], onDelete: NoAction)
+  /// A foreign line's currency must be its account's (the database checks; base lines have no currency)
+  currencyAccount Account?     @relation("LineCurrency", fields: [organizationId, accountId, currency], references: [organizationId, id, currency], onDelete: NoAction)
   /// Composite key: a line can only use an account of its own organisation
-  account      Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+  account         Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([entryId, lineNo])
   @@index([organizationId, accountId])
@@ -455,6 +469,7 @@ model OrganizationCurrency {
 
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   rates        ExchangeRate[]
+  accounts     Account[]
 
   @@id([organizationId, code])
   @@map("organization_currencies")

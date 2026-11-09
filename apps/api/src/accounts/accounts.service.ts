@@ -26,12 +26,12 @@ type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 const refuse = (Ex: typeof ConflictException | typeof BadRequestException, message: string, reason: string, extra: object = {}) =>
   new Ex({ message, details: { reason, ...extra } });
 
-const select = { id: true, code: true, name: true, type: true, subtype: true, description: true, parentId: true, systemKey: true, archivedAt: true } as const;
+const select = { id: true, code: true, name: true, type: true, subtype: true, description: true, parentId: true, systemKey: true, archivedAt: true, currency: true } as const;
 type Row = Prisma.AccountGetPayload<{ select: typeof select }>;
 type Tx = Prisma.TransactionClient;
 
 /** What the audit log records about an account. */
-const snapshot = (a: Partial<Row>) => ({ code: a.code, name: a.name, type: a.type, subtype: a.subtype, parentId: a.parentId, description: a.description });
+const snapshot = (a: Partial<Row>) => ({ code: a.code, name: a.name, type: a.type, subtype: a.subtype, parentId: a.parentId, description: a.description, ...(a.currency && { currency: a.currency }) });
 
 /**
  * The chart of accounts. Writes are serialised per organisation with an advisory lock,
@@ -176,14 +176,24 @@ export class AccountsService {
     }
   }
 
-  async create(input: AccountCreateInput & { parentId: string | null; description: string | null }, ctx: Ctx) {
+  /** A foreign-currency account needs the currency enabled; assets and liabilities only. */
+  private async checkCurrency(tx: Tx, organizationId: string, currency: string | null | undefined, type: string) {
+    if (!currency) return;
+    if (type !== 'asset' && type !== 'liability') throw refuse(BadRequestException, 'Only asset and liability accounts can be in a foreign currency.', 'currency_type', { field: 'currency' });
+    if (!(await tx.organizationCurrency.findUnique({ where: { organizationId_code: { organizationId, code: currency } } }))) {
+      throw refuse(BadRequestException, `Enable ${currency} under Currencies first.`, 'currency_not_enabled', { field: 'currency' });
+    }
+  }
+
+  async create(input: AccountCreateInput & { parentId: string | null; description: string | null; currency?: string | null }, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
     const created = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       await this.assertUnique(tx, organizationId, input);
       if (input.parentId) await this.checkParent(tx, organizationId, input.parentId, input.type, 1);
+      await this.checkCurrency(tx, organizationId, input.currency, input.type);
       const a = await tx.account.create({
-        data: { organizationId, code: input.code, name: input.name, type: input.type, subtype: input.subtype, parentId: input.parentId, description: input.description },
+        data: { organizationId, code: input.code, name: input.name, type: input.type, subtype: input.subtype, parentId: input.parentId, description: input.description, currency: input.currency ?? null },
         select,
       });
       await this.audit.record({ action: 'org.account.create', actorId: ctx.actor.userId, organizationId, entityType: 'account', entityId: a.id, after: snapshot(a), req: ctx.req }, tx);
@@ -213,6 +223,11 @@ export class AccountsService {
         if (await this.usedByTax(tx, organizationId, id)) throw refuse(ConflictException, 'A tax rate posts to this account, so its type can’t change.', 'used_by_tax');
       }
       if (!subtypeBelongsTo(type, subtype)) throw refuse(BadRequestException, 'Choose a sub-type that belongs to this type.', 'subtype');
+      if (changed.includes('currency')) {
+        if (current.systemKey) throw refuse(BadRequestException, 'This is a system account: only its code, name and description can change.', 'system');
+        if (await this.hasEntries(tx, organizationId, [id])) throw refuse(ConflictException, 'An account with entries can’t change currency.', 'has_entries');
+      }
+      if (changed.includes('currency') || changed.includes('type')) await this.checkCurrency(tx, organizationId, wanted.currency === undefined ? current.currency : wanted.currency, type);
 
       await this.assertUnique(tx, organizationId, { code: changed.includes('code') ? wanted.code : undefined, name: changed.includes('name') ? wanted.name : undefined }, id);
 

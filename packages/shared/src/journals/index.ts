@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isoDaySchema } from '../periods/index.js';
+import { rateSchema } from '../currencies/index.js';
 
 /**
  * Journal entries: the heart of double-entry. Every amount is an integer in the currency's
@@ -29,8 +30,22 @@ export const journalLineSchema = z
     taxGroupId: z.uuid().nullable().optional().default(null),
     /** The amount already includes the tax (otherwise the tax is added on top) */
     taxInclusive: z.boolean().optional().default(false),
+    /** A line on a foreign-currency account: its amount is in this currency, and the base amount is worked out */
+    currency: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^[A-Z]{3}$/)
+      .nullable()
+      .optional()
+      .default(null),
+    foreignDebit: amount.default(0),
+    foreignCredit: amount.default(0),
+    /** 1 unit of the currency in the base currency; omitted = the rate on the entry's date */
+    rate: rateSchema.nullable().optional().default(null),
   })
-  .refine((l) => (l.debit > 0) !== (l.credit > 0), { message: 'Each line is either a debit or a credit.', path: ['debit'] })
+  .refine((l) => (l.currency ? (l.foreignDebit > 0) !== (l.foreignCredit > 0) : (l.debit > 0) !== (l.credit > 0)), { message: 'Each line is either a debit or a credit.', path: ['debit'] })
+  .refine((l) => !l.currency || !l.taxGroupId, { message: 'Tax goes on the base-currency line (e.g. the sale), not the foreign one.', path: ['taxGroupId'] })
   .refine((l) => l.taxGroupId !== null || !l.taxInclusive, { message: 'Choose a tax group for a tax-inclusive amount.', path: ['taxInclusive'] });
 export type JournalLineInput = z.input<typeof journalLineSchema>;
 

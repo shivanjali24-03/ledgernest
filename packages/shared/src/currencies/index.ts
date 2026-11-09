@@ -87,5 +87,6 @@ export const currencyCodeSchema = z
 export const currencyAddSchema = z.object({ code: currencyCodeSchema });
 export const rateSetSchema = z.object({ rate: rateSchema });
 export const rateFetchSchema = z.object({ date: isoDaySchema.optional() });
+export const revalueSchema = z.object({ date: isoDaySchema });
 export const rateListQuerySchema = z.object({ from: isoDaySchema.optional(), to: isoDaySchema.optional() });
 export type CurrencyAddInput = z.input<typeof currencyAddSchema>;

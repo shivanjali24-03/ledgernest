@@ -9,11 +9,14 @@ describe('accounts', () => {
 
   it('validates new accounts, tidying the code', () => {
     const r = accountCreateSchema.safeParse({ code: ' 1100.a ', name: ' HDFC current account ', type: 'asset', subtype: 'bank' });
-    expect(r.success && r.data).toEqual({ code: '1100.A', name: 'HDFC current account', type: 'asset', subtype: 'bank', parentId: null, description: null });
+    expect(r.success && r.data).toEqual({ code: '1100.A', name: 'HDFC current account', type: 'asset', subtype: 'bank', parentId: null, description: null, currency: null });
     expect(accountCreateSchema.safeParse({ code: '1100', name: 'X', type: 'asset', subtype: 'payroll' }).success).toBe(false);
     expect(accountCreateSchema.safeParse({ code: '.100', name: 'X', type: 'asset', subtype: 'bank' }).success).toBe(false);
     expect(accountCreateSchema.safeParse({ code: '1100', name: '', type: 'asset', subtype: 'bank' }).success).toBe(false);
     expect(accountCreateSchema.safeParse({ code: '1100', name: 'X', type: 'cash', subtype: 'bank' }).success).toBe(false);
+    // Foreign-currency accounts: assets and liabilities only
+    expect(accountCreateSchema.parse({ code: '1150', name: 'USD account', type: 'asset', subtype: 'bank', currency: 'usd' }).currency).toBe('USD');
+    expect(accountCreateSchema.safeParse({ code: '4100', name: 'X', type: 'income', subtype: 'operating_income', currency: 'USD' }).success).toBe(false);
   });
 
   it('accepts partial updates but not empty ones', () => {

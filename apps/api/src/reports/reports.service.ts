@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { compareCodes, csvCell, formatRate, journalNumber, NORMAL_SIDE, type AccountType, type TaxKind } from '@ledgernest/shared';
+import { compareCodes, csvCell, formatRate, journalNumber, normaliseRate, NORMAL_SIDE, type AccountType, type TaxKind } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
@@ -39,19 +39,19 @@ export class ReportsService {
 
   /** One account's posted lines in a date range, with the balance carried in and a running balance. */
   async ledger(organizationId: string, accountId: string, from: string, to: string) {
-    const account = await this.prisma.account.findFirst({ where: { id: accountId, organizationId }, select: { id: true, code: true, name: true, type: true } });
+    const account = await this.prisma.account.findFirst({ where: { id: accountId, organizationId }, select: { id: true, code: true, name: true, type: true, currency: true } });
     if (!account) throw new NotFoundException('Account not found.');
     const normal = NORMAL_SIDE[account.type as AccountType];
     // Balances are shown on the account's normal side: a positive bank balance is money in the bank
     const signed = (debit: number, credit: number) => (normal === 'debit' ? debit - credit : credit - debit);
 
-    const [opening] = await this.prisma.$queryRaw<{ debit: bigint | null; credit: bigint | null }[]>`
-      SELECT sum(l.debit)::bigint AS debit, sum(l.credit)::bigint AS credit
+    const [opening] = await this.prisma.$queryRaw<{ debit: bigint | null; credit: bigint | null; foreign: bigint | null }[]>`
+      SELECT sum(l.debit)::bigint AS debit, sum(l.credit)::bigint AS credit, sum(l.foreign_debit - l.foreign_credit)::bigint AS foreign
       FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
       WHERE l.organization_id = ${organizationId}::uuid AND l.account_id = ${accountId}::uuid AND e.status = 'posted' AND e.date < ${asDate(from)}::date`;
     // One join in SQL: loading entries per line through the ORM would send every line id as a parameter
-    const lines = await this.prisma.$queryRaw<{ id: string; description: string | null; debit: bigint; credit: bigint; entry_id: string; date: Date; number: number | null; memo: string | null; reference: string | null; year_name: string | null }[]>`
-      SELECT l.id, l.description, l.debit, l.credit, e.id AS entry_id, e.date, e.number, e.memo, e.reference, y.name AS year_name
+    const lines = await this.prisma.$queryRaw<{ id: string; description: string | null; debit: bigint; credit: bigint; foreign_debit: bigint; foreign_credit: bigint; rate: string | null; entry_id: string; date: Date; number: number | null; memo: string | null; reference: string | null; year_name: string | null }[]>`
+      SELECT l.id, l.description, l.debit, l.credit, l.foreign_debit, l.foreign_credit, l.rate::text AS rate, e.id AS entry_id, e.date, e.number, e.memo, e.reference, y.name AS year_name
       FROM journal_lines l
       JOIN journal_entries e ON e.id = l.entry_id
       LEFT JOIN fiscal_years y ON y.id = e.fiscal_year_id
@@ -60,6 +60,9 @@ export class ReportsService {
       ORDER BY e.date, e.number, l.line_no`;
     let balance = signed(Number(opening?.debit ?? 0), Number(opening?.credit ?? 0));
     const openingBalance = balance;
+    // Foreign-currency accounts also run their balance in that currency, on the same normal side
+    let foreignBalance = (normal === 'debit' ? 1 : -1) * Number(opening?.foreign ?? 0);
+    const openingForeign = foreignBalance;
     let debit = 0;
     let credit = 0;
     const rows = lines.map((l) => {
@@ -68,9 +71,22 @@ export class ReportsService {
       debit += d;
       credit += c;
       balance += signed(d, c);
-      return { lineId: l.id, entryId: l.entry_id, number: l.number && l.year_name ? journalNumber(l.year_name, l.number) : null, date: iso(l.date), memo: l.memo, reference: l.reference, description: l.description, debit: d, credit: c, balance };
+      const fd = Number(l.foreign_debit);
+      const fc = Number(l.foreign_credit);
+      foreignBalance += signed(fd, fc);
+      const row = { lineId: l.id, entryId: l.entry_id, number: l.number && l.year_name ? journalNumber(l.year_name, l.number) : null, date: iso(l.date), memo: l.memo, reference: l.reference, description: l.description, debit: d, credit: c, balance };
+      return account.currency ? { ...row, foreignDebit: fd, foreignCredit: fc, rate: l.rate && normaliseRate(l.rate), foreignBalance } : row;
     });
-    return { account: { ...account, normalSide: normal }, from, to, openingBalance, rows, totals: { debit, credit }, closingBalance: balance };
+    return {
+      account: { ...account, normalSide: normal },
+      from,
+      to,
+      openingBalance,
+      rows,
+      totals: { debit, credit },
+      closingBalance: balance,
+      ...(account.currency && { foreign: { currency: account.currency, openingBalance: openingForeign, closingBalance: foreignBalance } }),
+    };
   }
 
   /**
