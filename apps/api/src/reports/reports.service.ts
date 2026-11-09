@@ -512,6 +512,14 @@ export class ReportsService {
       voidEntry: { select: { date: true } },
       allocations: paidBy,
     } as const;
+    // Credit notes take what they credit off invoices; what's left is credit the customer holds
+    const creditedBy = {
+      select: {
+        amount: true,
+        date: true,
+        creditNote: { select: { voidEntry: { select: { date: true } } } },
+      },
+    } as const;
     const live = (v: { date: Date } | null) => !v || v.date > day;
     const docs =
       side === 'receivables'
@@ -522,7 +530,12 @@ export class ReportsService {
                 status: { in: ['issued', 'void'] },
                 issueDate: { lte: day },
               },
-              select: { id: true, issueDate: true, ...common },
+              select: {
+                id: true,
+                issueDate: true,
+                credits: creditedBy,
+                ...common,
+              },
             })
           ).map((d) => ({
             ...d,
@@ -625,9 +638,16 @@ export class ReportsService {
     const totals = { buckets: zero(), total: 0, advance: 0 };
     for (const d of docs) {
       if (!live(d.voidEntry)) continue;
-      const paid = d.allocations
-        .filter((a) => a.payment.date <= day && live(a.payment.voidEntry))
-        .reduce((s, a) => s + Number(a.amount), 0);
+      const credited =
+        'credits' in d
+          ? d.credits
+              .filter((c) => c.date <= day && live(c.creditNote.voidEntry))
+              .reduce((s, c) => s + Number(c.amount), 0)
+          : 0;
+      const paid =
+        d.allocations
+          .filter((a) => a.payment.date <= day && live(a.payment.voidEntry))
+          .reduce((s, a) => s + Number(a.amount), 0) + credited;
       const outstanding = Number(d.total) - paid;
       if (outstanding <= 0) continue;
       const due = iso(d.dueDate);
@@ -651,10 +671,26 @@ export class ReportsService {
         outstanding,
       });
     }
+    const credits =
+      side === 'receivables'
+        ? await this.prisma.creditNote.findMany({
+            where: { organizationId, date: { lte: day } },
+            select: {
+              contactId: true,
+              currency: true,
+              rate: true,
+              total: true,
+              voidEntry: { select: { date: true } },
+              applications: { select: { date: true, amount: true } },
+            },
+          })
+        : [];
     const contacts = await this.prisma.contact.findMany({
       where: {
         organizationId,
-        id: { in: [...new Set(advances.map((a) => a.contactId))] },
+        id: {
+          in: [...new Set([...advances, ...credits].map((a) => a.contactId))],
+        },
       },
       select: { id: true, name: true },
     });
@@ -667,6 +703,23 @@ export class ReportsService {
       );
       r.advance += left;
       const base = inBase(left, a.currency, a.rate);
+      r.baseAdvance += base;
+      totals.advance += base;
+    }
+    for (const n of credits) {
+      if (!live(n.voidEntry)) continue;
+      const left =
+        Number(n.total) -
+        n.applications
+          .filter((a) => a.date <= day)
+          .reduce((s, a) => s + Number(a.amount), 0);
+      if (left <= 0) continue;
+      const r = rowFor(
+        contacts.find((c) => c.id === n.contactId)!,
+        n.currency,
+      );
+      const base = inBase(left, n.currency, n.rate);
+      r.advance += left;
       r.baseAdvance += base;
       totals.advance += base;
     }
