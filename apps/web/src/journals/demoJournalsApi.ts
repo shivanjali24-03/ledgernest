@@ -1,6 +1,7 @@
-import { journalDraftSchema, journalNumber, postingProblem, sniffAttachmentType, todayIn, totals } from '@ledgernest/shared';
+import { enteredLines, expandTax, journalDraftSchema, journalNumber, postingProblem, sniffAttachmentType, todayIn, totals, type EnteredLine } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
-import { createDemoAccountsApi, sampleId } from '../accounts/demoAccountsApi';
+import { createDemoAccountsApi, demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { demoTaxState } from '../taxes/demoTaxesApi';
 import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
 import type { JournalEntry, JournalsApi, JournalSummary } from './types';
 
@@ -10,8 +11,24 @@ import type { JournalEntry, JournalsApi, JournalSummary } from './types';
  * active accounts, final posted entries, reversals linked both ways.
  */
 
-const KEY = 'ledgernest.demo.journals';
-type StoredLine = { accountId: string; description: string | null; debit: number; credit: number };
+// v2: lines carry tax (the sample sale's GST is generated from the GST 18% group)
+const KEY = 'ledgernest.demo.journals.v2';
+type StoredLine = { accountId: string; description: string | null; debit: number; credit: number; taxGroupId?: string | null; taxInclusive?: boolean; taxRateId?: string | null; taxSourceLine?: number | null };
+
+/** The demo company's lines as stored, from the lines as entered: the same tax rules as the API. */
+function expandDemo(lines: readonly EnteredLine[]) {
+  const tax = demoTaxState();
+  const accounts = demoAccountRows();
+  const { rows, tooSmall } = expandTax(
+    lines,
+    (id) => {
+      const g = tax.groups.find((x) => x.id === id);
+      return g?.rateIds.map((rid) => tax.rates.find((r) => r.id === rid)!).map((r) => ({ id: r.id, ratePpm: r.ratePpm, outputAccountId: r.outputAccountId, inputAccountId: r.inputAccountId }));
+    },
+    (id) => accounts.find((a) => a.id === id)?.type,
+  );
+  return { rows: rows.map(({ lineNo: _n, ...r }) => r), tooSmall };
+}
 type Stored = {
   id: string;
   number: number | null;
@@ -61,9 +78,10 @@ function seed(yearName: string): Stored[] {
   const sale = entry(thisMonth(2), 'Invoice INV-1042 · Kumar Logistics', 'INV-1042', [
     ['1300', 11800000, 0],
     ['4100.01', 0, 10000000, 'Software development, sprint 14'],
-    ['2200.01', 0, 900000, 'CGST 9%'],
-    ['2200.02', 0, 900000, 'SGST 9%'],
   ]);
+  // GST 18% within Maharashtra: CGST 9% + SGST 9%, generated like the API does
+  const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%');
+  if (gst18) sale.lines = expandDemo(sale.lines.map((l, i) => ({ ...l, taxGroupId: i === 1 ? gst18.id : null }))).rows;
   const rent = entry(thisMonth(3), 'Office rent', 'RENT-NOV', [
     ['5300', 8500000, 0],
     ['1100.01', 0, 8500000],
@@ -137,6 +155,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     const accs = new Map((await accounts.list(true)).map((x) => [x.id, x]));
     const reversedBy = all.find((x) => x.reversalOfId === e.id);
     const reversalOf = all.find((x) => x.id === e.reversalOfId);
+    const tax = demoTaxState();
     return {
       id: e.id,
       number: label(e),
@@ -152,7 +171,21 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
       reversedBy: reversedBy ? { id: reversedBy.id, number: label(reversedBy) } : null,
       lines: e.lines.map((l, i) => {
         const a = accs.get(l.accountId);
-        return { id: `${e.id}-${i}`, lineNo: i + 1, accountId: l.accountId, account: { code: a?.code ?? '?', name: a?.name ?? '?', type: a?.type ?? 'asset' }, description: l.description, debit: l.debit, credit: l.credit };
+        const group = l.taxGroupId ? tax.groups.find((g) => g.id === l.taxGroupId) : undefined;
+        const rate = l.taxRateId ? tax.rates.find((r) => r.id === l.taxRateId) : undefined;
+        return {
+          id: `${e.id}-${i}`,
+          lineNo: i + 1,
+          accountId: l.accountId,
+          account: { code: a?.code ?? '?', name: a?.name ?? '?', type: a?.type ?? 'asset' },
+          description: l.description,
+          debit: l.debit,
+          credit: l.credit,
+          taxGroup: group ? { id: group.id, name: group.name } : null,
+          taxInclusive: !!l.taxInclusive,
+          taxRate: rate ? { id: rate.id, name: rate.name, kind: rate.kind, ratePpm: rate.ratePpm } : null,
+          taxSourceLine: l.taxSourceLine ?? null,
+        };
       }),
       totals: totals(e.lines),
       attachments: e.attachments.map(({ data: _d, ...rest }) => rest),
@@ -170,6 +203,20 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     const r = journalDraftSchema.safeParse(input);
     if (!r.success) throw new ApiError('validation', 400, undefined, undefined, { fields: r.error.issues });
     return r.data;
+  };
+  /** Checks the lines' accounts and tax groups, then generates the tax lines. */
+  const linesFor = async (lines: EnteredLine[]): Promise<StoredLine[]> => {
+    await checkAccounts(lines);
+    const tax = demoTaxState();
+    for (const l of lines) {
+      if (!l.taxGroupId) continue;
+      const g = tax.groups.find((x) => x.id === l.taxGroupId);
+      if (!g) throw refuse(400, 'tax_group_not_found');
+      if (g.archivedAt) throw refuse(400, 'tax_group_archived');
+    }
+    const { rows, tooSmall } = expandDemo(lines);
+    if (tooSmall !== null) throw refuse(400, 'tax_too_small', { line: tooSmall });
+    return rows;
   };
   const postInto = async (all: Stored[], e: Stored) => {
     const problem = postingProblem(e.lines);
@@ -229,9 +276,9 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
       wait(async () => {
         guard('journals.create');
         const d = parse(input);
-        await checkAccounts(d.lines);
+        const lines = await linesFor(d.lines);
         const all = await load();
-        const e: Stored = { id: crypto.randomUUID(), number: null, yearName: null, date: d.date, memo: d.memo, reference: d.reference, status: 'draft', reversalOfId: null, postedAt: null, createdAt: new Date().toISOString(), lines: d.lines, attachments: [] };
+        const e: Stored = { id: crypto.randomUUID(), number: null, yearName: null, date: d.date, memo: d.memo, reference: d.reference, status: 'draft', reversalOfId: null, postedAt: null, createdAt: new Date().toISOString(), lines, attachments: [] };
         all.push(e);
         save(all);
         return view(all, e);
@@ -243,8 +290,8 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         const all = await load();
         const e = find(all, id);
         if (e.status !== 'draft') throw refuse(409, 'posted');
-        await checkAccounts(d.lines);
-        Object.assign(e, { date: d.date, memo: d.memo, reference: d.reference, lines: d.lines });
+        const lines = await linesFor(d.lines);
+        Object.assign(e, { date: d.date, memo: d.memo, reference: d.reference, lines });
         save(all);
         return view(all, e);
       }),
@@ -261,6 +308,8 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         const all = await load();
         const e = find(all, id);
         if (e.status !== 'draft') throw refuse(409, 'posted');
+        // Tax lines are recomputed from the rates' current accounts, as the API does
+        if (e.lines.some((l) => l.taxGroupId || l.taxRateId)) e.lines = await linesFor(enteredLines(e.lines.map((l, i) => ({ ...l, lineNo: i + 1, taxGroupId: l.taxGroupId ?? null, taxInclusive: !!l.taxInclusive, taxRateId: l.taxRateId ?? null, taxSourceLine: l.taxSourceLine ?? null }))));
         await postInto(all, e);
         save(all);
         return view(all, e);

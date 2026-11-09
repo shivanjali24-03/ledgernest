@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { Fragment, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, postingProblem, sniffAttachmentType, toMinor, todayIn, totals, type AttachmentType } from '@ledgernest/shared';
+import { ACCOUNT_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, enteredLines, postingProblem, sniffAttachmentType, splitTax, toMinor, todayIn, totals, type AttachmentType } from '@ledgernest/shared';
 import { ArrowLeft, CheckCircle2, Download, Paperclip, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
+import { useTaxesApi } from '../../taxes/useTaxesApi';
 import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { inputClass, TextField } from '../../ui/Field';
@@ -23,8 +24,8 @@ import { journalErrorMessage } from '../errors';
 import type { JournalEntry, JournalsApi } from '../types';
 import { useJournalsApi } from '../useJournalsApi';
 
-type Line = { key: string; accountId: string; description: string; debit: string; credit: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '' });
+type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '', taxGroupId: '', inclusive: false });
 
 function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -69,7 +70,15 @@ function Attachments({ entry, api, onChange }: { entry: JournalEntry; api: Journ
         <h2 className="flex-1 font-semibold">{t('journals.attachments.title')}</h2>
         {canAdd && (
           <>
-            <input ref={input} type="file" accept={ATTACHMENT_TYPES.join(',')} className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => e.target.files?.[0] && add.mutate(e.target.files[0], { onSettled: () => (e.target.value = '') })} />
+            <input
+              ref={input}
+              type="file"
+              accept={ATTACHMENT_TYPES.join(',')}
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden
+              onChange={(e) => e.target.files?.[0] && add.mutate(e.target.files[0], { onSettled: () => (e.target.value = '') })}
+            />
             <Button size="sm" variant="secondary" icon={<Paperclip className="size-4" />} loading={add.isPending} onClick={() => input.current?.click()}>
               {t('journals.attachments.add')}
             </Button>
@@ -86,8 +95,19 @@ function Attachments({ entry, api, onChange }: { entry: JournalEntry; api: Journ
                 {a.fileName}
               </span>
               <span className="text-xs text-ink-400">{Math.ceil(a.size / 1024)} KB</span>
-              <Button size="sm" variant="ghost" aria-label={t('journals.attachments.download', { name: a.fileName })} icon={<Download className="size-4" />} onClick={async () => { const f = await api.download(entry.id, a.id); saveBlob(f.blob, f.filename); }} />
-              {entry.status === 'draft' && canAdd && <Button size="sm" variant="ghost" aria-label={t('journals.attachments.remove', { name: a.fileName })} icon={<X className="size-4" />} onClick={() => remove.mutate(a.id)} />}
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={t('journals.attachments.download', { name: a.fileName })}
+                icon={<Download className="size-4" />}
+                onClick={async () => {
+                  const f = await api.download(entry.id, a.id);
+                  saveBlob(f.blob, f.filename);
+                }}
+              />
+              {entry.status === 'draft' && canAdd && (
+                <Button size="sm" variant="ghost" aria-label={t('journals.attachments.remove', { name: a.fileName })} icon={<X className="size-4" />} onClick={() => remove.mutate(a.id)} />
+              )}
             </li>
           ))}
         </ul>
@@ -164,7 +184,7 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
             </thead>
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
               {entry.lines.map((l) => (
-                <tr key={l.id}>
+                <tr key={l.id} className={clsx(l.taxRate && 'text-ink-500')}>
                   <td className={clsx('px-5 py-2', l.credit > 0 && 'ps-10')}>
                     <span dir="auto">
                       <code className="me-2 text-xs text-ink-400" dir="ltr">
@@ -172,9 +192,14 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
                       </code>
                       {l.account.name}
                     </span>
-                    {l.description && (
+                    {l.taxGroup && (
+                      <span className="ms-2 inline-block">
+                        <Pill tone="brand">{l.taxInclusive ? t('journals.tax.groupInclusive', { name: l.taxGroup.name }) : l.taxGroup.name}</Pill>
+                      </span>
+                    )}
+                    {(l.description || l.taxRate) && (
                       <span className="block text-xs text-ink-400" dir="auto">
-                        {l.description}
+                        {l.taxRate ? t('journals.tax.lineFor', { name: l.taxRate.name, n: l.taxSourceLine }) : l.description}
                       </span>
                     )}
                   </td>
@@ -269,23 +294,72 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const canEdit = session.permissions.has('journals.create');
 
   const fmt = (minor: number) => (minor ? money.plain(minor) : '');
+  const taxesApi = useTaxesApi();
+  const taxes = useQuery({ queryKey: ['taxes', session.organizationId, session.role ?? session.customRoleName], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
   const [date, setDate] = useState(entry?.date ?? todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [reference, setReference] = useState(entry?.reference ?? '');
   const [memo, setMemo] = useState(entry?.memo ?? '');
   const [lines, setLines] = useState<Line[]>(
-    entry?.lines.length ? entry.lines.map((l) => ({ key: l.id, accountId: l.accountId, description: l.description ?? '', debit: fmt(l.debit), credit: fmt(l.credit) })) : [blankLine(), blankLine()],
+    entry?.lines.length
+      ? // Generated tax lines are left out: they're made again from each line's tax group
+        enteredLines(entry.lines.map((l) => ({ ...l, taxGroupId: l.taxGroup?.id ?? null, taxRateId: l.taxRate?.id ?? null }))).map((l) => ({
+          key: crypto.randomUUID(),
+          accountId: l.accountId,
+          description: l.description ?? '',
+          debit: fmt(l.debit),
+          credit: fmt(l.credit),
+          taxGroupId: l.taxGroupId ?? '',
+          inclusive: !!l.taxInclusive,
+        }))
+      : [blankLine(), blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
 
-  const parsed = lines.map((l) => ({ ...l, d: toMinor(l.debit, money.digits), c: toMinor(l.credit, money.digits) }));
+  const taxGroups = taxes.data?.groups ?? [];
+  const groupById = new Map(taxGroups.map((g) => [g.id, g]));
+  // Each line's tax as the API will generate it: the net amount, then one amount per rate
+  const parsed = lines.map((l) => {
+    const d = toMinor(l.debit, money.digits);
+    const c = toMinor(l.credit, money.digits);
+    const group = l.taxGroupId ? groupById.get(l.taxGroupId) : undefined;
+    const amount = (d ?? 0) || (c ?? 0);
+    const split =
+      group && amount
+        ? splitTax(
+            amount,
+            l.inclusive,
+            group.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })),
+          )
+        : null;
+    const taxLines = split ? split.taxes.map((x, i) => ({ name: group!.rates[i]!.name, amount: x.amount })).filter((x) => x.amount) : [];
+    return { ...l, d, c, net: split?.net ?? amount, taxLines, onDebit: !!d };
+  });
   const filled = parsed.filter((l) => l.accountId || l.d || l.c || l.description);
   const invalid = parsed.some((l) => l.d === null || l.c === null);
-  const t2 = totals(filled.map((l) => ({ debit: l.d ?? 0, credit: l.c ?? 0 })));
-  const problem = invalid ? 'invalid' : postingProblem(filled.map((l) => ({ debit: l.d ?? 0, credit: l.c ?? 0 })));
+  // Totals count the tax lines too
+  const asStored = filled.flatMap((l) => [
+    { debit: l.onDebit ? l.net : 0, credit: l.onDebit ? 0 : l.net },
+    ...l.taxLines.map((x) => ({ debit: l.onDebit ? x.amount : 0, credit: l.onDebit ? 0 : x.amount })),
+  ]);
+  const t2 = totals(asStored);
+  const problem = invalid ? 'invalid' : postingProblem(filled.length < 2 ? filled.map((l) => ({ debit: l.d ?? 0, credit: l.c ?? 0 })) : asStored);
+  const hasTaxes = taxGroups.length > 0 || lines.some((l) => l.taxGroupId);
   const missingAccount = filled.some((l) => !l.accountId);
 
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
-  const payload = () => ({ date, reference, memo, lines: filled.map((l) => ({ accountId: l.accountId, description: l.description, debit: l.d ?? 0, credit: l.c ?? 0 })) });
+  const payload = () => ({
+    date,
+    reference,
+    memo,
+    lines: filled.map((l) => ({
+      accountId: l.accountId,
+      description: l.description,
+      debit: l.d ?? 0,
+      credit: l.c ?? 0,
+      taxGroupId: l.taxGroupId || null,
+      taxInclusive: !!l.taxGroupId && l.inclusive,
+    })),
+  });
 
   const groups = useMemo(() => {
     const list = (accounts.data ?? []).filter((a) => !a.archived || lines.some((l) => l.accountId === a.id));
@@ -333,7 +407,7 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
 
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className={clsx('w-full text-sm', hasTaxes ? 'min-w-[940px]' : 'min-w-[760px]')}>
             <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>
                 <th scope="col" className="w-[38%] px-3 py-2 text-start font-semibold">
@@ -342,6 +416,11 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
                 <th scope="col" className="px-3 py-2 text-start font-semibold">
                   {t('journals.fields.description')}
                 </th>
+                {hasTaxes && (
+                  <th scope="col" className="w-44 px-3 py-2 text-start font-semibold">
+                    {t('journals.tax.column')}
+                  </th>
+                )}
                 <th scope="col" className="w-36 px-3 py-2 text-end font-semibold">
                   {t('journals.fields.debit')}
                 </th>
@@ -355,57 +434,143 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
             </thead>
             <tbody>
               {parsed.map((l, i) => (
-                <tr key={l.key} className="align-top">
-                  <td className="px-3 py-1.5">
-                    <select aria-label={t('journals.lineAccount', { n: i + 1 })} value={l.accountId} disabled={!canEdit} onChange={(e) => set(l.key, { accountId: e.target.value })} className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}>
-                      <option value="">{t('journals.pickAccount')}</option>
-                      {groups.map((g) =>
-                        g.accounts.length ? (
-                          <optgroup key={g.type} label={t(`accounts.typesPlural.${g.type}`)}>
-                            {g.accounts.map((a) => (
-                              <option key={a.id} value={a.id} disabled={a.archived}>
-                                {a.code} · {a.name}
+                <Fragment key={l.key}>
+                  <tr className="align-top">
+                    <td className="px-3 py-1.5">
+                      <select
+                        aria-label={t('journals.lineAccount', { n: i + 1 })}
+                        value={l.accountId}
+                        disabled={!canEdit}
+                        onChange={(e) => set(l.key, { accountId: e.target.value })}
+                        className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}
+                      >
+                        <option value="">{t('journals.pickAccount')}</option>
+                        {groups.map((g) =>
+                          g.accounts.length ? (
+                            <optgroup key={g.type} label={t(`accounts.typesPlural.${g.type}`)}>
+                              {g.accounts.map((a) => (
+                                <option key={a.id} value={a.id} disabled={a.archived}>
+                                  {a.code} · {a.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ) : null,
+                        )}
+                      </select>
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <input
+                        aria-label={t('journals.lineDescription', { n: i + 1 })}
+                        value={l.description}
+                        disabled={!canEdit}
+                        onChange={(e) => set(l.key, { description: e.target.value })}
+                        dir="auto"
+                        className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}
+                      />
+                    </td>
+                    {hasTaxes && (
+                      <td className="px-3 py-1.5">
+                        <select
+                          aria-label={t('journals.tax.lineTax', { n: i + 1 })}
+                          value={l.taxGroupId}
+                          disabled={!canEdit}
+                          onChange={(e) => set(l.key, { taxGroupId: e.target.value, inclusive: e.target.value ? l.inclusive : false })}
+                          className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}
+                        >
+                          <option value="">{t('journals.tax.none')}</option>
+                          {taxGroups
+                            .filter((g) => !g.archived || g.id === l.taxGroupId)
+                            .map((g) => (
+                              <option key={g.id} value={g.id} disabled={g.archived}>
+                                {g.name}
                               </option>
                             ))}
-                          </optgroup>
-                        ) : null,
-                      )}
-                    </select>
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <input aria-label={t('journals.lineDescription', { n: i + 1 })} value={l.description} disabled={!canEdit} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')} />
-                  </td>
-                  {(['debit', 'credit'] as const).map((side) => {
-                    const value = side === 'debit' ? l.d : l.c;
-                    return (
-                      <td key={side} className="px-3 py-1.5">
-                        <input
-                          aria-label={t(side === 'debit' ? 'journals.lineDebit' : 'journals.lineCredit', { n: i + 1 })}
-                          inputMode="decimal"
-                          dir="ltr"
-                          value={l[side]}
-                          disabled={!canEdit}
-                          aria-invalid={value === null || undefined}
-                          onChange={(e) => set(l.key, side === 'debit' ? { debit: e.target.value, credit: e.target.value ? '' : l.credit } : { credit: e.target.value, debit: e.target.value ? '' : l.debit })}
-                          onBlur={() => value && set(l.key, { [side]: money.plain(value) })}
-                          className={clsx(inputClass, 'h-9 text-end font-mono tabular-nums', value === null ? 'border-expense' : 'border-ink-200 dark:border-ink-700')}
-                        />
+                        </select>
+                        {l.taxGroupId && (
+                          <label className="mt-1 flex items-center gap-1.5 text-xs text-ink-500">
+                            <input
+                              type="checkbox"
+                              checked={l.inclusive}
+                              disabled={!canEdit}
+                              onChange={(e) => set(l.key, { inclusive: e.target.checked })}
+                              className="size-3.5 rounded accent-brand-600"
+                            />
+                            {t('journals.tax.inclusive')}
+                          </label>
+                        )}
                       </td>
-                    );
-                  })}
-                  <td className="py-1.5 pe-2">
-                    {canEdit && lines.length > 2 && (
-                      <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} aria-label={t('journals.removeLineN', { n: i + 1 })} className="grid size-9 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-expense dark:hover:bg-ink-800">
-                        <X className="size-4" />
-                      </button>
                     )}
-                  </td>
-                </tr>
+                    {(['debit', 'credit'] as const).map((side) => {
+                      const value = side === 'debit' ? l.d : l.c;
+                      return (
+                        <td key={side} className="px-3 py-1.5">
+                          <input
+                            aria-label={t(side === 'debit' ? 'journals.lineDebit' : 'journals.lineCredit', { n: i + 1 })}
+                            inputMode="decimal"
+                            dir="ltr"
+                            value={l[side]}
+                            disabled={!canEdit}
+                            aria-invalid={value === null || undefined}
+                            onChange={(e) =>
+                              set(l.key, side === 'debit' ? { debit: e.target.value, credit: e.target.value ? '' : l.credit } : { credit: e.target.value, debit: e.target.value ? '' : l.debit })
+                            }
+                            onBlur={() => value && set(l.key, { [side]: money.plain(value) })}
+                            className={clsx(inputClass, 'h-9 text-end font-mono tabular-nums', value === null ? 'border-expense' : 'border-ink-200 dark:border-ink-700')}
+                          />
+                        </td>
+                      );
+                    })}
+                    <td className="py-1.5 pe-2">
+                      {canEdit && lines.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
+                          aria-label={t('journals.removeLineN', { n: i + 1 })}
+                          className="grid size-9 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-expense dark:hover:bg-ink-800"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                  {l.taxLines.length > 0 && (
+                    <>
+                      {l.inclusive && (
+                        <tr className="text-xs text-ink-500">
+                          <td className="px-3 pb-1 ps-6" colSpan={3}>
+                            {t('journals.tax.net')}
+                          </td>
+                          <td className="px-3 pb-1 text-end font-mono tabular-nums" dir="ltr">
+                            {l.onDebit ? money.plain(l.net) : ''}
+                          </td>
+                          <td className="px-3 pb-1 text-end font-mono tabular-nums" dir="ltr">
+                            {l.onDebit ? '' : money.plain(l.net)}
+                          </td>
+                          <td />
+                        </tr>
+                      )}
+                      {l.taxLines.map((x) => (
+                        <tr key={x.name} className="text-xs text-ink-500" data-testid="tax-preview">
+                          <td className="px-3 pb-1 ps-6" colSpan={3}>
+                            ↳ {x.name}
+                          </td>
+                          <td className="px-3 pb-1 text-end font-mono tabular-nums" dir="ltr">
+                            {l.onDebit ? money.plain(x.amount) : ''}
+                          </td>
+                          <td className="px-3 pb-1 text-end font-mono tabular-nums" dir="ltr">
+                            {l.onDebit ? '' : money.plain(x.amount)}
+                          </td>
+                          <td />
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                </Fragment>
               ))}
             </tbody>
             <tfoot className="border-t-2 border-ink-200 dark:border-ink-700">
               <tr>
-                <td className="px-3 py-2" colSpan={2}>
+                <td className="px-3 py-2" colSpan={hasTaxes ? 3 : 2}>
                   {canEdit && (
                     <Button type="button" size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setLines((ls) => [...ls, blankLine()])}>
                       {t('journals.addLine')}
@@ -441,13 +606,28 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
             {t('journals.saveDraft')}
           </Button>
           {canPost && (
-            <Button type="button" icon={<Send className="size-4 rtl:-scale-x-100" />} disabled={!!problem || missingAccount} loading={save.isPending && save.variables === true} onClick={() => save.mutate(true)}>
+            <Button
+              type="button"
+              icon={<Send className="size-4 rtl:-scale-x-100" />}
+              disabled={!!problem || missingAccount}
+              loading={save.isPending && save.variables === true}
+              onClick={() => save.mutate(true)}
+            >
               {t('journals.post')}
             </Button>
           )}
         </div>
       )}
-      <ConfirmDialog open={deleting} title={t('journals.deleteTitle')} body={t('journals.deleteBody')} confirmLabel={t('journals.deleteDraft')} tone="danger" busy={remove.isPending} onConfirm={() => remove.mutate()} onClose={() => setDeleting(false)} />
+      <ConfirmDialog
+        open={deleting}
+        title={t('journals.deleteTitle')}
+        body={t('journals.deleteBody')}
+        confirmLabel={t('journals.deleteDraft')}
+        tone="danger"
+        busy={remove.isPending}
+        onConfirm={() => remove.mutate()}
+        onClose={() => setDeleting(false)}
+      />
     </form>
   );
 }
@@ -464,7 +644,7 @@ export default function JournalEditor() {
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !isNew });
   const entry = query.data;
 
-  const title = isNew ? t('journals.newTitle') : entry?.number ?? t('journals.draftTitle');
+  const title = isNew ? t('journals.newTitle') : (entry?.number ?? t('journals.draftTitle'));
   return (
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>

@@ -14,5 +14,7 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     ledger: (accountId, from, to) => r(`/ledger?accountId=${accountId}&from=${from}&to=${to}`),
     exportTrialBalance: (asOf) => file(`/trial-balance/export?asOf=${asOf}`, `trial-balance-${asOf}.csv`),
     exportLedger: (accountId, from, to) => file(`/ledger/export?accountId=${accountId}&from=${from}&to=${to}`, `ledger-${from}-${to}.csv`),
+    taxSummary: (from, to) => r(`/tax-summary?from=${from}&to=${to}`),
+    exportTaxSummary: (from, to) => file(`/tax-summary/export?from=${from}&to=${to}`, `tax-summary-${from}-${to}.csv`),
   };
 }

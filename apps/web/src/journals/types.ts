@@ -8,6 +8,13 @@ export interface JournalLine {
   description: string | null;
   debit: number;
   credit: number;
+  /** The tax group charged on this line (its amount is then the net value) */
+  taxGroup: { id: string; name: string } | null;
+  taxInclusive: boolean;
+  /** Set on a tax line the system generated */
+  taxRate: { id: string; name: string; kind: string; ratePpm: number } | null;
+  /** The line a generated tax line was charged on */
+  taxSourceLine: number | null;
 }
 
 export interface JournalRef {

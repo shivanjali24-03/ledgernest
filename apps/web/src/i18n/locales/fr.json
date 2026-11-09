@@ -1081,7 +1081,19 @@
       "type_mismatch": "Ce fichier n'est pas du type annoncé.",
       "too_large": "Joignez un fichier de moins de 2 Mo.",
       "invalid_amount": "Vérifiez les montants signalés.",
-      "missing_account": "Choisissez un compte pour chaque ligne."
+      "missing_account": "Choisissez un compte pour chaque ligne.",
+      "tax_group_archived": "Une ligne utilise un groupe de taxes archivé.",
+      "tax_group_not_found": "Une ligne utilise un groupe de taxes qui n’existe plus.",
+      "tax_too_small": "Ce montant est trop faible pour porter la taxe."
+    },
+    "tax": {
+      "column": "Taxe",
+      "lineTax": "Taxe de la ligne {{n}}",
+      "none": "Pas de taxe",
+      "inclusive": "Le montant inclut la taxe",
+      "net": "Montant net",
+      "groupInclusive": "{{name}}, taxe incluse",
+      "lineFor": "{{name}} sur la ligne {{n}}"
     }
   },
   "reports": {
@@ -1101,7 +1113,26 @@
     "balance": "Solde",
     "opening": "Solde d'ouverture au {{date}}",
     "noLines": "Aucune écriture validée sur ces dates.",
-    "closing": "Solde de clôture au {{date}}"
+    "closing": "Solde de clôture au {{date}}",
+    "tax": {
+      "title": "Récapitulatif des taxes",
+      "hint": "Écritures validées uniquement. Les avoirs et les contrepassations sont compensés.",
+      "empty": "Aucune écriture taxée sur cette période",
+      "emptyBody": "Choisissez un groupe de taxes sur une ligne d’écriture : il apparaîtra ici une fois validé.",
+      "output": "Taxe sur les ventes",
+      "input": "Crédit de taxe",
+      "payable": "Taxe nette à payer",
+      "credit": "Crédit net reporté",
+      "byGroup": "Par groupe de taxes",
+      "group": "Groupe de taxes",
+      "salesValue": "Valeur des ventes",
+      "salesTax": "Taxe sur les ventes",
+      "purchaseValue": "Valeur des achats",
+      "purchaseTax": "Taxe sur les achats",
+      "byRate": "Par taxe",
+      "rate": "Taxe",
+      "net": "Net"
+    }
   },
   "taxes": {
     "title": "Taxes",

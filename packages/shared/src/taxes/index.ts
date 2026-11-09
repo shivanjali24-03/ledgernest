@@ -296,3 +296,82 @@ export const UTGST_ACCOUNT_NAMES: Record<'utgst_input' | 'utgst_output', { en: s
   utgst_input: { en: 'UTGST input', hi: 'यूटीजीएसटी इनपुट', mr: 'यूटीजीएसटी इनपुट', es: 'UTGST soportado', fr: 'UTGST déductible', de: 'UTGST-Vorsteuer', ar: 'ضريبة UTGST على المدخلات' },
   utgst_output: { en: 'UTGST output', hi: 'यूटीजीएसटी आउटपुट', mr: 'यूटीजीएसटी आउटपुट', es: 'UTGST repercutido', fr: 'UTGST collectée', de: 'UTGST-Umsatzsteuer', ar: 'ضريبة UTGST على المخرجات' },
 };
+
+// ---------- lines as stored ----------
+
+export interface TaxRateAccounts {
+  id: string;
+  ratePpm: number;
+  outputAccountId: string;
+  inputAccountId: string | null;
+}
+
+export interface EnteredLine {
+  accountId: string;
+  description: string | null;
+  debit: number;
+  credit: number;
+  taxGroupId?: string | null;
+  taxInclusive?: boolean;
+}
+
+export interface ExpandedLine {
+  lineNo: number;
+  accountId: string;
+  description: string | null;
+  debit: number;
+  credit: number;
+  taxGroupId: string | null;
+  taxInclusive: boolean;
+  /** Set on a generated tax line: the rate it charges and the line it was charged on */
+  taxRateId: string | null;
+  taxSourceLine: number | null;
+}
+
+/**
+ * The lines an entry stores, from the lines as entered. A taxed line keeps its net amount and is followed by
+ * one line per tax component on the same side, posted to the output account for sales and the input account
+ * for purchases (see taxRole). The API, the demo and the editor's preview all use this, so they always agree.
+ * Returns the 1-based number of an entered line whose amount is too small to carry its tax, if any.
+ */
+export function expandTax(
+  lines: readonly EnteredLine[],
+  ratesOf: (groupId: string) => readonly TaxRateAccounts[] | undefined,
+  accountType: (accountId: string) => string | undefined,
+): { rows: ExpandedLine[]; tooSmall: number | null } {
+  const rows: ExpandedLine[] = [];
+  let tooSmall: number | null = null;
+  lines.forEach((l, index) => {
+    const lineNo = rows.length + 1;
+    const rates = l.taxGroupId ? ratesOf(l.taxGroupId) : undefined;
+    if (!l.taxGroupId || !rates) {
+      rows.push({ lineNo, accountId: l.accountId, description: l.description, debit: l.debit, credit: l.credit, taxGroupId: l.taxGroupId ?? null, taxInclusive: false, taxRateId: null, taxSourceLine: null });
+      return;
+    }
+    const onDebit = l.debit > 0;
+    const split = splitTax(onDebit ? l.debit : l.credit, !!l.taxInclusive, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })));
+    if (split.net <= 0 && tooSmall === null) tooSmall = index + 1;
+    const side = (amount: number) => (onDebit ? { debit: amount, credit: 0 } : { debit: 0, credit: amount });
+    rows.push({ lineNo, accountId: l.accountId, description: l.description, ...side(split.net), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxInclusive, taxRateId: null, taxSourceLine: null });
+    const role = taxRole(accountType(l.accountId) ?? 'asset');
+    split.taxes.forEach((t, i) => {
+      if (!t.amount) return; // a 0% slab records the taxable value on the line and adds no tax line
+      const rate = rates[i]!;
+      const accountId = role === 'input' ? (rate.inputAccountId ?? rate.outputAccountId) : rate.outputAccountId;
+      rows.push({ lineNo: rows.length + 1, accountId, description: null, ...side(t.amount), taxGroupId: null, taxInclusive: false, taxRateId: rate.id, taxSourceLine: lineNo });
+    });
+  });
+  return { rows, tooSmall };
+}
+
+/** The lines as they were entered, back from the stored ones: generated tax lines dropped, inclusive amounts made gross again. */
+export function enteredLines<L extends { lineNo: number; accountId: string; description: string | null; debit: number; credit: number; taxGroupId: string | null; taxInclusive: boolean; taxRateId: string | null; taxSourceLine: number | null }>(
+  lines: readonly L[],
+): EnteredLine[] {
+  return lines
+    .filter((l) => !l.taxRateId)
+    .map((l) => {
+      const tax = l.taxInclusive ? lines.filter((t) => t.taxSourceLine === l.lineNo).reduce((s, t) => s + t.debit + t.credit, 0) : 0;
+      return { accountId: l.accountId, description: l.description, debit: l.debit ? l.debit + tax : 0, credit: l.credit ? l.credit + tax : 0, taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive };
+    });
+}

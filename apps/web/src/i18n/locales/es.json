@@ -1081,7 +1081,19 @@
       "type_mismatch": "Ese archivo no es del tipo que indica.",
       "too_large": "Adjunta un archivo de menos de 2 MB.",
       "invalid_amount": "Revisa los importes marcados.",
-      "missing_account": "Elige una cuenta para cada línea."
+      "missing_account": "Elige una cuenta para cada línea.",
+      "tax_group_archived": "Una línea usa un grupo de impuestos archivado.",
+      "tax_group_not_found": "Una línea usa un grupo de impuestos que ya no existe.",
+      "tax_too_small": "Este importe es demasiado pequeño para llevar el impuesto."
+    },
+    "tax": {
+      "column": "Impuesto",
+      "lineTax": "Impuesto de la línea {{n}}",
+      "none": "Sin impuesto",
+      "inclusive": "El importe incluye el impuesto",
+      "net": "Importe neto",
+      "groupInclusive": "{{name}}, impuesto incluido",
+      "lineFor": "{{name}} de la línea {{n}}"
     }
   },
   "reports": {
@@ -1101,7 +1113,26 @@
     "balance": "Saldo",
     "opening": "Saldo inicial al {{date}}",
     "noLines": "No hay asientos contabilizados en estas fechas.",
-    "closing": "Saldo final al {{date}}"
+    "closing": "Saldo final al {{date}}",
+    "tax": {
+      "title": "Resumen de impuestos",
+      "hint": "Solo asientos contabilizados. Las notas de crédito y las reversiones se compensan.",
+      "empty": "No hay asientos con impuestos en este periodo",
+      "emptyBody": "Elige un grupo de impuestos en una línea del asiento y aparecerá aquí al contabilizarlo.",
+      "output": "Impuesto en ventas",
+      "input": "Crédito fiscal",
+      "payable": "Impuesto neto a pagar",
+      "credit": "Crédito neto a compensar",
+      "byGroup": "Por grupo de impuestos",
+      "group": "Grupo de impuestos",
+      "salesValue": "Valor de ventas",
+      "salesTax": "Impuesto en ventas",
+      "purchaseValue": "Valor de compras",
+      "purchaseTax": "Impuesto en compras",
+      "byRate": "Por impuesto",
+      "rate": "Impuesto",
+      "net": "Neto"
+    }
   },
   "taxes": {
     "title": "Impuestos",
