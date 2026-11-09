@@ -10,6 +10,8 @@ import {
   csvToRows,
   nextReportRun,
   parseCsv,
+  PDF_TYPE,
+  pdfTableBytes,
   reportPeriod,
   XLSX_TYPE,
   xlsxBytes,
@@ -371,11 +373,26 @@ export class ScheduledReportsService
               ]),
             ),
           }
-        : {
-            fileName: `${base}.csv`,
-            contentType: 'text/csv; charset=utf-8',
-            data: Buffer.from(csv, 'utf8'),
-          };
+        : s.format === 'pdf'
+          ? {
+              fileName: `${base}.pdf`,
+              contentType: PDF_TYPE,
+              data: Buffer.from(
+                pdfTableBytes({
+                  title: TITLES[kind],
+                  subtitle: `${s.organization.name} · ${period}`,
+                  footer: `${s.name} · LedgerNest`,
+                  rows: parseCsv(csv.replace(/^\uFEFF/, ''), ',').map((r) =>
+                    r.map((c) => c.replace(/^'(?=[=+\-@])/, '')),
+                  ),
+                }),
+              ),
+            }
+          : {
+              fileName: `${base}.csv`,
+              contentType: 'text/csv; charset=utf-8',
+              data: Buffer.from(csv, 'utf8'),
+            };
     const members = await this.prisma.membership.findMany({
       where: { organizationId, userId: { in: s.recipients } },
       select: {

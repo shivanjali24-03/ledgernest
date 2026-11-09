@@ -3127,7 +3127,8 @@
     },
     "formats": {
       "xlsx": "Excel (XLSX)",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF"
     },
     "periodHint": {
       "weekly": "Chaque semaine couvre les sept jours avant le jour où il est fait.",

@@ -1,4 +1,4 @@
-import { csvToRows, nextReportRun, parseCsv, reportPeriod, scheduledReportSchema, scheduledReportUpdateSchema, XLSX_TYPE, xlsxBytes, type ScheduledReportKind } from '@ledgernest/shared';
+import { csvToRows, nextReportRun, parseCsv, PDF_TYPE, pdfTableBytes, reportPeriod, scheduledReportSchema, scheduledReportUpdateSchema, XLSX_TYPE, xlsxBytes, type ScheduledReportKind } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoReportsApi } from '../reports/demoReportsApi';
 import type { ReportRun, ScheduledReport, ScheduledReportsApi } from './types';
@@ -83,7 +83,7 @@ export function createDemoScheduledReportsApi(canExport: () => boolean): Schedul
         const reports = createDemoReportsApi(() => true);
         const file = x.report === 'profit_and_loss' ? await reports.exportProfitAndLoss(from, to, 'none') : x.report === 'balance_sheet' ? await reports.exportBalanceSheet(to, null) : x.report === 'trial_balance' ? await reports.exportTrialBalance(to) : await reports.exportAging(x.report === 'receivables_aging' ? 'receivables' : 'payables', to);
         const base = `${TITLES[x.report].toLowerCase().replace(/ /g, '-')}-${x.report === 'profit_and_loss' ? `${from}-${to}` : to}`;
-        const run = { id: crypto.randomUUID(), scheduleId: id, periodFrom: from, periodTo: to, fileName: `${base}.${x.format}`, contentType: x.format === 'xlsx' ? XLSX_TYPE : 'text/csv', emailedTo: [], error: null, createdAt: new Date().toISOString(), text: await file.blob.text() };
+        const run = { id: crypto.randomUUID(), scheduleId: id, periodFrom: from, periodTo: to, fileName: `${base}.${x.format}`, contentType: x.format === 'xlsx' ? XLSX_TYPE : x.format === 'pdf' ? PDF_TYPE : 'text/csv', emailedTo: [], error: null, createdAt: new Date().toISOString(), text: await file.blob.text() };
         const s = load();
         s.runs.push(run);
         find(s, id).lastRunAt = run.createdAt;
@@ -102,7 +102,15 @@ export function createDemoScheduledReportsApi(canExport: () => boolean): Schedul
       wait(() => {
         const r = load().runs.find((x) => x.id === runId);
         if (!r) throw new ApiError('not_found', 404);
-        const blob = r.contentType === XLSX_TYPE ? new Blob([xlsxBytes([{ name: 'Report', rows: csvToRows(r.text, parseCsv) }]).buffer as ArrayBuffer], { type: XLSX_TYPE }) : new Blob([r.text], { type: 'text/csv;charset=utf-8' });
+        const schedule = load().schedules.find((x) => x.id === r.scheduleId);
+        const title = schedule ? TITLES[schedule.report] : 'Report';
+        const rows = () => parseCsv(r.text.replace(/^\uFEFF/, ''), ',').map((row) => row.map((c) => c.replace(/^'(?=[=+\-@])/, '')));
+        const blob =
+          r.contentType === XLSX_TYPE
+            ? new Blob([xlsxBytes([{ name: 'Report', rows: csvToRows(r.text, parseCsv) }]).buffer as ArrayBuffer], { type: XLSX_TYPE })
+            : r.contentType === PDF_TYPE
+              ? new Blob([pdfTableBytes({ title, subtitle: schedule?.report === 'profit_and_loss' ? `${r.periodFrom} to ${r.periodTo}` : `as of ${r.periodTo}`, footer: `${schedule?.name ?? ''} · LedgerNest`, rows: rows() }).buffer as ArrayBuffer], { type: PDF_TYPE })
+              : new Blob([r.text], { type: 'text/csv;charset=utf-8' });
         return { blob, filename: r.fileName };
       }),
   };

@@ -3127,7 +3127,8 @@
     },
     "formats": {
       "xlsx": "Excel (XLSX)",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF"
     },
     "periodHint": {
       "weekly": "يغطي كل أسبوع الأيام السبعة قبل يوم إعداده.",

@@ -1,15 +1,15 @@
 import { z } from 'zod';
 
 /**
- * Reports that arrive by themselves: a report, how often (weekly on a weekday, or monthly on a day), Excel or
- * CSV, and which members it goes to. Each run covers the period just ended: the last seven days, or last
+ * Reports that arrive by themselves: a report, how often (weekly on a weekday, or monthly on a day), Excel, CSV or
+ * PDF, and which members it goes to. Each run covers the period just ended: the last seven days, or last
  * calendar month; as-of reports (balance sheet, trial balance, aging) are as of that period's last day.
  */
 export const SCHEDULED_REPORTS = ['profit_and_loss', 'balance_sheet', 'trial_balance', 'receivables_aging', 'payables_aging'] as const;
 export type ScheduledReportKind = (typeof SCHEDULED_REPORTS)[number];
 export const REPORT_FREQUENCIES = ['weekly', 'monthly'] as const;
 export type ReportFrequency = (typeof REPORT_FREQUENCIES)[number];
-export const REPORT_FORMATS = ['xlsx', 'csv'] as const;
+export const REPORT_FORMATS = ['xlsx', 'csv', 'pdf'] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 /** Runs go out at this hour, UTC (about mid-morning in India, early morning in Europe) */
 export const REPORT_RUN_HOUR_UTC = 4;

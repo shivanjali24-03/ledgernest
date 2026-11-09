@@ -15,6 +15,7 @@ type Delivery = {
   periodFrom: string;
   periodTo: string;
   fileName: string;
+  contentType: string;
   emailedTo: string[];
   error: string | null;
 };
@@ -207,6 +208,40 @@ describe('Scheduled reports (e2e)', () => {
           .body as Delivery[]
       ).length,
     ).toBe(1);
+  });
+
+  it('makes a PDF of the report when asked', async () => {
+    const s = (
+      await as()
+        .post('/scheduled-reports', {
+          name: 'Trial balance PDF',
+          report: 'trial_balance',
+          frequency: 'monthly',
+          day: 1,
+          format: 'pdf',
+          recipients: [users.owner!.id],
+        })
+        .expect(201)
+    ).body as Schedule;
+    const d = (await as().post(`/scheduled-reports/${s.id}/run`).expect(200))
+      .body as Delivery;
+    expect(d.fileName).toMatch(/^trial-balance-\d{4}-\d{2}-\d{2}\.pdf$/);
+    expect(d.contentType).toBe('application/pdf');
+    const file = await as()
+      .get(`/scheduled-reports/deliveries/${d.id}/file`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(file.headers['content-type']).toContain('application/pdf');
+    const pdf = (file.body as Buffer).toString('latin1');
+    expect(pdf.startsWith('%PDF-1.4')).toBe(true);
+    expect(pdf).toContain('(Trial balance) Tj');
+    expect(pdf.trimEnd().endsWith('%%EOF')).toBe(true);
+    await as().delete(`/scheduled-reports/${s.id}`).expect(204);
   });
 
   it('is picked up when due, once, and skipped while paused', async () => {

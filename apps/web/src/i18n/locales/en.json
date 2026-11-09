@@ -3127,7 +3127,8 @@
     },
     "formats": {
       "xlsx": "Excel (XLSX)",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF"
     },
     "periodHint": {
       "weekly": "Each week covers the seven days before the day it’s made.",
