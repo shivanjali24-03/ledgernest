@@ -37,6 +37,8 @@ type Stored = {
   voidNumber: string | null;
   lines: StoredLine[];
   payments?: { id: string; number: string; date: string; amount: number }[];
+  credits?: { id: string; number: string; date: string; amount: number }[];
+  creditNotes?: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -112,6 +114,24 @@ export async function demoAdjustPaid(invoiceId: string, delta: number, payment?:
   save(rows);
 }
 
+/** A credit note (or its void) puts credit on an invoice or takes it off: keyed by the note */
+export async function demoAdjustCredit(invoiceId: string, credit: { id: string; number: string; date: string; amount: number }, remove = false) {
+  const rows = await load();
+  const i = rows.find((r) => r.id === invoiceId);
+  if (!i) return;
+  i.amountPaid += remove ? -credit.amount : credit.amount;
+  i.credits = remove ? (i.credits ?? []).filter((c) => !(c.id === credit.id && c.date === credit.date && c.amount === credit.amount)) : [...(i.credits ?? []), credit];
+  save(rows);
+}
+/** Records a credit note raised against an invoice, or its new status */
+export async function demoTrackCreditNote(invoiceId: string, note: { id: string; number: string; status: 'issued' | 'void'; total: number }) {
+  const rows = await load();
+  const i = rows.find((r) => r.id === invoiceId);
+  if (!i) return;
+  i.creditNotes = [...(i.creditNotes ?? []).filter((n) => n.id !== note.id), note];
+  save(rows);
+}
+
 export const resetDemoInvoices = () => {
   try {
     localStorage.removeItem(KEY);
@@ -170,13 +190,16 @@ function view(i: Stored): Invoice {
     taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
     journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
     payments: i.payments ?? [],
+    credits: i.credits ?? [],
+    creditNotes: i.creditNotes ?? [],
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
       const acc = accounts.find((x) => x.id === l.accountId);
       const g = groups[n];
       return {
-        id: `${i.id}-${n}`,
+        // A UUID like the API's, stable per line: the invoice's with the line's index in its last digits
+        id: `${i.id.slice(0, 32)}${n.toString(16).padStart(4, '0')}`,
         lineNo: n + 1,
         description: l.description,
         quantity: l.quantity,
