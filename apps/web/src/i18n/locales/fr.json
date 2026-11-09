@@ -594,7 +594,9 @@
       "org_tax_setup_gst": "GST configurée",
       "platform_gst_slab_create": "Tranche de GST ajoutée",
       "platform_gst_slab_update": "Tranche de GST modifiée",
-      "platform_gst_slab_delete": "Tranche de GST supprimée"
+      "platform_gst_slab_delete": "Tranche de GST supprimée",
+      "org_fiscal_year_close": "Exercice clôturé",
+      "org_fiscal_year_reopen": "Exercice rouvert"
     },
     "entities": {
       "membership": "Membre",
@@ -676,7 +678,9 @@
       "rates": "Taux",
       "groups": "Groupes",
       "utgst": "UTGST",
-      "state": "État"
+      "state": "État",
+      "profit": "Résultat transféré",
+      "closingEntry": "Écriture de clôture"
     },
     "details": {
       "when": "Quand",
@@ -984,7 +988,24 @@
       "already_closed": "Ce mois est déjà clôturé.",
       "already_open": "Ce mois est déjà ouvert.",
       "earlier_open": "Clôturez d'abord les mois précédents : les mois se clôturent dans l'ordre.",
-      "later_closed": "Rouvrez d'abord les mois suivants : les mois se rouvrent dans l'ordre inverse."
+      "later_closed": "Rouvrez d'abord les mois suivants : les mois se rouvrent dans l'ordre inverse.",
+      "no_retained_earnings": "Le compte Report à nouveau est absent : l’exercice ne peut pas être clôturé."
+    },
+    "yearEnd": {
+      "close": "Clôturer l’exercice",
+      "closeTitle": "Clôturer {{name}} ?",
+      "closeBody": "{{month}} est clôturé, et une écriture de clôture à son dernier jour remet à zéro chaque compte de produits et de charges contre le Report à nouveau.",
+      "profit": "Un bénéfice de {{amount}} passe en Report à nouveau.",
+      "loss": "Une perte de {{amount}} passe en Report à nouveau.",
+      "nothing": "Aucun solde de produits ou de charges à transférer.",
+      "working": "Calcul du résultat…",
+      "reopenTitle": "Rouvrir {{name}} ?",
+      "reopenBody": "{{month}} est rouvert et l’écriture de clôture {{number}} est contrepassée, pour corriger l’exercice et le clôturer à nouveau.",
+      "closedWith": "Clôturé par",
+      "done": {
+        "close": "{{name}} clôturé",
+        "reopen": "{{name}} rouvert"
+      }
     }
   },
   "journals": {
@@ -1084,7 +1105,8 @@
       "missing_account": "Choisissez un compte pour chaque ligne.",
       "tax_group_archived": "Une ligne utilise un groupe de taxes archivé.",
       "tax_group_not_found": "Une ligne utilise un groupe de taxes qui n’existe plus.",
-      "tax_too_small": "Ce montant est trop faible pour porter la taxe."
+      "tax_too_small": "Ce montant est trop faible pour porter la taxe.",
+      "closing_entry": "Cette écriture a clôturé un exercice. Rouvrez plutôt le dernier mois de l’exercice, ce qui la contrepasse."
     },
     "tax": {
       "column": "Taxe",

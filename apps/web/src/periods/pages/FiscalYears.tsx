@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarPlus, CalendarRange, Building2, History, Lock, LockOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { useIntlLocale } from '../../i18n';
+import { useMoney } from '../../lib/useMoney';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
@@ -12,13 +14,14 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import { periodErrorMessage } from '../errors';
-import type { FiscalPeriod } from '../types';
+import type { FiscalPeriod, FiscalYear } from '../types';
 import { usePeriodsApi } from '../usePeriodsApi';
 
 const monthLabel = (startDate: string, locale: string) => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${startDate}T00:00:00Z`));
 const dayLabel = (d: string, locale: string) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${d}T00:00:00Z`));
 
-type Acting = { action: 'close' | 'reopen'; period: FiscalPeriod };
+/** `year` is set when the period is its year's last month: closing it closes the year */
+type Acting = { action: 'close' | 'reopen'; period: FiscalPeriod; year?: FiscalYear };
 
 /** Financial years and their months: add years, close months in order, reopen the latest when a correction is needed. */
 export default function FiscalYears() {
@@ -33,12 +36,18 @@ export default function FiscalYears() {
   const key = ['periods', session.organizationId, session.role ?? session.customRoleName] as const;
   const query = useQuery({ queryKey: key, queryFn: () => api!.list(), enabled: !!api });
   const [acting, setActing] = useState<Acting | null>(null);
+  const money = useMoney();
+  const closingYear = acting?.action === 'close' ? acting.year : undefined;
+  const preview = useQuery({ queryKey: [...key, 'yearEnd', closingYear?.id], queryFn: () => api!.yearEnd(closingYear!.id), enabled: !!api && !!closingYear });
 
   const done = (message: string) => {
     toast(message);
     void queryClient.invalidateQueries({ queryKey: key });
     // The settings page shows the fiscal-year-start lock
     void queryClient.invalidateQueries({ queryKey: ['settings'] });
+    // Closing or reopening a year posts an entry
+    void queryClient.invalidateQueries({ queryKey: ['journals'] });
+    void queryClient.invalidateQueries({ queryKey: ['reports'] });
   };
   const addYear = useMutation({
     mutationFn: (startYear: number) => api!.createYear(startYear),
@@ -47,9 +56,9 @@ export default function FiscalYears() {
   });
   const act = useMutation({
     mutationFn: ({ action, period, reason }: Acting & { reason?: string }) => (action === 'close' ? api!.close(period.id, reason) : api!.reopen(period.id, reason)),
-    onSuccess: (_r, { action, period }) => {
+    onSuccess: (_r, { action, period, year }) => {
       setActing(null);
-      done(t(`periods.done.${action}`, { month: monthLabel(period.startDate, locale) }));
+      done(year ? t(`periods.yearEnd.done.${action}`, { name: year.name }) : t(`periods.done.${action}`, { month: monthLabel(period.startDate, locale) }));
     },
     onError: (e) => {
       setActing(null);
@@ -115,6 +124,14 @@ export default function FiscalYears() {
                 </span>
                 {y.current && <Pill tone="brand">{t('periods.current')}</Pill>}
                 {y.closed && <Pill>{t('periods.yearClosed')}</Pill>}
+                {y.closingEntry && (
+                  <span className="ms-auto text-sm text-ink-500">
+                    {t('periods.yearEnd.closedWith')}{' '}
+                    <Link to={`/journals/${y.closingEntry.id}`} className="font-mono font-semibold text-brand-700 hover:underline dark:text-brand-300" dir="ltr">
+                      {y.closingEntry.number}
+                    </Link>
+                  </span>
+                )}
               </header>
               <ul className="grid gap-px bg-ink-100 sm:grid-cols-2 lg:grid-cols-3 dark:bg-ink-800">
                 {y.periods.map((p) => (
@@ -129,12 +146,12 @@ export default function FiscalYears() {
                       </span>
                     </span>
                     {p.canClose && canClose && (
-                      <Button size="sm" variant="secondary" onClick={() => setActing({ action: 'close', period: p })}>
-                        {t('periods.close')}
+                      <Button size="sm" variant={p.number === y.periods.length ? 'primary' : 'secondary'} onClick={() => setActing({ action: 'close', period: p, year: p.number === y.periods.length ? y : undefined })}>
+                        {p.number === y.periods.length ? t('periods.yearEnd.close') : t('periods.close')}
                       </Button>
                     )}
                     {p.canReopen && canReopen && (
-                      <Button size="sm" variant="ghost" onClick={() => setActing({ action: 'reopen', period: p })}>
+                      <Button size="sm" variant="ghost" onClick={() => setActing({ action: 'reopen', period: p, year: p.number === y.periods.length && y.closingEntry ? y : undefined })}>
                         {t('periods.reopen')}
                       </Button>
                     )}
@@ -148,9 +165,32 @@ export default function FiscalYears() {
 
       <ConfirmDialog
         open={!!acting}
-        title={acting ? t(`periods.confirm.${acting.action}Title`, { month: monthLabel(acting.period.startDate, locale) }) : ''}
-        body={acting ? t(`periods.confirm.${acting.action}Body`) : ''}
-        confirmLabel={acting ? t(`periods.${acting.action}`) : ''}
+        title={
+          acting?.year ? t(`periods.yearEnd.${acting.action}Title`, { name: acting.year.name }) : acting ? t(`periods.confirm.${acting.action}Title`, { month: monthLabel(acting.period.startDate, locale) }) : ''
+        }
+        body={
+          !acting ? (
+            ''
+          ) : acting.year && acting.action === 'reopen' ? (
+            t('periods.yearEnd.reopenBody', { number: acting.year.closingEntry?.number ?? '', month: monthLabel(acting.period.startDate, locale) })
+          ) : acting.year ? (
+            <span className="block space-y-2">
+              <span className="block">{t('periods.yearEnd.closeBody', { month: monthLabel(acting.period.startDate, locale) })}</span>
+              <span role="status" className="block font-medium text-ink-800 dark:text-ink-100">
+                {!preview.data
+                  ? t('periods.yearEnd.working')
+                  : preview.data.profit > 0
+                    ? t('periods.yearEnd.profit', { amount: money.format(preview.data.profit) })
+                    : preview.data.profit < 0
+                      ? t('periods.yearEnd.loss', { amount: money.format(-preview.data.profit) })
+                      : t('periods.yearEnd.nothing')}
+              </span>
+            </span>
+          ) : (
+            t(`periods.confirm.${acting.action}Body`)
+          )
+        }
+        confirmLabel={acting?.year && acting.action === 'close' ? t('periods.yearEnd.close') : acting ? t(`periods.${acting.action}`) : ''}
         tone={acting?.action === 'reopen' ? 'danger' : 'primary'}
         askReason
         busy={act.isPending}

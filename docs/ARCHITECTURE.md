@@ -175,6 +175,7 @@ How a request is checked:
 - A journal entry must have at least two lines, and debits must equal credits.
 - Posted entries are immutable: corrections are made with a reversing entry.
 - Periods can be locked; nothing posts into a locked period.
+- **Year-end close.** Closing a year's last month closes the year: first a closing entry on its last day brings every income and expense account to zero against Retained earnings, so a year can never be closed without its result moved. Reopening that month reverses the closing entry (posted entries are never edited), and the closing entry can't be reversed any other way.
 
 ## Taxes
 

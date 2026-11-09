@@ -594,7 +594,9 @@
       "org_tax_setup_gst": "GST set up",
       "platform_gst_slab_create": "GST slab added",
       "platform_gst_slab_update": "GST slab edited",
-      "platform_gst_slab_delete": "GST slab deleted"
+      "platform_gst_slab_delete": "GST slab deleted",
+      "org_fiscal_year_close": "Financial year closed",
+      "org_fiscal_year_reopen": "Financial year reopened"
     },
     "entities": {
       "membership": "Member",
@@ -676,7 +678,9 @@
       "rates": "Rates",
       "groups": "Groups",
       "utgst": "UTGST",
-      "state": "State"
+      "state": "State",
+      "profit": "Profit moved",
+      "closingEntry": "Closing entry"
     },
     "details": {
       "when": "When",
@@ -984,7 +988,24 @@
       "already_closed": "This month is already closed.",
       "already_open": "This month is already open.",
       "earlier_open": "Close earlier months first: months close in order.",
-      "later_closed": "Reopen later months first: months reopen in reverse order."
+      "later_closed": "Reopen later months first: months reopen in reverse order.",
+      "no_retained_earnings": "The Retained earnings account is missing, so the year can’t close."
+    },
+    "yearEnd": {
+      "close": "Close year",
+      "closeTitle": "Close {{name}}?",
+      "closeBody": "{{month}} closes, and a year-end entry on its last day brings every income and expense account to zero against Retained earnings.",
+      "profit": "A profit of {{amount}} moves to Retained earnings.",
+      "loss": "A loss of {{amount}} moves to Retained earnings.",
+      "nothing": "There are no income or expense balances to move.",
+      "working": "Working out the profit…",
+      "reopenTitle": "Reopen {{name}}?",
+      "reopenBody": "{{month}} reopens, and the year-end entry {{number}} is reversed so the year can be corrected and closed again.",
+      "closedWith": "Closed with",
+      "done": {
+        "close": "{{name}} closed",
+        "reopen": "{{name}} reopened"
+      }
     }
   },
   "journals": {
@@ -1084,7 +1105,8 @@
       "missing_account": "Choose an account for every line.",
       "tax_group_archived": "A line uses an archived tax group.",
       "tax_group_not_found": "A line uses a tax group that no longer exists.",
-      "tax_too_small": "This amount is too small to carry the tax."
+      "tax_too_small": "This amount is too small to carry the tax.",
+      "closing_entry": "This entry closed a financial year. Reopen the year’s last month instead, which reverses it."
     },
     "tax": {
       "column": "Tax",

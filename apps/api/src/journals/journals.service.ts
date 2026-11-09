@@ -4,7 +4,7 @@ import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import { PeriodsService } from '../periods/periods.service.js';
+import { dayStatus } from '../periods/day-status.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -243,14 +243,14 @@ export class JournalsService {
 
   /** Checks the date is in an open period and returns its financial year. */
   private async openYearFor(tx: Tx, organizationId: string, day: string) {
-    const status = await PeriodsService.dayStatus(tx, organizationId, day);
+    const status = await dayStatus(tx, organizationId, day);
     if (status === 'no_period') throw refuse(ConflictException, 'There is no financial year for this date. Add it under Financial years.', 'no_period');
     if (status === 'closed') throw refuse(ConflictException, 'This date is in a closed month.', 'period_closed');
     return tx.fiscalYear.findFirstOrThrow({ where: { organizationId, startDate: { lte: asDate(day) }, endDate: { gte: asDate(day) } }, select: { id: true, name: true } });
   }
 
   /** Gives a draft its number and makes it final. */
-  private async postInTx(tx: Tx, organizationId: string, id: string, actorId: string, { recomputeTax = true } = {}) {
+  private async postInTx(tx: Tx, organizationId: string, id: string, actorId: string, { recomputeTax = true, system = false } = {}) {
     let e = await this.find(tx, organizationId, id);
     if (e.status !== 'draft') throw refuse(ConflictException, 'This entry is already posted.', 'posted');
     // Tax lines are recomputed from the current rates' accounts, so a draft saved before an account changed posts correctly
@@ -261,7 +261,8 @@ export class JournalsService {
     const lines = e.lines.map((l) => ({ debit: Number(l.debit), credit: Number(l.credit) }));
     const problem = postingProblem(lines);
     if (problem) throw refuse(BadRequestException, problem === 'unbalanced' ? 'Debits and credits must be equal.' : problem === 'zero' ? 'The entry has no amounts.' : 'An entry needs at least two lines.', problem, totals(lines));
-    await this.checkAccounts(tx, organizationId, e.lines.map((l) => ({ accountId: l.accountId, description: null, debit: 0, credit: 0 })));
+    // System entries (the year-end close) may touch archived accounts: their balances still have to move
+    if (!system) await this.checkAccounts(tx, organizationId, e.lines.map((l) => ({ accountId: l.accountId, description: null, debit: 0, credit: 0 })));
     const year = await this.openYearFor(tx, organizationId, iso(e.date));
     const last = await tx.journalEntry.aggregate({ where: { organizationId, fiscalYearId: year.id }, _max: { number: true } });
     const number = (last._max.number ?? 0) + 1;
@@ -284,29 +285,53 @@ export class JournalsService {
     const organizationId = ctx.tenant.organizationId;
     const reversalId = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
-      const e = await this.find(tx, organizationId, id);
-      if (e.status !== 'posted') throw refuse(ConflictException, 'Only posted entries can be reversed. Edit or delete the draft instead.', 'not_posted');
-      if (e.reversedBy) throw refuse(ConflictException, 'This entry has already been reversed.', 'already_reversed');
-      if (e.reversalOf) throw refuse(ConflictException, 'A reversal can’t itself be reversed. Post a new entry instead.', 'is_reversal');
-      // Only the reversal's own date must be open: reversing on a later date is how a closed month is corrected
-      const date = input.date ?? iso(e.date);
-      const original = label(e)!;
-      const r = await tx.journalEntry.create({
-        data: { organizationId, date: asDate(date), memo: input.memo ?? `Reversal of ${original}`, reference: e.reference, reversalOfId: id, createdById: ctx.actor.userId },
-        select: { id: true },
-      });
-      // An exact mirror, tax lines included, even if a tax group has since been archived
-      await this.writeRows(
-        tx,
-        organizationId,
-        r.id,
-        e.lines.map((l) => ({ lineNo: l.lineNo, accountId: l.accountId, description: l.description, debit: Number(l.credit), credit: Number(l.debit), taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive, taxRateId: l.taxRateId, taxSourceLine: l.taxSourceLine })),
-      );
-      const posted = await this.postInTx(tx, organizationId, r.id, ctx.actor.userId, { recomputeTax: false });
-      await this.audit.record({ action: 'org.journal.reverse', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, after: { original, reversal: posted.number, date }, req: ctx.req }, tx);
+      if (await tx.fiscalYear.findFirst({ where: { organizationId, closingEntryId: id }, select: { id: true } })) {
+        throw refuse(ConflictException, 'This entry closed a financial year. Reopen the year’s last month instead, which reverses it.', 'closing_entry');
+      }
+      const r = await this.reverseInTx(tx, organizationId, id, ctx.actor.userId, input);
+      await this.audit.record({ action: 'org.journal.reverse', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, after: { original: r.original, reversal: r.number, date: r.date }, req: ctx.req }, tx);
       return r.id;
     });
     return this.get(organizationId, reversalId);
+  }
+
+  /** The reversal itself, inside the caller's transaction (the year-end reopen uses it too). */
+  async reverseInTx(tx: Tx, organizationId: string, id: string, actorId: string, input: { date?: string; memo: string | null }, { system = false } = {}) {
+    await this.lock(tx, organizationId); // re-entrant: the same transaction may already hold it
+    const e = await this.find(tx, organizationId, id);
+    if (e.status !== 'posted') throw refuse(ConflictException, 'Only posted entries can be reversed. Edit or delete the draft instead.', 'not_posted');
+    if (e.reversedBy) throw refuse(ConflictException, 'This entry has already been reversed.', 'already_reversed');
+    if (e.reversalOf) throw refuse(ConflictException, 'A reversal can’t itself be reversed. Post a new entry instead.', 'is_reversal');
+    // Only the reversal's own date must be open: reversing on a later date is how a closed month is corrected
+    const date = input.date ?? iso(e.date);
+    const original = label(e)!;
+    const r = await tx.journalEntry.create({
+      data: { organizationId, date: asDate(date), memo: input.memo ?? `Reversal of ${original}`, reference: e.reference, reversalOfId: id, createdById: actorId },
+      select: { id: true },
+    });
+    // An exact mirror, tax lines included, even if a tax group has since been archived
+    await this.writeRows(
+      tx,
+      organizationId,
+      r.id,
+      e.lines.map((l) => ({ lineNo: l.lineNo, accountId: l.accountId, description: l.description, debit: Number(l.credit), credit: Number(l.debit), taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive, taxRateId: l.taxRateId, taxSourceLine: l.taxSourceLine })),
+    );
+    const posted = await this.postInTx(tx, organizationId, r.id, actorId, { recomputeTax: false, system });
+    return { id: r.id, number: posted.number, original, date };
+  }
+
+  /** Posts an entry the system writes itself (the year-end close), inside the caller's transaction. */
+  async postSystemEntry(tx: Tx, organizationId: string, input: { date: string; memo: string; lines: { accountId: string; debit: number; credit: number; description?: string | null }[] }, actorId: string) {
+    await this.lock(tx, organizationId);
+    const e = await tx.journalEntry.create({ data: { organizationId, date: asDate(input.date), memo: input.memo, createdById: actorId }, select: { id: true } });
+    await this.writeRows(
+      tx,
+      organizationId,
+      e.id,
+      input.lines.map((l, i) => ({ lineNo: i + 1, accountId: l.accountId, description: l.description ?? null, debit: l.debit, credit: l.credit, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null })),
+    );
+    const posted = await this.postInTx(tx, organizationId, e.id, actorId, { recomputeTax: false, system: true });
+    return { id: e.id, number: posted.number };
   }
 
   // ---------- attachments ----------

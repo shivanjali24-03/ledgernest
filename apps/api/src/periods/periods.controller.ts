@@ -25,6 +25,13 @@ export class PeriodsController {
     return this.periods.list(tenant.organizationId);
   }
 
+  @Get(':id/year-end')
+  @RequirePermission('accounts.view')
+  @ApiOkResponse({ description: 'The profit (negative: loss) that closing this year would move to retained earnings, and how many accounts it touches' })
+  yearEnd(@Param('id', id) yearId: string, @CurrentTenant() tenant: Tenant) {
+    return this.periods.yearEndPreview(tenant.organizationId, yearId);
+  }
+
   @Post()
   @RequirePermission('periods.close')
   create(@Body(new ZodValidationPipe(fiscalYearCreateSchema)) body: FiscalYearCreateInput, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
