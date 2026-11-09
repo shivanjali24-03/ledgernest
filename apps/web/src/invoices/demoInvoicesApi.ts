@@ -36,6 +36,7 @@ type Stored = {
   voidEntryId: string | null;
   voidNumber: string | null;
   lines: StoredLine[];
+  payments?: { id: string; number: string; date: string; amount: number }[];
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -97,6 +98,20 @@ function save(rows: Stored[]) {
     /* private mode */
   }
 }
+/** The demo's invoices as the screens see them, for receipts */
+export async function demoInvoiceViews(): Promise<Invoice[]> {
+  return (await load()).map(view);
+}
+/** A receipt (or its void) changes what an invoice has had paid */
+export async function demoAdjustPaid(invoiceId: string, delta: number, payment?: { id: string; number: string; date: string; amount: number }) {
+  const rows = await load();
+  const i = rows.find((r) => r.id === invoiceId);
+  if (!i) return;
+  i.amountPaid += delta;
+  i.payments = payment ? [...(i.payments ?? []), payment] : (i.payments ?? []).filter((p) => p.amount !== -delta || delta > 0);
+  save(rows);
+}
+
 export const resetDemoInvoices = () => {
   try {
     localStorage.removeItem(KEY);
@@ -154,6 +169,7 @@ function view(i: Stored): Invoice {
     balance: a.total - i.amountPaid,
     taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
     journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
+    payments: i.payments ?? [],
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;

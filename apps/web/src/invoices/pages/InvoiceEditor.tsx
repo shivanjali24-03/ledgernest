@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, Plus, Printer, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, HandCoins, Plus, Printer, Send, Trash2, X } from 'lucide-react';
+import ReceiptDialog from '../../payments/ReceiptDialog';
+import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../../contacts/useContactsApi';
@@ -313,6 +315,9 @@ export default function InvoiceEditor() {
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !isNew });
   const invoice = query.data;
   const [voiding, setVoiding] = useState(false);
+  const [receiving, setReceiving] = useState(false);
+  const paymentsApi = usePaymentsApi();
+  const canReceive = session.permissions.has('payments.manage');
   const voidIt = useMutation({
     mutationFn: (reason?: string) => api!.void(invoice!.id, { reason }),
     onSuccess: (i) => {
@@ -347,6 +352,11 @@ export default function InvoiceEditor() {
                 {invoice.status !== 'draft' && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
+                  <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
+                    {t('payments.recordPayment')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canManage && invoice.amountPaid === 0 && (
@@ -384,6 +394,15 @@ export default function InvoiceEditor() {
                   </Link>
                 </>
               )}
+              {invoice!.payments.map((p) => (
+                <span key={p.id}>
+                  {' · '}
+                  {t('payments.paidBy')}{' '}
+                  <span className="font-mono" dir="ltr">
+                    {p.number}
+                  </span>
+                </span>
+              ))}
               {invoice!.voidEntry && (
                 <>
                   {' · '}
@@ -397,6 +416,18 @@ export default function InvoiceEditor() {
           </>
         )}
       </motion.div>
+      {receiving && invoice && paymentsApi && (
+        <ReceiptDialog
+          api={paymentsApi}
+          contactId={invoice.contact.id}
+          invoiceId={invoice.id}
+          onClose={() => setReceiving(false)}
+          onDone={() => {
+            setReceiving(false);
+            void queryClient.invalidateQueries({ queryKey: key });
+          }}
+        />
+      )}
       <ConfirmDialog
         open={voiding}
         title={invoice ? t('invoices.voidTitle', { number: invoice.number }) : ''}

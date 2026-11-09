@@ -20,6 +20,8 @@ export interface Contact {
   notes: string | null;
   archived: boolean;
   createdAt: string;
+  /** What a customer owes in their currency: unpaid invoices less advances (negative = in credit) */
+  receivable?: number;
 }
 
 export interface ContactQuery {

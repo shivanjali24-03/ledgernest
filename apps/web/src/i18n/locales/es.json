@@ -1528,7 +1528,9 @@
       "currency_not_enabled": "Activa primero esta moneda en Monedas.",
       "already_archived": "Este contacto ya está archivado.",
       "not_archived": "Este contacto no está archivado."
-    }
+    },
+    "owes": "Debe {{amount}}",
+    "inCredit": "A favor {{amount}}"
   },
   "items": {
     "title": "Productos y servicios",
@@ -1714,7 +1716,55 @@
       "document_entry": "Este asiento pertenece a una factura. Anula la factura en su lugar.",
       "no_rate": "No hay tipo de cambio para la fecha de emisión. Añádelo en Monedas.",
       "no_period": "No hay ejercicio para la fecha de emisión. Añádelo en Ejercicios.",
-      "period_closed": "La fecha de emisión está en un mes cerrado."
+      "period_closed": "La fecha de emisión está en un mes cerrado.",
+      "over_allocated": "Eso supera lo que queda por pagar en la factura.",
+      "bank_currency": "Esta cuenta bancaria está en otra moneda.",
+      "bank_invalid": "Elige una cuenta de banco o caja activa.",
+      "invoice_not_issued": "Solo las facturas emitidas pueden pagarse.",
+      "invoice_currency": "Una factura está en otra moneda.",
+      "already_void": "Ya está anulado."
+    }
+  },
+  "payments": {
+    "title": "Pagos",
+    "description": "Dinero recibido de clientes y las facturas que pagó.",
+    "receive": "Registrar cobro",
+    "empty": "Aún no hay cobros",
+    "emptyBody": "Registra lo que te pagó un cliente: liquida sus facturas.",
+    "void": "Anulado",
+    "paid": "Pagó",
+    "onAccount": "{{amount}} a cuenta",
+    "actionsFor": "Acciones de {{number}}",
+    "voidAction": "Anular cobro",
+    "voidTitle": "¿Anular {{number}}?",
+    "voidBody": "Su asiento se revierte hoy y las facturas que pagó vuelven a quedar abiertas.",
+    "voided": "{{number}} anulado",
+    "received": "Registrado como {{number}}",
+    "receiveTitle": "Registrar un cobro",
+    "receiveBody": "Dinero que te pagó un cliente, aplicado a sus facturas. Lo que sobre queda a su cuenta.",
+    "record": "Registrar cobro",
+    "noBank": "Añade primero una cuenta de banco o caja",
+    "allocate": "Aplicar a facturas",
+    "oldestFirst": "Más antiguas primero",
+    "nothingOpen": "No queda nada por pagar en las facturas de este cliente.",
+    "applyTo": "Aplicar a {{number}}",
+    "leftOver": "{{amount}} queda a cuenta",
+    "allAllocated": "Todo está aplicado",
+    "recordPayment": "Registrar pago",
+    "paidBy": "Pagada con",
+    "fields": {
+      "date": "Fecha de cobro",
+      "bank": "En",
+      "amount": "Importe ({{currency}})",
+      "reference": "Referencia",
+      "apply": "Aplicar"
+    },
+    "problems": {
+      "customer": "Elige un cliente.",
+      "bank": "Elige la cuenta donde entró el dinero.",
+      "amount": "Escribe el importe cobrado.",
+      "allocation": "Revisa los importes marcados: no más de lo que queda en cada factura.",
+      "over": "No puedes aplicar más de lo cobrado."
     }
   }
 }
