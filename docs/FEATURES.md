@@ -61,10 +61,10 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 | Feature | What it means | Status |
 |---|---|---|
-| Bank and cash accounts | Multiple accounts and currencies | 📋 |
-| Statement import | Upload CSV or OFX statements | 📋 |
-| Reconciliation | Match statement lines to transactions, with suggestions | 📋 |
-| Transfers | Between bank and cash accounts | 📋 |
+| Bank and cash accounts | Every account with its balance (in its own currency too) and a statement of what moved; money spent and received that isn't an invoice or bill, with GST | ✅ #90 |
+| Statement import | CSV (layout worked out, correctable, remembered per account) or OFX, previewed first; the same lines never import twice | ✅ #92 |
+| Reconciliation | Bank lines matched to the books with suggestions, missing entries recorded from the bank line, reconciled to a statement balance and locked | ✅ #93 |
+| Transfers | Between bank and cash accounts, across currencies with the exchange difference booked | ✅ #91 |
 
 ## Phase 5: Reports and insights
 
