@@ -706,7 +706,15 @@
       "org_approval_request": "Zur Freigabe gesendet",
       "org_approval_approve": "Freigegeben",
       "org_approval_reject": "Zurückgeschickt",
-      "org_approval_cancel": "Freigabeanfrage zurückgezogen"
+      "org_approval_cancel": "Freigabeanfrage zurückgezogen",
+      "org_invoice_attach": "Datei an eine Rechnung angehängt",
+      "org_invoice_detach": "Datei von einer Rechnung entfernt",
+      "org_bill_attach": "Datei an eine Eingangsrechnung angehängt",
+      "org_bill_detach": "Datei von einer Eingangsrechnung entfernt",
+      "org_payment_attach": "Datei an eine Zahlung angehängt",
+      "org_payment_detach": "Datei von einer Zahlung entfernt",
+      "org_banking_attach": "Datei an eine Bankbuchung angehängt",
+      "org_banking_detach": "Datei von einer Bankbuchung entfernt"
     },
     "entities": {
       "membership": "Mitglied",

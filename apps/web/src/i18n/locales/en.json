@@ -706,7 +706,15 @@
       "org_approval_request": "Sent for approval",
       "org_approval_approve": "Approved",
       "org_approval_reject": "Sent back",
-      "org_approval_cancel": "Approval request withdrawn"
+      "org_approval_cancel": "Approval request withdrawn",
+      "org_invoice_attach": "File attached to an invoice",
+      "org_invoice_detach": "File removed from an invoice",
+      "org_bill_attach": "File attached to a bill",
+      "org_bill_detach": "File removed from a bill",
+      "org_payment_attach": "File attached to a payment",
+      "org_payment_detach": "File removed from a payment",
+      "org_banking_attach": "File attached to a bank transaction",
+      "org_banking_detach": "File removed from a bank transaction"
     },
     "entities": {
       "membership": "Member",

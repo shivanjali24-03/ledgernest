@@ -784,6 +784,9 @@ export class BillsService {
           'Recorded bills can’t be deleted. Void it instead.',
           'not_draft',
         );
+      await tx.documentAttachment.deleteMany({
+        where: { organizationId, documentType: 'bill', documentId: id },
+      });
       await tx.bill.delete({ where: { id } });
       await this.audit.record(
         {

@@ -706,7 +706,15 @@
       "org_approval_request": "Enviado a aprobación",
       "org_approval_approve": "Aprobado",
       "org_approval_reject": "Devuelto",
-      "org_approval_cancel": "Solicitud de aprobación retirada"
+      "org_approval_cancel": "Solicitud de aprobación retirada",
+      "org_invoice_attach": "Archivo adjuntado a una factura",
+      "org_invoice_detach": "Archivo quitado de una factura",
+      "org_bill_attach": "Archivo adjuntado a una factura de proveedor",
+      "org_bill_detach": "Archivo quitado de una factura de proveedor",
+      "org_payment_attach": "Archivo adjuntado a un pago",
+      "org_payment_detach": "Archivo quitado de un pago",
+      "org_banking_attach": "Archivo adjuntado a un movimiento bancario",
+      "org_banking_detach": "Archivo quitado de un movimiento bancario"
     },
     "entities": {
       "membership": "Miembro",
