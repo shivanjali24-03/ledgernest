@@ -104,7 +104,7 @@ export default function Budgets() {
         <>
           <motion.div variants={fadeUp} className="flex flex-wrap items-end gap-3">
             <div className="w-72">
-              <SelectField label={t('budgets.budget')} value={current.id} onChange={(e) => set({ budget: e.target.value })} options={list.data!.map((b) => ({ value: b.id, label: `${b.name} · ${b.fiscalYear.name}` }))} />
+              <SelectField label={t('budgets.budget')} value={current.id} onChange={(e) => set({ budget: e.target.value })} options={list.data!.map((b) => ({ value: b.id, label: `${b.name} · ${b.fiscalYear.name}${b.costCentre ? ` · ${b.costCentre.code}` : ''}` }))} />
             </div>
             {canManage && (
               <RowMenu

@@ -17,6 +17,7 @@ import type { Request } from 'express';
 import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { checkCostCentres } from '../cost-centres/check.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -42,7 +43,13 @@ export class BudgetsService {
   ) {}
 
   /** Each income and expense account's actual amount per month over some months, the way it reads (income and expenses both positive) */
-  private async actuals(organizationId: string, from: string, to: string) {
+  /** costCentreId: only that cost centre's lines (a budget for one cost centre or project) */
+  private async actuals(
+    organizationId: string,
+    from: string,
+    to: string,
+    costCentreId: string | null = null,
+  ) {
     const rows = await this.prisma.$queryRaw<
       { account_id: string; month: string; type: string; net: bigint }[]
     >`
@@ -51,6 +58,7 @@ export class BudgetsService {
       WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND a.type IN ('income', 'expense')
         AND e.date BETWEEN ${asDate(from)}::date AND ${asDate(to)}::date
         AND e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL)
+        AND (${costCentreId}::uuid IS NULL OR l.cost_centre_id = ${costCentreId}::uuid)
       GROUP BY 1, 2, 3`;
     const out = new Map<string, Map<string, number>>();
     for (const r of rows) {
@@ -73,6 +81,7 @@ export class BudgetsService {
           select: { id: true, name: true, startDate: true, endDate: true },
         },
         lines: { select: { accountId: true, month: true, amount: true } },
+        costCentre: { select: { id: true, code: true, name: true } },
       },
     });
     if (!b) throw new NotFoundException('Budget not found.');
@@ -88,6 +97,7 @@ export class BudgetsService {
         name: true,
         updatedAt: true,
         fiscalYear: { select: { id: true, name: true } },
+        costCentre: { select: { id: true, code: true, name: true } },
         lines: {
           select: { amount: true, account: { select: { type: true } } },
         },
@@ -104,6 +114,7 @@ export class BudgetsService {
         id: b.id,
         name: b.name,
         fiscalYear: b.fiscalYear,
+        costCentre: b.costCentre,
         updatedAt: b.updatedAt,
         income,
         expenses,
@@ -153,6 +164,7 @@ export class BudgetsService {
     return {
       id: b.id,
       name: b.name,
+      costCentre: b.costCentre,
       fiscalYear: {
         id: b.fiscalYear.id,
         name: b.fiscalYear.name,
@@ -210,7 +222,12 @@ export class BudgetsService {
       )
         .toISOString()
         .slice(0, 10);
-      const actuals = await this.actuals(organizationId, lastStart, lastEnd);
+      const actuals = await this.actuals(
+        organizationId,
+        lastStart,
+        lastEnd,
+        input.costCentreId,
+      );
       seed = new Map(
         [...actuals].map(([acc, m]) => [
           acc,
@@ -238,11 +255,15 @@ export class BudgetsService {
       }
     }
     const b = await this.prisma.$transaction(async (tx) => {
+      await checkCostCentres(tx, organizationId, [
+        { costCentreId: input.costCentreId },
+      ]);
       const created = await tx.budget.create({
         data: {
           organizationId,
           fiscalYearId: year.id,
           name: input.name,
+          costCentreId: input.costCentreId,
           createdById: ctx.actor.userId,
         },
         select: { id: true },
@@ -402,6 +423,7 @@ export class BudgetsService {
       organizationId,
       b.fiscalYear.startDate,
       to < b.fiscalYear.endDate ? to : b.fiscalYear.endDate,
+      b.costCentre?.id ?? null,
     );
     // Accounts with actuals but no budget row (a parent posted to directly, an archived one) still show
     const known = new Set(b.rows.map((r) => r.accountId));

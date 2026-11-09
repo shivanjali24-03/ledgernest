@@ -298,4 +298,61 @@ describe('Budgets (e2e)', () => {
       ]),
     );
   });
+
+  it('plans for one cost centre, comparing against that cost centre’s lines only', async () => {
+    const cc = (
+      await as()
+        .post('/cost-centres', { code: 'PUNE', name: 'Pune office' })
+        .expect(201)
+    ).body.id as string;
+    const d = await as()
+      .post('/journals', {
+        date: '2026-07-10',
+        memo: 'Pune sale',
+        lines: [
+          { accountId: acc.bank, debit: 30_000_00 },
+          { accountId: acc.sales, credit: 30_000_00, costCentreId: cc },
+        ],
+      })
+      .expect(201);
+    await as().post(`/journals/${d.body.id}/post`).expect(200);
+    const g = (
+      await as()
+        .post('/budgets', {
+          name: 'Pune plan',
+          fiscalYearId: years[2026],
+          startFrom: 'empty',
+          costCentreId: cc,
+        })
+        .expect(201)
+    ).body as Grid & { costCentre: { code: string } };
+    expect(g.costCentre).toMatchObject({ code: 'PUNE' });
+    const c = (
+      await as().get(`/budgets/${g.id}/comparison?upTo=2026-07-31`).expect(200)
+    ).body as Comparison;
+    // Only the Pune sale counts, not the rest of the organisation's
+    expect(
+      c.sections.flatMap((s) => s.rows).find((r) => r.code === '4100'),
+    ).toMatchObject({ actual: 30_000_00 });
+    expect(
+      (
+        (await as().get('/budgets').expect(200)).body as {
+          name: string;
+          costCentre: { code: string } | null;
+        }[]
+      ).find((b) => b.name === 'Pune plan')!.costCentre,
+    ).toMatchObject({ code: 'PUNE' });
+    expect(
+      (await as().delete(`/cost-centres/${cc}`).expect(409)).body.details
+        .reason,
+    ).toBe('in_use');
+    await as()
+      .post('/budgets', {
+        name: 'Nowhere',
+        fiscalYearId: years[2026],
+        startFrom: 'empty',
+        costCentreId: randomUUID(),
+      })
+      .expect(400);
+  });
 });

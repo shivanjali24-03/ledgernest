@@ -1300,12 +1300,15 @@ model Budget {
   organizationId String   @map("organization_id") @db.Uuid
   fiscalYearId   String   @map("fiscal_year_id") @db.Uuid
   name           String
+  /// A plan for one cost centre or project; none = the whole organisation
+  costCentreId   String?  @map("cost_centre_id") @db.Uuid
   createdById    String?  @map("created_by_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fiscalYear   FiscalYear   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: Cascade)
+  costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
   lines        BudgetLine[]
 
   @@unique([organizationId, id])
@@ -1349,6 +1352,7 @@ model CostCentre {
   journalLines JournalLine[]
   invoiceLines InvoiceLine[]
   billLines    BillLine[]
+  budgets      Budget[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, code])

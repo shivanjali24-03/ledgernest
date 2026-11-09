@@ -2646,7 +2646,8 @@
       "name": "Name",
       "startFrom": "Start from",
       "adjust": "Up or down by (%)",
-      "budget": "Budget to copy"
+      "budget": "Budget to copy",
+      "costCentre": "For"
     },
     "adjustHint": "For example 10 for ten per cent more, or -5 for less.",
     "start": {
@@ -2666,7 +2667,9 @@
       "not_pnl_account": "Budgets are for income and expense accounts.",
       "forbidden": "You don’t have permission to change budgets.",
       "generic": "The budget couldn’t be saved. Try again."
-    }
+    },
+    "costCentreHint": "A plan for one cost centre or project is compared with its lines only.",
+    "wholeOrganisation": "The whole organisation"
   },
   "costCentres": {
     "title": "Cost centres and projects",
