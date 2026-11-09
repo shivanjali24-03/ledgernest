@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, BookCheck, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, BookCheck, Plus, Send, Trash2, X } from 'lucide-react';
+import ReceiptDialog from '../../payments/ReceiptDialog';
+import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -431,6 +433,9 @@ export default function BillEditor() {
   });
   const bill = query.data;
   const [voiding, setVoiding] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const paymentsApi = usePaymentsApi();
+  const canPay = session.permissions.has('payments.manage');
   const voidIt = useMutation({
     mutationFn: (reason?: string) => api!.void(bill!.id, { reason }),
     onSuccess: (b) => {
@@ -463,6 +468,11 @@ export default function BillEditor() {
                 <Pill tone={bill.status === 'open' ? 'brand' : 'neutral'}>
                   <span className={stateTone(bill.state)}>{t(`bills.states.${bill.state}`)}</span>
                 </Pill>
+                {bill.status === 'open' && canPay && bill.balance > 0 && (
+                  <Button icon={<Send className="size-4 rtl:-scale-x-100" />} onClick={() => setPaying(true)}>
+                    {t('payments.payBill')}
+                  </Button>
+                )}
                 {bill.status === 'open' && canManage && bill.amountPaid === 0 && (
                   <Button variant="ghost" icon={<Ban className="size-4" />} onClick={() => setVoiding(true)}>
                     {t('bills.void')}
@@ -520,6 +530,19 @@ export default function BillEditor() {
           </>
         )}
       </motion.div>
+      {paying && bill && paymentsApi && (
+        <ReceiptDialog
+          api={paymentsApi}
+          kind="payment"
+          contactId={bill.contact.id}
+          documentId={bill.id}
+          onClose={() => setPaying(false)}
+          onDone={() => {
+            setPaying(false);
+            void queryClient.invalidateQueries({ queryKey: key });
+          }}
+        />
+      )}
       <ConfirmDialog open={voiding} title={bill ? t('bills.voidTitle', { number: bill.number }) : ''} body={t('bills.voidBody')} confirmLabel={t('bills.void')} tone="danger" askReason busy={voidIt.isPending} onConfirm={(reason) => voidIt.mutate(reason)} onClose={() => setVoiding(false)} />
     </motion.div>
   );

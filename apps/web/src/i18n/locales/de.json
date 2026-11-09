@@ -1538,7 +1538,9 @@
       "not_archived": "Dieser Kontakt ist nicht archiviert."
     },
     "owes": "Schuldet {{amount}}",
-    "inCredit": "Guthaben {{amount}}"
+    "inCredit": "Guthaben {{amount}}",
+    "weOwe": "Wir schulden {{amount}}",
+    "paidAhead": "Vorausbezahlt {{amount}}"
   },
   "items": {
     "title": "Produkte und Leistungen",
@@ -1735,10 +1737,10 @@
   },
   "payments": {
     "title": "Zahlungen",
-    "description": "Geld von Kunden und die Rechnungen, die es bezahlt hat.",
+    "description": "Geld von Kunden und an Lieferanten, und die Rechnungen, die es beglichen hat.",
     "receive": "Zahlungseingang erfassen",
-    "empty": "Noch keine Zahlungseingänge",
-    "emptyBody": "Erfassen Sie, was ein Kunde bezahlt hat: Es begleicht seine Rechnungen.",
+    "empty": "Noch keine Zahlungen",
+    "emptyBody": "Erfassen Sie Geld von einem Kunden oder eine Zahlung an einen Lieferanten: Jede begleicht deren Rechnungen.",
     "void": "Storniert",
     "paid": "Bezahlt",
     "onAccount": "{{amount}} als Guthaben",
@@ -1765,15 +1767,37 @@
       "bank": "Auf",
       "amount": "Betrag ({{currency}})",
       "reference": "Referenz",
-      "apply": "Anwenden"
+      "apply": "Anwenden",
+      "datePaid": "Zahlungsdatum",
+      "from": "Von"
     },
     "problems": {
       "customer": "Wählen Sie einen Kunden.",
       "bank": "Wählen Sie das Konto, auf dem das Geld einging.",
       "amount": "Geben Sie den erhaltenen Betrag ein.",
       "allocation": "Prüfen Sie die markierten Beträge: nicht mehr als jeweils offen.",
-      "over": "Sie können nicht mehr verteilen, als eingegangen ist."
-    }
+      "over": "Sie können nicht mehr verteilen, als eingegangen ist.",
+      "vendor": "Wählen Sie einen Lieferanten.",
+      "amountPaid": "Geben Sie den gezahlten Betrag ein.",
+      "allocationPaid": "Prüfen Sie die markierten Beträge: nicht mehr als bei jeder Rechnung offen ist.",
+      "overPaid": "Sie können nicht mehr verrechnen als gezahlt wurde."
+    },
+    "payVendor": "Lieferanten bezahlen",
+    "payBill": "Rechnung bezahlen",
+    "payTitle": "Lieferanten bezahlen",
+    "payBody": "Geld an einen Lieferanten, auf dessen Rechnungen verrechnet. Ein Rest gilt als Anzahlung.",
+    "recordPay": "Zahlung erfassen",
+    "paidOut": "Erfasst als {{number}}",
+    "allocateBills": "Auf Rechnungen verrechnen",
+    "nothingToPay": "Auf den Rechnungen dieses Lieferanten ist nichts mehr offen.",
+    "filter": "Anzeigen",
+    "filters": {
+      "all": "Alle",
+      "receipt": "Eingänge",
+      "payment": "Ausgänge"
+    },
+    "voidPayment": "Zahlung stornieren",
+    "voidPaymentBody": "Die Buchung wird heute storniert und die bezahlten Rechnungen sind wieder offen."
   },
   "bills": {
     "title": "Eingangsrechnungen",

@@ -22,6 +22,8 @@ export interface Contact {
   createdAt: string;
   /** What a customer owes in their currency: unpaid invoices less advances (negative = in credit) */
   receivable?: number;
+  /** What we owe a vendor in their currency: unpaid bills less advances (negative = paid ahead) */
+  payable?: number;
 }
 
 export interface ContactQuery {

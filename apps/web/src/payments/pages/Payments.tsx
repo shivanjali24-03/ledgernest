@@ -2,18 +2,19 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, HandCoins, Plus } from 'lucide-react';
+import { Ban, Building2, HandCoins, Plus, Send } from 'lucide-react';
+import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
-import { invoiceErrorMessage } from '../../invoices/errors';
+import { billErrorMessage } from '../../bills/errors';
 import { formatDate, formatMoney } from '../../lib/format';
 import { useMoney } from '../../lib/useMoney';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
-import { Card, EmptyState, ErrorState, PageHeader, Pagination, Pill, SkeletonRows } from '../../ui/Kit';
+import { Card, EmptyState, ErrorState, PageHeader, Pagination, Pill, Segmented, SkeletonRows } from '../../ui/Kit';
 import RowMenu from '../../ui/RowMenu';
 import { useToast } from '../../ui/toastContext';
 import ReceiptDialog from '../ReceiptDialog';
@@ -22,7 +23,7 @@ import { usePaymentsApi } from '../usePaymentsApi';
 
 const PAGE_SIZE = 25;
 
-/** Money received from customers, and what it paid. */
+/** Money received from customers and paid to vendors, and the invoices and bills it settled. */
 export default function Payments() {
   const { t } = useTranslation();
   const locale = useIntlLocale();
@@ -33,19 +34,20 @@ export default function Payments() {
   const api = usePaymentsApi();
   const canManage = session.permissions.has('payments.manage');
   const [page, setPage] = useState(1);
-  const [receiving, setReceiving] = useState(false);
+  const [kind, setKind] = useState<'all' | PaymentKind>('all');
+  const [recording, setRecording] = useState<PaymentKind | null>(null);
   const [voiding, setVoiding] = useState<Payment | null>(null);
-  const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, page], queryFn: () => api!.list({ page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
+  const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, kind, page], queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ p, reason }: { p: Payment; reason?: string }) => api!.void(p.id, reason),
     onSuccess: (p) => {
       setVoiding(null);
-      for (const k of ['payments', 'invoices', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
+      for (const k of ['payments', 'invoices', 'bills', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
       toast(t('payments.voided', { number: p.number }));
     },
     onError: (e) => {
       setVoiding(null);
-      toast(invoiceErrorMessage(e, t), 'error');
+      toast(billErrorMessage(e, t), 'error');
     },
   });
   if (!api) {
@@ -66,11 +68,28 @@ export default function Payments() {
           description={t('payments.description')}
           actions={
             canManage ? (
-              <Button icon={<Plus className="size-4" />} onClick={() => setReceiving(true)}>
-                {t('payments.receive')}
-              </Button>
+              <>
+                <Button variant="secondary" icon={<Send className="size-4 rtl:-scale-x-100" />} onClick={() => setRecording('payment')}>
+                  {t('payments.payVendor')}
+                </Button>
+                <Button icon={<Plus className="size-4" />} onClick={() => setRecording('receipt')}>
+                  {t('payments.receive')}
+                </Button>
+              </>
             ) : undefined
           }
+        />
+      </motion.div>
+      <motion.div variants={fadeUp}>
+        <Segmented<'all' | PaymentKind>
+          label={t('payments.filter')}
+          value={kind}
+          onChange={(v) => (setKind(v), setPage(1))}
+          options={[
+            { value: 'all', label: t('payments.filters.all') },
+            { value: 'receipt', label: t('payments.filters.receipt') },
+            { value: 'payment', label: t('payments.filters.payment') },
+          ]}
         />
       </motion.div>
       <motion.div variants={fadeUp}>
@@ -103,10 +122,10 @@ export default function Payments() {
                       <span className="block text-xs text-ink-500">
                         {t('payments.paid')}{' '}
                         {p.allocations.map((a, n) => (
-                          <span key={a.invoiceId}>
+                          <span key={a.documentId}>
                             {n > 0 && ', '}
-                            <Link to={`/invoices/${a.invoiceId}`} className="font-mono hover:underline" dir="ltr">
-                              {a.invoiceNumber}
+                            <Link to={`/${a.kind === 'bill' ? 'bills' : 'invoices'}/${a.documentId}`} className="font-mono hover:underline" dir="ltr">
+                              {a.documentNumber}
                             </Link>
                           </span>
                         ))}
@@ -114,10 +133,11 @@ export default function Payments() {
                       </span>
                     )}
                   </span>
-                  <span className="font-mono font-semibold tabular-nums text-income" dir="ltr">
+                  <span className={clsx('font-mono font-semibold tabular-nums', p.kind === 'receipt' ? 'text-income' : 'text-expense')} dir="ltr">
+                    {p.kind === 'payment' && '−'}
                     {amount(p, p.amount)}
                   </span>
-                  {canManage && p.status === 'posted' && <RowMenu label={t('payments.actionsFor', { number: p.number })} items={[{ key: 'void', label: t('payments.voidAction'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }]} />}
+                  {canManage && p.status === 'posted' && <RowMenu label={t('payments.actionsFor', { number: p.number })} items={[{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }]} />}
                 </li>
               ))}
             </ul>
@@ -125,12 +145,12 @@ export default function Payments() {
         </Card>
       </motion.div>
       {data && data.total > PAGE_SIZE && <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} />}
-      {receiving && <ReceiptDialog api={api} onClose={() => setReceiving(false)} onDone={() => setReceiving(false)} />}
+      {recording && <ReceiptDialog api={api} kind={recording} onClose={() => setRecording(null)} onDone={() => setRecording(null)} />}
       <ConfirmDialog
         open={!!voiding}
         title={voiding ? t('payments.voidTitle', { number: voiding.number }) : ''}
-        body={t('payments.voidBody')}
-        confirmLabel={t('payments.voidAction')}
+        body={t(voiding?.kind === 'payment' ? 'payments.voidPaymentBody' : 'payments.voidBody')}
+        confirmLabel={t(voiding?.kind === 'payment' ? 'payments.voidPayment' : 'payments.voidAction')}
         tone="danger"
         askReason
         busy={voidIt.isPending}

@@ -1,4 +1,4 @@
-import type { PaymentKind, ReceiptInput } from '@ledgernest/shared';
+import type { PaymentKind, ReceiptInput, VendorPaymentInput } from '@ledgernest/shared';
 
 export interface Payment {
   id: string;
@@ -18,9 +18,11 @@ export interface Payment {
   notes: string | null;
   journalEntry: { id: string; number: string | null };
   voidEntry: { id: string; number: string | null } | null;
-  allocations: { invoiceId: string; invoiceNumber: string | null; amount: number }[];
+  /** The invoices a receipt paid, or the bills a payment settled */
+  allocations: { kind: 'invoice' | 'bill'; documentId: string; documentNumber: string | null; amount: number }[];
 }
 
+/** An invoice or bill with something left to pay */
 export interface OpenInvoice {
   id: string;
   number: string;
@@ -29,12 +31,16 @@ export interface OpenInvoice {
   currency: string | null;
   total: number;
   balance: number;
+  /** A bill's number from the vendor */
+  vendorReference?: string | null;
 }
 
 /** Receipts and payments. Live and demo both implement it. */
 export interface PaymentsApi {
   list(q: { kind?: PaymentKind; contactId?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: Payment[] }>;
   openInvoices(contactId: string): Promise<OpenInvoice[]>;
+  openBills(contactId: string): Promise<OpenInvoice[]>;
   receive(input: ReceiptInput): Promise<Payment>;
+  pay(input: VendorPaymentInput): Promise<Payment>;
   void(id: string, reason?: string): Promise<Payment>;
 }

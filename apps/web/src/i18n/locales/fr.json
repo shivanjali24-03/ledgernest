@@ -1538,7 +1538,9 @@
       "not_archived": "Ce contact n’est pas archivé."
     },
     "owes": "Doit {{amount}}",
-    "inCredit": "Crédit {{amount}}"
+    "inCredit": "Crédit {{amount}}",
+    "weOwe": "Nous devons {{amount}}",
+    "paidAhead": "Avance de {{amount}}"
   },
   "items": {
     "title": "Produits et services",
@@ -1735,10 +1737,10 @@
   },
   "payments": {
     "title": "Paiements",
-    "description": "L’argent reçu des clients et les factures qu’il a réglées.",
+    "description": "L’argent reçu des clients et versé aux fournisseurs, et les factures qu’il a réglées.",
     "receive": "Enregistrer un encaissement",
-    "empty": "Aucun encaissement pour l’instant",
-    "emptyBody": "Enregistrez ce qu’un client vous a payé : cela règle ses factures.",
+    "empty": "Aucun paiement",
+    "emptyBody": "Enregistrez l’argent versé par un client ou un paiement à un fournisseur : chacun règle leurs factures.",
     "void": "Annulé",
     "paid": "A réglé",
     "onAccount": "{{amount}} en acompte",
@@ -1765,15 +1767,37 @@
       "bank": "Sur",
       "amount": "Montant ({{currency}})",
       "reference": "Référence",
-      "apply": "Imputer"
+      "apply": "Imputer",
+      "datePaid": "Date de paiement",
+      "from": "Depuis"
     },
     "problems": {
       "customer": "Choisissez un client.",
       "bank": "Choisissez le compte crédité.",
       "amount": "Saisissez le montant reçu.",
       "allocation": "Vérifiez les montants signalés : pas plus que le reste de chaque facture.",
-      "over": "Vous ne pouvez pas imputer plus que reçu."
-    }
+      "over": "Vous ne pouvez pas imputer plus que reçu.",
+      "vendor": "Choisissez un fournisseur.",
+      "amountPaid": "Saisissez le montant payé.",
+      "allocationPaid": "Vérifiez les montants signalés : pas plus que le reste de chaque facture.",
+      "overPaid": "Impossible d’imputer plus que le montant payé."
+    },
+    "payVendor": "Payer un fournisseur",
+    "payBill": "Payer la facture",
+    "payTitle": "Payer un fournisseur",
+    "payBody": "Argent versé à un fournisseur, imputé sur ses factures. Le reste devient une avance.",
+    "recordPay": "Enregistrer le paiement",
+    "paidOut": "Enregistré sous {{number}}",
+    "allocateBills": "Imputer aux factures",
+    "nothingToPay": "Plus rien à payer sur les factures de ce fournisseur.",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Tous",
+      "receipt": "Encaissés",
+      "payment": "Décaissés"
+    },
+    "voidPayment": "Annuler le paiement",
+    "voidPaymentBody": "Son écriture est contrepassée aujourd’hui et les factures qu’il a payées sont de nouveau dues."
   },
   "bills": {
     "title": "Factures fournisseurs",

@@ -153,6 +153,11 @@ export default function Contacts() {
                       {t(c.receivable > 0 ? 'contacts.owes' : 'contacts.inCredit', { amount: c.currency ? formatMoney(Math.abs(c.receivable), c.currency, locale) : money.format(Math.abs(c.receivable)) })}
                     </span>
                   )}
+                  {!!c.payable && (
+                    <span className={clsx('text-end font-mono text-sm tabular-nums', c.payable > 0 ? 'text-expense' : 'text-ink-500')} dir="ltr">
+                      {t(c.payable > 0 ? 'contacts.weOwe' : 'contacts.paidAhead', { amount: c.currency ? formatMoney(Math.abs(c.payable), c.currency, locale) : money.format(Math.abs(c.payable)) })}
+                    </span>
+                  )}
                   <span className="w-24 text-end text-xs text-ink-500">{c.paymentTermsDays ? t('contacts.terms', { days: c.paymentTermsDays }) : t('contacts.onReceipt')}</span>
                   {canManage && (
                     <RowMenu
