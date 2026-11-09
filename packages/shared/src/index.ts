@@ -18,3 +18,4 @@ export * from './payments/index.js';
 export * from './bills/index.js';
 export * from './aging/index.js';
 export * from './credit-notes/index.js';
+export * from './recurring/index.js';

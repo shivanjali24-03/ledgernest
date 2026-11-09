@@ -50,6 +50,8 @@ type DraftIn = {
   receivableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
+  /** Set when a schedule raises it */
+  recurringInvoiceId?: string | null;
 };
 
 const refuse = (
@@ -142,6 +144,7 @@ const select = {
       },
     },
   },
+  recurring: { select: { id: true, name: true } },
   creditNotes: {
     orderBy: { number: 'asc' as const },
     select: {
@@ -289,6 +292,8 @@ export class InvoicesService {
         date: iso(c.date),
         amount: amount(c.amount),
       })),
+      /** The schedule that raised it */
+      recurring: i.recurring,
       /** Credit notes raised against it */
       creditNotes: i.creditNotes.map((c) => ({
         id: c.id,
@@ -716,6 +721,7 @@ export class InvoicesService {
           placeOfSupply: p.placeOfSupply,
           reference: input.reference,
           notes: input.notes,
+          recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
