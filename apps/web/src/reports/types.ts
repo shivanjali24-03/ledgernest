@@ -1,4 +1,4 @@
-import type { AccountType } from '@ledgernest/shared';
+import type { AccountType, AgingBucket, AgingSide } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
   accountId: string;
@@ -57,6 +57,40 @@ export interface TaxSummary {
   totals: { outwardTaxable: number; inwardTaxable: number; output: number; input: number; net: number };
 }
 
+export interface AgingDocument {
+  id: string;
+  number: string;
+  vendorReference: string | null;
+  date: string;
+  dueDate: string;
+  daysOverdue: number;
+  bucket: AgingBucket;
+  total: number;
+  outstanding: number;
+}
+export interface AgingContact {
+  contact: { id: string; name: string };
+  /** null = the base currency */
+  currency: string | null;
+  buckets: Record<AgingBucket, number>;
+  total: number;
+  /** Received (or paid) and not yet applied */
+  advance: number;
+  baseTotal: number;
+  baseAdvance: number;
+  documents: AgingDocument[];
+}
+/** Who owes what, or what's owed, on a day, by days past due */
+export interface Aging {
+  side: AgingSide;
+  asOf: string;
+  baseCurrency: string;
+  buckets: readonly AgingBucket[];
+  contacts: AgingContact[];
+  /** In the base currency */
+  totals: { buckets: Record<AgingBucket, number>; total: number; advance: number; net: number };
+}
+
 /** Reports. Live and demo both implement it. */
 export interface ReportsApi {
   trialBalance(asOf: string): Promise<TrialBalance>;
@@ -65,4 +99,6 @@ export interface ReportsApi {
   exportLedger(accountId: string, from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   taxSummary(from: string, to: string): Promise<TaxSummary>;
   exportTaxSummary(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
+  aging(side: AgingSide, asOf: string): Promise<Aging>;
+  exportAging(side: AgingSide, asOf: string): Promise<{ blob: Blob; filename: string }>;
 }

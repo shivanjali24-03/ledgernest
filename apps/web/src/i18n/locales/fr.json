@@ -1233,7 +1233,35 @@
       "net": "Net"
     },
     "fxAmount": "Montant ({{code}})",
-    "fxBalance": "Solde ({{code}})"
+    "fxBalance": "Solde ({{code}})",
+    "aging": {
+      "title": "Balance âgée",
+      "side": "Afficher",
+      "receivables": "Ce qu’on nous doit",
+      "payables": "Ce que nous devons",
+      "hint": "Factures ouvertes telles qu’elles figuraient ce jour-là, selon leur retard.",
+      "empty": {
+        "receivables": "Personne ne doit rien à cette date",
+        "payables": "Rien n’est dû aux fournisseurs à cette date"
+      },
+      "emptyBody": "Essayez une autre date, ou revenez une fois des factures enregistrées.",
+      "buckets": {
+        "current": "Non échu",
+        "d1_30": "1–30 jours",
+        "d31_60": "31–60 jours",
+        "d61_90": "61–90 jours",
+        "over_90": "Plus de 90 jours"
+      },
+      "totalOwedToUs": "On nous doit, net",
+      "totalWeOwe": "Nous devons, net",
+      "customer": "Client",
+      "vendor": "Fournisseur",
+      "advance": "Avances",
+      "total": "Total",
+      "totalIn": "Total en {{currency}}",
+      "daysLate": "Échéance {{due}} · {{count}} j de retard",
+      "due": "Échéance {{due}}"
+    }
   },
   "taxes": {
     "title": "Taxes",
