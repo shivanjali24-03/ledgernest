@@ -86,6 +86,7 @@ model Organization {
   taxGroups     TaxGroup[]
   taxGroupRates TaxGroupRate[]
   currencies    OrganizationCurrency[]
+  contacts      Contact[]
   exchangeRates ExchangeRate[]
 
   @@map("organizations")
@@ -470,6 +471,7 @@ model OrganizationCurrency {
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   rates        ExchangeRate[]
   accounts     Account[]
+  contacts     Contact[]
 
   @@id([organizationId, code])
   @@map("organization_currencies")
@@ -492,4 +494,38 @@ model ExchangeRate {
 
   @@unique([organizationId, currency, date])
   @@map("exchange_rates")
+}
+
+/// A customer, a vendor or both.
+model Contact {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  name             String
+  isCustomer       Boolean   @map("is_customer")
+  isVendor         Boolean   @map("is_vendor")
+  legalName        String?   @map("legal_name")
+  /// GSTIN, VAT number, EIN…
+  taxId            String?   @map("tax_id")
+  email            String?
+  phone            String?
+  /// { line1, line2, city, region, postalCode, country }
+  billingAddress   Json      @map("billing_address")
+  /// null = same as billing
+  shippingAddress  Json?     @map("shipping_address")
+  /// GST state code for the place of supply (from the GSTIN, else the address); null outside India
+  stateCode        String?   @map("state_code") @db.Char(2)
+  /// Invoices and bills in this currency by default; null = the base currency
+  currency         String?   @db.Char(3)
+  paymentTermsDays Int       @default(30) @map("payment_terms_days")
+  notes            String?
+  archivedAt       DateTime? @map("archived_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgCurrency  OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@index([organizationId, archivedAt])
+  @@map("contacts")
 }

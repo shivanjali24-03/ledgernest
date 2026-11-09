@@ -535,7 +535,8 @@
       "journals": "Journal entries",
       "taxes": "Taxes",
       "gstSlabs": "GST slabs",
-      "currencies": "Currencies"
+      "currencies": "Currencies",
+      "contacts": "Customers and vendors"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -603,7 +604,12 @@
       "org_currency_remove": "Currency removed",
       "org_exchange_rate_set": "Exchange rate set",
       "org_exchange_rate_remove": "Exchange rate removed",
-      "org_exchange_rate_fetch": "Exchange rates fetched"
+      "org_exchange_rate_fetch": "Exchange rates fetched",
+      "org_contact_create": "Contact added",
+      "org_contact_update": "Contact edited",
+      "org_contact_archive": "Contact archived",
+      "org_contact_restore": "Contact restored",
+      "org_contact_delete": "Contact deleted"
     },
     "entities": {
       "membership": "Member",
@@ -618,7 +624,8 @@
       "tax_rate": "Tax rate",
       "tax_group": "Tax group",
       "gst_slab": "GST slab",
-      "currency": "Currency"
+      "currency": "Currency",
+      "contact": "Contact"
     },
     "fields": {
       "user": "Person",
@@ -694,7 +701,13 @@
       "requested": "Requested day",
       "saved": "Saved",
       "keptManual": "Kept (typed by hand)",
-      "unsupported": "Not covered"
+      "unsupported": "Not covered",
+      "isCustomer": "Customer",
+      "isVendor": "Vendor",
+      "billingAddress": "Billing address",
+      "shippingAddress": "Shipping address",
+      "paymentTermsDays": "Payment terms (days)",
+      "notes": "Notes"
     },
     "details": {
       "when": "When",

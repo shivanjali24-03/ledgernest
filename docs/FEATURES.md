@@ -49,7 +49,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 | Feature | What it means | Status |
 |---|---|---|
-| Customers and vendors | Contacts with addresses, tax IDs, payment terms and balances | 📋 |
+| Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms and balances | 🚧 #64 |
 | Products and services | Items with prices, tax defaults and income/expense accounts | 📋 |
 | Quotes → invoices | Branded PDF invoices, numbering, due dates, partial payments | 📋 |
 | Recurring invoices | Weekly, monthly or yearly schedules | 📋 |

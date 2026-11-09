@@ -535,7 +535,8 @@
       "journals": "قيود اليومية",
       "taxes": "الضرائب",
       "gstSlabs": "شرائح ضريبة السلع والخدمات",
-      "currencies": "العملات"
+      "currencies": "العملات",
+      "contacts": "العملاء والموردون"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -603,7 +604,12 @@
       "org_currency_remove": "أُزيلت عملة",
       "org_exchange_rate_set": "حُدّد سعر صرف",
       "org_exchange_rate_remove": "حُذف سعر صرف",
-      "org_exchange_rate_fetch": "جُلبت أسعار الصرف"
+      "org_exchange_rate_fetch": "جُلبت أسعار الصرف",
+      "org_contact_create": "أُضيفت جهة اتصال",
+      "org_contact_update": "عُدّلت جهة اتصال",
+      "org_contact_archive": "أُرشفت جهة اتصال",
+      "org_contact_restore": "استُعيدت جهة اتصال",
+      "org_contact_delete": "حُذفت جهة اتصال"
     },
     "entities": {
       "membership": "عضو",
@@ -618,7 +624,8 @@
       "tax_rate": "معدل ضريبي",
       "tax_group": "مجموعة ضريبية",
       "gst_slab": "شريحة ضريبة السلع والخدمات",
-      "currency": "عملة"
+      "currency": "عملة",
+      "contact": "جهة اتصال"
     },
     "fields": {
       "user": "الشخص",
@@ -694,7 +701,13 @@
       "requested": "اليوم المطلوب",
       "saved": "المحفوظة",
       "keptManual": "المُبقاة (مُدخلة يدويًا)",
-      "unsupported": "غير مشمولة"
+      "unsupported": "غير مشمولة",
+      "isCustomer": "عميل",
+      "isVendor": "مورد",
+      "billingAddress": "عنوان الفوترة",
+      "shippingAddress": "عنوان الشحن",
+      "paymentTermsDays": "مدة السداد (أيام)",
+      "notes": "ملاحظات"
     },
     "details": {
       "when": "متى",

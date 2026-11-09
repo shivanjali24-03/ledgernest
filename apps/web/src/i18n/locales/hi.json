@@ -535,7 +535,8 @@
       "journals": "जर्नल प्रविष्टियाँ",
       "taxes": "कर",
       "gstSlabs": "जीएसटी स्लैब",
-      "currencies": "मुद्राएँ"
+      "currencies": "मुद्राएँ",
+      "contacts": "ग्राहक और विक्रेता"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -603,7 +604,12 @@
       "org_currency_remove": "मुद्रा हटाई गई",
       "org_exchange_rate_set": "विनिमय दर सेट की गई",
       "org_exchange_rate_remove": "विनिमय दर हटाई गई",
-      "org_exchange_rate_fetch": "विनिमय दरें लाई गईं"
+      "org_exchange_rate_fetch": "विनिमय दरें लाई गईं",
+      "org_contact_create": "संपर्क जोड़ा गया",
+      "org_contact_update": "संपर्क संपादित",
+      "org_contact_archive": "संपर्क संग्रहित",
+      "org_contact_restore": "संपर्क बहाल",
+      "org_contact_delete": "संपर्क हटाया गया"
     },
     "entities": {
       "membership": "सदस्य",
@@ -618,7 +624,8 @@
       "tax_rate": "कर दर",
       "tax_group": "कर समूह",
       "gst_slab": "जीएसटी स्लैब",
-      "currency": "मुद्रा"
+      "currency": "मुद्रा",
+      "contact": "संपर्क"
     },
     "fields": {
       "user": "व्यक्ति",
@@ -694,7 +701,13 @@
       "requested": "माँगा गया दिन",
       "saved": "सहेजी गईं",
       "keptManual": "रखी गईं (हाथ से लिखी)",
-      "unsupported": "शामिल नहीं"
+      "unsupported": "शामिल नहीं",
+      "isCustomer": "ग्राहक",
+      "isVendor": "विक्रेता",
+      "billingAddress": "बिलिंग पता",
+      "shippingAddress": "शिपिंग पता",
+      "paymentTermsDays": "भुगतान अवधि (दिन)",
+      "notes": "टिप्पणियाँ"
     },
     "details": {
       "when": "कब",
