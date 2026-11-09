@@ -96,6 +96,7 @@ model Organization {
   creditNotes        CreditNote[]
   creditNoteLines    CreditNoteLine[]
   creditApplications CreditApplication[]
+  recurringInvoices  RecurringInvoice[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -574,8 +575,9 @@ model Contact {
   organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orgCurrency  OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
 
-  invoices    Invoice[]
-  creditNotes CreditNote[]
+  invoices          Invoice[]
+  creditNotes       CreditNote[]
+  recurringInvoices RecurringInvoice[]
 
   payments Payment[]
 
@@ -642,6 +644,8 @@ model Invoice {
   reference           String?
   notes               String?
   receivableAccountId String?   @map("receivable_account_id") @db.Uuid
+  /// The schedule that raised it, if any
+  recurringInvoiceId  String?   @map("recurring_invoice_id") @db.Uuid
   /// In the invoice currency's smallest unit
   subtotal            BigInt    @default(0)
   taxTotal            BigInt    @default(0) @map("tax_total")
@@ -666,12 +670,14 @@ model Invoice {
   allocations PaymentAllocation[]
   creditNotes CreditNote[]
   credits     CreditApplication[]
+  recurring   RecurringInvoice?   @relation(fields: [organizationId, recurringInvoiceId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
   @@index([organizationId, contactId])
+  @@index([organizationId, recurringInvoiceId])
   @@index([organizationId, status, dueDate])
   @@map("invoices")
 }
@@ -941,4 +947,39 @@ model CreditApplication {
   @@index([organizationId, creditNoteId])
   @@index([organizationId, invoiceId])
   @@map("credit_applications")
+}
+
+/// Raises an invoice from its template on a schedule: weekly, monthly, quarterly or yearly, until an end date or count.
+model RecurringInvoice {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  contactId      String    @map("contact_id") @db.Uuid
+  frequency      String /// weekly | monthly | quarterly | yearly
+  interval       Int       @default(1)
+  startDate      DateTime  @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  maxCount       Int?      @map("max_count")
+  /// Invoices raised so far; the next is the count-th date from the start
+  count          Int       @default(0)
+  /// null once it has ended
+  nextDate       DateTime? @map("next_date") @db.Date
+  autoIssue      Boolean   @default(false) @map("auto_issue")
+  status         String    @default("active") /// active | paused | ended
+  /// What each invoice is made of: lines, reference, notes, place of supply
+  template       Json
+  lastRunAt      DateTime? @map("last_run_at")
+  /// Why the last attempt failed, until one succeeds
+  lastError      String?   @map("last_error")
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  invoices     Invoice[]
+
+  @@unique([organizationId, id])
+  @@index([status, nextDate])
+  @@map("recurring_invoices")
 }
