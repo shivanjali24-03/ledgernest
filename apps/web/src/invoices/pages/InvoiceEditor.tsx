@@ -3,7 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, FileMinus, HandCoins, Plus, Printer, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, FileMinus, HandCoins, Plus, Printer, Repeat, Send, Trash2, X } from 'lucide-react';
+import RecurringDialog from '../../recurring/RecurringDialog';
+import { templateOf } from '../../recurring/templateOf';
+import { useRecurringApi } from '../../recurring/useRecurringApi';
 import CreditNoteDialog from '../../credit-notes/CreditNoteDialog';
 import { useCreditNotesApi } from '../../credit-notes/useCreditNotesApi';
 import ReceiptDialog from '../../payments/ReceiptDialog';
@@ -319,6 +322,8 @@ export default function InvoiceEditor() {
   const [voiding, setVoiding] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [crediting, setCrediting] = useState(false);
+  const [repeating, setRepeating] = useState(false);
+  const recurringApi = useRecurringApi();
   const creditNotesApi = useCreditNotesApi();
   const paymentsApi = usePaymentsApi();
   const canReceive = session.permissions.has('payments.manage');
@@ -361,6 +366,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
+                  </Button>
+                )}
+                {invoice.status !== 'void' && canManage && (
+                  <Button variant="ghost" icon={<Repeat className="size-4" />} onClick={() => setRepeating(true)}>
+                    {t('recurring.makeRecurring')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canManage && (
@@ -412,6 +422,15 @@ export default function InvoiceEditor() {
                   </span>
                 </span>
               ))}
+              {invoice!.recurring && (
+                <>
+                  {' · '}
+                  {t('recurring.raisedBy')}{' '}
+                  <Link to="/recurring" className="hover:underline" dir="auto">
+                    {invoice!.recurring.name}
+                  </Link>
+                </>
+              )}
               {invoice!.credits.map((c, n) => (
                 <span key={`${c.id}-${n}`}>
                   {' · '}
@@ -445,6 +464,7 @@ export default function InvoiceEditor() {
           </>
         )}
       </motion.div>
+      {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       {crediting && invoice && creditNotesApi && (
         <CreditNoteDialog
           invoice={invoice}

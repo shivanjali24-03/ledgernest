@@ -29,7 +29,8 @@
       "currencies": "Devises",
       "contacts": "Clients et fournisseurs",
       "items": "Produits et services",
-      "creditNotes": "Avoirs"
+      "creditNotes": "Avoirs",
+      "recurring": "Factures récurrentes"
     },
     "soon": "Bientôt"
   },
@@ -638,7 +639,13 @@
       "org_credit_note_issue": "Avoir émis",
       "org_credit_note_apply": "Avoir imputé sur une facture",
       "org_credit_note_refund": "Avoir remboursé",
-      "org_credit_note_void": "Avoir annulé"
+      "org_credit_note_void": "Avoir annulé",
+      "org_recurring_create": "Récurrence créée",
+      "org_recurring_update": "Récurrence modifiée",
+      "org_recurring_pause": "Récurrence suspendue",
+      "org_recurring_resume": "Récurrence reprise",
+      "org_recurring_delete": "Récurrence supprimée",
+      "org_recurring_raise": "Facture émise par une récurrence"
     },
     "entities": {
       "membership": "Membre",
@@ -1950,6 +1957,100 @@
       "over_applied": "C’est plus que le crédit restant sur cet avoir.",
       "has_refunds": "Une partie de ce crédit a été remboursée : il ne peut pas être annulé.",
       "before_credit_note": "Un remboursement ne peut pas précéder son avoir."
+    }
+  },
+  "recurring": {
+    "title": "Factures récurrentes",
+    "description": "Des factures qui se répètent selon un calendrier, à partir d’un modèle.",
+    "new": "Nouvelle récurrence",
+    "runNow": "Lancer maintenant",
+    "makeRecurring": "Rendre récurrente",
+    "raisedBy": "Créée par",
+    "empty": "Aucune récurrence",
+    "emptyBody": "Ouvrez une facture et choisissez Rendre récurrente, ou créez ici une récurrence à partir de n’importe quelle facture.",
+    "newTitle": "Nouvelle récurrence",
+    "editTitle": "Modifier la récurrence",
+    "pickTemplate": "Choisissez la facture à répéter : son client, ses lignes et ses notes forment le modèle.",
+    "templateFrom": "Chaque facture va à {{name}}, avec les lignes du modèle.",
+    "chooseInvoice": "Choisir une facture",
+    "create": "Créer la récurrence",
+    "created": "{{name}} planifiée",
+    "saved": "{{name}} enregistrée",
+    "fields": {
+      "template": "Facture modèle",
+      "name": "Nom",
+      "frequency": "Fréquence",
+      "interval": "Tous les",
+      "startDate": "Première facture le",
+      "ends": "Fin",
+      "endDate": "Dernière date",
+      "maxCount": "Nombre de factures",
+      "autoIssue": "Émettre chaque facture dès sa création"
+    },
+    "autoIssueHint": "Sinon chacune attend en brouillon que vous la vérifiiez et l’émettiez.",
+    "frequencies": {
+      "weekly": "Hebdomadaire",
+      "monthly": "Mensuelle",
+      "quarterly": "Trimestrielle",
+      "yearly": "Annuelle"
+    },
+    "every": {
+      "weekly": "Toutes les {{n}} semaines",
+      "monthly": "Tous les {{n}} mois",
+      "quarterly": "Tous les {{n}} trimestres",
+      "yearly": "Tous les {{n}} ans"
+    },
+    "intervalHint": {
+      "weekly": "1 = chaque semaine, 2 = une semaine sur deux",
+      "monthly": "1 = chaque mois, 3 = tous les trois mois",
+      "quarterly": "1 = chaque trimestre, 2 = deux fois par an",
+      "yearly": "1 = chaque année"
+    },
+    "ends": {
+      "never": "Jamais",
+      "date": "À une date",
+      "count": "Après un nombre de factures"
+    },
+    "statuses": {
+      "active": "Active",
+      "paused": "Suspendue",
+      "ended": "Terminée"
+    },
+    "issuesItself": "S’émet seule",
+    "nextOn": "prochaine le {{date}}",
+    "noMore": "plus rien à émettre",
+    "countOf": "{{count}} sur {{max}} émises",
+    "countSoFar": "{{count}} émises",
+    "lastError": "Le dernier essai a échoué : {{reason}}",
+    "raised": "Émises",
+    "actionsFor": "Actions pour {{name}}",
+    "edit": "Modifier",
+    "pause": "Suspendre",
+    "resume": "Reprendre",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer {{name}} ?",
+    "deleteBody": "Elle n’a encore rien émis, rien d’autre ne change.",
+    "deleted": "{{name}} supprimée",
+    "paused": "{{name}} suspendue",
+    "resumed": "{{name}} reprise",
+    "ran": "Terminé : {{raised}} émises",
+    "ranWithFailures": "{{raised}} émises, {{failed}} impossibles : voir les récurrences",
+    "upcoming": "À venir",
+    "upcomingHint": "Les 30 prochains jours.",
+    "dueNow": "{{count}} à émettre maintenant ; le prochain passage les émettra.",
+    "nothingComing": "Rien dans les 30 prochains jours.",
+    "problems": {
+      "template": "Choisissez la facture à répéter.",
+      "name": "Nommez la récurrence.",
+      "interval": "Répétez tous les 1 à 12 périodes.",
+      "endDate": "Choisissez une dernière date égale ou postérieure à la première.",
+      "count": "Indiquez combien de factures émettre."
+    },
+    "errors": {
+      "has_invoices": "Cette récurrence a déjà émis des factures. Suspendez-la, ou gardez sa date de début.",
+      "ended": "Cette récurrence est terminée.",
+      "not_customer": "Les factures ne sont émises qu’aux clients.",
+      "contact_archived": "Ce client est archivé."
     }
   }
 }

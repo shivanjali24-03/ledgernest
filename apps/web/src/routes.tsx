@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, BillEditor, Bills, ChartOfAccounts, CreditNotes, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, BillEditor, Bills, ChartOfAccounts, CreditNotes, Recurring, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -25,6 +25,7 @@ const BUILT: RouteObject[] = [
   { path: 'invoices', element: page(<Invoices />, 'invoices.view') },
   { path: 'invoices/:id', element: page(<InvoiceEditor />, 'invoices.view') },
   { path: 'credit-notes', element: page(<CreditNotes />, 'invoices.view') },
+  { path: 'recurring', element: page(<Recurring />, 'invoices.view') },
   { path: 'bills', element: page(<Bills />, 'bills.view') },
   { path: 'bills/:id', element: page(<BillEditor />, 'bills.view') },
   { path: 'payments', element: page(<Payments />, 'invoices.view') },
