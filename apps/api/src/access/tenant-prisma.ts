@@ -56,6 +56,7 @@ export const TENANT_MODELS = new Set<string>([
   'WebhookDelivery',
   'ScheduledReport',
   'ReportDelivery',
+  'ReminderPolicy',
 ]);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */

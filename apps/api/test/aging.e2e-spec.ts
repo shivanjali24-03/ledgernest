@@ -4,6 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { InvoiceRemindersService } from '../src/invoices/invoice-reminders.service.js';
 import { MailService } from '../src/mail/mail.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
@@ -592,6 +593,70 @@ describe('Aging reports (e2e)', () => {
             .expect(409)
         ).body.details,
       ).toMatchObject({ reason: 'mail_off' });
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
+
+  it('sends automatic reminders under the organisation’s policy', async () => {
+    expect((await as().get('/reminder-policy').expect(200)).body).toEqual({
+      enabled: false,
+      firstAfterDays: 3,
+      repeatEveryDays: 7,
+      maxReminders: 3,
+    });
+    const policy = {
+      enabled: true,
+      firstAfterDays: 3,
+      repeatEveryDays: 7,
+      maxReminders: 3,
+    };
+    await as()
+      .put('/reminder-policy', { ...policy, maxReminders: 0 })
+      .expect(400);
+    await as('viewer').put('/reminder-policy', policy).expect(403);
+    expect(
+      (await as().put('/reminder-policy', policy).expect(200)).body,
+    ).toEqual(policy);
+    await as('viewer').get('/reminder-policy').expect(403);
+    // Kumar now has an email; C already had two reminders by hand, the last a few days before the run
+    await prisma.contact.update({
+      where: { id: contact.kumar },
+      data: { email: 'accounts@kumar.example' },
+    });
+    await prisma.invoice.update({
+      where: { id: inv.c },
+      data: { lastRemindedAt: new Date('2026-11-28T06:00:00Z') },
+    });
+    const svc = app.get(InvoiceRemindersService);
+    const count = async (id: string) =>
+      (await prisma.invoice.findUniqueOrThrow({ where: { id } })).reminders;
+    expect(await svc.runDue(new Date('2026-12-01T06:00:00Z'))).toBe(0); // email isn't set up
+    process.env.SMTP_URL = 'json';
+    try {
+      // A is overdue and never reminded; C was reminded 3 days ago; Northwind has no email
+      expect(await svc.runDue(new Date('2026-12-01T06:00:00Z'))).toBe(1);
+      expect(await count(inv.a)).toBe(1);
+      expect(await svc.runDue(new Date('2026-12-01T09:00:00Z'))).toBe(0);
+      const auto = await prisma.auditLog.findFirstOrThrow({
+        where: {
+          organizationId: org,
+          action: 'org.invoice.remind',
+          entityId: inv.a,
+        },
+      });
+      expect(auto.actorId).toBeNull();
+      expect(auto.after).toMatchObject({ automatic: true });
+      // A week on: A again, and C's third (its last)
+      expect(await svc.runDue(new Date('2026-12-08T06:00:00Z'))).toBe(2);
+      expect([await count(inv.a), await count(inv.c)]).toEqual([2, 3]);
+      expect(await svc.runDue(new Date('2026-12-15T06:00:00Z'))).toBe(1);
+      expect(await svc.runDue(new Date('2026-12-22T06:00:00Z'))).toBe(0);
+      // Off means off
+      await as()
+        .put('/reminder-policy', { ...policy, enabled: false, maxReminders: 9 })
+        .expect(200);
+      expect(await svc.runDue(new Date('2027-01-30T06:00:00Z'))).toBe(0);
     } finally {
       delete process.env.SMTP_URL;
     }

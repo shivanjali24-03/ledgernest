@@ -1,4 +1,4 @@
-import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
@@ -17,6 +17,7 @@ import type { Invoice, InvoicesApi } from './types';
  * Kumar Logistics (already in the books) and a draft for Bluewave Clinics in Karnataka, which takes IGST.
  */
 const KEY = 'ledgernest.demo.invoices';
+const POLICY_KEY = 'ledgernest.demo.reminderPolicy';
 const ORG_STATE = '27';
 type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string; costCentreId?: string | null };
 type Stored = {
@@ -139,6 +140,7 @@ export async function demoTrackCreditNote(invoiceId: string, note: { id: string;
 export const resetDemoInvoices = () => {
   try {
     localStorage.removeItem(KEY);
+    localStorage.removeItem(POLICY_KEY);
   } catch {
     /* nothing stored */
   }
@@ -371,6 +373,27 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         Object.assign(i, { lastRemindedAt: new Date().toISOString(), reminders: (i.reminders ?? 0) + 1 });
         save(rows);
         return { sentTo: to, lastRemindedAt: i.lastRemindedAt!, reminders: i.reminders! };
+      }),
+    reminderPolicy: () =>
+      wait(() => {
+        try {
+          const raw = localStorage.getItem(POLICY_KEY);
+          return raw ? reminderPolicySchema.parse(JSON.parse(raw)) : DEFAULT_REMINDER_POLICY;
+        } catch {
+          return DEFAULT_REMINDER_POLICY;
+        }
+      }),
+    setReminderPolicy: (policy) =>
+      wait(() => {
+        guard();
+        const p = reminderPolicySchema.safeParse(policy);
+        if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+        try {
+          localStorage.setItem(POLICY_KEY, JSON.stringify(p.data));
+        } catch {
+          // storage blocked: it lasts until the page closes
+        }
+        return p.data;
       }),
   };
 }

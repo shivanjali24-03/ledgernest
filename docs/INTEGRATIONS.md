@@ -108,10 +108,11 @@ Scheduled reports (**Reports → Scheduled**) are always kept in the app, to dow
 | `SMTP_URL` | `smtps://user:password@smtp.example.com:465` |
 | `MAIL_FROM` | `LedgerNest <reports@example.com>` |
 | `SCHEDULED_REPORTS_MINUTES` | `15` (how often due reports are made; 0 turns it off) |
+| `INVOICE_REMINDERS_MINUTES` | `60` (how often automatic payment reminders go out; 0 turns it off) |
 
 Reports come as Excel, CSV or PDF. PDFs use the standard PDF fonts, which cover Western European text: the rupee sign is written "Rs", and names in other scripts (Devanagari, Arabic) show as "?", so choose Excel or CSV for those.
 
-The same server also sends **payment reminders** (an invoice's **Send reminder**) and **statements of account** (**Reports → Statements → Email**): a PDF to the customer or vendor, recorded in the audit trail. Without SMTP, download the PDF and send it yourself.
+The same server also sends **payment reminders**, by hand (an invoice's **Send reminder**) or automatically for overdue invoices (**Settings → Payment reminders**: days after the due date, how often, at most how many), and **statements of account** (**Reports → Statements → Email**): a PDF to the customer or vendor, recorded in the audit trail. Without SMTP, download the PDF and send it yourself.
 
 Reports only go to members who can see reports, checked at each run. Each schedule keeps its latest `REPORT_RUNS_KEPT` (24) runs.
 

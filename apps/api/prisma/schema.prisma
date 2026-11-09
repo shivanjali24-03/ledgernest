@@ -125,6 +125,7 @@ model Organization {
   webhookDeliveries   WebhookDelivery[]
   scheduledReports    ScheduledReport[]
   reportDeliveries    ReportDelivery[]
+  reminderPolicy      ReminderPolicy?
 
   @@map("organizations")
 }
@@ -1584,4 +1585,21 @@ model ReportDelivery {
 
   @@index([organizationId, scheduleId, createdAt])
   @@map("report_deliveries")
+}
+
+/// When overdue invoices get automatic payment reminders: the first some days after the due date, then every so
+/// many days, up to a limit. Manual reminders count towards the limit and the spacing.
+model ReminderPolicy {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @unique @map("organization_id") @db.Uuid
+  enabled         Boolean  @default(false)
+  firstAfterDays  Int      @default(3) @map("first_after_days")
+  repeatEveryDays Int      @default(7) @map("repeat_every_days")
+  maxReminders    Int      @default(3) @map("max_reminders")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("reminder_policies")
 }

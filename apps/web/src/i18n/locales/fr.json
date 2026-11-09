@@ -740,7 +740,8 @@
       "org_backup_export": "Sauvegarde téléchargée",
       "org_backup_restore": "Restauré depuis une sauvegarde",
       "org_statement_email": "Relevé envoyé par e-mail",
-      "org_invoice_remind": "Relance de paiement envoyée"
+      "org_invoice_remind": "Relance de paiement envoyée",
+      "org_invoice_reminder_policy": "Réglages des relances de paiement modifiés"
     },
     "entities": {
       "membership": "Membre",
@@ -2055,6 +2056,24 @@
       "sent": "Relance envoyée à {{email}}",
       "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; elle partirait à {{email}}",
       "history": "Relances envoyées : {{count}}, la dernière le {{date}}"
+    },
+    "reminderPolicy": {
+      "title": "Relances de paiement",
+      "body": "Envoyez automatiquement un e-mail aux clients quand une facture est en retard. Les relances partent à l’adresse enregistrée du client, et seulement si l’e-mail est configuré sur le serveur.",
+      "bodyDemo": "Envoyez automatiquement un e-mail aux clients quand une facture est en retard. La démo garde le réglage mais n’envoie rien.",
+      "enabled": "Envoyer des relances automatiques",
+      "firstAfterDays": "La première, jours après l’échéance",
+      "repeatEveryDays": "Puis tous les (jours)",
+      "maxReminders": "Au plus, par facture",
+      "hint": "Les relances envoyées à la main comptent dans la limite et l’espacement.",
+      "save": "Enregistrer",
+      "savedOn": "Les relances automatiques sont activées",
+      "savedOff": "Les relances automatiques sont désactivées",
+      "bad": {
+        "firstAfterDays": "De 0 à 90 jours.",
+        "repeatEveryDays": "De 1 à 90 jours.",
+        "maxReminders": "De 1 à 10 relances."
+      }
     }
   },
   "payments": {

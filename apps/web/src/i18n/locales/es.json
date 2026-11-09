@@ -740,7 +740,8 @@
       "org_backup_export": "Copia de seguridad descargada",
       "org_backup_restore": "Restaurado desde una copia de seguridad",
       "org_statement_email": "Estado de cuenta enviado por correo",
-      "org_invoice_remind": "Recordatorio de pago enviado"
+      "org_invoice_remind": "Recordatorio de pago enviado",
+      "org_invoice_reminder_policy": "Ajustes de recordatorios de pago modificados"
     },
     "entities": {
       "membership": "Miembro",
@@ -2055,6 +2056,24 @@
       "sent": "Recordatorio enviado a {{email}}",
       "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
       "history": "Recordatorios enviados: {{count}}, el último el {{date}}"
+    },
+    "reminderPolicy": {
+      "title": "Recordatorios de pago",
+      "body": "Envía un correo a los clientes automáticamente cuando una factura vence. Los recordatorios van al correo registrado del cliente, y solo si el correo está configurado en el servidor.",
+      "bodyDemo": "Envía un correo a los clientes automáticamente cuando una factura vence. La demo guarda el ajuste pero no envía nada.",
+      "enabled": "Enviar recordatorios automáticos",
+      "firstAfterDays": "El primero, días después del vencimiento",
+      "repeatEveryDays": "Después, cada (días)",
+      "maxReminders": "Como máximo, por factura",
+      "hint": "Los recordatorios enviados a mano cuentan para el límite y el intervalo.",
+      "save": "Guardar",
+      "savedOn": "Los recordatorios automáticos están activados",
+      "savedOff": "Los recordatorios automáticos están desactivados",
+      "bad": {
+        "firstAfterDays": "De 0 a 90 días.",
+        "repeatEveryDays": "De 1 a 90 días.",
+        "maxReminders": "De 1 a 10 recordatorios."
+      }
     }
   },
   "payments": {

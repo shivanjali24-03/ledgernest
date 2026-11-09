@@ -2,11 +2,18 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
 } from '@nestjs/common';
 import {
   currencyDigits,
   daysBetween,
+  DEFAULT_REMINDER_POLICY,
+  reminderDue,
+  todayIn,
   type invoiceReminderSchema,
+  type ReminderPolicy,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
@@ -17,10 +24,25 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoicesService } from './invoices.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
+/** Who sends it: a person from a request, or the automatic run (no actor) */
+type Sender = {
+  organizationId: string;
+  actorId: string | null;
+  req?: Request;
+};
 
-/** Payment reminders: an email to the customer about an issued invoice that still has something owed */
+/**
+ * Payment reminders: an email to the customer about an issued invoice that still has something owed, sent by
+ * hand or automatically under the organisation's policy. Due automatic ones go out every
+ * INVOICE_REMINDERS_MINUTES (60; 0 turns it off).
+ */
 @Injectable()
-export class InvoiceRemindersService {
+export class InvoiceRemindersService
+  implements OnApplicationBootstrap, OnApplicationShutdown
+{
+  private readonly log = new Logger('InvoiceReminders');
+  private timer: NodeJS.Timeout | null = null;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
@@ -28,12 +50,144 @@ export class InvoiceRemindersService {
     private readonly invoices: InvoicesService,
   ) {}
 
+  onApplicationBootstrap() {
+    const minutes = Number(
+      process.env.INVOICE_REMINDERS_MINUTES ??
+        (process.env.NODE_ENV === 'test' ? 0 : 60),
+    );
+    if (!minutes) return;
+    this.timer = setInterval(
+      () =>
+        void this.runDue().catch((e: unknown) =>
+          this.log.error(e instanceof Error ? e.message : String(e)),
+        ),
+      minutes * 60_000,
+    );
+  }
+
+  onApplicationShutdown() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  async policy(organizationId: string): Promise<ReminderPolicy> {
+    const p = await this.prisma.reminderPolicy.findUnique({
+      where: { organizationId },
+      select: {
+        enabled: true,
+        firstAfterDays: true,
+        repeatEveryDays: true,
+        maxReminders: true,
+      },
+    });
+    return p ?? DEFAULT_REMINDER_POLICY;
+  }
+
+  async setPolicy(input: ReminderPolicy, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const before = await this.policy(organizationId);
+    await this.prisma.reminderPolicy.upsert({
+      where: { organizationId },
+      create: { organizationId, ...input },
+      update: input,
+    });
+    await this.audit.record({
+      action: 'org.invoice.reminder_policy',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'reminder_policy',
+      entityId: organizationId,
+      before,
+      after: input,
+      req: ctx.req,
+    });
+    return input;
+  }
+
+  /**
+   * Sends every automatic reminder that's due, in organisations whose policy is on and that can send email.
+   * Returns how many went. Invoices without a customer email are skipped.
+   */
+  async runDue(now = new Date()) {
+    if (!this.mail.configured) return 0;
+    const policies = await this.prisma.reminderPolicy.findMany({
+      where: { enabled: true, organization: { status: 'ACTIVE' } },
+      select: {
+        organizationId: true,
+        enabled: true,
+        firstAfterDays: true,
+        repeatEveryDays: true,
+        maxReminders: true,
+        organization: { select: { timeZone: true } },
+      },
+    });
+    let sent = 0;
+    for (const { organization, organizationId, ...policy } of policies) {
+      const today = todayIn(organization.timeZone, now);
+      const latestDue = new Date(`${today}T00:00:00Z`);
+      latestDue.setUTCDate(
+        latestDue.getUTCDate() - Math.max(1, policy.firstAfterDays),
+      );
+      const candidates = await this.prisma.invoice.findMany({
+        where: {
+          organizationId,
+          status: 'issued',
+          dueDate: { lte: latestDue },
+          reminders: { lt: policy.maxReminders },
+          total: { gt: this.prisma.invoice.fields.amountPaid },
+          contact: { email: { not: null } },
+        },
+        select: {
+          id: true,
+          status: true,
+          total: true,
+          amountPaid: true,
+          dueDate: true,
+          reminders: true,
+          lastRemindedAt: true,
+        },
+        orderBy: { dueDate: 'asc' },
+      });
+      for (const c of candidates) {
+        const due = reminderDue(
+          {
+            status: c.status,
+            balance: Number(c.total - c.amountPaid),
+            dueDate: c.dueDate.toISOString().slice(0, 10),
+            reminders: c.reminders,
+            lastRemindedAt: c.lastRemindedAt?.toISOString() ?? null,
+          },
+          policy,
+          today,
+        );
+        if (!due) continue;
+        try {
+          await this.remind(c.id, {}, { organizationId, actorId: null }, now);
+          sent++;
+        } catch (e) {
+          this.log.warn(
+            `Reminder for invoice ${c.id} not sent: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+      }
+    }
+    return sent;
+  }
+
   async remind(
     id: string,
     input: z.output<typeof invoiceReminderSchema>,
-    ctx: Ctx,
+    who: Ctx | Sender,
+    now = new Date(),
   ) {
-    const organizationId = ctx.tenant.organizationId;
+    const sender: Sender =
+      'tenant' in who
+        ? {
+            organizationId: who.tenant.organizationId,
+            actorId: who.actor.userId,
+            req: who.req,
+          }
+        : who;
+    const organizationId = sender.organizationId;
     const inv = await this.invoices.get(organizationId, id);
     if (inv.status !== 'issued' || inv.balance <= 0)
       throw new ConflictException({
@@ -61,9 +215,7 @@ export class InvoiceRemindersService {
     const digits = currencyDigits(currency);
     const money = (minor: number) =>
       `${currency} ${(minor / 10 ** digits).toFixed(digits)}`;
-    const today = new Intl.DateTimeFormat('en-CA', {
-      timeZone: org.timeZone,
-    }).format(new Date());
+    const today = todayIn(org.timeZone, now);
     const late = daysBetween(inv.dueDate, today);
     const when =
       late > 0
@@ -90,12 +242,12 @@ export class InvoiceRemindersService {
       });
     const updated = await this.prisma.invoice.update({
       where: { id },
-      data: { lastRemindedAt: new Date(), reminders: { increment: 1 } },
+      data: { lastRemindedAt: now, reminders: { increment: 1 } },
       select: { lastRemindedAt: true, reminders: true },
     });
     await this.audit.record({
       action: 'org.invoice.remind',
-      actorId: ctx.actor.userId,
+      actorId: sender.actorId,
       organizationId,
       entityType: 'invoice',
       entityId: id,
@@ -104,8 +256,9 @@ export class InvoiceRemindersService {
         email: to,
         balance: inv.balance,
         reminders: updated.reminders,
+        automatic: !sender.actorId,
       },
-      req: ctx.req,
+      req: sender.req,
     });
     return { sentTo: to, ...updated };
   }
