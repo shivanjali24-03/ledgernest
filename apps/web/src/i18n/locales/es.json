@@ -3122,5 +3122,30 @@
     "emailedTo": "enviado a {{count}}",
     "notEmailed": "guardado aquí (sin correo)",
     "download": "Descargar {{name}}"
+  },
+  "backups": {
+    "title": "Copias de seguridad",
+    "body": "Descarga toda la contabilidad de esta organización en un archivo y restaura un archivo como una nueva organización tuya. Las personas, las claves de API y el registro de auditoría no se incluyen.",
+    "bodyDemo": "Descarga todo lo que la demo guarda en este navegador y vuelve a poner un archivo en su lugar.",
+    "download": "Descargar una copia",
+    "restore": "Restaurar desde un archivo",
+    "downloaded": "Copia descargada",
+    "failed": "No ha funcionado. Inténtalo de nuevo.",
+    "restoredDemo": "La empresa de la demo tiene ahora los datos del archivo",
+    "invalidWith": "No se restauró nada: {{first}}",
+    "tooBig": "Ese archivo es demasiado grande para restaurarlo aquí.",
+    "notBackup": "Eso no es una copia de seguridad de LedgerNest.",
+    "restoredSuffix": "restaurada",
+    "restored": "{{name}} está lista: elígela entre tus organizaciones.",
+    "restoreTitle": "¿Restaurar esta copia?",
+    "restoreBody": "Primero se comprueba y luego se restaura como una nueva organización de la que eres propietario. Esta organización no se toca.",
+    "restoreBodyDemo": "Los datos de la empresa de la demo en este navegador se sustituyen por los del archivo.",
+    "replaceDemo": "Sustituir los datos de la demo",
+    "restoreAsNew": "Restaurar como nueva organización",
+    "from": "De",
+    "made": "Hecha",
+    "holds": "Contiene",
+    "counts": "{{rows}} filas en {{tables}} tablas",
+    "newName": "Nombre de la nueva organización"
   }
 }

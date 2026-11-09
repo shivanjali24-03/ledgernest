@@ -3122,5 +3122,30 @@
     "emailedTo": "envoyé à {{count}}",
     "notEmailed": "gardé ici (pas d’e-mail)",
     "download": "Télécharger {{name}}"
+  },
+  "backups": {
+    "title": "Sauvegardes",
+    "body": "Téléchargez toute la comptabilité de cette organisation en un fichier, et restaurez un fichier en une nouvelle organisation dont vous êtes propriétaire. Les personnes, les clés d’API et la piste d’audit ne suivent pas.",
+    "bodyDemo": "Téléchargez tout ce que la démo garde dans ce navigateur, et remettez un fichier à sa place.",
+    "download": "Télécharger une sauvegarde",
+    "restore": "Restaurer depuis un fichier",
+    "downloaded": "Sauvegarde téléchargée",
+    "failed": "Cela n’a pas fonctionné. Réessayez.",
+    "restoredDemo": "La société de démo contient maintenant les données du fichier",
+    "invalidWith": "Rien n’a été restauré : {{first}}",
+    "tooBig": "Ce fichier est trop volumineux pour être restauré ici.",
+    "notBackup": "Ce n’est pas une sauvegarde LedgerNest.",
+    "restoredSuffix": "restaurée",
+    "restored": "{{name}} est prête : choisissez-la parmi vos organisations.",
+    "restoreTitle": "Restaurer cette sauvegarde ?",
+    "restoreBody": "Elle est d’abord vérifiée, puis restaurée en une nouvelle organisation dont vous êtes propriétaire. Cette organisation-ci n’est pas modifiée.",
+    "restoreBodyDemo": "Les données de la société de démo dans ce navigateur sont remplacées par celles du fichier.",
+    "replaceDemo": "Remplacer les données de la démo",
+    "restoreAsNew": "Restaurer en nouvelle organisation",
+    "from": "De",
+    "made": "Faite le",
+    "holds": "Contient",
+    "counts": "{{rows}} lignes dans {{tables}} tables",
+    "newName": "Nom de la nouvelle organisation"
   }
 }

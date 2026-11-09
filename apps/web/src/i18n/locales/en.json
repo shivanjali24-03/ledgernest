@@ -3122,5 +3122,30 @@
     "emailedTo": "emailed to {{count}}",
     "notEmailed": "kept here (not emailed)",
     "download": "Download {{name}}"
+  },
+  "backups": {
+    "title": "Backups",
+    "body": "Download all of this organisation’s books as one file, and restore a file as a new organisation you own. People, API keys and the audit trail stay behind.",
+    "bodyDemo": "Download everything the demo keeps in this browser, and put a file back in its place.",
+    "download": "Download a backup",
+    "restore": "Restore from a file",
+    "downloaded": "Backup downloaded",
+    "failed": "That didn’t work. Try again.",
+    "restoredDemo": "The demo company now holds the file’s data",
+    "invalidWith": "Nothing was restored: {{first}}",
+    "tooBig": "That file is too big to restore here.",
+    "notBackup": "That isn’t a LedgerNest backup.",
+    "restoredSuffix": "restored",
+    "restored": "{{name}} is ready: choose it from your organisations.",
+    "restoreTitle": "Restore this backup?",
+    "restoreBody": "It’s checked first, then restored as a new organisation with you as its owner. This organisation isn’t touched.",
+    "restoreBodyDemo": "The demo company’s data in this browser is replaced by the file’s.",
+    "replaceDemo": "Replace the demo’s data",
+    "restoreAsNew": "Restore as a new organisation",
+    "from": "From",
+    "made": "Made",
+    "holds": "Holds",
+    "counts": "{{rows}} rows in {{tables}} tables",
+    "newName": "Name of the new organisation"
   }
 }

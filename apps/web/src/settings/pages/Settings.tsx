@@ -19,6 +19,7 @@ import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui
 import { useToast } from '../../ui/toastContext';
 import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField } from '../form';
 import LogoCard from '../LogoCard';
+import BackupsCard from '../../backups/BackupsCard';
 import type { OrganizationSettings, SettingsApi } from '../types';
 import { useSettingsApi } from '../useSettingsApi';
 
@@ -253,6 +254,11 @@ export default function Settings() {
           </div>
         )}
       </motion.div>
+      {session.permissions.has('org.delete') && (
+        <motion.div variants={fadeUp}>
+          <BackupsCard />
+        </motion.div>
+      )}
     </motion.div>
   );
 }

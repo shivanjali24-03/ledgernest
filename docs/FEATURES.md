@@ -90,7 +90,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Data import | Chart of accounts, contacts, items and opening balances from CSV or Excel: columns matched from the headers, every row checked before anything is saved | ✅ #140 |
 | API keys and webhooks | Scoped API keys shown once and revocable, acting within their maker’s permissions; signed webhooks for invoice, payment and bill events with retries and a delivery log | ✅ #142 #143 |
 | Scheduled reports | Profit and loss, balance sheet, trial balance and aging made weekly or monthly as Excel or CSV, kept in the app and emailed to members who can see reports | ✅ #145 |
-| Backups and restore | An organisation's data exported and restored | Planned |
+| Backups and restore | An organisation’s books downloaded as one JSON file and restored as a new organisation, checked before anything is written; Owners only | ✅ #147 |
 
 ## Quality standards (apply to every feature)
 

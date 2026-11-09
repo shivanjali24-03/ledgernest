@@ -3122,5 +3122,30 @@
     "emailedTo": "an {{count}} gemailt",
     "notEmailed": "hier aufbewahrt (nicht gemailt)",
     "download": "{{name}} herunterladen"
+  },
+  "backups": {
+    "title": "Sicherungen",
+    "body": "Laden Sie die gesamte Buchhaltung dieser Organisation als eine Datei herunter und stellen Sie eine Datei als neue Organisation wieder her, deren Inhaber Sie sind. Personen, API-Schlüssel und das Prüfprotokoll bleiben außen vor.",
+    "bodyDemo": "Laden Sie alles herunter, was die Demo in diesem Browser speichert, und setzen Sie eine Datei an seine Stelle.",
+    "download": "Sicherung herunterladen",
+    "restore": "Aus einer Datei wiederherstellen",
+    "downloaded": "Sicherung heruntergeladen",
+    "failed": "Das hat nicht geklappt. Versuchen Sie es erneut.",
+    "restoredDemo": "Die Demofirma enthält jetzt die Daten der Datei",
+    "invalidWith": "Nichts wiederhergestellt: {{first}}",
+    "tooBig": "Diese Datei ist zu groß, um sie hier wiederherzustellen.",
+    "notBackup": "Das ist keine LedgerNest-Sicherung.",
+    "restoredSuffix": "wiederhergestellt",
+    "restored": "{{name}} ist bereit: Wählen Sie sie unter Ihren Organisationen.",
+    "restoreTitle": "Diese Sicherung wiederherstellen?",
+    "restoreBody": "Sie wird zuerst geprüft und dann als neue Organisation mit Ihnen als Inhaber wiederhergestellt. Diese Organisation bleibt unberührt.",
+    "restoreBodyDemo": "Die Daten der Demofirma in diesem Browser werden durch die der Datei ersetzt.",
+    "replaceDemo": "Daten der Demo ersetzen",
+    "restoreAsNew": "Als neue Organisation wiederherstellen",
+    "from": "Von",
+    "made": "Erstellt",
+    "holds": "Enthält",
+    "counts": "{{rows}} Zeilen in {{tables}} Tabellen",
+    "newName": "Name der neuen Organisation"
   }
 }
