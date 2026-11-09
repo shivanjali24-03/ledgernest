@@ -671,7 +671,8 @@
       "org_banking_ignore": "बैंक पंक्ति अलग रखी",
       "org_banking_unignore": "बैंक पंक्ति वापस लाई",
       "org_banking_reconcile": "खाते का मिलान पूरा",
-      "org_banking_reconcile_undo": "मिलान वापस लिया"
+      "org_banking_reconcile_undo": "मिलान वापस लिया",
+      "org_report_export": "रिपोर्ट डाउनलोड की"
     },
     "entities": {
       "membership": "सदस्य",
@@ -1425,7 +1426,11 @@
         "quantity": "मात्रा",
         "documents": "13 जारी दस्तावेज़: {{total}} इनवॉइस ({{first}} से {{last}}), {{cancelled}} रद्द; {{notes}} क्रेडिट नोट।"
       }
-    }
+    },
+    "print": "प्रिंट या PDF",
+    "excel": "Excel",
+    "printAsOf": "{{date}} तक",
+    "printRange": "{{from}} से {{to}}"
   },
   "taxes": {
     "title": "कर",

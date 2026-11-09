@@ -671,7 +671,8 @@
       "org_banking_ignore": "Bankzeile zurückgestellt",
       "org_banking_unignore": "Bankzeile wiederhergestellt",
       "org_banking_reconcile": "Konto abgeglichen",
-      "org_banking_reconcile_undo": "Abgleich rückgängig gemacht"
+      "org_banking_reconcile_undo": "Abgleich rückgängig gemacht",
+      "org_report_export": "Bericht heruntergeladen"
     },
     "entities": {
       "membership": "Mitglied",
@@ -1425,7 +1426,11 @@
         "quantity": "Menge",
         "documents": "13 Ausgestellte Belege: {{total}} Rechnungen ({{first}} bis {{last}}), {{cancelled}} storniert; {{notes}} Gutschriften."
       }
-    }
+    },
+    "print": "Drucken oder PDF",
+    "excel": "Excel",
+    "printAsOf": "Stand {{date}}",
+    "printRange": "{{from}} bis {{to}}"
   },
   "taxes": {
     "title": "Steuern",

@@ -1,13 +1,14 @@
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare } from '@ledgernest/shared';
-import { AlertTriangle, Building2, CheckCircle2, Download } from 'lucide-react';
+import { ACCOUNT_TYPES, currencyDigits, parseCsv, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare } from '@ledgernest/shared';
+import { AlertTriangle, Building2, CheckCircle2, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
 import { useIntlLocale } from '../../i18n';
 import { formatDate } from '../../lib/format';
 import { useMoney } from '../../lib/useMoney';
+import { csvToRows, xlsx } from '../../lib/xlsx';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import { apiErrorMessage } from '../../platform/errors';
@@ -57,6 +58,7 @@ export default function Reports() {
   const to = params.get('to') ?? today;
   const accountId = params.get('account') ?? '';
   const canExport = session.permissions.has('reports.export');
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -94,7 +96,12 @@ export default function Reports() {
   const aging = useQuery({ queryKey: [...key, 'aging', side, asOf], queryFn: () => api!.aging(side, asOf), enabled: !!api && tab === 'aging', placeholderData: keepPreviousData });
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
+    mutationFn: async (format: 'csv' | 'xlsx') => {
+      const csvFile = await (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to));
+      if (format === 'csv') return csvFile;
+      // Excel from the same figures, numbers as numbers
+      return { filename: csvFile.filename.replace(/\.(csv|json)$/, '.xlsx'), blob: xlsx([{ name: reportTitle, rows: csvToRows(await csvFile.blob.text(), parseCsv) }]) };
+    },
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -122,15 +129,32 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            canExport ? (
-              <Button variant="secondary" icon={<Download className="size-4" />} loading={exporting.isPending} disabled={tab === 'ledger' && !accountId} onClick={() => exporting.mutate()}>
-                {t('reports.export')}
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={tab === 'ledger' && !accountId}>
+                {t('reports.print')}
               </Button>
-            ) : undefined
+              {canExport && (
+                <>
+                  <Button variant="secondary" icon={<Download className="size-4" />} loading={exporting.isPending && exporting.variables === 'csv'} disabled={tab === 'ledger' && !accountId} onClick={() => exporting.mutate('csv')}>
+                    {t('reports.export')}
+                  </Button>
+                  <Button variant="secondary" icon={<FileSpreadsheet className="size-4" />} loading={exporting.isPending && exporting.variables === 'xlsx'} disabled={tab === 'ledger' && !accountId} onClick={() => exporting.mutate('xlsx')}>
+                    {t('reports.excel')}
+                  </Button>
+                </>
+              )}
+            </div>
           }
         />
       </motion.div>
-      <motion.div variants={fadeUp}>
+      {/* On paper: who it's for and what it is, in place of the app's own header and the tabs */}
+      <div className="hidden print:block">
+        <p className="text-lg font-semibold">{settings?.legalName ?? settings?.name ?? session.organization}</p>
+        {settings?.taxId && <p className="text-sm">{settings.taxId}</p>}
+        <p className="mt-2 text-base font-semibold">{reportTitle}</p>
+        <p className="text-sm">{['trial-balance', 'balance-sheet', 'aging'].includes(tab) ? t('reports.printAsOf', { date: day(asOf) }) : t('reports.printRange', { from: day(from), to: day(to) })}</p>
+      </div>
+      <motion.div variants={fadeUp} className="print:hidden">
         <Tabs<Tab>
           label={t('reports.title')}
           value={tab}
@@ -150,7 +174,7 @@ export default function Reports() {
 
       {tab === 'trial-balance' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <div className="w-48">
               <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
             </div>
@@ -234,7 +258,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'pnl' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <div className="w-44">
               <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
             </div>
@@ -247,7 +271,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'balance-sheet' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <div className="w-44">
               <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
             </div>
@@ -265,7 +289,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'cash-flow' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <div className="w-44">
               <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
             </div>
@@ -286,7 +310,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'gst' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <Segmented<'gstr-3b' | 'gstr-1'>
               label={t('reports.gst.return')}
               value={gstReturn}
@@ -308,7 +332,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
             <Segmented<AgingSide>
               label={t('reports.aging.side')}
               value={side}
@@ -327,7 +351,7 @@ export default function Reports() {
         </motion.div>
       ) : tab === 'tax' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
-          <div className="grid gap-4 sm:grid-cols-[11rem_11rem_minmax(0,1fr)]">
+          <div className="grid gap-4 print:hidden sm:grid-cols-[11rem_11rem_minmax(0,1fr)]">
             <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
             <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
             <p className="self-end pb-2 text-sm text-ink-500">{t('reports.tax.hint')}</p>

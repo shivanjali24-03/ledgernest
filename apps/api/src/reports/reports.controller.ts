@@ -1,4 +1,11 @@
-import { Controller, Get, Header, Query, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Query,
+  Res,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
@@ -22,6 +29,7 @@ import type { Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DashboardService } from './dashboard.service.js';
+import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
 import { ReportsService } from './reports.service.js';
 
@@ -57,6 +65,7 @@ const rangeQuery = new ZodValidationPipe(
   description: 'The organisation to act in',
 })
 @Controller('reports')
+@UseInterceptors(ExportAuditInterceptor)
 export class ReportsController {
   constructor(
     private readonly reports: ReportsService,

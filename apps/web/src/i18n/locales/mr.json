@@ -671,7 +671,8 @@
       "org_banking_ignore": "बँक ओळ बाजूला ठेवली",
       "org_banking_unignore": "बँक ओळ परत आणली",
       "org_banking_reconcile": "खाते जुळवले",
-      "org_banking_reconcile_undo": "जुळवणी मागे घेतली"
+      "org_banking_reconcile_undo": "जुळवणी मागे घेतली",
+      "org_report_export": "अहवाल डाउनलोड केला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -1425,7 +1426,11 @@
         "quantity": "प्रमाण",
         "documents": "13 जारी दस्तऐवज: {{total}} इनव्हॉइस ({{first}} ते {{last}}), {{cancelled}} रद्द; {{notes}} क्रेडिट नोट."
       }
-    }
+    },
+    "print": "प्रिंट किंवा PDF",
+    "excel": "Excel",
+    "printAsOf": "{{date}} रोजी",
+    "printRange": "{{from}} ते {{to}}"
   },
   "taxes": {
     "title": "कर",
