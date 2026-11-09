@@ -228,6 +228,11 @@ export default function ChartOfAccounts() {
                             </Pill>
                           </span>
                         )}
+                        {a.currency && (
+                          <span title={t('accounts.currencyHint', { code: a.currency })}>
+                            <Pill tone="brand">{a.currency}</Pill>
+                          </span>
+                        )}
                         {a.archived && <Pill>{t('accounts.archived')}</Pill>}
                         <RowMenu label={t('accounts.actionsFor', { name: a.name })} items={menuFor(a)} />
                       </li>

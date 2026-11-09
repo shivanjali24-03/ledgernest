@@ -2,7 +2,7 @@ import type { Account } from './types';
 import { flattenTree, heightOf, levelOf, parentChoices, searchAccounts, suggestCode } from './tree';
 
 const acc = (id: string, code: string, name: string, parentId: string | null = null, type: Account['type'] = 'asset', archived = false): Account => ({
-  id, code, name, type, subtype: 'bank', description: null, parentId, systemKey: null, normalSide: 'debit', system: false, archived, archivedAt: null, childCount: 0,
+  id, code, name, type, subtype: 'bank', description: null, parentId, systemKey: null, normalSide: 'debit', system: false, archived, archivedAt: null, childCount: 0, currency: null,
 });
 const accounts = [
   acc('bank', '1100', 'Bank accounts'),

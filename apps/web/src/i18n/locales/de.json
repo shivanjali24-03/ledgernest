@@ -25,7 +25,8 @@
       "platformAudit": "Plattform-Audit-Log",
       "periods": "Geschäftsjahre",
       "taxes": "Steuern",
-      "gstSlabs": "GST-Sätze"
+      "gstSlabs": "GST-Sätze",
+      "currencies": "Währungen"
     },
     "soon": "Bald"
   },
@@ -857,7 +858,9 @@
       "systemType": "Der Typ eines Systemkontos kann nicht geändert werden.",
       "typeLocked": "Konten mit Unterkonten behalten ihren Typ.",
       "parent": "Unterkonten fließen in ihr übergeordnetes Konto ein und haben denselben Typ.",
-      "code": "Buchstaben, Ziffern, Punkte und Bindestriche, z. B. 1100.01."
+      "code": "Buchstaben, Ziffern, Punkte und Bindestriche, z. B. 1100.01.",
+      "currency": "Führen Sie ein Bankkonto, eine Forderung oder Verbindlichkeit in einer Fremdwährung. Ihre Zeilen werden dann in dieser Währung erfasst.",
+      "currencyLocked": "Die Währung kann nicht mehr geändert werden, sobald das Konto Buchungen hat."
     },
     "fields": {
       "type": "Typ",
@@ -865,7 +868,8 @@
       "parent": "Übergeordnetes Konto",
       "code": "Kontonummer",
       "name": "Name",
-      "description": "Beschreibung"
+      "description": "Beschreibung",
+      "currency": "Währung"
     },
     "dialog": {
       "newTitle": "Neues Konto",
@@ -906,7 +910,10 @@
       "parent_not_found": "Dieses übergeordnete Konto existiert nicht mehr.",
       "already_archived": "Dieses Konto ist bereits archiviert.",
       "not_archived": "Dieses Konto ist nicht archiviert.",
-      "chart_not_empty": "Vorlagen können nur auf einen leeren Kontenplan angewendet werden."
+      "chart_not_empty": "Vorlagen können nur auf einen leeren Kontenplan angewendet werden.",
+      "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
+      "currency_type": "Nur Aktiv- und Passivkonten können in einer Fremdwährung geführt werden.",
+      "used_by_tax": "Ein Steuersatz bucht auf dieses Konto. Ändern Sie zuerst den Steuersatz."
     },
     "validation": {
       "code": "Bis zu 12 Buchstaben, Ziffern, Punkte oder Bindestriche, z. B. 1100.",
@@ -968,7 +975,9 @@
         "name": "Landwirtschaft",
         "description": "Ernte, Vieh, Landmaschinen, Subventionen"
       }
-    }
+    },
+    "baseCurrency": "{{code}} (Basiswährung)",
+    "currencyHint": "Geführt in {{code}}"
   },
   "periods": {
     "title": "Geschäftsjahre",
@@ -1332,6 +1341,57 @@
       "rate": "Geben Sie einen Satz zwischen 0 und 100 ein, der sich gleichmäßig auf CGST und SGST aufteilen lässt.",
       "label": "Geben Sie mindestens 2 Zeichen ein.",
       "effectiveTo": "Das Enddatum darf nicht vor dem Startdatum liegen."
+    }
+  },
+  "currencies": {
+    "title": "Währungen",
+    "description": "Die Bücher werden in {{base}} ({{name}}) geführt. Aktivieren Sie die Währungen, in denen Sie handeln, und pflegen Sie hier ihre Wechselkurse.",
+    "fetch": "Heutige Kurse abrufen",
+    "add": "Währung hinzufügen",
+    "fetched": "{{list}} gespeichert (veröffentlicht am {{date}}).",
+    "fetchedNothing": "Keine neuen Kurse veröffentlicht.",
+    "keptManual": "Von Hand eingegebener Kurs für {{list}} behalten.",
+    "unsupported": "Von der Europäischen Zentralbank nicht abgedeckt, bitte von Hand eingeben: {{list}}.",
+    "removed": "{{code}} entfernt",
+    "empty": "Noch keine Fremdwährungen",
+    "emptyBody": "Fügen Sie eine hinzu, um Bankkonten, Forderungen oder Verbindlichkeiten darin zu führen. Berichtet wird weiterhin in {{base}}.",
+    "sourceNote": "Abgerufene Kurse sind die täglichen Referenzkurse der Europäischen Zentralbank, an Arbeitstagen veröffentlicht. Ein eingegebener Kurs wird nie überschrieben.",
+    "removeTitle": "{{code}} entfernen?",
+    "removeBody": "Ihre Wechselkurse werden ebenfalls entfernt. Eine Währung, in der Konten geführt werden, kann nicht entfernt werden.",
+    "remove": "Entfernen",
+    "rateLine": "1 {{code}} = {{rate}} {{base}}",
+    "noRate": "Noch kein Kurs: fügen Sie einen hinzu, bevor Sie Beträge in dieser Währung erfassen.",
+    "rates": "{{code}}-Kurse",
+    "actionsFor": "Aktionen für {{code}}",
+    "rateSaved": "1 {{code}} = {{rate}} am {{date}} gespeichert",
+    "setRate": "Kurs speichern",
+    "noRates": "Noch keine Kurse.",
+    "removeRate": "Kurs entfernen",
+    "removeRateOn": "Kurs vom {{date}} entfernen",
+    "added": "{{code}} hinzugefügt",
+    "addTitle": "Währung hinzufügen",
+    "addBody": "Beträge darin werden zum Tageskurs in {{base}} umgerechnet.",
+    "source": {
+      "manual": "Eingegeben",
+      "ecb": "EZB"
+    },
+    "fields": {
+      "date": "Datum",
+      "rate": "1 {{code}} in {{base}}",
+      "source": "Quelle",
+      "currency": "Währung"
+    },
+    "validation": {
+      "rate": "Geben Sie einen Kurs über 0 mit höchstens 10 Nachkommastellen ein."
+    },
+    "errors": {
+      "is_base": "Das ist die Basiswährung: Die Bücher werden bereits darin geführt.",
+      "already_enabled": "Diese Währung ist bereits aktiviert.",
+      "in_use": "In dieser Währung werden Konten geführt, daher bleibt sie aktiviert.",
+      "no_currencies": "Aktivieren Sie zuerst eine Währung.",
+      "source_unavailable": "Der Wechselkursdienst war nicht erreichbar. Versuchen Sie es später erneut oder geben Sie die Kurse ein.",
+      "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
+      "currency_type": "Nur Aktiv- und Passivkonten können in einer Fremdwährung geführt werden."
     }
   }
 }

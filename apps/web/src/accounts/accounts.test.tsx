@@ -157,7 +157,7 @@ describe('industry templates', () => {
   ];
 
   it('offers a template to a new organisation, previews it, and creates it', async () => {
-    localStorage.setItem('ledgernest.demo.accounts', JSON.stringify(systemOnly));
+    localStorage.setItem('ledgernest.demo.accounts.v2', JSON.stringify(systemOnly));
     renderApp();
     expect(await screen.findByText('Start with a ready chart of accounts')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Use a template' }));

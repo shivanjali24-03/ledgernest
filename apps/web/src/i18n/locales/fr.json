@@ -25,7 +25,8 @@
       "platformAudit": "Journal d'audit de la plateforme",
       "periods": "Exercices",
       "taxes": "Taxes",
-      "gstSlabs": "Tranches de GST"
+      "gstSlabs": "Tranches de GST",
+      "currencies": "Devises"
     },
     "soon": "Bientôt"
   },
@@ -857,7 +858,9 @@
       "systemType": "Le type d'un compte système ne peut pas changer.",
       "typeLocked": "Les comptes avec des sous-comptes gardent leur type.",
       "parent": "Les sous-comptes se cumulent dans leur parent et partagent son type.",
-      "code": "Lettres, chiffres, points et tirets, comme 1100.01."
+      "code": "Lettres, chiffres, points et tirets, comme 1100.01.",
+      "currency": "Tenez un compte bancaire, une créance ou une dette en devise étrangère. Ses lignes sont alors saisies dans cette devise.",
+      "currencyLocked": "La devise ne peut plus changer une fois que le compte a des écritures."
     },
     "fields": {
       "type": "Type",
@@ -865,7 +868,8 @@
       "parent": "Compte parent",
       "code": "Code",
       "name": "Nom",
-      "description": "Description"
+      "description": "Description",
+      "currency": "Devise"
     },
     "dialog": {
       "newTitle": "Nouveau compte",
@@ -906,7 +910,10 @@
       "parent_not_found": "Ce compte parent n'existe plus.",
       "already_archived": "Ce compte est déjà archivé.",
       "not_archived": "Ce compte n'est pas archivé.",
-      "chart_not_empty": "Les modèles ne s'appliquent qu'à un plan comptable vide."
+      "chart_not_empty": "Les modèles ne s'appliquent qu'à un plan comptable vide.",
+      "currency_not_enabled": "Activez d’abord cette devise dans Devises.",
+      "currency_type": "Seuls les comptes d’actif et de passif peuvent être en devise étrangère.",
+      "used_by_tax": "Un taux de taxe utilise ce compte. Modifiez d’abord le taux de taxe."
     },
     "validation": {
       "code": "Jusqu'à 12 lettres, chiffres, points ou tirets, comme 1100.",
@@ -968,7 +975,9 @@
         "name": "Agriculture",
         "description": "Cultures, élevage, matériel agricole, subventions"
       }
-    }
+    },
+    "baseCurrency": "{{code}} (devise de base)",
+    "currencyHint": "Tenu en {{code}}"
   },
   "periods": {
     "title": "Exercices",
@@ -1332,6 +1341,57 @@
       "rate": "Saisissez un taux entre 0 et 100 qui se partage à parts égales entre CGST et SGST.",
       "label": "Saisissez au moins 2 caractères.",
       "effectiveTo": "La date de fin ne peut pas précéder la date de début."
+    }
+  },
+  "currencies": {
+    "title": "Devises",
+    "description": "La comptabilité est tenue en {{base}} ({{name}}). Activez les devises que vous utilisez et gardez ici leurs taux de change.",
+    "fetch": "Récupérer les taux du jour",
+    "add": "Ajouter une devise",
+    "fetched": "{{list}} enregistrés (publiés le {{date}}).",
+    "fetchedNothing": "Aucun nouveau taux publié.",
+    "keptManual": "Taux saisi à la main conservé pour {{list}}.",
+    "unsupported": "Non couvertes par la Banque centrale européenne, saisissez-les à la main : {{list}}.",
+    "removed": "{{code}} retirée",
+    "empty": "Aucune devise étrangère pour l’instant",
+    "emptyBody": "Ajoutez-en une pour y tenir des comptes bancaires, créances ou dettes. Tout reste présenté en {{base}}.",
+    "sourceNote": "Les taux récupérés sont les taux de référence quotidiens de la Banque centrale européenne, publiés les jours ouvrés. Un taux saisi n’est jamais écrasé.",
+    "removeTitle": "Retirer {{code}} ?",
+    "removeBody": "Ses taux de change sont aussi supprimés. Une devise dans laquelle des comptes sont tenus ne peut pas être retirée.",
+    "remove": "Retirer",
+    "rateLine": "1 {{code}} = {{rate}} {{base}}",
+    "noRate": "Pas encore de taux : ajoutez-en un avant de saisir des montants dans cette devise.",
+    "rates": "Taux {{code}}",
+    "actionsFor": "Actions pour {{code}}",
+    "rateSaved": "1 {{code}} = {{rate}} le {{date}} enregistré",
+    "setRate": "Enregistrer le taux",
+    "noRates": "Pas encore de taux.",
+    "removeRate": "Supprimer le taux",
+    "removeRateOn": "Supprimer le taux du {{date}}",
+    "added": "{{code}} ajoutée",
+    "addTitle": "Ajouter une devise",
+    "addBody": "Ses montants sont convertis en {{base}} au taux du jour.",
+    "source": {
+      "manual": "Saisi",
+      "ecb": "BCE"
+    },
+    "fields": {
+      "date": "Date",
+      "rate": "1 {{code}} en {{base}}",
+      "source": "Source",
+      "currency": "Devise"
+    },
+    "validation": {
+      "rate": "Saisissez un taux supérieur à 0, avec 10 décimales au plus."
+    },
+    "errors": {
+      "is_base": "C’est la devise de base : la comptabilité est déjà tenue dans cette devise.",
+      "already_enabled": "Cette devise est déjà activée.",
+      "in_use": "Des comptes sont tenus dans cette devise : elle reste activée.",
+      "no_currencies": "Activez d’abord une devise.",
+      "source_unavailable": "Le service des taux de change est injoignable. Réessayez plus tard ou saisissez les taux.",
+      "currency_not_enabled": "Activez d’abord cette devise dans Devises.",
+      "currency_type": "Seuls les comptes d’actif et de passif peuvent être en devise étrangère."
     }
   }
 }

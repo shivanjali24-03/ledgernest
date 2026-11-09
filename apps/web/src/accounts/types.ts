@@ -14,6 +14,8 @@ export interface Account {
   archived: boolean;
   archivedAt: string | null;
   childCount: number;
+  /** A foreign-currency account (assets and liabilities only); null = the base currency */
+  currency: string | null;
 }
 
 /** An organisation's chart of accounts. Live and demo both implement it. */
