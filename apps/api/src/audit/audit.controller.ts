@@ -1,8 +1,19 @@
 import { Controller, Get, Header, Query, Req, Res } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiProduces, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiHeader,
+  ApiOkResponse,
+  ApiProduces,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { auditQuerySchema, type AuditQuery } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
-import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
+import {
+  CurrentActor,
+  CurrentTenant,
+  RequirePermission,
+} from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AuditQueryService, type AuditFilter } from './audit-query.service.js';
@@ -13,11 +24,20 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function queryDocs() {
   return [
-    ApiQuery({ name: 'group', required: false, description: 'signIns, members, invitations, roles, supportAccess, organizations, platformUsers, exports' }),
+    ApiQuery({
+      name: 'group',
+      required: false,
+      description:
+        'signIns, members, invitations, roles, supportAccess, organizations, platformUsers, exports',
+    }),
     ApiQuery({ name: 'actorId', required: false }),
     ApiQuery({ name: 'from', required: false, description: 'ISO timestamp' }),
     ApiQuery({ name: 'to', required: false, description: 'ISO timestamp' }),
-    ApiQuery({ name: 'cursor', required: false, description: 'nextCursor from the previous page' }),
+    ApiQuery({
+      name: 'cursor',
+      required: false,
+      description: 'nextCursor from the previous page',
+    }),
     ApiQuery({ name: 'limit', required: false }),
   ];
 }
@@ -43,12 +63,16 @@ export class OrganizationAuditController {
   @apply(...queryDocs())
   @ApiOkResponse({ description: 'Newest first, 50 per page, with nextCursor' })
   list(@Query(filters) q: AuditQuery, @CurrentTenant() tenant: Tenant) {
-    return this.audit.list(q as AuditFilter, { organizationId: tenant.organizationId });
+    return this.audit.list(q as AuditFilter, {
+      organizationId: tenant.organizationId,
+    });
   }
 
   @Get('actors')
   @RequirePermission('audit.view')
-  @ApiOkResponse({ description: 'People who appear in this log, most recently active first' })
+  @ApiOkResponse({
+    description: 'People who appear in this log, most recently active first',
+  })
   actors(@CurrentTenant() tenant: Tenant) {
     return this.audit.actors({ organizationId: tenant.organizationId });
   }
@@ -59,10 +83,27 @@ export class OrganizationAuditController {
   @Header('Cache-Control', 'no-store')
   @ApiProduces('text/csv')
   @apply(...queryDocs())
-  async export(@Query(filters) q: AuditQuery, @CurrentTenant() tenant: Tenant, @CurrentActor() actor: Actor, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const out = await this.audit.csv(q as AuditFilter, { organizationId: tenant.organizationId });
-    await this.writer.record({ action: 'org.audit.export', actorId: actor.userId, organizationId: tenant.organizationId, after: { filters: { ...q, cursor: undefined }, rows: out.count }, req });
-    res.setHeader('Content-Disposition', `attachment; filename="audit-log-${today()}.csv"`);
+  async export(
+    @Query(filters) q: AuditQuery,
+    @CurrentTenant() tenant: Tenant,
+    @CurrentActor() actor: Actor,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const out = await this.audit.csv(q as AuditFilter, {
+      organizationId: tenant.organizationId,
+    });
+    await this.writer.record({
+      action: 'org.audit.export',
+      actorId: actor.userId,
+      organizationId: tenant.organizationId,
+      after: { filters: { ...q, cursor: undefined }, rows: out.count },
+      req,
+    });
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="audit-log-${today()}.csv"`,
+    );
     if (out.truncated) res.setHeader('X-Truncated', 'true');
     return out.body;
   }
@@ -88,7 +129,9 @@ export class PlatformAuditController {
 
   @Get('actors')
   @RequirePermission('platform.audit.view')
-  @ApiOkResponse({ description: 'People who appear in the log, most recently active first' })
+  @ApiOkResponse({
+    description: 'People who appear in the log, most recently active first',
+  })
   actors() {
     return this.audit.actors({});
   }
@@ -99,10 +142,24 @@ export class PlatformAuditController {
   @Header('Cache-Control', 'no-store')
   @ApiProduces('text/csv')
   @apply(...queryDocs(), ApiQuery({ name: 'organizationId', required: false }))
-  async export(@Query(filters) q: AuditQuery, @CurrentActor() actor: Actor, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async export(
+    @Query(filters) q: AuditQuery,
+    @CurrentActor() actor: Actor,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const out = await this.audit.csv(q as AuditFilter, {});
-    await this.writer.record({ action: 'platform.audit.export', actorId: actor.userId, organizationId: q.organizationId ?? null, after: { filters: { ...q, cursor: undefined }, rows: out.count }, req });
-    res.setHeader('Content-Disposition', `attachment; filename="platform-audit-log-${today()}.csv"`);
+    await this.writer.record({
+      action: 'platform.audit.export',
+      actorId: actor.userId,
+      organizationId: q.organizationId ?? null,
+      after: { filters: { ...q, cursor: undefined }, rows: out.count },
+      req,
+    });
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="platform-audit-log-${today()}.csv"`,
+    );
     if (out.truncated) res.setHeader('X-Truncated', 'true');
     return out.body;
   }

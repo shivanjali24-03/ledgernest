@@ -475,7 +475,8 @@
       "banking": "Banque",
       "reports": "Rapports",
       "audit": "Audit",
-      "approvals": "Approbations"
+      "approvals": "Approbations",
+      "integrations": "Intégrations"
     },
     "org_settings_view": "Voir les paramètres",
     "org_settings_manage": "Modifier les paramètres",
@@ -510,7 +511,8 @@
     "reports_export": "Exporter les rapports",
     "audit_view": "Voir le journal d'audit",
     "approvals_manage": "Définir les règles d’approbation",
-    "approvals_approve": "Approuver et renvoyer"
+    "approvals_approve": "Approuver et renvoyer",
+    "integrations_manage": "Gérer les clés d’API et les webhooks"
   },
   "audit": {
     "title": "Journal d'audit",
@@ -573,7 +575,8 @@
       "costCentres": "Centres de coûts",
       "inventory": "Stocks",
       "approvals": "Approbations",
-      "imports": "Imports"
+      "imports": "Imports",
+      "integrations": "Intégrations"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -720,7 +723,12 @@
       "org_import_accounts": "Plan comptable importé",
       "org_import_contacts": "Contacts importés",
       "org_import_items": "Articles importés",
-      "org_import_opening_balances": "Soldes d’ouverture importés"
+      "org_import_opening_balances": "Soldes d’ouverture importés",
+      "org_api_key_create": "Clé d’API créée",
+      "org_api_key_revoke": "Clé d’API révoquée",
+      "org_webhook_create": "Webhook ajouté",
+      "org_webhook_update": "Webhook modifié",
+      "org_webhook_delete": "Webhook supprimé"
     },
     "entities": {
       "membership": "Membre",

@@ -475,7 +475,8 @@
       "banking": "Banca",
       "reports": "Informes",
       "audit": "Auditoría",
-      "approvals": "Aprobaciones"
+      "approvals": "Aprobaciones",
+      "integrations": "Integraciones"
     },
     "org_settings_view": "Ver ajustes",
     "org_settings_manage": "Cambiar ajustes",
@@ -510,7 +511,8 @@
     "reports_export": "Exportar informes",
     "audit_view": "Ver el registro de auditoría",
     "approvals_manage": "Fijar reglas de aprobación",
-    "approvals_approve": "Aprobar y devolver"
+    "approvals_approve": "Aprobar y devolver",
+    "integrations_manage": "Gestionar claves de API y webhooks"
   },
   "audit": {
     "title": "Registro de auditoría",
@@ -573,7 +575,8 @@
       "costCentres": "Centros de coste",
       "inventory": "Inventario",
       "approvals": "Aprobaciones",
-      "imports": "Importaciones"
+      "imports": "Importaciones",
+      "integrations": "Integraciones"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -720,7 +723,12 @@
       "org_import_accounts": "Plan de cuentas importado",
       "org_import_contacts": "Contactos importados",
       "org_import_items": "Artículos importados",
-      "org_import_opening_balances": "Saldos iniciales importados"
+      "org_import_opening_balances": "Saldos iniciales importados",
+      "org_api_key_create": "Clave de API creada",
+      "org_api_key_revoke": "Clave de API revocada",
+      "org_webhook_create": "Webhook añadido",
+      "org_webhook_update": "Webhook modificado",
+      "org_webhook_delete": "Webhook eliminado"
     },
     "entities": {
       "membership": "Miembro",

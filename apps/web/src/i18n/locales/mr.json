@@ -475,7 +475,8 @@
       "banking": "बँकिंग",
       "reports": "अहवाल",
       "audit": "ऑडिट",
-      "approvals": "मंजुरी"
+      "approvals": "मंजुरी",
+      "integrations": "एकत्रीकरण"
     },
     "org_settings_view": "सेटिंग्ज पहा",
     "org_settings_manage": "सेटिंग्ज बदला",
@@ -510,7 +511,8 @@
     "reports_export": "अहवाल निर्यात करा",
     "audit_view": "ऑडिट लॉग पहा",
     "approvals_manage": "मंजुरीचे नियम ठरवा",
-    "approvals_approve": "मंजूर करा आणि परत पाठवा"
+    "approvals_approve": "मंजूर करा आणि परत पाठवा",
+    "integrations_manage": "API की आणि वेबहुक व्यवस्थापित करा"
   },
   "audit": {
     "title": "ऑडिट लॉग",
@@ -573,7 +575,8 @@
       "costCentres": "खर्च केंद्रे",
       "inventory": "साठा",
       "approvals": "मंजुरी",
-      "imports": "आयात"
+      "imports": "आयात",
+      "integrations": "एकत्रीकरण"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -720,7 +723,12 @@
       "org_import_accounts": "खात्यांचा तक्ता आयात केला",
       "org_import_contacts": "संपर्क आयात केले",
       "org_import_items": "वस्तू आयात केल्या",
-      "org_import_opening_balances": "प्रारंभिक शिल्लक आयात केल्या"
+      "org_import_opening_balances": "प्रारंभिक शिल्लक आयात केल्या",
+      "org_api_key_create": "API की तयार केली",
+      "org_api_key_revoke": "API की रद्द केली",
+      "org_webhook_create": "वेबहुक जोडला",
+      "org_webhook_update": "वेबहुक बदलला",
+      "org_webhook_delete": "वेबहुक हटवला"
     },
     "entities": {
       "membership": "सदस्य",

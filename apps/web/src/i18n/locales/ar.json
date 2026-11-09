@@ -475,7 +475,8 @@
       "banking": "البنوك",
       "reports": "التقارير",
       "audit": "التدقيق",
-      "approvals": "الموافقات"
+      "approvals": "الموافقات",
+      "integrations": "التكاملات"
     },
     "org_settings_view": "عرض الإعدادات",
     "org_settings_manage": "تغيير الإعدادات",
@@ -510,7 +511,8 @@
     "reports_export": "تصدير التقارير",
     "audit_view": "عرض سجل التدقيق",
     "approvals_manage": "تحديد قواعد الموافقة",
-    "approvals_approve": "الموافقة والإعادة"
+    "approvals_approve": "الموافقة والإعادة",
+    "integrations_manage": "إدارة مفاتيح API وWebhooks"
   },
   "audit": {
     "title": "سجل التدقيق",
@@ -573,7 +575,8 @@
       "costCentres": "مراكز التكلفة",
       "inventory": "المخزون",
       "approvals": "الموافقات",
-      "imports": "الاستيراد"
+      "imports": "الاستيراد",
+      "integrations": "التكاملات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -720,7 +723,12 @@
       "org_import_accounts": "تم استيراد دليل الحسابات",
       "org_import_contacts": "تم استيراد جهات الاتصال",
       "org_import_items": "تم استيراد الأصناف",
-      "org_import_opening_balances": "تم استيراد الأرصدة الافتتاحية"
+      "org_import_opening_balances": "تم استيراد الأرصدة الافتتاحية",
+      "org_api_key_create": "تم إنشاء مفتاح API",
+      "org_api_key_revoke": "تم إلغاء مفتاح API",
+      "org_webhook_create": "تمت إضافة Webhook",
+      "org_webhook_update": "تم تعديل Webhook",
+      "org_webhook_delete": "تمت إزالة Webhook"
     },
     "entities": {
       "membership": "عضو",

@@ -18,6 +18,7 @@ export const ORGANIZATION_PERMISSIONS = [
   'org.settings.manage',
   'org.billing.manage',
   'org.delete',
+  'integrations.manage',
   // people and access
   'users.view',
   'users.invite',

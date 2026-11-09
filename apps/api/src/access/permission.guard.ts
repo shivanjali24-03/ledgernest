@@ -1,6 +1,17 @@
-import { BadRequestException, type CanActivate, type ExecutionContext, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { isPlatformPermission, type OrganizationPermission, type Permission } from '@ledgernest/shared';
+import {
+  isPlatformPermission,
+  type OrganizationPermission,
+  type Permission,
+} from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AccessService } from './access.service.js';
 import { REQUIRED_PERMISSIONS } from './decorators.js';
@@ -20,35 +31,68 @@ export class PermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<Permission[] | undefined>(REQUIRED_PERMISSIONS, [context.getHandler(), context.getClass()]);
+    const required = this.reflector.getAllAndOverride<Permission[] | undefined>(
+      REQUIRED_PERMISSIONS,
+      [context.getHandler(), context.getClass()],
+    );
     if (!required?.length) return true;
 
     const req = context.switchToHttp().getRequest<AccessRequest>();
     const actor = req.actor;
-    if (!actor) throw new Error('@RequirePermission used on a @Public() endpoint');
+    if (!actor)
+      throw new Error('@RequirePermission used on a @Public() endpoint');
 
     const platform = required.filter(isPlatformPermission);
-    if (platform.length && platform.length !== required.length) throw new Error('@RequirePermission mixes platform and organisation permissions');
+    if (platform.length && platform.length !== required.length)
+      throw new Error(
+        '@RequirePermission mixes platform and organisation permissions',
+      );
 
-    // Platform endpoints: Super Admin only
+    // Platform endpoints: Super Admin only (never with an API key)
+    if (platform.length && actor.apiKey)
+      throw new ForbiddenException('API keys can’t do this.');
     if (platform.length) {
-      if (!actor.isSuperAdmin) throw new ForbiddenException('Only a Super Admin can do this.');
+      if (!actor.isSuperAdmin)
+        throw new ForbiddenException('Only a Super Admin can do this.');
       return true;
     }
 
-    // Organisation endpoints
-    const organizationId = req.header(ORG_HEADER);
+    // Organisation endpoints; an API key works in its own organisation only
+    const organizationId =
+      req.header(ORG_HEADER) ?? actor.apiKey?.organizationId;
+    if (actor.apiKey && organizationId !== actor.apiKey.organizationId)
+      throw new NotFoundException('Organisation not found.');
     if (!organizationId || !UUID.test(organizationId)) {
-      throw new BadRequestException('Choose an organisation: send its id in the X-Organization-Id header.');
+      throw new BadRequestException(
+        'Choose an organisation: send its id in the X-Organization-Id header.',
+      );
     }
 
     const access = await this.access.resolve(actor, organizationId);
     // "Not found" rather than "forbidden": outsiders can't tell whether an organisation exists
     if (!access) throw new NotFoundException('Organisation not found.');
-    if (access.organizationStatus === 'SUSPENDED' && !actor.isSuperAdmin) throw new ForbiddenException('This organisation is suspended.');
+    if (access.organizationStatus === 'SUSPENDED' && !actor.isSuperAdmin)
+      throw new ForbiddenException('This organisation is suspended.');
 
-    const missing = (required as OrganizationPermission[]).filter((p) => !access.permissions.has(p));
-    if (missing.length) throw new ForbiddenException({ message: 'Your role does not allow this.', details: { missing } });
+    // A key may do what its maker may do now, and only within its scopes
+    if (actor.apiKey) {
+      const scopes = actor.apiKey.scopes;
+      access.permissions = new Set(
+        [...access.permissions].filter(
+          (p) => p === 'org.settings.view' || scopes.has(p),
+        ),
+      );
+    }
+    const missing = (required as OrganizationPermission[]).filter(
+      (p) => !access.permissions.has(p),
+    );
+    if (missing.length)
+      throw new ForbiddenException({
+        message: actor.apiKey
+          ? 'This API key isn’t allowed to do this.'
+          : 'Your role does not allow this.',
+        details: { missing },
+      });
 
     const { organizationStatus: _status, ...tenant } = access;
     req.tenant = tenant;
@@ -62,7 +106,11 @@ export class PermissionGuard implements CanActivate {
           actorId: actor.userId,
           entityType: 'organization',
           entityId: organizationId,
-          after: { method: req.method, path: req.originalUrl, permissions: required },
+          after: {
+            method: req.method,
+            path: req.originalUrl,
+            permissions: required,
+          },
           ip: req.ip,
           userAgent: req.headers['user-agent']?.slice(0, 255),
         },

@@ -29,3 +29,4 @@ export * from './inventory/index.js';
 export * from './approvals/index.js';
 export * from './attachments/index.js';
 export * from './imports/index.js';
+export * from './integrations/index.js';

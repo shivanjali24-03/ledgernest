@@ -475,7 +475,8 @@
       "banking": "Bank",
       "reports": "Berichte",
       "audit": "Prüfung",
-      "approvals": "Freigaben"
+      "approvals": "Freigaben",
+      "integrations": "Integrationen"
     },
     "org_settings_view": "Einstellungen ansehen",
     "org_settings_manage": "Einstellungen ändern",
@@ -510,7 +511,8 @@
     "reports_export": "Berichte exportieren",
     "audit_view": "Audit-Protokoll ansehen",
     "approvals_manage": "Freigaberegeln festlegen",
-    "approvals_approve": "Freigeben und zurückschicken"
+    "approvals_approve": "Freigeben und zurückschicken",
+    "integrations_manage": "API-Schlüssel und Webhooks verwalten"
   },
   "audit": {
     "title": "Audit-Log",
@@ -573,7 +575,8 @@
       "costCentres": "Kostenstellen",
       "inventory": "Lager",
       "approvals": "Freigaben",
-      "imports": "Importe"
+      "imports": "Importe",
+      "integrations": "Integrationen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -720,7 +723,12 @@
       "org_import_accounts": "Kontenplan importiert",
       "org_import_contacts": "Kontakte importiert",
       "org_import_items": "Artikel importiert",
-      "org_import_opening_balances": "Eröffnungssalden importiert"
+      "org_import_opening_balances": "Eröffnungssalden importiert",
+      "org_api_key_create": "API-Schlüssel erstellt",
+      "org_api_key_revoke": "API-Schlüssel widerrufen",
+      "org_webhook_create": "Webhook hinzugefügt",
+      "org_webhook_update": "Webhook geändert",
+      "org_webhook_delete": "Webhook entfernt"
     },
     "entities": {
       "membership": "Mitglied",

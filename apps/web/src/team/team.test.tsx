@@ -112,7 +112,7 @@ describe('roles', () => {
     await userEvent.type(within(dialog).getByLabelText('Role name'), 'Payroll clerk');
     await userEvent.click(within(dialog).getByLabelText('Record payments'));
     await userEvent.click(within(dialog).getByLabelText('See bank accounts'));
-    expect(within(dialog).getByText('2 of 34 selected')).toBeInTheDocument();
+    expect(within(dialog).getByText('2 of 35 selected')).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Create role' }));
     expect(await screen.findByText('Role Payroll clerk created')).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Payroll clerk' })).toBeInTheDocument();

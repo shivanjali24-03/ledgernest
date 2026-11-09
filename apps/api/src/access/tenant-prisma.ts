@@ -7,17 +7,67 @@ import { currentOrganizationId } from './tenant-context.js';
  * automatically. A test fails if a model with an `organizationId` column is missing here
  * and not listed in TENANT_EXEMPT.
  */
-export const TENANT_MODELS = new Set<string>(['Role', 'Membership', 'Invitation', 'OrganizationLogo', 'Account', 'FiscalYear', 'Period', 'JournalEntry', 'JournalLine', 'JournalAttachment', 'TaxRate', 'TaxGroup', 'TaxGroupRate', 'OrganizationCurrency', 'ExchangeRate', 'Contact', 'Item', 'Invoice', 'InvoiceLine', 'Payment', 'PaymentAllocation', 'Bill', 'BillLine', 'CreditNote', 'CreditNoteLine', 'CreditApplication', 'RecurringInvoice', 'BankTransaction', 'BankStatementImport', 'BankStatementLine', 'BankStatementLayout', 'BankMatch', 'BankReconciliation', 'FixedAsset', 'DepreciationRun', 'DepreciationLine', 'Budget', 'BudgetLine', 'CostCentre', 'StockMovement', 'ApprovalRule', 'ApprovalRequest', 'DocumentAttachment']);
+export const TENANT_MODELS = new Set<string>([
+  'Role',
+  'Membership',
+  'Invitation',
+  'OrganizationLogo',
+  'Account',
+  'FiscalYear',
+  'Period',
+  'JournalEntry',
+  'JournalLine',
+  'JournalAttachment',
+  'TaxRate',
+  'TaxGroup',
+  'TaxGroupRate',
+  'OrganizationCurrency',
+  'ExchangeRate',
+  'Contact',
+  'Item',
+  'Invoice',
+  'InvoiceLine',
+  'Payment',
+  'PaymentAllocation',
+  'Bill',
+  'BillLine',
+  'CreditNote',
+  'CreditNoteLine',
+  'CreditApplication',
+  'RecurringInvoice',
+  'BankTransaction',
+  'BankStatementImport',
+  'BankStatementLine',
+  'BankStatementLayout',
+  'BankMatch',
+  'BankReconciliation',
+  'FixedAsset',
+  'DepreciationRun',
+  'DepreciationLine',
+  'Budget',
+  'BudgetLine',
+  'CostCentre',
+  'StockMovement',
+  'ApprovalRule',
+  'ApprovalRequest',
+  'DocumentAttachment',
+  'ApiKey',
+]);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */
 export const TENANT_EXEMPT: Record<string, string> = {
-  AuditLog: 'Also records platform actions with no organisation; read through dedicated, permission-checked queries.',
+  AuditLog:
+    'Also records platform actions with no organisation; read through dedicated, permission-checked queries.',
 };
 
 type Args = { where?: object; data?: object | object[]; create?: object };
 
 /** Adds the current organisation to every query on a tenant model. Fails closed when there is none. */
-export function scopeArgs(operation: string, args: Args, organizationId: string): Args {
+export function scopeArgs(
+  operation: string,
+  args: Args,
+  organizationId: string,
+): Args {
   const a: Args = { ...args };
   switch (operation) {
     case 'create':
@@ -25,7 +75,10 @@ export function scopeArgs(operation: string, args: Args, organizationId: string)
       break;
     case 'createMany':
     case 'createManyAndReturn':
-      a.data = (Array.isArray(a.data) ? a.data : [a.data ?? {}]).map((d) => ({ ...d, organizationId }));
+      a.data = (Array.isArray(a.data) ? a.data : [a.data ?? {}]).map((d) => ({
+        ...d,
+        organizationId,
+      }));
       break;
     case 'upsert':
       a.where = { ...a.where, organizationId };
@@ -45,7 +98,13 @@ const scoped = (prisma: PrismaService) =>
       $allModels: {
         $allOperations({ model, operation, args, query }) {
           if (!TENANT_MODELS.has(model)) return query(args);
-          return query(scopeArgs(operation, args as Args, currentOrganizationId()) as typeof args);
+          return query(
+            scopeArgs(
+              operation,
+              args as Args,
+              currentOrganizationId(),
+            ) as typeof args,
+          );
         },
       },
     },
