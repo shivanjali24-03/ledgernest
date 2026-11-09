@@ -87,6 +87,7 @@ export class PlatformService {
       });
       // Every organisation starts with the accounts LedgerNest relies on, named in its language
       await AccountsService.createSystemAccounts(tx, org.id, org.locale);
+      if (input.industry) await AccountsService.applyTemplate(tx, org.id, org.locale, input.industry);
 
       const existing = await tx.user.findUnique({ where: { email: input.owner.email }, select: { id: true } });
       let owner: { status: 'added'; userId: string } | { status: 'invited'; email: string; inviteUrl: string; expiresAt: Date };
@@ -99,7 +100,7 @@ export class PlatformService {
       }
 
       await this.audit.record(
-        { action: 'platform.organization.create', actorId: actor.userId, organizationId: org.id, entityType: 'organization', entityId: org.id, after: { ...org, owner: { email: input.owner.email, status: owner.status } }, req },
+        { action: 'platform.organization.create', actorId: actor.userId, organizationId: org.id, entityType: 'organization', entityId: org.id, after: { ...org, industry: input.industry ?? null, owner: { email: input.owner.email, status: owner.status } }, req },
         tx,
       );
       return { organization: org, owner };

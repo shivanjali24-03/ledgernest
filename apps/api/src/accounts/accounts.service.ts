@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  namedTemplate,
+  type Industry,
   compareCodes,
   MAX_ACCOUNT_DEPTH,
   NORMAL_SIDE,
@@ -51,6 +53,44 @@ export class AccountsService {
         update: {},
       });
     }
+  }
+
+  /**
+   * Creates an industry's chart of accounts, named in the organisation's language.
+   * Only for a chart that holds nothing but the system accounts, so a template never overwrites real work.
+   */
+  static async applyTemplate(tx: Tx, organizationId: string, locale: string, industry: Industry) {
+    if (await tx.account.count({ where: { organizationId, systemKey: null } })) {
+      throw refuse(ConflictException, 'Templates can only be applied to an empty chart of accounts.', 'chart_not_empty');
+    }
+    const ids = new Map<string, string>();
+    const template = namedTemplate(industry, locale);
+    for (const a of template) {
+      const created = await tx.account.create({
+        data: { organizationId, code: a.code, name: a.name, type: a.type, subtype: a.subtype, parentId: a.parent ? ids.get(a.parent)! : null },
+        select: { id: true },
+      });
+      ids.set(a.code, created.id);
+    }
+    return template.length;
+  }
+
+  /** A template as it would be created for this organisation (names in its language). */
+  async previewTemplate(organizationId: string, industry: Industry) {
+    const org = await this.prisma.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { locale: true } });
+    return namedTemplate(industry, org.locale);
+  }
+
+  async applyTemplateFor(industry: Industry, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const count = await this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, organizationId);
+      const org = await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { locale: true } });
+      const n = await AccountsService.applyTemplate(tx, organizationId, org.locale, industry);
+      await this.audit.record({ action: 'org.account.template_apply', actorId: ctx.actor.userId, organizationId, entityType: 'organization', entityId: organizationId, after: { industry, accounts: n }, req: ctx.req }, tx);
+      return n;
+    });
+    return { industry, created: count };
   }
 
   /**
