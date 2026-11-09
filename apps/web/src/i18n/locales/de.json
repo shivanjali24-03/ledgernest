@@ -32,7 +32,8 @@
       "creditNotes": "Gutschriften",
       "recurring": "Wiederkehrende Rechnungen",
       "fixedAssets": "Anlagevermögen",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "costCentres": "Kostenstellen"
     },
     "soon": "Bald"
   },
@@ -1334,7 +1335,8 @@
         "none": "Nichts",
         "previous": "Vorperiode",
         "year": "Vorjahr",
-        "months": "Nach Monaten"
+        "months": "Nach Monaten",
+        "costCentres": "Nach Kostenstelle"
       },
       "compareWith": "Mit einem anderen Datum vergleichen",
       "compareDate": "Verglichen mit",
@@ -2616,6 +2618,56 @@
       "not_pnl_account": "Budgets gelten für Ertrags- und Aufwandskonten.",
       "forbidden": "Sie dürfen Budgets nicht ändern.",
       "generic": "Das Budget konnte nicht gespeichert werden. Versuchen Sie es erneut."
+    }
+  },
+  "costCentres": {
+    "title": "Kostenstellen und Projekte",
+    "description": "Die Abteilungen, Filialen und Projekte, mit denen Sie Zeilen kennzeichnen, um den Gewinn jedes Unternehmensteils zu sehen.",
+    "add": "Kostenstelle hinzufügen",
+    "showArchived": "Archivierte anzeigen",
+    "profitBy": "Gewinn nach Kostenstelle",
+    "empty": "Noch keine Kostenstellen",
+    "emptyBody": "Legen Sie eine Abteilung, Filiale oder ein Projekt an und kennzeichnen Sie damit Buchungs-, Rechnungs- und Eingangsrechnungszeilen.",
+    "kinds": {
+      "department": "Abteilung",
+      "project": "Projekt"
+    },
+    "archivedPill": "Archiviert",
+    "lines": "Gekennzeichnete Zeilen: {{count}}",
+    "actionsFor": "Aktionen für {{name}}",
+    "edit": "Bearbeiten",
+    "archive": "Archivieren",
+    "restore": "Wiederherstellen",
+    "delete": "Löschen",
+    "archived": "{{name}} archiviert",
+    "restored": "{{name}} wiederhergestellt",
+    "deleted": "{{name}} gelöscht",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Nur eine Kostenstelle ohne gekennzeichnete Zeilen kann gelöscht werden. Archivieren Sie sie, um sie nicht mehr zu verwenden.",
+    "updated": "{{name}} gespeichert",
+    "added": "{{name}} hinzugefügt",
+    "editTitle": "Kostenstelle bearbeiten",
+    "addTitle": "Kostenstelle hinzufügen",
+    "dialogBody": "Kennzeichnen Sie Zeilen damit, um den Gewinn dieses Unternehmensteils zu sehen.",
+    "fields": {
+      "code": "Kürzel",
+      "kind": "Art",
+      "name": "Name",
+      "description": "Beschreibung"
+    },
+    "codeHint": "Kurz und eindeutig, z. B. PUNE oder PRJ-ALPHA",
+    "codeInvalid": "Verwenden Sie Buchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche.",
+    "filter": "Kostenstelle",
+    "all": "Alle Kostenstellen",
+    "unassigned": "Ohne Kostenstelle",
+    "field": "Kostenstelle",
+    "errors": {
+      "code_taken": "Eine andere Kostenstelle hat dieses Kürzel.",
+      "in_use": "Zeilen sind mit dieser Kostenstelle gekennzeichnet. Archivieren Sie sie stattdessen.",
+      "cost_centre_not_found": "Diese Kostenstelle gibt es nicht.",
+      "cost_centre_archived": "Diese Kostenstelle ist archiviert. Wählen Sie eine andere oder stellen Sie sie wieder her.",
+      "forbidden": "Sie dürfen Kostenstellen nicht ändern.",
+      "generic": "Die Kostenstelle konnte nicht gespeichert werden. Versuchen Sie es erneut."
     }
   }
 }

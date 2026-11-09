@@ -32,7 +32,8 @@
       "creditNotes": "Avoirs",
       "recurring": "Factures récurrentes",
       "fixedAssets": "Immobilisations",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "costCentres": "Centres de coûts"
     },
     "soon": "Bientôt"
   },
@@ -1334,7 +1335,8 @@
         "none": "Rien",
         "previous": "Période précédente",
         "year": "Année précédente",
-        "months": "Par mois"
+        "months": "Par mois",
+        "costCentres": "Par centre de coûts"
       },
       "compareWith": "Comparer avec une autre date",
       "compareDate": "Comparé au",
@@ -2616,6 +2618,56 @@
       "not_pnl_account": "Les budgets concernent les comptes de produits et de charges.",
       "forbidden": "Vous n’avez pas le droit de modifier les budgets.",
       "generic": "Le budget n’a pas pu être enregistré. Réessayez."
+    }
+  },
+  "costCentres": {
+    "title": "Centres de coûts et projets",
+    "description": "Les services, agences et projets avec lesquels vous étiquetez les lignes, pour voir le résultat de chaque partie de l’entreprise.",
+    "add": "Ajouter un centre de coûts",
+    "showArchived": "Afficher les archivés",
+    "profitBy": "Résultat par centre de coûts",
+    "empty": "Aucun centre de coûts pour l’instant",
+    "emptyBody": "Ajoutez un service, une agence ou un projet, puis étiquetez-en les lignes d’écritures, de factures et de factures fournisseurs.",
+    "kinds": {
+      "department": "Service",
+      "project": "Projet"
+    },
+    "archivedPill": "Archivé",
+    "lines": "Lignes étiquetées : {{count}}",
+    "actionsFor": "Actions pour {{name}}",
+    "edit": "Modifier",
+    "archive": "Archiver",
+    "restore": "Restaurer",
+    "delete": "Supprimer",
+    "archived": "{{name}} archivé",
+    "restored": "{{name}} restauré",
+    "deleted": "{{name}} supprimé",
+    "deleteTitle": "Supprimer {{name}} ?",
+    "deleteBody": "Seul un centre de coûts sans ligne étiquetée peut être supprimé. Archivez-le pour ne plus l’utiliser.",
+    "updated": "{{name}} enregistré",
+    "added": "{{name}} ajouté",
+    "editTitle": "Modifier le centre de coûts",
+    "addTitle": "Ajouter un centre de coûts",
+    "dialogBody": "Étiquetez des lignes avec lui pour voir le résultat de cette partie de l’entreprise.",
+    "fields": {
+      "code": "Code",
+      "kind": "Type",
+      "name": "Nom",
+      "description": "Description"
+    },
+    "codeHint": "Court et unique, par ex. PUNE ou PRJ-ALPHA",
+    "codeInvalid": "Utilisez des lettres, chiffres, points, tirets ou traits bas.",
+    "filter": "Centre de coûts",
+    "all": "Tous les centres de coûts",
+    "unassigned": "Non affecté",
+    "field": "Centre de coûts",
+    "errors": {
+      "code_taken": "Un autre centre de coûts a ce code.",
+      "in_use": "Des lignes sont étiquetées avec ce centre de coûts. Archivez-le plutôt.",
+      "cost_centre_not_found": "Ce centre de coûts n’existe pas.",
+      "cost_centre_archived": "Ce centre de coûts est archivé. Choisissez-en un autre ou restaurez-le.",
+      "forbidden": "Vous n’avez pas le droit de modifier les centres de coûts.",
+      "generic": "Le centre de coûts n’a pas pu être enregistré. Réessayez."
     }
   }
 }

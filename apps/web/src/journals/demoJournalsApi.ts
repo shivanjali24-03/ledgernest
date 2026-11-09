@@ -1,6 +1,7 @@
 import { currencyDigits, enteredLines, invoiceNumber, expandTax, journalDraftSchema, journalNumber, postingProblem, realisedDifferences, sniffAttachmentType, todayIn, toBase, totals, type EnteredLine } from '@ledgernest/shared';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { ApiError } from '../auth/client';
+import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
 import { createDemoAccountsApi, demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { createDemoPeriodsApi, demoClosingEntryIds } from '../periods/demoPeriodsApi';
@@ -28,6 +29,7 @@ type StoredLine = {
   foreignCredit?: number;
   rate?: string | null;
   fxSourceLine?: number | null;
+  costCentreId?: string | null;
 };
 
 /** The demo company's lines as stored, from the lines as entered: the same tax rules as the API. */
@@ -120,11 +122,27 @@ function seed(yearName: string): Stored[] {
     ['2500', 0, 3820000],
   ]);
   const receipt = entry(dayOffset(0), 'Payment from Kumar Logistics', 'UTR 402918', [['1100.01', 11800000, 0], ['1300', 0, 11800000]], { status: 'draft', postedAt: null });
+  // The sample company's branches: the sale and the rent belong to Pune, the cloud bill to Mumbai
+  const [pune, mumbai] = demoCostCentreRows();
+  for (const [e, code] of [[sale, '4100.01'], [rent, '5300'], [cloud, '5100'], [fix, '5100'], [cloudRight, '5100']] as const) {
+    const l = e.lines.find((x) => x.accountId === a(code));
+    if (l) l.costCentreId = (e === sale || e === rent ? pune : mumbai)?.id ?? null;
+  }
   return [capital, sale, rent, payroll, cloud, fix, cloudRight, receipt];
 }
 
 const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
+
+/** How many of the demo's journal lines are tagged with a cost centre */
+export const demoJournalLinesTagged = (costCentreId: string) => {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as Stored[]).reduce((n, e) => n + e.lines.filter((l) => l.costCentreId === costCentreId).length, 0) : 0;
+  } catch {
+    return 0;
+  }
+};
 
 export const resetDemoJournals = () => {
   try {
@@ -186,6 +204,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     const reversedBy = all.find((x) => x.reversalOfId === e.id);
     const reversalOf = all.find((x) => x.id === e.reversalOfId);
     const tax = demoTaxState();
+    const centres = demoCostCentreRows().map(({ id, code, name }) => ({ id, code, name }));
     return {
       id: e.id,
       number: label(e),
@@ -220,6 +239,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
           foreignCredit: l.foreignCredit ?? 0,
           rate: l.rate ?? null,
           fxSourceLine: l.fxSourceLine ?? null,
+          costCentre: (l.costCentreId && centres.find((c) => c.id === l.costCentreId)) || null,
         };
       }),
       totals: totals(e.lines),
@@ -257,6 +277,13 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
   };
   const linesFor = async (entered: EnteredLine[], date: string): Promise<StoredLine[]> => {
     await checkAccounts(entered);
+    const centres = demoCostCentreRows();
+    for (const l of entered) {
+      if (!l.costCentreId) continue;
+      const c = centres.find((x) => x.id === l.costCentreId);
+      if (!c) throw refuse(400, 'cost_centre_not_found');
+      if (c.archived) throw refuse(400, 'cost_centre_archived');
+    }
     const lines = convert(entered, date);
     const tax = demoTaxState();
     for (const l of lines) {

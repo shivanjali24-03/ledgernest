@@ -105,7 +105,10 @@ export interface ProfitAndLoss {
   from: string;
   to: string;
   compare: PnlCompare;
-  columns: { from: string; to: string }[];
+  /** By cost centre, each column is one (null: the untagged lines) */
+  columns: { from: string; to: string; costCentre?: { id: string; code: string; name: string } | null }[];
+  /** Set when the report is for one cost centre ("none": the untagged lines) */
+  costCentre?: { id: string; code: string; name: string } | 'none' | null;
   sections: { section: PnlSection; rows: StatementRow[]; total: number[] }[];
   grossProfit: number[];
   operatingProfit: number[];
@@ -195,8 +198,9 @@ export interface ReportsApi {
   exportTaxSummary(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   aging(side: AgingSide, asOf: string): Promise<Aging>;
   exportAging(side: AgingSide, asOf: string): Promise<{ blob: Blob; filename: string }>;
-  profitAndLoss(from: string, to: string, compare: PnlCompare): Promise<ProfitAndLoss>;
-  exportProfitAndLoss(from: string, to: string, compare: PnlCompare): Promise<{ blob: Blob; filename: string }>;
+  /** costCentreId: one cost centre, or "none" for the untagged lines */
+  profitAndLoss(from: string, to: string, compare: PnlCompare, costCentreId?: string): Promise<ProfitAndLoss>;
+  exportProfitAndLoss(from: string, to: string, compare: PnlCompare, costCentreId?: string): Promise<{ blob: Blob; filename: string }>;
   balanceSheet(asOf: string, compareAsOf: string | null): Promise<BalanceSheet>;
   exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
   dashboard(): Promise<Dashboard>;
