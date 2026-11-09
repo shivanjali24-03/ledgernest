@@ -355,6 +355,31 @@ describe('Webhooks (e2e)', () => {
     });
   });
 
+  it('keeps finished deliveries for 30 days, and anything still waiting', async () => {
+    const old = new Date(Date.now() - 40 * 86_400_000);
+    const base = {
+      organizationId: org,
+      endpointId: hook,
+      event: 'ping',
+      payload: {},
+      createdAt: old,
+    };
+    const [done, waiting] = [randomUUID(), randomUUID()];
+    await prisma.webhookDelivery.createMany({
+      data: [
+        { ...base, id: done, status: 'succeeded' },
+        { ...base, id: waiting, status: 'pending' },
+      ],
+    });
+    expect(await app.get(WebhooksService).prune()).toBeGreaterThanOrEqual(1);
+    expect(
+      await prisma.webhookDelivery.findUnique({ where: { id: done } }),
+    ).toBeNull();
+    expect(
+      await prisma.webhookDelivery.findUnique({ where: { id: waiting } }),
+    ).not.toBeNull();
+  });
+
   it('can be switched off, rotated and removed, and is audited', async () => {
     const before = hits.length;
     await as().patch(`/webhooks/${hook}`, { active: false }).expect(200);

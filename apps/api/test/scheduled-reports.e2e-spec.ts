@@ -258,6 +258,21 @@ describe('Scheduled reports (e2e)', () => {
     ).toBe(1);
   });
 
+  it('keeps each schedule’s latest runs only', async () => {
+    process.env.REPORT_RUNS_KEPT = '2';
+    try {
+      for (let n = 0; n < 3; n++)
+        await as().post(`/scheduled-reports/${monthly}/run`).expect(200);
+      expect(
+        await prisma.reportDelivery.count({
+          where: { organizationId: org, scheduleId: monthly },
+        }),
+      ).toBe(2);
+    } finally {
+      delete process.env.REPORT_RUNS_KEPT;
+    }
+  });
+
   it('can be removed, and is audited', async () => {
     await as().delete(`/scheduled-reports/${monthly}`).expect(204);
     expect(

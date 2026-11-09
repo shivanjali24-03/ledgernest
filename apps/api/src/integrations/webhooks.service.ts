@@ -78,9 +78,9 @@ export class WebhooksService
     if (!seconds) return;
     this.timer = setInterval(
       () =>
-        void this.dispatch().catch((e: unknown) =>
-          this.log.error(errorText(e)),
-        ),
+        void this.dispatch()
+          .then(() => this.prune())
+          .catch((e: unknown) => this.log.error(errorText(e))),
       seconds * 1000,
     );
     this.timer.unref();
@@ -149,6 +149,18 @@ export class WebhooksService
   }
 
   /** Sends what's due (or just the deliveries given), each claimed first so two workers never send the same one */
+  /** Finished deliveries are kept for WEBHOOK_LOG_DAYS (30), so the log doesn't grow for ever */
+  async prune(now = new Date()) {
+    const days = Number(process.env.WEBHOOK_LOG_DAYS ?? 30);
+    const { count } = await this.prisma.webhookDelivery.deleteMany({
+      where: {
+        status: { in: ['succeeded', 'failed'] },
+        createdAt: { lt: new Date(now.getTime() - days * 86_400_000) },
+      },
+    });
+    return count;
+  }
+
   async dispatch(onlyIds?: string[]) {
     const now = new Date();
     const due = await this.prisma.webhookDelivery.findMany({
