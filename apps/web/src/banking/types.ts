@@ -78,6 +78,40 @@ export interface BankStatementLine {
   importId: string;
 }
 
+export interface BookLine {
+  id: string;
+  entryId: string;
+  number: string | null;
+  date: string;
+  memo: string | null;
+  reference: string | null;
+  description: string | null;
+  /** In the account's currency: in positive */
+  amount: number;
+}
+export interface ReconcileWorkspace {
+  account: { id: string; code: string; name: string; currency: string | null };
+  date: string;
+  bankLines: { id: string; date: string; description: string; reference: string | null; amount: number; balance: number | null }[];
+  bookLines: BookLine[];
+  suggestions: { statementLineId: string; journalLineIds: string[]; confidence: 'high' | 'medium' }[];
+  matched: { id: string; date: string; description: string; reference: string | null; amount: number; bookLines: BookLine[] }[];
+  ignored: { id: string; date: string; description: string; reference: string | null; amount: number }[];
+  summary: { bookBalance: number; outstandingIn: number; outstandingOut: number; cleared: number; since: string | null; unmatchedToDate: number; statementBalance: number | null };
+  lastReconciliation: { id: string; statementDate: string; statementBalance: number; createdAt: string } | null;
+}
+export interface Reconciliation {
+  id: string;
+  bankAccountId: string;
+  statementDate: string;
+  statementBalance: number;
+  bookBalance: number;
+  outstandingIn: number;
+  outstandingOut: number;
+  matches: number;
+  createdAt: string;
+}
+
 /** Banking. Live and demo both implement it. */
 export interface BankingApi {
   accounts(): Promise<BankAccount[]>;
@@ -91,4 +125,12 @@ export interface BankingApi {
   statementImports(bankAccountId: string): Promise<StatementImport[]>;
   statementLines(q: { bankAccountId: string; status?: StatementLineStatus; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: BankStatementLine[] }>;
   undoImport(id: string): Promise<void>;
+  reconcileWorkspace(accountId: string, date: string): Promise<ReconcileWorkspace>;
+  match(statementLineId: string, journalLineIds: string[]): Promise<void>;
+  unmatch(statementLineId: string): Promise<void>;
+  ignore(statementLineId: string, ignored: boolean): Promise<void>;
+  createFromLine(input: { statementLineId: string; accountId: string; taxGroupId: string | null; description: string | null }): Promise<BankTransaction>;
+  reconcile(input: { bankAccountId: string; statementDate: string; statementBalance: number }): Promise<Reconciliation>;
+  reconciliations(bankAccountId: string): Promise<Reconciliation[]>;
+  undoReconciliation(id: string): Promise<void>;
 }

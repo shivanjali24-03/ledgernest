@@ -6,7 +6,7 @@ import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi'
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { createDemoReportsApi } from '../reports/demoReportsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
-import type { BankAccount, BankingApi, BankStatementLine, BankTransaction, StatementImport } from './types';
+import type { BankAccount, BankingApi, BankStatementLine, BankTransaction, BookLine, Reconciliation, StatementImport } from './types';
 
 /** Banking in demo mode: the same rules as the API, posted through the demo's journals. */
 const KEY = 'ledgernest.demo.banking';
@@ -29,7 +29,7 @@ function save(rows: BankTransaction[]) {
 }
 /** Statements in demo mode: imports, their lines, and each account's CSV layout */
 const STATEMENTS = 'ledgernest.demo.statements';
-type Statements = { imports: (StatementImport & { bankAccountId: string })[]; lines: (BankStatementLine & { bankAccountId: string; fingerprint: string })[]; layouts: Record<string, StatementMapping> };
+type Statements = { imports: (StatementImport & { bankAccountId: string })[]; lines: (BankStatementLine & { bankAccountId: string; fingerprint: string })[]; layouts: Record<string, StatementMapping>; matches?: Record<string, { journalLineIds: string[]; reconciliationId: string | null }>; reconciliations?: Reconciliation[] };
 function loadStatements(): Statements {
   try {
     const raw = localStorage.getItem(STATEMENTS);
@@ -103,7 +103,29 @@ export function createDemoBankingApi(canManage: () => boolean): BankingApi {
     const headers = mapping.headerRows ? (parseCsv(d.content, mapping.delimiter)[mapping.headerRows - 1] ?? []) : [];
     return { d, account, format: 'csv' as const, mapping, headers, ...statementFromCsv(d.content, mapping, digits) };
   };
-  return {
+  /** The account's posted book lines that stand (not reversed, not reversals), in its own currency */
+  const bookLines = async (accountId: string, foreign: boolean): Promise<BookLine[]> => {
+    const j = journals();
+    const { items } = await j.list({ status: 'posted', page: 1, pageSize: 1000 });
+    const out: BookLine[] = [];
+    for (const e of await Promise.all(items.map((x) => j.get(x.id)))) {
+      if (e.reversalOf || e.reversedBy) continue;
+      for (const l of e.lines.filter((x) => x.accountId === accountId)) out.push({ id: l.id, entryId: e.id, number: e.number, date: e.date, memo: e.memo, reference: e.reference, description: l.description, amount: foreign ? l.foreignDebit - l.foreignCredit : l.debit - l.credit });
+    }
+    return out.sort((a, b) => a.date.localeCompare(b.date));
+  };
+  /** Reversed pairs net to nothing, but count them in the balance all the same (as the books do) */
+  const reversedTotal = async (accountId: string, foreign: boolean, date: string) => {
+    const j = journals();
+    const { items } = await j.list({ status: 'posted', page: 1, pageSize: 1000 });
+    let sum = 0;
+    for (const e of await Promise.all(items.map((x) => j.get(x.id)))) {
+      if (!(e.reversalOf || e.reversedBy) || e.date > date) continue;
+      for (const l of e.lines.filter((x) => x.accountId === accountId)) sum += foreign ? l.foreignDebit - l.foreignCredit : l.debit - l.credit;
+    }
+    return sum;
+  };
+  const api: BankingApi = {
     previewStatement: (input) =>
       wait(async () => {
         guard();
@@ -250,5 +272,127 @@ export function createDemoBankingApi(canManage: () => boolean): BankingApi {
         save(all);
         return t;
       }),
+    reconcileWorkspace: (accountId, date) =>
+      wait(async () => {
+        const account = await bankOf(accountId, 'accountId');
+        const foreign = !!account.currency;
+        const st = loadStatements();
+        const matches = st.matches ?? {};
+        const book = await bookLines(account.id, foreign);
+        const matchedIds = new Set(Object.values(matches).flatMap((m) => m.journalLineIds));
+        const free = book.filter((b) => !matchedIds.has(b.id));
+        const mine = st.lines.filter((l) => l.bankAccountId === account.id);
+        const bankLines = mine.filter((l) => l.status === 'unmatched').sort((a, b) => a.date.localeCompare(b.date)).map((l) => ({ id: l.id, date: l.date, description: l.description, reference: l.reference, amount: l.amount, balance: l.balance }));
+        const dayGap = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000;
+        const used = new Set<string>();
+        const suggestions = bankLines.flatMap((s) => {
+          const c = free.filter((b) => !used.has(b.id) && b.amount === s.amount && dayGap(b.date, s.date) <= 10).sort((x, y) => dayGap(x.date, s.date) - dayGap(y.date, s.date))[0];
+          if (!c) return [];
+          used.add(c.id);
+          return [{ statementLineId: s.id, journalLineIds: [c.id], confidence: dayGap(c.date, s.date) <= 3 ? ('high' as const) : ('medium' as const) }];
+        });
+        const since = mine.length ? mine.map((l) => l.date).sort()[0]! : null;
+        const bookBalance = book.filter((b) => b.date <= date).reduce((s, b) => s + b.amount, 0) + (await reversedTotal(account.id, foreign, date));
+        const outstanding = since ? free.filter((b) => b.date >= since && b.date <= date) : [];
+        const outstandingIn = outstanding.filter((b) => b.amount > 0).reduce((s, b) => s + b.amount, 0);
+        const outstandingOut = -outstanding.filter((b) => b.amount < 0).reduce((s, b) => s + b.amount, 0);
+        const printed = mine.filter((l) => l.date <= date && l.balance !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
+        const recs = (st.reconciliations ?? []).filter((r) => r.bankAccountId === account.id).sort((a, b) => b.statementDate.localeCompare(a.statementDate));
+        return {
+          account: { id: account.id, code: account.code, name: account.name, currency: account.currency ?? null },
+          date,
+          bankLines,
+          bookLines: free,
+          suggestions,
+          matched: mine.filter((l) => l.status === 'matched' && !matches[l.id]?.reconciliationId).map((l) => ({ id: l.id, date: l.date, description: l.description, reference: l.reference, amount: l.amount, bookLines: book.filter((b) => matches[l.id]?.journalLineIds.includes(b.id)) })),
+          ignored: mine.filter((l) => l.status === 'ignored').map((l) => ({ id: l.id, date: l.date, description: l.description, reference: l.reference, amount: l.amount })),
+          summary: { bookBalance, outstandingIn, outstandingOut, cleared: bookBalance - outstandingIn + outstandingOut, since, unmatchedToDate: bankLines.filter((l) => l.date <= date).length, statementBalance: printed?.balance ?? null },
+          lastReconciliation: recs[0] ? { id: recs[0].id, statementDate: recs[0].statementDate, statementBalance: recs[0].statementBalance, createdAt: recs[0].createdAt } : null,
+        };
+      }),
+    match: (statementLineId, journalLineIds) =>
+      wait(async () => {
+        guard();
+        const st = loadStatements();
+        const line = st.lines.find((l) => l.id === statementLineId);
+        if (!line) throw new ApiError('not_found', 404);
+        if (line.status !== 'unmatched') throw refuse(409, 'line_not_unmatched');
+        const account = await bankOf(line.bankAccountId, 'bankAccountId');
+        const book = await bookLines(account.id, !!account.currency);
+        const taken = new Set(Object.values(st.matches ?? {}).flatMap((m) => m.journalLineIds));
+        const chosen = journalLineIds.map((id) => book.find((b) => b.id === id));
+        if (chosen.some((b) => !b)) throw refuse(400, 'book_line_not_found');
+        if (chosen.some((b) => taken.has(b!.id))) throw refuse(409, 'book_line_matched');
+        if (chosen.reduce((s, b) => s + b!.amount, 0) !== line.amount) throw refuse(400, 'amounts_differ');
+        line.status = 'matched';
+        st.matches = { ...(st.matches ?? {}), [line.id]: { journalLineIds, reconciliationId: null } };
+        saveStatements(st);
+      }),
+    unmatch: (statementLineId) =>
+      wait(() => {
+        guard();
+        const st = loadStatements();
+        const line = st.lines.find((l) => l.id === statementLineId);
+        if (!line) throw new ApiError('not_found', 404);
+        if (line.status !== 'matched') throw refuse(409, 'line_not_matched');
+        if (st.matches?.[line.id]?.reconciliationId) throw refuse(409, 'reconciled');
+        line.status = 'unmatched';
+        delete st.matches?.[line.id];
+        saveStatements(st);
+      }),
+    ignore: (statementLineId, ignored) =>
+      wait(() => {
+        guard();
+        const st = loadStatements();
+        const line = st.lines.find((l) => l.id === statementLineId);
+        if (!line) throw new ApiError('not_found', 404);
+        if (line.status === 'matched') throw refuse(409, 'line_matched');
+        line.status = ignored ? 'ignored' : 'unmatched';
+        saveStatements(st);
+      }),
+    createFromLine: async (input) => {
+      const line = loadStatements().lines.find((l) => l.id === input.statementLineId);
+      if (!line) throw new ApiError('not_found', 404);
+      if (line.status !== 'unmatched') throw refuse(409, 'line_not_unmatched');
+      const t = await api.money({ kind: line.amount < 0 ? 'spend' : 'receive', bankAccountId: line.bankAccountId, date: line.date, reference: line.reference, description: input.description ?? line.description, taxInclusive: !!input.taxGroupId, lines: [{ accountId: input.accountId, amount: Math.abs(line.amount), taxGroupId: input.taxGroupId }] });
+      const entry = await journals().get(t.journalEntry.id);
+      await api.match(line.id, [entry.lines.find((l) => l.accountId === line.bankAccountId)!.id]);
+      return t;
+    },
+    reconcile: (input) =>
+      wait(async () => {
+        guard();
+        const st = loadStatements();
+        const recs = (st.reconciliations ?? []).filter((r) => r.bankAccountId === input.bankAccountId);
+        if (recs.some((r) => r.statementDate >= input.statementDate)) throw refuse(400, 'before_last');
+        const ws = await api.reconcileWorkspace(input.bankAccountId, input.statementDate);
+        if (ws.summary.unmatchedToDate) throw refuse(409, 'unmatched_lines', { count: ws.summary.unmatchedToDate });
+        if (ws.summary.cleared !== input.statementBalance) throw refuse(409, 'difference', { difference: input.statementBalance - ws.summary.cleared });
+        const fresh = loadStatements();
+        const r: Reconciliation = { id: crypto.randomUUID(), bankAccountId: input.bankAccountId, statementDate: input.statementDate, statementBalance: input.statementBalance, bookBalance: ws.summary.bookBalance, outstandingIn: ws.summary.outstandingIn, outstandingOut: ws.summary.outstandingOut, matches: 0, createdAt: new Date().toISOString() };
+        for (const l of fresh.lines.filter((x) => x.bankAccountId === input.bankAccountId && x.status === 'matched' && x.date <= input.statementDate)) {
+          const m = fresh.matches?.[l.id];
+          if (m && !m.reconciliationId) {
+            m.reconciliationId = r.id;
+            r.matches += m.journalLineIds.length;
+          }
+        }
+        fresh.reconciliations = [...(fresh.reconciliations ?? []), r];
+        saveStatements(fresh);
+        return r;
+      }),
+    reconciliations: (bankAccountId) => wait(() => (loadStatements().reconciliations ?? []).filter((r) => r.bankAccountId === bankAccountId).sort((a, b) => b.statementDate.localeCompare(a.statementDate))),
+    undoReconciliation: (id) =>
+      wait(() => {
+        guard();
+        const st = loadStatements();
+        const r = (st.reconciliations ?? []).find((x) => x.id === id);
+        if (!r) throw new ApiError('not_found', 404);
+        if ((st.reconciliations ?? []).some((x) => x.bankAccountId === r.bankAccountId && x.statementDate > r.statementDate)) throw refuse(409, 'not_latest');
+        for (const m of Object.values(st.matches ?? {})) if (m.reconciliationId === id) m.reconciliationId = null;
+        st.reconciliations = (st.reconciliations ?? []).filter((x) => x.id !== id);
+        saveStatements(st);
+      }),
   };
+  return api;
 }

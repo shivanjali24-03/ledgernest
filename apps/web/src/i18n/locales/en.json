@@ -1200,7 +1200,8 @@
       "currency_required": "This account is kept in a foreign currency: enter the line in that currency.",
       "currency_mismatch": "Only foreign-currency accounts take foreign amounts.",
       "no_rate": "There is no exchange rate for this date. Add one under Currencies, or type the rate on the line.",
-      "amount_too_small": "This amount is too small to show in the base currency."
+      "amount_too_small": "This amount is too small to show in the base currency.",
+      "bank_matched": "This is matched to a line of the bank's statement. Unmatch it under Banking first."
     },
     "tax": {
       "column": "Tax",
@@ -2157,7 +2158,18 @@
       "no_fx_account": "There's no exchange gain or loss account for the difference.",
       "layout_unknown": "The columns couldn't be worked out. Choose them below.",
       "nothing_to_import": "No transactions could be read from this file.",
-      "has_reconciled": "Some of these lines are reconciled. Undo that first."
+      "has_reconciled": "Some of these lines are reconciled. Undo that first.",
+      "amounts_differ": "The book lines don't add up to the bank line.",
+      "line_not_unmatched": "This bank line is already dealt with.",
+      "line_not_matched": "This bank line isn't matched.",
+      "line_matched": "This bank line is matched. Unmatch it first.",
+      "reconciled": "This is reconciled. Undo the reconciliation first.",
+      "unmatched_lines": "Some bank lines up to this day still need matching, creating or setting aside.",
+      "difference": "The books don't agree with the statement balance yet.",
+      "before_last": "The account is already reconciled past this day.",
+      "not_latest": "Only the latest reconciliation can be undone.",
+      "book_line_matched": "One of these book lines is already matched.",
+      "book_line_not_found": "A book line wasn't found."
     },
     "fromBank": "From the bank",
     "fromBankHint": "Import the bank's statement to see its own record here, ready to reconcile.",
@@ -2217,6 +2229,55 @@
         "description": "Row {{row}}: no description",
         "columns": "Row {{row}}: the columns don't match"
       }
+    },
+    "rec": {
+      "open": "Reconcile",
+      "title": "Reconcile {{name}}",
+      "titlePlain": "Reconcile",
+      "description": "Match the bank's lines to the books, record what's missing, then agree the balance with the statement.",
+      "statementDate": "Statement date",
+      "statementBalance": "Statement balance ({{currency}})",
+      "fromStatement": "From the bank's last line",
+      "lastDone": "Last reconciled to {{date}}",
+      "where": "Where the account stands",
+      "bookBalance": "Books on {{date}}",
+      "inTransit": "Less money in, not yet at the bank",
+      "unpresented": "Plus money out, not yet through the bank",
+      "cleared": "The bank should show",
+      "difference": "Difference",
+      "stillToDo": "{{count}} bank lines up to this day still to deal with",
+      "agrees": "The books agree with the statement",
+      "reconcile": "Reconcile",
+      "done": "Reconciled to {{date}}",
+      "bankSide": "From the bank ({{count}})",
+      "bankDone": "Every bank line is dealt with",
+      "importFirst": "Import the bank's statement first.",
+      "chooseLine": "Choose {{description}} to match by hand",
+      "confidence": {
+        "high": "Likely match",
+        "medium": "Possible match"
+      },
+      "match": "Match",
+      "create": "Record it",
+      "createAccount": "Account for the new entry",
+      "createTax": "Tax on the new entry",
+      "createAndMatch": "Record and match",
+      "setAside": "Set aside",
+      "bookSide": "In the books, not yet matched ({{count}})",
+      "pickHint": "To match by hand, choose a bank line, then tick the book lines that make it up.",
+      "pickBook": "Match {{what}}",
+      "matchPicked": "Match {{picked}} of {{wanted}}",
+      "matched": "Matched, not yet reconciled",
+      "noneMatched": "Nothing matched since the last reconciliation.",
+      "unmatch": "Unmatch",
+      "setAsideList": "Set aside",
+      "bringBack": "Bring back",
+      "history": "Reconciliations",
+      "noHistory": "Not reconciled yet.",
+      "historyLine": "Balance {{balance}} · {{matches}} matches",
+      "undo": "Undo",
+      "undoTitle": "Undo the reconciliation to {{date}}?",
+      "undoBody": "Its matches are unlocked, so they can be changed again."
     }
   }
 }

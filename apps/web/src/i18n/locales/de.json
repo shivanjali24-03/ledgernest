@@ -1200,7 +1200,8 @@
       "currency_required": "Dieses Konto wird in einer Fremdwährung geführt: Erfassen Sie die Zeile in dieser Währung.",
       "currency_mismatch": "Nur Fremdwährungskonten nehmen Fremdwährungsbeträge an.",
       "no_rate": "Für dieses Datum gibt es keinen Wechselkurs. Fügen Sie einen unter Währungen hinzu oder geben Sie den Kurs in der Zeile ein.",
-      "amount_too_small": "Dieser Betrag ist zu klein für die Basiswährung."
+      "amount_too_small": "Dieser Betrag ist zu klein für die Basiswährung.",
+      "bank_matched": "Dies ist einer Zeile des Kontoauszugs zugeordnet. Heben Sie die Zuordnung zuerst unter Bank auf."
     },
     "tax": {
       "column": "Steuer",
@@ -2157,7 +2158,18 @@
       "no_fx_account": "Kein Konto für Kursdifferenzen vorhanden.",
       "layout_unknown": "Die Spalten konnten nicht erkannt werden. Wählen Sie sie unten.",
       "nothing_to_import": "Aus dieser Datei konnten keine Buchungen gelesen werden.",
-      "has_reconciled": "Einige dieser Zeilen sind abgeglichen. Machen Sie das zuerst rückgängig."
+      "has_reconciled": "Einige dieser Zeilen sind abgeglichen. Machen Sie das zuerst rückgängig.",
+      "amounts_differ": "Die Buchungszeilen ergeben nicht den Betrag der Bankzeile.",
+      "line_not_unmatched": "Diese Bankzeile ist schon erledigt.",
+      "line_not_matched": "Diese Bankzeile ist nicht zugeordnet.",
+      "line_matched": "Diese Bankzeile ist zugeordnet. Heben Sie das zuerst auf.",
+      "reconciled": "Dies ist abgeglichen. Machen Sie den Abgleich zuerst rückgängig.",
+      "unmatched_lines": "Bis zu diesem Tag sind noch Bankzeilen zuzuordnen, zu erfassen oder zurückzustellen.",
+      "difference": "Die Bücher stimmen noch nicht mit dem Auszugssaldo überein.",
+      "before_last": "Das Konto ist schon über diesen Tag hinaus abgeglichen.",
+      "not_latest": "Nur der letzte Abgleich kann rückgängig gemacht werden.",
+      "book_line_matched": "Eine dieser Buchungszeilen ist schon zugeordnet.",
+      "book_line_not_found": "Eine Buchungszeile wurde nicht gefunden."
     },
     "fromBank": "Von der Bank",
     "fromBankHint": "Importieren Sie den Kontoauszug, um hier die Buchungen der Bank zu sehen, bereit zum Abgleich.",
@@ -2217,6 +2229,55 @@
         "description": "Zeile {{row}}: kein Verwendungszweck",
         "columns": "Zeile {{row}}: Spalten passen nicht"
       }
+    },
+    "rec": {
+      "open": "Abgleichen",
+      "title": "{{name}} abgleichen",
+      "titlePlain": "Abgleich",
+      "description": "Ordnen Sie die Bankzeilen den Buchungen zu, erfassen Sie Fehlendes und gleichen Sie den Saldo mit dem Auszug ab.",
+      "statementDate": "Auszugsdatum",
+      "statementBalance": "Auszugssaldo ({{currency}})",
+      "fromStatement": "Aus der letzten Bankzeile",
+      "lastDone": "Zuletzt abgeglichen bis {{date}}",
+      "where": "Stand des Kontos",
+      "bookBalance": "Bücher am {{date}}",
+      "inTransit": "Minus Eingänge, noch nicht auf der Bank",
+      "unpresented": "Plus Ausgänge, noch nicht abgebucht",
+      "cleared": "Die Bank sollte zeigen",
+      "difference": "Differenz",
+      "stillToDo": "{{count}} Bankzeilen bis zu diesem Tag offen",
+      "agrees": "Die Bücher stimmen mit dem Auszug überein",
+      "reconcile": "Abgleichen",
+      "done": "Abgeglichen bis {{date}}",
+      "bankSide": "Von der Bank ({{count}})",
+      "bankDone": "Alle Bankzeilen erledigt",
+      "importFirst": "Importieren Sie zuerst den Kontoauszug.",
+      "chooseLine": "{{description}} zum manuellen Zuordnen wählen",
+      "confidence": {
+        "high": "Wahrscheinlicher Treffer",
+        "medium": "Möglicher Treffer"
+      },
+      "match": "Zuordnen",
+      "create": "Erfassen",
+      "createAccount": "Konto der neuen Buchung",
+      "createTax": "Steuer der neuen Buchung",
+      "createAndMatch": "Erfassen und zuordnen",
+      "setAside": "Zurückstellen",
+      "bookSide": "In den Büchern, nicht zugeordnet ({{count}})",
+      "pickHint": "Zum manuellen Zuordnen eine Bankzeile wählen, dann die passenden Buchungszeilen ankreuzen.",
+      "pickBook": "{{what}} zuordnen",
+      "matchPicked": "{{picked}} von {{wanted}} zuordnen",
+      "matched": "Zugeordnet, nicht abgeglichen",
+      "noneMatched": "Seit dem letzten Abgleich nichts zugeordnet.",
+      "unmatch": "Aufheben",
+      "setAsideList": "Zurückgestellt",
+      "bringBack": "Zurückholen",
+      "history": "Abgleiche",
+      "noHistory": "Noch nicht abgeglichen.",
+      "historyLine": "Saldo {{balance}} · {{matches}} Zuordnungen",
+      "undo": "Rückgängig",
+      "undoTitle": "Abgleich bis {{date}} rückgängig machen?",
+      "undoBody": "Seine Zuordnungen werden freigegeben und lassen sich wieder ändern."
     }
   }
 }
