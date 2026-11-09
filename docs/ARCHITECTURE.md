@@ -51,6 +51,15 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
   - The add/edit dialog only offers parents of the same type with room beneath them, never the account itself or its sub-accounts, and suggests the next free code.
   - Refusals from the API are shown next to the field they're about.
 
+## Financial years and periods
+
+- `GET/POST /api/v1/fiscal-years`, `POST /fiscal-years/periods/:id/close` and `/reopen`. Reading needs `accounts.view`. Adding years and closing need `periods.close`, reopening needs `periods.reopen`. Each change is audited.
+- A financial year starts in the organisation's start month and is split into 12 calendar-month periods. Dates are calendar days (`YYYY-MM-DD`), and "today" is worked out in the organisation's time zone.
+- **Contiguous years:** a new year must directly follow the last or directly precede the first (for entering history). PostgreSQL exclusion constraints guarantee that years, and periods, never overlap.
+- **Closing order:** periods close in order (the earliest open one) and reopen in reverse (the latest closed one), with an optional reason. "Everything up to date X is final" is then always true.
+- `PeriodsService.dayStatus()` tells journal entries (#42) whether a day is open, closed or outside every year.
+- Once a financial year exists, the organisation's fiscal-year start is locked in settings.
+
 ## Organisation settings
 
 - `GET /api/v1/organization` returns the settings, what can no longer change (`locks`) and your access. `PATCH` changes them, with `org.settings.manage` (Owners and Admins).

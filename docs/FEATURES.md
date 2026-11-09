@@ -41,7 +41,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | 📋 |
 | General ledger | Every posted line per account with running balance and drill-down | 📋 |
 | Trial balance | Balances of all accounts at any date | 📋 |
-| Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | 📋 |
+| Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41 (year-end close with #42) |
 | Multi-currency | Transactions in any currency, exchange rates, realised and unrealised gain/loss | 📋 |
 | Taxes | Configurable GST / VAT / sales-tax rates and groups, tax on lines, tax summary | 📋 |
 
