@@ -560,7 +560,8 @@
       "payments": "Zahlungseingänge und Zahlungen",
       "bills": "Eingangsrechnungen",
       "banking": "Bank",
-      "assets": "Anlagevermögen"
+      "assets": "Anlagevermögen",
+      "budgets": "Budgets"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -680,7 +681,10 @@
       "org_asset_delete": "Anlagegut entfernt",
       "org_asset_depreciate": "Abschreibung gebucht",
       "org_asset_depreciate_undo": "Abschreibung rückgängig gemacht",
-      "org_asset_dispose": "Anlagegut abgegangen"
+      "org_asset_dispose": "Anlagegut abgegangen",
+      "org_budget_create": "Budget erstellt",
+      "org_budget_update": "Budget geändert",
+      "org_budget_delete": "Budget gelöscht"
     },
     "entities": {
       "membership": "Mitglied",
