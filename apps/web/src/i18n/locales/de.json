@@ -82,6 +82,19 @@
       "coa": "Kontenplan-Vorlage wählen",
       "fiscal": "Geschäftsjahr und Basiswährung festlegen",
       "bank": "Bankkonto verbinden"
+    },
+    "vsLastMonthAmount": "{{value}} gegenüber Vormonat",
+    "profitByMonth": "Ergebnis nach Monaten",
+    "profitHint": "Die letzten zwölf Monate: oben Gewinn, unten Verlust.",
+    "attention": "Zu erledigen",
+    "allClear": "Nichts zu erledigen",
+    "alerts": {
+      "overdue_invoices": "{{count}} überfällige Rechnungen, {{amount}}",
+      "overdue_bills": "{{count}} überfällige Eingangsrechnungen, {{amount}}",
+      "unreconciled": "{{count}} Bankzeilen abzugleichen",
+      "recurring_due": "{{count}} Serienrechnungen fällig",
+      "open_periods": "{{count}} vergangene Monate noch offen",
+      "draft_entries": "{{count}} Buchungsentwürfe nicht gebucht"
     }
   },
   "comingSoon": {

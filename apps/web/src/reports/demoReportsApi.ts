@@ -1,10 +1,10 @@
-import { AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { todayIn, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { Aging, AgingContact, BalanceSheet, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
+import type { Aging, AgingContact, BalanceSheet, Dashboard, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -225,12 +225,42 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return { asOf, compareAsOf, columns: dates, sections: BS_SECTIONS.map((sec) => ({ section: sec, rows: rows.filter((r) => r.section === sec) as StatementRow[], total: t[sec] })), profitThisYear: unclosed.map((u) => u.thisYear), profitEarlierYears: unclosed.map((u) => u.earlier), yearStart: unclosed.map((u) => u.yearStart), totalAssets: assets, totalLiabilities: liabilities, totalEquity: equity, balanced: dates.map((_d, k) => assets[k] === liabilities[k]! + equity[k]!) };
   };
 
+  /** The dashboard from the demo's books, as the API works it out */
+  const dashboard = async (): Promise<Dashboard> => {
+    const today = todayIn('Asia/Kolkata');
+    const thisMonth = today.slice(0, 7);
+    const back = (n: number) => {
+      const [y, m] = thisMonth.split('-').map(Number) as [number, number];
+      return new Date(Date.UTC(y, m - 1 - n, 1)).toISOString().slice(0, 7);
+    };
+    const months = Array.from({ length: 12 }, (_v, k) => back(11 - k));
+    const accs = await accounts.list(true);
+    const kindOf = new Map(accs.map((a) => [a.id, a.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash') ? 'cash' : a.subtype === 'accounts_receivable' ? 'receivables' : a.subtype === 'accounts_payable' ? 'payables' : a.type === 'income' ? 'income' : a.type === 'expense' ? 'expense' : null]));
+    const lines = (await postedLines()).filter((l) => l.date <= today);
+    const upTo = (k: string, month: string) => lines.filter((l) => kindOf.get(l.accountId) === k && l.date.slice(0, 7) <= month).reduce((s, l) => s + l.debit - l.credit, 0);
+    const inMonth = (k: string, month: string) => lines.filter((l) => kindOf.get(l.accountId) === k && l.date.slice(0, 7) === month).reduce((s, l) => s + l.debit - l.credit, 0);
+    const monthly = months.map((m) => ({ month: m, income: -inMonth('income', m), expenses: inMonth('expense', m), profit: -inMonth('income', m) - inMonth('expense', m), cash: upTo('cash', m) }));
+    const yearStart = fiscalYearSpan(fiscalYearOf(today, 4), 4).startDate.slice(0, 7);
+    const ytd = (to: string) => monthly.filter((m) => m.month >= yearStart && m.month <= to).reduce((s, m) => s + m.profit, 0);
+    const bal = (k: 'cash' | 'receivables' | 'payables', m: string) => (k === 'payables' ? -1 : 1) * upTo(k, m);
+    const kpi = (k: 'cash' | 'receivables' | 'payables') => ({ value: bal(k, thisMonth), previous: bal(k, months[10]!), trend: months.map((m) => bal(k, m)) });
+    const alerts: Dashboard['alerts'] = [];
+    const invoices = (await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews()).filter((i) => i.status === 'issued' && i.balance > 0 && i.dueDate < today);
+    if (invoices.length) alerts.push({ kind: 'overdue_invoices', count: invoices.length, amount: invoices.reduce((s, i) => s + i.balance, 0) });
+    const bills = (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((b) => b.status === 'open' && b.balance > 0 && b.dueDate < today);
+    if (bills.length) alerts.push({ kind: 'overdue_bills', count: bills.length, amount: bills.reduce((s, b) => s + b.balance, 0) });
+    const drafts = (await journals.list({ status: 'draft', page: 1, pageSize: 1 })).total;
+    if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
+    return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
     if (!canExport()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['reports.export'] });
   };
   return {
+    dashboard,
     trialBalance,
     ledger,
     taxSummary,

@@ -125,6 +125,21 @@ export interface BalanceSheet {
   balanced: boolean[];
 }
 
+export interface DashboardKpi {
+  value: number;
+  /** At the end of last month */
+  previous: number;
+  trend: number[];
+}
+export interface Dashboard {
+  asOf: string;
+  baseCurrency: string;
+  kpis: { cash: DashboardKpi; receivables: DashboardKpi; payables: DashboardKpi; profit: DashboardKpi & { since: string } };
+  monthly: { month: string; income: number; expenses: number; profit: number; cash: number }[];
+  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries'; count: number; amount?: number }[];
+  setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean };
+}
+
 /** Reports. Live and demo both implement it. */
 export interface ReportsApi {
   trialBalance(asOf: string): Promise<TrialBalance>;
@@ -139,4 +154,5 @@ export interface ReportsApi {
   exportProfitAndLoss(from: string, to: string, compare: PnlCompare): Promise<{ blob: Blob; filename: string }>;
   balanceSheet(asOf: string, compareAsOf: string | null): Promise<BalanceSheet>;
   exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
+  dashboard(): Promise<Dashboard>;
 }

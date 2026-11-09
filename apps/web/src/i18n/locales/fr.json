@@ -82,6 +82,19 @@
       "coa": "Choisissez un modèle de plan comptable",
       "fiscal": "Définissez votre exercice et votre devise de base",
       "bank": "Connectez un compte bancaire"
+    },
+    "vsLastMonthAmount": "{{value}} par rapport au mois dernier",
+    "profitByMonth": "Résultat par mois",
+    "profitHint": "Les douze derniers mois : en haut le bénéfice, en bas la perte.",
+    "attention": "À traiter",
+    "allClear": "Rien à traiter",
+    "alerts": {
+      "overdue_invoices": "{{count}} factures en retard, {{amount}}",
+      "overdue_bills": "{{count}} factures fournisseurs en retard, {{amount}}",
+      "unreconciled": "{{count}} lignes bancaires à rapprocher",
+      "recurring_due": "{{count}} factures récurrentes à émettre",
+      "open_periods": "{{count}} mois passés encore ouverts",
+      "draft_entries": "{{count}} écritures en brouillon non comptabilisées"
     }
   },
   "comingSoon": {

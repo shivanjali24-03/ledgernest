@@ -11,6 +11,7 @@ import { resetDemoItems } from '../items/demoItemsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
+import { openDialog } from '../test/openDialog';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoPayments } from './demoPaymentsApi';
 
@@ -36,16 +37,7 @@ describe('receipts', () => {
     renderApp('/invoices');
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
-    // A plain click, retried until the dialog opens: the header re-renders as the invoice's details load
-    await waitFor(
-      () => {
-        // Only while it's closed: a second click would land outside the open dialog and close it
-        if (!screen.queryByText('Record a receipt')) fireEvent.click(screen.getByRole('button', { name: 'Record payment' }));
-        expect(screen.getByText('Record a receipt')).toBeInTheDocument();
-      },
-      { timeout: 4000 },
-    );
-    const dialog = screen.getByText('Record a receipt').closest('[role="dialog"]') as HTMLElement;
+    const dialog = await openDialog('Record payment', 'Record a receipt');
     await waitFor(() => expect(within(dialog).getByLabelText('Amount (INR)')).toHaveValue('1,18,000.00'));
     expect(within(dialog).getByLabelText(/^Apply to INV\//)).toHaveValue('1,18,000.00');
     expect(within(dialog).getByRole('status')).toHaveTextContent('All of it is applied');
@@ -98,14 +90,7 @@ describe('vendor payments', () => {
     renderApp('/bills');
     await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
-    await waitFor(
-      () => {
-        if (!screen.queryByText('Pay a vendor')) fireEvent.click(screen.getByRole('button', { name: 'Pay bill' }));
-        expect(screen.getByText('Pay a vendor')).toBeInTheDocument();
-      },
-      { timeout: 4000 },
-    );
-    const dialog = screen.getByText('Pay a vendor').closest('[role="dialog"]') as HTMLElement;
+    const dialog = await openDialog('Pay bill', 'Pay a vendor');
     await waitFor(() => expect(within(dialog).getByLabelText('Amount (INR)')).toHaveValue('53,100.00'));
     expect(within(dialog).getByLabelText(/^Apply to BILL\//)).toHaveValue('53,100.00');
     expect(within(dialog).getByText('SOS/887')).toBeInTheDocument();

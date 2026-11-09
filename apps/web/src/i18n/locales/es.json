@@ -82,6 +82,19 @@
       "coa": "Elige una plantilla de plan de cuentas",
       "fiscal": "Define tu año fiscal y moneda base",
       "bank": "Conecta una cuenta bancaria"
+    },
+    "vsLastMonthAmount": "{{value}} frente al mes pasado",
+    "profitByMonth": "Beneficio por mes",
+    "profitHint": "Los últimos doce meses: arriba beneficio, abajo pérdida.",
+    "attention": "Requiere atención",
+    "allClear": "Nada requiere atención",
+    "alerts": {
+      "overdue_invoices": "{{count}} facturas vencidas, {{amount}}",
+      "overdue_bills": "{{count}} facturas de proveedor vencidas, {{amount}}",
+      "unreconciled": "{{count}} líneas bancarias por conciliar",
+      "recurring_due": "{{count}} facturas recurrentes pendientes",
+      "open_periods": "{{count}} meses pasados aún abiertos",
+      "draft_entries": "{{count}} asientos en borrador sin contabilizar"
     }
   },
   "comingSoon": {

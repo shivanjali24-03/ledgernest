@@ -82,6 +82,19 @@
       "coa": "اختر قالبًا لدليل الحسابات",
       "fiscal": "حدّد سنتك المالية وعملتك الأساسية",
       "bank": "اربط حسابًا بنكيًا"
+    },
+    "vsLastMonthAmount": "{{value}} مقارنة بالشهر الماضي",
+    "profitByMonth": "الربح حسب الشهر",
+    "profitHint": "الأشهر الاثنا عشر الماضية: للأعلى ربح، وللأسفل خسارة.",
+    "attention": "يحتاج انتباهًا",
+    "allClear": "لا شيء يحتاج انتباهًا",
+    "alerts": {
+      "overdue_invoices": "{{count}} فواتير متأخرة، {{amount}}",
+      "overdue_bills": "{{count}} فواتير موردين متأخرة، {{amount}}",
+      "unreconciled": "{{count}} أسطر بنكية للتسوية",
+      "recurring_due": "{{count}} فواتير متكررة مستحقة",
+      "open_periods": "{{count}} أشهر سابقة ما زالت مفتوحة",
+      "draft_entries": "{{count}} قيود مسودة غير مرحّلة"
     }
   },
   "comingSoon": {
