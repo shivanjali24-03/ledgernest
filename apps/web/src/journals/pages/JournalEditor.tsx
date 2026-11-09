@@ -26,6 +26,7 @@ import type { JournalEntry, JournalsApi } from '../types';
 import { useJournalsApi } from '../useJournalsApi';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
+import { heldForApproval, heldMessage } from '../../approvals/errors';
 
 /** For a line on a foreign-currency account, debit and credit are in that currency, and rate is typed or empty (= the day's rate) */
 type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean; rate: string; costCentreId: string };
@@ -412,14 +413,23 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const save = useMutation({
     mutationFn: async (andPost: boolean) => {
       const saved = entry ? await api.update(entry.id, payload()) : await api.create(payload());
-      return andPost ? api.post(saved.id) : saved;
+      if (!andPost) return { e: saved, held: null };
+      // Held for approval: it stays a draft, saved, with the request sent
+      return api.post(saved.id).then(
+        (e) => ({ e, held: null }),
+        (err: unknown) => {
+          if (heldForApproval(err)) return { e: saved, held: err };
+          throw err;
+        },
+      );
     },
-    onSuccess: (e, andPost) => {
+    onSuccess: ({ e, held }, andPost) => {
       void queryClient.invalidateQueries({ queryKey: ['journals'] });
       void queryClient.invalidateQueries({ queryKey: ['journal'] });
       // Posting can lock the base currency in settings
       if (andPost) void queryClient.invalidateQueries({ queryKey: ['settings'] });
-      toast(andPost ? t('journals.posted', { number: e.number }) : t('journals.saved'));
+      toast(held ? heldMessage(held, t) : andPost ? t('journals.posted', { number: e.number }) : t('journals.saved'));
+      if (held) void queryClient.invalidateQueries({ queryKey: ['approvals'] });
       navigate(`/journals/${e.id}`, { replace: true });
     },
     onError: (e) => toast(journalErrorMessage(e, t), 'error'),

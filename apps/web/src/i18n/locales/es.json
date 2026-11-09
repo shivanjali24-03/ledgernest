@@ -34,7 +34,8 @@
       "fixedAssets": "Activos fijos",
       "budgets": "Presupuestos",
       "costCentres": "Centros de coste",
-      "inventory": "Inventario"
+      "inventory": "Inventario",
+      "approvals": "Aprobaciones"
     },
     "soon": "Pronto"
   },
@@ -2768,6 +2769,70 @@
       "inventory_account_type": "Las existencias van en una cuenta de activo.",
       "cogs_account_type": "El coste de lo vendido va a una cuenta de gasto.",
       "in_use": "Facturas, facturas de proveedor o movimientos usan este artículo. Archívalo en su lugar."
+    }
+  },
+  "approvals": {
+    "title": "Aprobaciones",
+    "description": "Un segundo par de ojos antes de mover dinero: los asientos, facturas y pagos por encima de un límite esperan aquí el sí de otra persona.",
+    "view": "Mostrar",
+    "pending": "Pendientes",
+    "pendingCount": "Pendientes ({{count}})",
+    "history": "Decididas",
+    "nothingPending": "Nada pendiente de aprobación",
+    "nothingPendingBody": "Aquí aparecen los asientos, facturas y pagos retenidos por una regla.",
+    "noHistory": "Aún no hay decisiones",
+    "documents": {
+      "journal": "Asiento",
+      "bill": "Factura de proveedor",
+      "payment": "Pago a proveedor"
+    },
+    "statuses": {
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Devuelto",
+      "cancelled": "Retirado"
+    },
+    "sentBy": "Enviado por {{name}} {{when}}",
+    "approvedBy": "aprobado por {{name}}",
+    "sentBackBy": "devuelto por {{name}}",
+    "closedBy": "cerrado por {{name}}",
+    "withdraw": "Retirar",
+    "withdrawn": "Solicitud retirada",
+    "sendBack": "Devolver",
+    "sendBackFor": "Devolver {{summary}}",
+    "approve": "Aprobar",
+    "approveFor": "Aprobar {{summary}}",
+    "approvedToast": "{{summary}} aprobado y contabilizado",
+    "sentBackToast": "{{summary}} devuelto",
+    "approveTitle": "Aprobar y contabilizar",
+    "sendBackTitle": "Devolverlo",
+    "approveAndPost": "Aprobar y contabilizar",
+    "approveBody": "Se contabiliza ahora, a tu nombre.",
+    "sendBackBody": "Se queda como está; quien lo envió verá tu nota y podrá cambiarlo y enviarlo de nuevo.",
+    "noteOptional": "Nota (opcional)",
+    "note": "Qué hay que cambiar",
+    "rulesTitle": "Reglas de aprobación",
+    "rulesBody": "Los documentos a partir de un importe esperan a alguien distinto de quien los envió.",
+    "rulesReadOnly": "Las fijan los propietarios y administradores.",
+    "ruleSaved": "Regla de {{document}} guardada",
+    "rules": {
+      "journal": "Los asientos necesitan aprobación",
+      "bill": "Las facturas de proveedor necesitan aprobación",
+      "payment": "Los pagos a proveedores necesitan aprobación"
+    },
+    "atOrAbove": "A partir de ({{currency}})",
+    "badAmount": "Introduce un importe.",
+    "saveRule": "Guardar la regla: {{rule}}",
+    "sent": "Enviado a aprobación. Se contabiliza cuando alguien lo apruebe.",
+    "alreadyWaiting": "Esto ya está pendiente de aprobación.",
+    "errors": {
+      "own_request": "Otra persona tiene que aprobar lo que enviaste.",
+      "already_decided": "Alguien ya ha decidido sobre esto.",
+      "document_changed": "Ha cambiado desde que se envió. Devuélvelo para que se envíe de nuevo.",
+      "document_gone": "Ya no es un borrador, así que no hay nada que aprobar.",
+      "not_yours": "Solo quien lo envió puede retirarlo.",
+      "forbidden": "No tienes permiso para decidir aprobaciones.",
+      "generic": "No ha funcionado. Inténtalo de nuevo."
     }
   }
 }

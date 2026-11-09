@@ -34,7 +34,8 @@
       "fixedAssets": "Anlagevermögen",
       "budgets": "Budgets",
       "costCentres": "Kostenstellen",
-      "inventory": "Lager"
+      "inventory": "Lager",
+      "approvals": "Freigaben"
     },
     "soon": "Bald"
   },
@@ -2768,6 +2769,70 @@
       "inventory_account_type": "Bestand steht auf einem Aktivkonto.",
       "cogs_account_type": "Der Wareneinsatz geht auf ein Aufwandskonto.",
       "in_use": "Rechnungen, Eingangsrechnungen oder Bestandsbewegungen verwenden diesen Artikel. Archivieren Sie ihn stattdessen."
+    }
+  },
+  "approvals": {
+    "title": "Freigaben",
+    "description": "Ein zweiter Blick, bevor Geld fließt: Buchungen, Eingangsrechnungen und Zahlungen über einer Grenze warten hier auf das Ja einer anderen Person.",
+    "view": "Anzeigen",
+    "pending": "Offen",
+    "pendingCount": "Offen ({{count}})",
+    "history": "Entschieden",
+    "nothingPending": "Nichts wartet auf Freigabe",
+    "nothingPendingBody": "Hier erscheinen Buchungen, Eingangsrechnungen und Zahlungen, die eine Regel zurückhält.",
+    "noHistory": "Noch keine Entscheidungen",
+    "documents": {
+      "journal": "Buchung",
+      "bill": "Eingangsrechnung",
+      "payment": "Lieferantenzahlung"
+    },
+    "statuses": {
+      "pending": "Offen",
+      "approved": "Freigegeben",
+      "rejected": "Zurückgeschickt",
+      "cancelled": "Zurückgezogen"
+    },
+    "sentBy": "Gesendet von {{name}} {{when}}",
+    "approvedBy": "freigegeben von {{name}}",
+    "sentBackBy": "zurückgeschickt von {{name}}",
+    "closedBy": "geschlossen von {{name}}",
+    "withdraw": "Zurückziehen",
+    "withdrawn": "Anfrage zurückgezogen",
+    "sendBack": "Zurückschicken",
+    "sendBackFor": "{{summary}} zurückschicken",
+    "approve": "Freigeben",
+    "approveFor": "{{summary}} freigeben",
+    "approvedToast": "{{summary}} freigegeben und gebucht",
+    "sentBackToast": "{{summary}} zurückgeschickt",
+    "approveTitle": "Freigeben und buchen",
+    "sendBackTitle": "Zurückschicken",
+    "approveAndPost": "Freigeben und buchen",
+    "approveBody": "Es wird jetzt in Ihrem Namen gebucht.",
+    "sendBackBody": "Es bleibt, wie es ist; wer es gesendet hat, sieht Ihre Notiz und kann es ändern und erneut senden.",
+    "noteOptional": "Notiz (optional)",
+    "note": "Was sich ändern muss",
+    "rulesTitle": "Freigaberegeln",
+    "rulesBody": "Belege ab einem Betrag warten auf jemand anderen als die Person, die sie gesendet hat.",
+    "rulesReadOnly": "Festgelegt von Inhabern und Admins.",
+    "ruleSaved": "Regel für {{document}} gespeichert",
+    "rules": {
+      "journal": "Buchungen brauchen eine Freigabe",
+      "bill": "Eingangsrechnungen brauchen eine Freigabe",
+      "payment": "Lieferantenzahlungen brauchen eine Freigabe"
+    },
+    "atOrAbove": "Ab ({{currency}})",
+    "badAmount": "Geben Sie einen Betrag ein.",
+    "saveRule": "Regel speichern: {{rule}}",
+    "sent": "Zur Freigabe gesendet. Es wird gebucht, sobald jemand freigibt.",
+    "alreadyWaiting": "Dies wartet bereits auf Freigabe.",
+    "errors": {
+      "own_request": "Jemand anderes muss freigeben, was Sie gesendet haben.",
+      "already_decided": "Darüber wurde bereits entschieden.",
+      "document_changed": "Es hat sich seit dem Senden geändert. Schicken Sie es zurück, damit es erneut gesendet werden kann.",
+      "document_gone": "Es ist kein Entwurf mehr, es gibt nichts freizugeben.",
+      "not_yours": "Nur wer es gesendet hat, kann es zurückziehen.",
+      "forbidden": "Sie dürfen nicht über Freigaben entscheiden.",
+      "generic": "Das hat nicht geklappt. Versuchen Sie es erneut."
     }
   }
 }

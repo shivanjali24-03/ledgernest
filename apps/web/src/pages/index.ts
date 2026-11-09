@@ -33,6 +33,7 @@ export const FixedAssets = lazy(() => import('../assets/pages/FixedAssets'));
 export const Budgets = lazy(() => import('../budgets/pages/Budgets'));
 export const CostCentres = lazy(() => import('../cost-centres/pages/CostCentres'));
 export const Inventory = lazy(() => import('../inventory/pages/Inventory'));
+export const Approvals = lazy(() => import('../approvals/pages/Approvals'));
 export const Reconcile = lazy(() => import('../banking/pages/Reconcile'));
 export const BillEditor = lazy(() => import('../bills/pages/BillEditor'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

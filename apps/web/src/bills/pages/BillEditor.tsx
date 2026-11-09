@@ -29,6 +29,7 @@ import type { Bill, BillsApi } from '../types';
 import { useBillsApi } from '../useBillsApi';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
+import { heldForApproval, heldMessage } from '../../approvals/errors';
 
 type Line = {
   key: string;
@@ -206,11 +207,19 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
       const saved = invoice ? await api.update(invoice.id, payload()) : await api.create(payload());
-      return andIssue ? api.record(saved.id) : saved;
+      if (!andIssue) return { i: saved, held: null };
+      // Held for approval: it stays a draft, saved, with the request sent
+      return api.record(saved.id).then(
+        (i) => ({ i, held: null }),
+        (err: unknown) => {
+          if (heldForApproval(err)) return { i: saved, held: err };
+          throw err;
+        },
+      );
     },
-    onSuccess: (i, andIssue) => {
-      for (const key of ['bills', 'contacts', 'journals', 'journal', 'reports']) void queryClient.invalidateQueries({ queryKey: [key] });
-      toast(andIssue ? t('bills.recorded', { number: i.number }) : t('invoices.saved'));
+    onSuccess: ({ i, held }, andIssue) => {
+      for (const key of ['bills', 'contacts', 'journals', 'journal', 'reports', 'approvals']) void queryClient.invalidateQueries({ queryKey: [key] });
+      toast(held ? heldMessage(held, t) : andIssue ? t('bills.recorded', { number: i.number }) : t('invoices.saved'));
       navigate(`/bills/${i.id}`, { replace: true });
     },
     onError: (e) => toast(billErrorMessage(e, t), 'error'),
