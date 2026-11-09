@@ -729,17 +729,23 @@ model Payment {
 }
 
 model PaymentAllocation {
-  organizationId String @map("organization_id") @db.Uuid
-  paymentId      String @map("payment_id") @db.Uuid
-  invoiceId      String @map("invoice_id") @db.Uuid
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  paymentId      String  @map("payment_id") @db.Uuid
+  /// A receipt settles an invoice; a payment settles a bill (exactly one is set)
+  invoiceId      String? @map("invoice_id") @db.Uuid
+  billId         String? @map("bill_id") @db.Uuid
   amount         BigInt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   payment      Payment      @relation(fields: [organizationId, paymentId], references: [organizationId, id], onDelete: Cascade)
-  invoice      Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
+  invoice      Invoice?     @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
+  bill         Bill?        @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: NoAction)
 
-  @@id([paymentId, invoiceId])
+  @@unique([paymentId, invoiceId])
+  @@unique([paymentId, billId])
   @@index([organizationId, invoiceId])
+  @@index([organizationId, billId])
   @@map("payment_allocations")
 }
 
@@ -779,6 +785,8 @@ model Bill {
   journalEntry   JournalEntry? @relation("BillEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
   voidEntry      JournalEntry? @relation("BillVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
   lines          BillLine[]
+
+  allocations PaymentAllocation[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])

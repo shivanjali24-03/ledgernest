@@ -632,7 +632,8 @@
       "org_bill_update": "Borrador de factura de proveedor editado",
       "org_bill_delete": "Borrador de factura de proveedor eliminado",
       "org_bill_record": "Factura de proveedor registrada",
-      "org_bill_void": "Factura de proveedor anulada"
+      "org_bill_void": "Factura de proveedor anulada",
+      "org_payment_pay": "Pago a proveedor registrado"
     },
     "entities": {
       "membership": "Miembro",

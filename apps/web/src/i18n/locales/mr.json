@@ -632,7 +632,8 @@
       "org_bill_update": "बिल मसुदा संपादित",
       "org_bill_delete": "बिल मसुदा हटवला",
       "org_bill_record": "बिल नोंदवले",
-      "org_bill_void": "बिल रद्द केले"
+      "org_bill_void": "बिल रद्द केले",
+      "org_payment_pay": "विक्रेत्याला दिलेले पेमेंट नोंदवले"
     },
     "entities": {
       "membership": "सदस्य",

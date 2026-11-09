@@ -632,7 +632,8 @@
       "org_bill_update": "Bill draft edited",
       "org_bill_delete": "Bill draft deleted",
       "org_bill_record": "Bill recorded",
-      "org_bill_void": "Bill voided"
+      "org_bill_void": "Bill voided",
+      "org_payment_pay": "Vendor payment recorded"
     },
     "entities": {
       "membership": "Member",

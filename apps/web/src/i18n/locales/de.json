@@ -632,7 +632,8 @@
       "org_bill_update": "Entwurf einer Eingangsrechnung bearbeitet",
       "org_bill_delete": "Entwurf einer Eingangsrechnung gelöscht",
       "org_bill_record": "Eingangsrechnung erfasst",
-      "org_bill_void": "Eingangsrechnung storniert"
+      "org_bill_void": "Eingangsrechnung storniert",
+      "org_payment_pay": "Lieferantenzahlung erfasst"
     },
     "entities": {
       "membership": "Mitglied",
