@@ -7,6 +7,7 @@ export const AUDIT_ACTION_GROUPS = {
   invitations: ['org.invitation.', 'invitation.'],
   roles: ['org.role.'],
   settings: ['org.settings.', 'org.logo.'],
+  accounts: ['org.account.'],
   supportAccess: ['platform.support_access'],
   organizations: ['platform.organization.'],
   platformUsers: ['platform.user.', 'platform.superadmin.'],
@@ -15,7 +16,7 @@ export const AUDIT_ACTION_GROUPS = {
 export type AuditActionGroup = keyof typeof AUDIT_ACTION_GROUPS;
 
 /** Groups that make sense inside one organisation (sign-ins and platform admin actions are platform-wide). */
-export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
+export const ORGANIZATION_AUDIT_GROUPS: AuditActionGroup[] = ['accounts', 'members', 'invitations', 'roles', 'settings', 'supportAccess', 'exports'];
 
 export const AUDIT_PAGE_SIZE = 50;
 export const AUDIT_EXPORT_LIMIT = 10_000;
