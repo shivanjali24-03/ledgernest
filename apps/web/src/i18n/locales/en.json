@@ -1052,5 +1052,24 @@
       "invalid_amount": "Check the highlighted amounts.",
       "missing_account": "Choose an account for every line."
     }
+  },
+  "reports": {
+    "title": "Reports",
+    "description": "Built from posted entries only, in {{currency}}.",
+    "export": "Export CSV",
+    "trialBalance": "Trial balance",
+    "ledger": "General ledger",
+    "asOf": "As of",
+    "balanced": "Debits equal credits",
+    "notBalanced": "Debits and credits don't match",
+    "tbCaption": "Trial balance as of {{date}}",
+    "from": "From",
+    "to": "To",
+    "pickAccount": "Choose an account to see its ledger",
+    "ledgerCaption": "General ledger for {{account}}",
+    "balance": "Balance",
+    "opening": "Opening balance on {{date}}",
+    "noLines": "No posted entries in these dates.",
+    "closing": "Closing balance on {{date}}"
   }
 }

@@ -50,7 +50,7 @@ export const NAV: NavGroup[] = [
       { to: '/accounts', labelKey: 'nav.items.accounts', icon: ListTree, permission: 'accounts.view', ready: true, keywords: 'coa ledger codes chart sub-accounts' },
       { to: '/periods', labelKey: 'nav.items.periods', icon: CalendarRange, permission: 'accounts.view', ready: true, keywords: 'financial year fiscal period month close lock' },
       { to: '/journals', labelKey: 'nav.items.journals', icon: BookOpen, permission: 'journals.view', ready: true, keywords: 'debit credit posting voucher jv reverse' },
-      { to: '/reports', labelKey: 'nav.items.reports', icon: BarChart3, permission: 'reports.view', keywords: 'profit loss balance sheet trial' },
+      { to: '/reports', labelKey: 'nav.items.reports', icon: BarChart3, permission: 'reports.view', ready: true, keywords: 'trial balance general ledger profit loss balance sheet' },
     ],
   },
   {

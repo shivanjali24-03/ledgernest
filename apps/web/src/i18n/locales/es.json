@@ -1052,5 +1052,24 @@
       "invalid_amount": "Revisa los importes marcados.",
       "missing_account": "Elige una cuenta para cada línea."
     }
+  },
+  "reports": {
+    "title": "Informes",
+    "description": "Solo a partir de asientos contabilizados, en {{currency}}.",
+    "export": "Exportar CSV",
+    "trialBalance": "Balance de comprobación",
+    "ledger": "Libro mayor",
+    "asOf": "A fecha de",
+    "balanced": "El debe es igual al haber",
+    "notBalanced": "El debe y el haber no coinciden",
+    "tbCaption": "Balance de comprobación a {{date}}",
+    "from": "Desde",
+    "to": "Hasta",
+    "pickAccount": "Elige una cuenta para ver su mayor",
+    "ledgerCaption": "Libro mayor de {{account}}",
+    "balance": "Saldo",
+    "opening": "Saldo inicial al {{date}}",
+    "noLines": "No hay asientos contabilizados en estas fechas.",
+    "closing": "Saldo final al {{date}}"
   }
 }
