@@ -632,7 +632,8 @@
       "org_bill_update": "عُدّلت مسودة فاتورة مورد",
       "org_bill_delete": "حُذفت مسودة فاتورة مورد",
       "org_bill_record": "سُجّلت فاتورة مورد",
-      "org_bill_void": "أُلغيت فاتورة مورد"
+      "org_bill_void": "أُلغيت فاتورة مورد",
+      "org_payment_pay": "سُجّلت دفعة لمورّد"
     },
     "entities": {
       "membership": "عضو",

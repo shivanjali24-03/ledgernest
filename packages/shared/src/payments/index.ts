@@ -43,6 +43,26 @@ export const receiptSchema = z
   .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was received.' });
 export type ReceiptInput = z.input<typeof receiptSchema>;
 
+/** Money paid to a vendor, allocated to their open bills; the rest is an advance to them */
+export const vendorPaymentSchema = z
+  .object({
+    contactId: z.uuid(),
+    date: isoDaySchema,
+    /** The bank or cash account the money left */
+    bankAccountId: z.uuid(),
+    amount,
+    rate: rateSchema.nullable().optional().default(null),
+    reference: text(64),
+    notes: text(500),
+    allocations: z
+      .array(z.object({ billId: z.uuid(), amount }))
+      .max(100)
+      .default([])
+      .refine((a) => new Set(a.map((x) => x.billId)).size === a.length, 'Each bill can appear once.'),
+  })
+  .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was paid.' });
+export type VendorPaymentInput = z.input<typeof vendorPaymentSchema>;
+
 export const paymentVoidSchema = z.object({ reason: z.string().trim().max(500).optional() });
 
 /** Allocates an amount to invoices oldest-due first, as a starting point the user can change. */

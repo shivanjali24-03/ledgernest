@@ -632,7 +632,8 @@
       "org_bill_update": "Brouillon de facture fournisseur modifié",
       "org_bill_delete": "Brouillon de facture fournisseur supprimé",
       "org_bill_record": "Facture fournisseur enregistrée",
-      "org_bill_void": "Facture fournisseur annulée"
+      "org_bill_void": "Facture fournisseur annulée",
+      "org_payment_pay": "Paiement fournisseur enregistré"
     },
     "entities": {
       "membership": "Membre",
