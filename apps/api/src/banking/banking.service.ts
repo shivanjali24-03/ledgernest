@@ -430,6 +430,7 @@ export class BankingService {
         ...side(base(l.amount), spend),
         taxGroupId: l.taxGroupId,
         taxInclusive: !!l.taxGroupId && input.taxInclusive,
+        costCentreId: l.costCentreId,
       }));
       const bankLine = bank.currency
         ? {

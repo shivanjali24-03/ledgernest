@@ -824,7 +824,10 @@ export class ReportsService {
     from: string | null,
     to: string,
     withoutClosings: boolean,
+    /** Only lines tagged with this cost centre, or "none" for untagged ones */
+    costCentre?: string,
   ) {
+    const cc = costCentre ?? 'all';
     const rows = await this.prisma.$queryRaw<
       { account_id: string; debit: bigint; credit: bigint }[]
     >`
@@ -833,6 +836,7 @@ export class ReportsService {
       WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted'
         AND e.date <= ${asDate(to)}::date AND (${from}::date IS NULL OR e.date >= ${from}::date)
         AND (NOT ${withoutClosings} OR e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL))
+        AND (${cc} = 'all' OR (${cc} = 'none' AND l.cost_centre_id IS NULL) OR l.cost_centre_id::text = ${cc})
       GROUP BY l.account_id`;
     return new Map(
       rows.map((r) => [r.account_id, Number(r.debit) - Number(r.credit)]),
@@ -922,11 +926,55 @@ export class ReportsService {
     from: string,
     to: string,
     compare: PnlCompare,
+    costCentreId?: string,
   ) {
-    const columns = pnlColumns(from, to, compare);
+    // By cost centre: a column for each one with income or expenses in the period, then the untagged lines
+    const centres =
+      compare === 'costCentres'
+        ? await this.prisma.$queryRaw<
+            { id: string; code: string; name: string }[]
+          >`
+            SELECT c.id, c.code, c.name FROM cost_centres c
+            WHERE c.organization_id = ${organizationId}::uuid AND EXISTS (
+              SELECT 1 FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id JOIN accounts a ON a.id = l.account_id
+              WHERE l.cost_centre_id = c.id AND e.status = 'posted' AND a.type IN ('income', 'expense')
+                AND e.date BETWEEN ${asDate(from)}::date AND ${asDate(to)}::date)
+            ORDER BY c.code`
+        : [];
+    const columns: {
+      from: string;
+      to: string;
+      costCentre?: { id: string; code: string; name: string } | null;
+    }[] =
+      compare === 'costCentres'
+        ? [
+            ...centres.map((c) => ({ from, to, costCentre: c })),
+            { from, to, costCentre: null },
+          ]
+        : pnlColumns(from, to, compare);
+    const filter = costCentreId
+      ? costCentreId === 'none'
+        ? null
+        : await this.prisma.costCentre.findFirst({
+            where: { organizationId, id: costCentreId },
+            select: { id: true, code: true, name: true },
+          })
+      : undefined;
+    if (filter === null && costCentreId !== 'none')
+      throw new NotFoundException('Cost centre not found.');
     const [tree, ...sums] = await Promise.all([
       this.tree(organizationId),
-      ...columns.map((c) => this.sums(organizationId, c.from, c.to, true)),
+      ...columns.map((c) =>
+        this.sums(
+          organizationId,
+          c.from,
+          c.to,
+          true,
+          c.costCentre !== undefined
+            ? (c.costCentre?.id ?? 'none')
+            : costCentreId,
+        ),
+      ),
     ]);
     const rows = this.rows<PnlSection>(tree, sums, pnlSectionOf, (type) =>
       type === 'income' ? -1 : 1,
@@ -952,6 +1000,12 @@ export class ReportsService {
       to,
       compare,
       columns,
+      /** Set when the report is for one cost centre ("none": the untagged lines) */
+      costCentre: costCentreId
+        ? costCentreId === 'none'
+          ? ('none' as const)
+          : filter!
+        : null,
       sections: PNL_SECTIONS.map((sec) => ({
         section: sec,
         rows: rows.filter((r) => r.section === sec),
@@ -1061,7 +1115,13 @@ export class ReportsService {
       'section',
       'code',
       'account',
-      ...p.columns.map((c) => `${c.from}..${c.to}`),
+      ...p.columns.map((c) =>
+        c.costCentre !== undefined
+          ? c.costCentre
+            ? `${c.costCentre.code} ${c.costCentre.name}`
+            : 'Unassigned'
+          : `${c.from}..${c.to}`,
+      ),
     ];
     const rows: (string | number)[][] = [head];
     const totals: Partial<Record<PnlSection, [string, number[]]>> = {

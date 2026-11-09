@@ -26,6 +26,7 @@ import { RecurringModule } from './recurring/recurring.module.js';
 import { BankingModule } from './banking/banking.module.js';
 import { AssetsModule } from './assets/assets.module.js';
 import { BudgetsModule } from './budgets/budgets.module.js';
+import { CostCentresModule } from './cost-centres/cost-centres.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -61,6 +62,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     BankingModule,
     AssetsModule,
     BudgetsModule,
+    CostCentresModule,
     PlatformModule,
   ],
   providers: [

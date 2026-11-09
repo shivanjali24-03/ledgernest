@@ -108,6 +108,7 @@ model Organization {
   depreciationLines  DepreciationLine[]
   budgets            Budget[]
   budgetLines        BudgetLine[]
+  costCentres        CostCentre[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -317,8 +318,11 @@ model JournalLine {
   rate           Decimal? @db.Decimal(20, 10)
   /// Set on an exchange-difference line generated on posting: the line whose settlement it records
   fxSourceLine   Int?     @map("fx_source_line")
+  /// The cost centre or project the line belongs to
+  costCentreId   String?  @map("cost_centre_id") @db.Uuid
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  costCentre      CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
   entry           JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
   taxGroup        TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
   taxRate         TaxRate?     @relation(fields: [organizationId, taxRateId], references: [organizationId, id], onDelete: NoAction)
@@ -332,6 +336,7 @@ model JournalLine {
   @@unique([organizationId, id])
   @@unique([entryId, lineNo])
   @@index([organizationId, accountId])
+  @@index([organizationId, costCentreId])
   @@map("journal_lines")
 }
 
@@ -727,8 +732,10 @@ model InvoiceLine {
   /// Worked out from the above: net of discount, and its tax
   amount         BigInt
   taxAmount      BigInt  @default(0) @map("tax_amount")
+  costCentreId   String? @map("cost_centre_id") @db.Uuid
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
   invoice      Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: Cascade)
   item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
   taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
@@ -865,8 +872,10 @@ model BillLine {
   accountId      String? @map("account_id") @db.Uuid
   amount         BigInt
   taxAmount      BigInt  @default(0) @map("tax_amount")
+  costCentreId   String? @map("cost_centre_id") @db.Uuid
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
   bill         Bill         @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: Cascade)
   item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
   taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
@@ -1295,4 +1304,27 @@ model BudgetLine {
   @@unique([budgetId, accountId, month])
   @@index([organizationId, budgetId])
   @@map("budget_lines")
+}
+
+/// A part of the business (a department or branch) or a project that lines are tagged with, to see profit by each.
+model CostCentre {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  code           String
+  name           String
+  /// department | project
+  kind           String    @default("department")
+  description    String?
+  archivedAt     DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+  invoiceLines InvoiceLine[]
+  billLines    BillLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, code])
+  @@map("cost_centres")
 }

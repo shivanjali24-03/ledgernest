@@ -247,7 +247,12 @@ export class ReportsController {
   })
   profitAndLoss(
     @Query(new ZodValidationPipe(pnlQuerySchema))
-    q: { from: string; to: string; compare: PnlCompare },
+    q: {
+      from: string;
+      to: string;
+      compare: PnlCompare;
+      costCentreId?: string;
+    },
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.reports.profitAndLoss(
@@ -255,6 +260,7 @@ export class ReportsController {
       q.from,
       q.to,
       q.compare,
+      q.costCentreId,
     );
   }
 
@@ -265,7 +271,12 @@ export class ReportsController {
   @ApiProduces('text/csv')
   async profitAndLossCsv(
     @Query(new ZodValidationPipe(pnlQuerySchema))
-    q: { from: string; to: string; compare: PnlCompare },
+    q: {
+      from: string;
+      to: string;
+      compare: PnlCompare;
+      costCentreId?: string;
+    },
     @CurrentTenant() tenant: Tenant,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -274,6 +285,7 @@ export class ReportsController {
       q.from,
       q.to,
       q.compare,
+      q.costCentreId,
     );
     res.setHeader(
       'Content-Disposition',

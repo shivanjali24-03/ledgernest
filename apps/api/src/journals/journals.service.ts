@@ -20,6 +20,7 @@ import {
   type ExpandedLine,
 } from '@ledgernest/shared';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { checkCostCentres } from '../cost-centres/check.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -88,6 +89,8 @@ const entrySelect = {
       foreignCredit: true,
       rate: true,
       fxSourceLine: true,
+      costCentreId: true,
+      costCentre: { select: { id: true, code: true, name: true } },
       account: {
         select: { code: true, name: true, type: true, currency: true },
       },
@@ -149,6 +152,7 @@ export class JournalsService {
       rate: l.rate && rateText(l.rate),
       /** Set on an exchange-difference line generated on posting */
       fxSourceLine: l.fxSourceLine,
+      costCentre: l.costCentre,
     }));
     return {
       id: e.id,
@@ -304,6 +308,7 @@ export class JournalsService {
     entered: LineIn[],
   ): Promise<LineRow[]> {
     const accounts = await this.checkAccounts(tx, organizationId, entered);
+    await checkCostCentres(tx, organizationId, entered);
     const lines = await this.convert(
       tx,
       organizationId,
@@ -498,6 +503,7 @@ export class JournalsService {
         foreignCredit: 0,
         rate: null,
         fxSourceLine: d.sourceLine,
+        costCentreId: null,
       };
       extra.push({
         ...base,
@@ -1026,6 +1032,7 @@ export class JournalsService {
         taxInclusive: l.taxInclusive,
         taxRateId: l.taxRateId,
         taxSourceLine: l.taxSourceLine,
+        costCentreId: l.costCentreId,
         currency: l.currency,
         foreignDebit: Number(l.foreignCredit),
         foreignCredit: Number(l.foreignDebit),
@@ -1084,6 +1091,7 @@ export class JournalsService {
         credit: number;
         description?: string | null;
         currency?: string | null;
+        costCentreId?: string | null;
       }[];
     },
     actorId: string,
@@ -1112,6 +1120,7 @@ export class JournalsService {
         taxInclusive: false,
         taxRateId: null,
         taxSourceLine: null,
+        costCentreId: l.costCentreId ?? null,
         currency: l.currency ?? null,
         foreignDebit: 0,
         foreignCredit: 0,
