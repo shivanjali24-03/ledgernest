@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, Banking, BillEditor, Bills, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, Banking, BillEditor, Bills, Budgets, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -28,6 +28,7 @@ const BUILT: RouteObject[] = [
   { path: 'recurring', element: page(<Recurring />, 'invoices.view') },
   { path: 'banking', element: page(<Banking />, 'banking.view') },
   { path: 'fixed-assets', element: page(<FixedAssets />, 'accounts.view') },
+  { path: 'budgets', element: page(<Budgets />, 'reports.view') },
   { path: 'banking/reconcile/:accountId', element: page(<Reconcile />, 'banking.view') },
   { path: 'bills', element: page(<Bills />, 'bills.view') },
   { path: 'bills/:id', element: page(<BillEditor />, 'bills.view') },

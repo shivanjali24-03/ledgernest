@@ -31,7 +31,8 @@
       "items": "Produkte & Leistungen",
       "creditNotes": "Gutschriften",
       "recurring": "Wiederkehrende Rechnungen",
-      "fixedAssets": "Anlagevermögen"
+      "fixedAssets": "Anlagevermögen",
+      "budgets": "Budgets"
     },
     "soon": "Bald"
   },
@@ -2540,6 +2541,75 @@
       "before_depreciated": "Es ist über diesen Tag hinaus abgeschrieben. Machen Sie diesen Lauf zuerst rückgängig.",
       "gain_loss_account": "Wählen Sie ein Ertrags- oder Aufwandskonto für das Ergebnis.",
       "bank_invalid": "Wählen Sie ein Bank- oder Kassenkonto."
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "description": "Planen Sie, was jedes Ertrags- und Aufwandskonto Monat für Monat ergeben soll, und sehen Sie, wie das Jahr im Vergleich läuft.",
+    "new": "Neues Budget",
+    "empty": "Noch keine Budgets",
+    "emptyBody": "Beginnen Sie mit den Zahlen des Vorjahres, einem anderen Budget oder einem leeren Blatt.",
+    "budget": "Budget",
+    "actionsFor": "Aktionen für {{name}}",
+    "rename": "Umbenennen",
+    "delete": "Budget löschen",
+    "plan": "Plan",
+    "comparison": "Budget gegen Ist",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Der Plan wird endgültig gelöscht. Ihre Buchhaltung bleibt unberührt.",
+    "deleted": "{{name}} gelöscht",
+    "saved": "{{name}} gespeichert",
+    "created": "{{name}} erstellt",
+    "renamed": "Umbenannt in {{name}}",
+    "planHint": "Beträge für {{year}} in {{currency}}. Erträge und Aufwendungen werden beide positiv eingegeben.",
+    "discard": "Verwerfen",
+    "total": "Summe",
+    "cell": "{{account}}, {{month}}",
+    "yearTotal": "{{account}}, Jahressumme",
+    "spreadHint": "Geben Sie eine Jahressumme ein, um sie gleichmäßig auf die Monate zu verteilen",
+    "better": "besser als geplant",
+    "worse": "schlechter als geplant",
+    "upTo": "Bis",
+    "monthsIn": "{{count}} von 12 Monaten in {{year}}",
+    "nothingYet": "Noch nichts zu vergleichen",
+    "nothingYetBody": "Tragen Sie Beträge in den Plan ein oder buchen Sie Erträge und Aufwendungen.",
+    "columns": {
+      "budget": "Budget",
+      "actual": "Ist",
+      "variance": "Abweichung"
+    },
+    "varianceHint": "Abweichungen sind positiv, wenn es besser als geplant läuft: Erträge über Budget oder Aufwendungen darunter.",
+    "defaultName": "Budget {{year}}",
+    "newTitle": "Neues Budget",
+    "newBody": "Ein Monatsplan für Erträge und Aufwendungen eines Geschäftsjahres.",
+    "create": "Budget erstellen",
+    "renameTitle": "Budget umbenennen",
+    "noYears": "Legen Sie zuerst ein Geschäftsjahr an",
+    "fields": {
+      "year": "Geschäftsjahr",
+      "name": "Name",
+      "startFrom": "Ausgangspunkt",
+      "adjust": "Erhöhen oder senken um (%)",
+      "budget": "Zu kopierendes Budget"
+    },
+    "adjustHint": "Zum Beispiel 10 für zehn Prozent mehr oder -5 für weniger.",
+    "start": {
+      "actuals": "Ist-Zahlen des Vorjahres",
+      "budget": "Ein anderes Budget",
+      "empty": "Ein leeres Blatt"
+    },
+    "problems": {
+      "year": "Wählen Sie ein Geschäftsjahr.",
+      "budget": "Wählen Sie das zu kopierende Budget.",
+      "adjust": "Geben Sie einen Prozentsatz zwischen -100 und 1000 ein."
+    },
+    "errors": {
+      "name_taken": "Dieses Jahr hat bereits ein Budget mit diesem Namen.",
+      "year_not_found": "Dieses Geschäftsjahr gibt es nicht.",
+      "budget_not_found": "Dieses Budget gibt es nicht.",
+      "not_pnl_account": "Budgets gelten für Ertrags- und Aufwandskonten.",
+      "forbidden": "Sie dürfen Budgets nicht ändern.",
+      "generic": "Das Budget konnte nicht gespeichert werden. Versuchen Sie es erneut."
     }
   }
 }
