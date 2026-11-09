@@ -3127,7 +3127,8 @@
     },
     "formats": {
       "xlsx": "Excel (XLSX)",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF"
     },
     "periodHint": {
       "weekly": "हर सप्ताह बनने के दिन से पहले के सात दिन शामिल।",

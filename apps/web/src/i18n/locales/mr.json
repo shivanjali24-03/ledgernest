@@ -3127,7 +3127,8 @@
     },
     "formats": {
       "xlsx": "Excel (XLSX)",
-      "csv": "CSV"
+      "csv": "CSV",
+      "pdf": "PDF"
     },
     "periodHint": {
       "weekly": "प्रत्येक आठवड्यात बनण्याच्या दिवसाआधीचे सात दिवस.",
