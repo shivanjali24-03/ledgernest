@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ATTACHMENT_MAX_BYTES, journalNumber, postingProblem, sniffAttachmentType, totals, type AttachmentType } from '@ledgernest/shared';
+import { ATTACHMENT_MAX_BYTES, journalNumber, postingProblem, sniffAttachmentType, splitTax, taxRole, totals, type AttachmentType } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -9,7 +9,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
-type LineIn = { accountId: string; description: string | null; debit: number; credit: number };
+type LineIn = { accountId: string; description: string | null; debit: number; credit: number; taxGroupId?: string | null; taxInclusive?: boolean };
+/** A line as stored: what was entered (with its net amount when taxed) or a tax line generated from it */
+type LineRow = { lineNo: number; accountId: string; description: string | null; debit: number; credit: number; taxGroupId: string | null; taxInclusive: boolean; taxRateId: string | null; taxSourceLine: number | null };
 type DraftIn = { date: string; memo: string | null; reference: string | null; lines: LineIn[] };
 
 const refuse = (Ex: typeof ConflictException | typeof BadRequestException, message: string, reason: string, extra: object = {}) =>
@@ -34,7 +36,24 @@ const entrySelect = {
   reversedBy: { select: { id: true, number: true, fiscalYear: { select: { name: true } } } },
   createdBy: { select: { name: true, email: true } },
   postedBy: { select: { name: true, email: true } },
-  lines: { orderBy: { lineNo: 'asc' as const }, select: { id: true, lineNo: true, accountId: true, description: true, debit: true, credit: true, account: { select: { code: true, name: true, type: true } } } },
+  lines: {
+    orderBy: { lineNo: 'asc' as const },
+    select: {
+      id: true,
+      lineNo: true,
+      accountId: true,
+      description: true,
+      debit: true,
+      credit: true,
+      taxGroupId: true,
+      taxInclusive: true,
+      taxRateId: true,
+      taxSourceLine: true,
+      account: { select: { code: true, name: true, type: true } },
+      taxGroup: { select: { id: true, name: true } },
+      taxRate: { select: { id: true, name: true, kind: true, ratePpm: true } },
+    },
+  },
   attachments: { orderBy: { createdAt: 'asc' as const }, select: { id: true, fileName: true, contentType: true, size: true, createdAt: true } },
 } as const;
 type EntryRow = Prisma.JournalEntryGetPayload<{ select: typeof entrySelect }>;
@@ -57,7 +76,20 @@ export class JournalsService {
   }
 
   private view(e: EntryRow) {
-    const lines = e.lines.map((l) => ({ id: l.id, lineNo: l.lineNo, accountId: l.accountId, account: l.account, description: l.description, debit: Number(l.debit), credit: Number(l.credit) }));
+    const lines = e.lines.map((l) => ({
+      id: l.id,
+      lineNo: l.lineNo,
+      accountId: l.accountId,
+      account: l.account,
+      description: l.description,
+      debit: Number(l.debit),
+      credit: Number(l.credit),
+      taxGroup: l.taxGroup,
+      taxInclusive: l.taxInclusive,
+      /** Set on a tax line the system generated */
+      taxRate: l.taxRate,
+      taxSourceLine: l.taxSourceLine,
+    }));
     return {
       id: e.id,
       number: label(e),
@@ -119,28 +151,90 @@ export class JournalsService {
   }
 
   /** Lines may only use active accounts of this organisation. */
-  private async checkAccounts(tx: Tx, organizationId: string, lines: LineIn[]) {
+  private async checkAccounts(tx: Tx, organizationId: string, lines: { accountId: string }[]) {
     const ids = [...new Set(lines.map((l) => l.accountId))];
-    if (!ids.length) return;
-    const found = await tx.account.findMany({ where: { organizationId, id: { in: ids } }, select: { id: true, archivedAt: true } });
+    if (!ids.length) return new Map<string, string>();
+    const found = await tx.account.findMany({ where: { organizationId, id: { in: ids } }, select: { id: true, type: true, archivedAt: true } });
     if (found.length !== ids.length) throw refuse(BadRequestException, 'A line uses an account that doesn’t exist.', 'account_not_found');
     if (found.some((a) => a.archivedAt)) throw refuse(BadRequestException, 'A line uses an archived account.', 'account_archived');
+    return new Map(found.map((a) => [a.id, a.type]));
+  }
+
+  /**
+   * Turns the lines as entered into the lines stored. A taxed line keeps its net amount and is followed by
+   * one generated line per tax component, on the same side: sales (credits to income) credit output tax,
+   * purchases (debits to expenses or assets) debit input tax, and credit notes run the other way.
+   */
+  private async expand(tx: Tx, organizationId: string, lines: LineIn[]): Promise<LineRow[]> {
+    const types = await this.checkAccounts(tx, organizationId, lines);
+    const groupIds = [...new Set(lines.map((l) => l.taxGroupId).filter((g): g is string => !!g))];
+    const groups = groupIds.length
+      ? await tx.taxGroup.findMany({
+          where: { organizationId, id: { in: groupIds } },
+          select: { id: true, archivedAt: true, rates: { orderBy: { position: 'asc' }, select: { rate: { select: { id: true, ratePpm: true, outputAccountId: true, inputAccountId: true } } } } },
+        })
+      : [];
+    if (groups.length !== groupIds.length) throw refuse(BadRequestException, 'A line uses a tax group that doesn’t exist.', 'tax_group_not_found');
+    if (groups.some((g) => g.archivedAt)) throw refuse(BadRequestException, 'A line uses an archived tax group.', 'tax_group_archived');
+    const byId = new Map(groups.map((g) => [g.id, g.rates.map((r) => r.rate)]));
+
+    const rows: LineRow[] = [];
+    lines.forEach((l, index) => {
+      const lineNo = rows.length + 1;
+      if (!l.taxGroupId) {
+        rows.push({ lineNo, accountId: l.accountId, description: l.description, debit: l.debit, credit: l.credit, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null });
+        return;
+      }
+      const rates = byId.get(l.taxGroupId)!;
+      const onDebit = l.debit > 0;
+      const split = splitTax(onDebit ? l.debit : l.credit, !!l.taxInclusive, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })));
+      if (split.net <= 0) throw refuse(BadRequestException, 'This amount is too small to carry the tax.', 'tax_too_small', { line: index + 1 });
+      const side = (amount: number) => (onDebit ? { debit: amount, credit: 0 } : { debit: 0, credit: amount });
+      rows.push({ lineNo, accountId: l.accountId, description: l.description, ...side(split.net), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxInclusive, taxRateId: null, taxSourceLine: null });
+      const role = taxRole(types.get(l.accountId)!);
+      split.taxes.forEach((t, i) => {
+        if (!t.amount) return; // a 0% slab records the taxable value on the line and adds no tax line
+        const rate = rates[i]!;
+        const accountId = role === 'input' ? (rate.inputAccountId ?? rate.outputAccountId) : rate.outputAccountId;
+        rows.push({ lineNo: rows.length + 1, accountId, description: null, ...side(t.amount), taxGroupId: null, taxInclusive: false, taxRateId: rate.id, taxSourceLine: lineNo });
+      });
+    });
+    // The tax accounts must be usable too
+    await this.checkAccounts(tx, organizationId, rows.filter((r) => r.taxRateId));
+    return rows;
+  }
+
+  private async writeRows(tx: Tx, organizationId: string, entryId: string, rows: LineRow[]) {
+    await tx.journalLine.deleteMany({ where: { entryId } });
+    if (rows.length) {
+      await tx.journalLine.createMany({ data: rows.map((r) => ({ organizationId, entryId, ...r, debit: BigInt(r.debit), credit: BigInt(r.credit) })) });
+    }
   }
 
   private async writeLines(tx: Tx, organizationId: string, entryId: string, lines: LineIn[]) {
-    await tx.journalLine.deleteMany({ where: { entryId } });
-    if (lines.length) {
-      await tx.journalLine.createMany({ data: lines.map((l, i) => ({ organizationId, entryId, lineNo: i + 1, accountId: l.accountId, description: l.description, debit: BigInt(l.debit), credit: BigInt(l.credit) })) });
-    }
+    const rows = await this.expand(tx, organizationId, lines);
+    await this.writeRows(tx, organizationId, entryId, rows);
+    return totals(rows);
+  }
+
+  /** The lines as they were entered, from the stored ones (inclusive amounts get their tax added back). */
+  private static entered(lines: EntryRow['lines']): LineIn[] {
+    return lines
+      .filter((l) => !l.taxRateId)
+      .map((l) => {
+        const tax = l.taxInclusive ? lines.filter((t) => t.taxSourceLine === l.lineNo).reduce((s, t) => s + Number(t.debit) + Number(t.credit), 0) : 0;
+        const debit = Number(l.debit);
+        const credit = Number(l.credit);
+        return { accountId: l.accountId, description: l.description, debit: debit ? debit + tax : 0, credit: credit ? credit + tax : 0, taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive };
+      });
   }
 
   async createDraft(input: DraftIn, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
     const id = await this.prisma.$transaction(async (tx) => {
-      await this.checkAccounts(tx, organizationId, input.lines);
       const e = await tx.journalEntry.create({ data: { organizationId, date: asDate(input.date), memo: input.memo, reference: input.reference, createdById: ctx.actor.userId }, select: { id: true } });
-      await this.writeLines(tx, organizationId, e.id, input.lines);
-      await this.audit.record({ action: 'org.journal.create', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: e.id, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...totals(input.lines) }, req: ctx.req }, tx);
+      const t = await this.writeLines(tx, organizationId, e.id, input.lines);
+      await this.audit.record({ action: 'org.journal.create', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: e.id, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...t }, req: ctx.req }, tx);
       return e.id;
     });
     return this.get(organizationId, id);
@@ -152,12 +246,11 @@ export class JournalsService {
       await this.lock(tx, organizationId);
       const e = await this.find(tx, organizationId, id);
       if (e.status !== 'draft') throw refuse(ConflictException, 'Posted entries can’t be changed. Reverse it instead.', 'posted');
-      await this.checkAccounts(tx, organizationId, input.lines);
       await tx.journalEntry.update({ where: { id }, data: { date: asDate(input.date), memo: input.memo, reference: input.reference } });
-      await this.writeLines(tx, organizationId, id, input.lines);
+      const t = await this.writeLines(tx, organizationId, id, input.lines);
       const before = this.view(e);
       await this.audit.record(
-        { action: 'org.journal.update', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, before: { date: before.date, memo: before.memo, lines: before.lines.length, ...before.totals }, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...totals(input.lines) }, req: ctx.req },
+        { action: 'org.journal.update', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, before: { date: before.date, memo: before.memo, lines: before.lines.length, ...before.totals }, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...t }, req: ctx.req },
         tx,
       );
     });
@@ -184,9 +277,14 @@ export class JournalsService {
   }
 
   /** Gives a draft its number and makes it final. */
-  private async postInTx(tx: Tx, organizationId: string, id: string, actorId: string) {
-    const e = await this.find(tx, organizationId, id);
+  private async postInTx(tx: Tx, organizationId: string, id: string, actorId: string, { recomputeTax = true } = {}) {
+    let e = await this.find(tx, organizationId, id);
     if (e.status !== 'draft') throw refuse(ConflictException, 'This entry is already posted.', 'posted');
+    // Tax lines are recomputed from the current rates' accounts, so a draft saved before an account changed posts correctly
+    if (recomputeTax && e.lines.some((l) => l.taxGroupId || l.taxRateId)) {
+      await this.writeLines(tx, organizationId, id, JournalsService.entered(e.lines));
+      e = await this.find(tx, organizationId, id);
+    }
     const lines = e.lines.map((l) => ({ debit: Number(l.debit), credit: Number(l.credit) }));
     const problem = postingProblem(lines);
     if (problem) throw refuse(BadRequestException, problem === 'unbalanced' ? 'Debits and credits must be equal.' : problem === 'zero' ? 'The entry has no amounts.' : 'An entry needs at least two lines.', problem, totals(lines));
@@ -224,13 +322,14 @@ export class JournalsService {
         data: { organizationId, date: asDate(date), memo: input.memo ?? `Reversal of ${original}`, reference: e.reference, reversalOfId: id, createdById: ctx.actor.userId },
         select: { id: true },
       });
-      await this.writeLines(
+      // An exact mirror, tax lines included, even if a tax group has since been archived
+      await this.writeRows(
         tx,
         organizationId,
         r.id,
-        e.lines.map((l) => ({ accountId: l.accountId, description: l.description, debit: Number(l.credit), credit: Number(l.debit) })),
+        e.lines.map((l) => ({ lineNo: l.lineNo, accountId: l.accountId, description: l.description, debit: Number(l.credit), credit: Number(l.debit), taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive, taxRateId: l.taxRateId, taxSourceLine: l.taxSourceLine })),
       );
-      const posted = await this.postInTx(tx, organizationId, r.id, ctx.actor.userId);
+      const posted = await this.postInTx(tx, organizationId, r.id, ctx.actor.userId, { recomputeTax: false });
       await this.audit.record({ action: 'org.journal.reverse', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, after: { original, reversal: posted.number, date }, req: ctx.req }, tx);
       return r.id;
     });
