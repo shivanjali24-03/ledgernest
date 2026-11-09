@@ -42,6 +42,9 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **System accounts** (retained earnings, opening balance equity) are created with every organisation, named in its language. They can be renamed but not re-typed, archived or deleted.
 - **Archive, don't delete:** archiving hides an account from new entries and keeps its history (sub-accounts first; restoring goes parent first). Deleting is only for unused accounts without sub-accounts. Journal entries (#42) will add "has entries" to these checks.
 - Writes take a per-organisation advisory lock, so two people creating the same code at once get one account and a clear `code_taken`, never a database error.
+- **Industry templates** (`GET /accounts/templates/:industry`, `POST …/apply`): 10 industries, 32–35 accounts each (a shared Indian small-business base plus each industry's own accounts), named in all 7 languages.
+  - They're applied in the organisation's language, and only to a chart that holds nothing but the system accounts, so a template never overwrites real work.
+  - A Super Admin can pick one when creating an organisation. A shared test checks every template: valid codes, same-type parents, at most 4 levels, all five types, and names unique in every language.
 - **Screen** (`/accounts`):
   - Accounts are grouped by type as an expandable tree. Search matches codes and names and keeps each match under its parents.
   - Filters for type and archived accounts live in the address bar.
