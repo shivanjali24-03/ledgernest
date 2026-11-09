@@ -13,6 +13,7 @@ import { OrganizationModule } from './organization/organization.module.js';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { PeriodsModule } from './periods/periods.module.js';
 import { JournalsModule } from './journals/journals.module.js';
+import { ReportsModule } from './reports/reports.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -31,6 +32,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AccountsModule,
     PeriodsModule,
     JournalsModule,
+    ReportsModule,
     PlatformModule,
   ],
   providers: [
