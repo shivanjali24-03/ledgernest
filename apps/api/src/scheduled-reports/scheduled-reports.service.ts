@@ -421,6 +421,18 @@ export class ScheduledReportsService
       },
       select: { id: true },
     });
+    // Each schedule keeps its latest REPORT_RUNS_KEPT (24) runs: older files go
+    const keep = Number(process.env.REPORT_RUNS_KEPT ?? 24);
+    const old = await this.prisma.reportDelivery.findMany({
+      where: { organizationId, scheduleId: id },
+      orderBy: { createdAt: 'desc' },
+      skip: keep,
+      select: { id: true },
+    });
+    if (old.length)
+      await this.prisma.reportDelivery.deleteMany({
+        where: { id: { in: old.map((o) => o.id) } },
+      });
     return d.id;
   }
 }

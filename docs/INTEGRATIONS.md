@@ -97,6 +97,7 @@ The secret (`whsec_…`) is shown when the webhook is added, and again whenever 
 - Deliveries can arrive more than once, and out of order: use the delivery id, and the document's own state in `data`.
 - In production, webhooks must use `https://` and can't point at the server itself or a private network.
 - The API server sends due retries every `WEBHOOK_DISPATCH_SECONDS` (60).
+- Finished deliveries stay in the log for `WEBHOOK_LOG_DAYS` (30).
 
 ## Email for scheduled reports
 
@@ -108,7 +109,7 @@ Scheduled reports (**Reports → Scheduled**) are always kept in the app, to dow
 | `MAIL_FROM` | `LedgerNest <reports@example.com>` |
 | `SCHEDULED_REPORTS_MINUTES` | `15` (how often due reports are made; 0 turns it off) |
 
-Reports only go to members who can see reports, checked at each run.
+Reports only go to members who can see reports, checked at each run. Each schedule keeps its latest `REPORT_RUNS_KEPT` (24) runs.
 
 ## Backups
 
