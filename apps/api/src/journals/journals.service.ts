@@ -1,5 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ATTACHMENT_MAX_BYTES, enteredLines, expandTax, journalNumber, postingProblem, sniffAttachmentType, totals, type AttachmentType, type ExpandedLine } from '@ledgernest/shared';
+import { ATTACHMENT_MAX_BYTES, currencyDigits, enteredLines, expandTax, journalNumber, postingProblem, sniffAttachmentType, toBase, totals, type AttachmentType, type EnteredLine, type ExpandedLine } from '@ledgernest/shared';
+import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -9,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
-type LineIn = { accountId: string; description: string | null; debit: number; credit: number; taxGroupId?: string | null; taxInclusive?: boolean };
+type LineIn = EnteredLine;
 /** A line as stored: what was entered (with its net amount when taxed) or a tax line generated from it */
 type LineRow = ExpandedLine;
 type DraftIn = { date: string; memo: string | null; reference: string | null; lines: LineIn[] };
@@ -49,7 +51,12 @@ const entrySelect = {
       taxInclusive: true,
       taxRateId: true,
       taxSourceLine: true,
-      account: { select: { code: true, name: true, type: true } },
+      currency: true,
+      foreignDebit: true,
+      foreignCredit: true,
+      rate: true,
+      fxSourceLine: true,
+      account: { select: { code: true, name: true, type: true, currency: true } },
       taxGroup: { select: { id: true, name: true } },
       taxRate: { select: { id: true, name: true, kind: true, ratePpm: true } },
     },
@@ -89,6 +96,13 @@ export class JournalsService {
       /** Set on a tax line the system generated */
       taxRate: l.taxRate,
       taxSourceLine: l.taxSourceLine,
+      /** A foreign-currency line: the amount in that currency and the rate it was converted at */
+      currency: l.currency,
+      foreignDebit: Number(l.foreignDebit),
+      foreignCredit: Number(l.foreignCredit),
+      rate: l.rate && rateText(l.rate),
+      /** Set on an exchange-difference line generated on posting */
+      fxSourceLine: l.fxSourceLine,
     }));
     return {
       id: e.id,
@@ -153,11 +167,11 @@ export class JournalsService {
   /** Lines may only use active accounts of this organisation. */
   private async checkAccounts(tx: Tx, organizationId: string, lines: { accountId: string }[]) {
     const ids = [...new Set(lines.map((l) => l.accountId))];
-    if (!ids.length) return new Map<string, string>();
-    const found = await tx.account.findMany({ where: { organizationId, id: { in: ids } }, select: { id: true, type: true, archivedAt: true } });
+    if (!ids.length) return new Map<string, { type: string; currency: string | null }>();
+    const found = await tx.account.findMany({ where: { organizationId, id: { in: ids } }, select: { id: true, type: true, currency: true, archivedAt: true } });
     if (found.length !== ids.length) throw refuse(BadRequestException, 'A line uses an account that doesn’t exist.', 'account_not_found');
     if (found.some((a) => a.archivedAt)) throw refuse(BadRequestException, 'A line uses an archived account.', 'account_archived');
-    return new Map(found.map((a) => [a.id, a.type]));
+    return new Map(found.map((a) => [a.id, a]));
   }
 
   /**
@@ -165,8 +179,9 @@ export class JournalsService {
    * one generated line per tax component, on the same side: sales (credits to income) credit output tax,
    * purchases (debits to expenses or assets) debit input tax, and credit notes run the other way.
    */
-  private async expand(tx: Tx, organizationId: string, lines: LineIn[]): Promise<LineRow[]> {
-    const types = await this.checkAccounts(tx, organizationId, lines);
+  private async expand(tx: Tx, organizationId: string, date: string, entered: LineIn[]): Promise<LineRow[]> {
+    const accounts = await this.checkAccounts(tx, organizationId, entered);
+    const lines = await this.convert(tx, organizationId, date, entered, accounts);
     const groupIds = [...new Set(lines.map((l) => l.taxGroupId).filter((g): g is string => !!g))];
     const groups = groupIds.length
       ? await tx.taxGroup.findMany({
@@ -177,36 +192,115 @@ export class JournalsService {
     if (groups.length !== groupIds.length) throw refuse(BadRequestException, 'A line uses a tax group that doesn’t exist.', 'tax_group_not_found');
     if (groups.some((g) => g.archivedAt)) throw refuse(BadRequestException, 'A line uses an archived tax group.', 'tax_group_archived');
     const byId = new Map(groups.map((g) => [g.id, g.rates.map((r) => r.rate)]));
-    const { rows, tooSmall } = expandTax(lines, (id) => byId.get(id), (id) => types.get(id));
+    const { rows, tooSmall } = expandTax(lines, (id) => byId.get(id), (id) => accounts.get(id)?.type);
     if (tooSmall !== null) throw refuse(BadRequestException, 'This amount is too small to carry the tax.', 'tax_too_small', { line: tooSmall });
     // The tax accounts must be usable too
     await this.checkAccounts(tx, organizationId, rows.filter((r) => r.taxRateId));
     return rows;
   }
 
-  private async writeRows(tx: Tx, organizationId: string, entryId: string, rows: LineRow[]) {
-    await tx.journalLine.deleteMany({ where: { entryId } });
-    if (rows.length) {
-      await tx.journalLine.createMany({ data: rows.map((r) => ({ organizationId, entryId, ...r, debit: BigInt(r.debit), credit: BigInt(r.credit) })) });
+  /**
+   * Lines on a foreign-currency account are entered in that currency and converted to the base currency at the
+   * line's rate, or the rate on the entry's date. Lines on other accounts are in the base currency.
+   */
+  private async convert(tx: Tx, organizationId: string, date: string, lines: LineIn[], accounts: Map<string, { type: string; currency: string | null }>): Promise<LineIn[]> {
+    if (!lines.some((l) => l.currency || accounts.get(l.accountId)?.currency)) return lines;
+    const { baseCurrency } = await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { baseCurrency: true } });
+    const out: LineIn[] = [];
+    for (const [i, l] of lines.entries()) {
+      const accountCurrency = accounts.get(l.accountId)?.currency ?? null;
+      if (accountCurrency && l.currency !== accountCurrency) throw refuse(BadRequestException, `This account is kept in ${accountCurrency}: enter the line in ${accountCurrency}.`, 'currency_required', { line: i + 1, currency: accountCurrency });
+      if (!l.currency) {
+        out.push(l);
+        continue;
+      }
+      if (l.currency !== accountCurrency) throw refuse(BadRequestException, 'Only foreign-currency accounts take foreign amounts.', 'currency_mismatch', { line: i + 1 });
+      const rate = l.rate ?? (await rateOn(tx, organizationId, l.currency, date))?.rate;
+      if (!rate) throw refuse(BadRequestException, `There is no ${l.currency} rate on or before ${date}. Add one under Currencies, or type the rate on the line.`, 'no_rate', { line: i + 1, currency: l.currency, date });
+      const foreign = (l.foreignDebit ?? 0) || (l.foreignCredit ?? 0);
+      const base = toBase(foreign, rate, currencyDigits(l.currency), currencyDigits(baseCurrency));
+      if (base <= 0) throw refuse(BadRequestException, 'This amount is too small to show in the base currency.', 'amount_too_small', { line: i + 1 });
+      out.push({ ...l, rate, debit: l.foreignDebit ? base : 0, credit: l.foreignDebit ? 0 : base });
     }
+    return out;
   }
 
-  private async writeLines(tx: Tx, organizationId: string, entryId: string, lines: LineIn[]) {
-    const rows = await this.expand(tx, organizationId, lines);
+  /**
+   * Realised exchange difference, worked out when an entry posts. A foreign-currency account carries its balance
+   * at an average rate; a line that reduces the balance (a receivable collected, a payable paid) takes out the
+   * carrying amount of the part it settles. When that differs from the line's own base amount, a generated pair
+   * of lines adjusts the account and books the difference to Realised exchange gain or loss.
+   */
+  private async addRealised(tx: Tx, organizationId: string, e: EntryRow) {
+    const foreign = e.lines.filter((l) => l.currency && !l.fxSourceLine);
+    if (!foreign.length) return;
+    const running = new Map<string, { f: bigint; b: bigint }>();
+    for (const accountId of new Set(foreign.map((l) => l.accountId))) {
+      const [r] = await tx.$queryRaw<{ f: bigint | null; b: bigint | null }[]>`
+        SELECT sum(l.foreign_debit - l.foreign_credit)::bigint AS f, sum(l.debit - l.credit)::bigint AS b
+        FROM journal_lines l JOIN journal_entries x ON x.id = l.entry_id
+        WHERE l.organization_id = ${organizationId}::uuid AND l.account_id = ${accountId}::uuid AND x.status = 'posted'`;
+      running.set(accountId, { f: r?.f ?? 0n, b: r?.b ?? 0n });
+    }
+    // Rounded half away from zero
+    const div = (n: bigint, d: bigint) => {
+      const neg = n < 0n !== d < 0n;
+      const [an, ad] = [n < 0n ? -n : n, d < 0n ? -d : d];
+      const q = (an * 2n + ad) / (ad * 2n);
+      return neg ? -q : q;
+    };
+    const extra: LineRow[] = [];
+    let lineNo = e.lines.length;
+    for (const l of foreign) {
+      const acc = running.get(l.accountId)!;
+      const lf = l.foreignDebit - l.foreignCredit;
+      const lb = l.debit - l.credit;
+      let adjust = 0n;
+      if (acc.f !== 0n && lf !== 0n && acc.f > 0n !== lf > 0n) {
+        // The part of the balance this line settles (all of it, or the whole line when it settles only part)
+        const settled = (lf < 0n ? -lf : lf) <= (acc.f < 0n ? -acc.f : acc.f) ? lf : -acc.f;
+        const carrying = div(acc.b * settled, acc.f);
+        const atLineRate = div(lb * settled, lf);
+        adjust = carrying - atLineRate;
+      }
+      acc.f += lf;
+      acc.b += lb + adjust;
+      if (adjust === 0n) continue;
+      const fxAccount = await ensureFxAccount(tx, organizationId, 'fx_realised');
+      const amount = Number(adjust < 0n ? -adjust : adjust);
+      const onAccount = adjust > 0n ? { debit: amount, credit: 0 } : { debit: 0, credit: amount };
+      const base = { description: null, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null, foreignDebit: 0, foreignCredit: 0, rate: null, fxSourceLine: l.lineNo };
+      extra.push({ ...base, lineNo: ++lineNo, accountId: l.accountId, currency: l.currency, ...onAccount });
+      extra.push({ ...base, lineNo: ++lineNo, accountId: fxAccount, currency: null, debit: onAccount.credit, credit: onAccount.debit });
+    }
+    if (extra.length) await tx.journalLine.createMany({ data: extra.map((r) => this.dbRow(organizationId, e.id, r)) });
+  }
+
+  private dbRow(organizationId: string, entryId: string, r: LineRow) {
+    return { organizationId, entryId, ...r, debit: BigInt(r.debit), credit: BigInt(r.credit), foreignDebit: BigInt(r.foreignDebit), foreignCredit: BigInt(r.foreignCredit) };
+  }
+
+  private async writeRows(tx: Tx, organizationId: string, entryId: string, rows: LineRow[]) {
+    await tx.journalLine.deleteMany({ where: { entryId } });
+    if (rows.length) await tx.journalLine.createMany({ data: rows.map((r) => this.dbRow(organizationId, entryId, r)) });
+  }
+
+  private async writeLines(tx: Tx, organizationId: string, entryId: string, date: string, lines: LineIn[]) {
+    const rows = await this.expand(tx, organizationId, date, lines);
     await this.writeRows(tx, organizationId, entryId, rows);
     return totals(rows);
   }
 
   /** The lines as they were entered, from the stored ones (inclusive amounts get their tax added back). */
   private static entered(lines: EntryRow['lines']): LineIn[] {
-    return enteredLines(lines.map((l) => ({ ...l, debit: Number(l.debit), credit: Number(l.credit) })));
+    return enteredLines(lines.map((l) => ({ ...l, debit: Number(l.debit), credit: Number(l.credit), foreignDebit: Number(l.foreignDebit), foreignCredit: Number(l.foreignCredit), rate: l.rate && rateText(l.rate) })));
   }
 
   async createDraft(input: DraftIn, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
     const id = await this.prisma.$transaction(async (tx) => {
       const e = await tx.journalEntry.create({ data: { organizationId, date: asDate(input.date), memo: input.memo, reference: input.reference, createdById: ctx.actor.userId }, select: { id: true } });
-      const t = await this.writeLines(tx, organizationId, e.id, input.lines);
+      const t = await this.writeLines(tx, organizationId, e.id, input.date, input.lines);
       await this.audit.record({ action: 'org.journal.create', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: e.id, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...t }, req: ctx.req }, tx);
       return e.id;
     });
@@ -220,7 +314,7 @@ export class JournalsService {
       const e = await this.find(tx, organizationId, id);
       if (e.status !== 'draft') throw refuse(ConflictException, 'Posted entries can’t be changed. Reverse it instead.', 'posted');
       await tx.journalEntry.update({ where: { id }, data: { date: asDate(input.date), memo: input.memo, reference: input.reference } });
-      const t = await this.writeLines(tx, organizationId, id, input.lines);
+      const t = await this.writeLines(tx, organizationId, id, input.date, input.lines);
       const before = this.view(e);
       await this.audit.record(
         { action: 'org.journal.update', actorId: ctx.actor.userId, organizationId, entityType: 'journal', entityId: id, before: { date: before.date, memo: before.memo, lines: before.lines.length, ...before.totals }, after: { date: input.date, memo: input.memo, lines: input.lines.length, ...t }, req: ctx.req },
@@ -255,7 +349,12 @@ export class JournalsService {
     if (e.status !== 'draft') throw refuse(ConflictException, 'This entry is already posted.', 'posted');
     // Tax lines are recomputed from the current rates' accounts, so a draft saved before an account changed posts correctly
     if (recomputeTax && e.lines.some((l) => l.taxGroupId || l.taxRateId)) {
-      await this.writeLines(tx, organizationId, id, JournalsService.entered(e.lines));
+      await this.writeLines(tx, organizationId, id, iso(e.date), JournalsService.entered(e.lines));
+      e = await this.find(tx, organizationId, id);
+    }
+    // Settling foreign balances realises exchange differences (a reversal mirrors the original's instead)
+    if (recomputeTax && e.lines.some((l) => l.currency && !l.fxSourceLine)) {
+      await this.addRealised(tx, organizationId, e);
       e = await this.find(tx, organizationId, id);
     }
     const lines = e.lines.map((l) => ({ debit: Number(l.debit), credit: Number(l.credit) }));
@@ -314,21 +413,36 @@ export class JournalsService {
       tx,
       organizationId,
       r.id,
-      e.lines.map((l) => ({ lineNo: l.lineNo, accountId: l.accountId, description: l.description, debit: Number(l.credit), credit: Number(l.debit), taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive, taxRateId: l.taxRateId, taxSourceLine: l.taxSourceLine })),
+      e.lines.map((l) => ({
+        lineNo: l.lineNo,
+        accountId: l.accountId,
+        description: l.description,
+        debit: Number(l.credit),
+        credit: Number(l.debit),
+        taxGroupId: l.taxGroupId,
+        taxInclusive: l.taxInclusive,
+        taxRateId: l.taxRateId,
+        taxSourceLine: l.taxSourceLine,
+        currency: l.currency,
+        foreignDebit: Number(l.foreignCredit),
+        foreignCredit: Number(l.foreignDebit),
+        rate: l.rate && rateText(l.rate),
+        fxSourceLine: l.fxSourceLine,
+      })),
     );
     const posted = await this.postInTx(tx, organizationId, r.id, actorId, { recomputeTax: false, system });
     return { id: r.id, number: posted.number, original, date };
   }
 
   /** Posts an entry the system writes itself (the year-end close), inside the caller's transaction. */
-  async postSystemEntry(tx: Tx, organizationId: string, input: { date: string; memo: string; lines: { accountId: string; debit: number; credit: number; description?: string | null }[] }, actorId: string) {
+  async postSystemEntry(tx: Tx, organizationId: string, input: { date: string; memo: string; lines: { accountId: string; debit: number; credit: number; description?: string | null; currency?: string | null }[] }, actorId: string) {
     await this.lock(tx, organizationId);
     const e = await tx.journalEntry.create({ data: { organizationId, date: asDate(input.date), memo: input.memo, createdById: actorId }, select: { id: true } });
     await this.writeRows(
       tx,
       organizationId,
       e.id,
-      input.lines.map((l, i) => ({ lineNo: i + 1, accountId: l.accountId, description: l.description ?? null, debit: l.debit, credit: l.credit, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null })),
+      input.lines.map((l, i) => ({ lineNo: i + 1, accountId: l.accountId, description: l.description ?? null, debit: l.debit, credit: l.credit, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null, currency: l.currency ?? null, foreignDebit: 0, foreignCredit: 0, rate: null, fxSourceLine: null })),
     );
     const posted = await this.postInTx(tx, organizationId, e.id, actorId, { recomputeTax: false, system: true });
     return { id: e.id, number: posted.number };

@@ -44,6 +44,13 @@ const description = z
   .transform((v) => v || null)
   .nullable();
 
+const accountCurrency = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z]{3}$/, 'Choose a currency.')
+  .nullable();
+
 export const accountCreateSchema = z
   .object({
     code,
@@ -53,8 +60,11 @@ export const accountCreateSchema = z
     /** A sub-account has the same type as its parent */
     parentId: z.uuid().nullable().default(null),
     description: description.optional().default(null),
+    /** A foreign-currency account (e.g. a USD bank account): its lines are in this currency. Assets and liabilities only. */
+    currency: accountCurrency.optional().default(null),
   })
-  .refine((a) => subtypeBelongsTo(a.type, a.subtype), { path: ['subtype'], message: 'Choose a sub-type that belongs to this type.' });
+  .refine((a) => subtypeBelongsTo(a.type, a.subtype), { path: ['subtype'], message: 'Choose a sub-type that belongs to this type.' })
+  .refine((a) => !a.currency || a.type === 'asset' || a.type === 'liability', { path: ['currency'], message: 'Only asset and liability accounts can be in a foreign currency.' });
 export type AccountCreateInput = z.input<typeof accountCreateSchema>;
 
 export const accountUpdateSchema = z
@@ -66,6 +76,8 @@ export const accountUpdateSchema = z
     subtype: z.string(),
     parentId: z.uuid().nullable(),
     description,
+    /** Only while the account has no entries */
+    currency: accountCurrency,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
@@ -105,6 +117,21 @@ export const SYSTEM_ACCOUNT_NAMES: Record<SystemAccountKey, { en: string } & Rec
 
 /** "hi-IN" → the Hindi name, falling back to English. */
 export const systemAccountName = (key: SystemAccountKey, locale: string) => SYSTEM_ACCOUNT_NAMES[key][locale.split('-')[0]!] ?? SYSTEM_ACCOUNT_NAMES[key].en;
+
+/**
+ * Where exchange differences go. Created the first time an organisation needs them (most never trade in a
+ * foreign currency): realised when a foreign balance is settled at a different rate, unrealised when
+ * balances are revalued at a period's closing rate.
+ */
+export const FX_ACCOUNTS = {
+  fx_realised: { code: '4950', type: 'income', subtype: 'other_income' },
+  fx_unrealised: { code: '4960', type: 'income', subtype: 'other_income' },
+} as const satisfies Record<string, { code: string; type: AccountType; subtype: AccountSubtype }>;
+export type FxAccountKey = keyof typeof FX_ACCOUNTS;
+export const FX_ACCOUNT_NAMES: Record<FxAccountKey, { en: string } & Record<string, string>> = {
+  fx_realised: { en: 'Realised exchange gain or loss', hi: 'प्राप्त विनिमय लाभ या हानि', mr: 'प्राप्त विनिमय नफा किंवा तोटा', es: 'Diferencias de cambio realizadas', fr: 'Écarts de change réalisés', de: 'Realisierte Kursgewinne und -verluste', ar: 'أرباح أو خسائر الصرف المحققة' },
+  fx_unrealised: { en: 'Unrealised exchange gain or loss', hi: 'अप्राप्त विनिमय लाभ या हानि', mr: 'अप्राप्त विनिमय नफा किंवा तोटा', es: 'Diferencias de cambio no realizadas', fr: 'Écarts de change latents', de: 'Unrealisierte Kursgewinne und -verluste', ar: 'أرباح أو خسائر الصرف غير المحققة' },
+};
 
 /** Sorts account codes the way accountants read them: 2 < 10, and 1100 < 1100.01 < 1101. */
 export const compareCodes = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });

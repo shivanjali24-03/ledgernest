@@ -37,3 +37,14 @@ describe('journal entries', () => {
     expect(sniffAttachmentType(new TextEncoder().encode('<html>'))).toBeNull();
   });
 });
+
+describe('foreign-currency lines', () => {
+  it('take a foreign amount instead of a base one, and never tax', async () => {
+    const { journalLineSchema } = await import('./index.js');
+    const id = '7f1d3c1e-8a0b-4c2d-9e3f-1a2b3c4d5e6f';
+    expect(journalLineSchema.parse({ accountId: id, currency: 'usd', foreignDebit: 10_000, rate: '93.9300' })).toMatchObject({ currency: 'USD', foreignDebit: 10_000, debit: 0, rate: '93.93' });
+    expect(journalLineSchema.safeParse({ accountId: id, currency: 'USD', debit: 10_000 }).success).toBe(false);
+    expect(journalLineSchema.safeParse({ accountId: id, currency: 'USD', foreignDebit: 1, foreignCredit: 1 }).success).toBe(false);
+    expect(journalLineSchema.safeParse({ accountId: id, currency: 'USD', foreignDebit: 1, taxGroupId: id }).success).toBe(false);
+  });
+});

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { currencyAddSchema, currencyCodeSchema, isoDaySchema, rateFetchSchema, rateListQuerySchema, rateSetSchema } from '@ledgernest/shared';
+import { currencyAddSchema, currencyCodeSchema, isoDaySchema, rateFetchSchema, rateListQuerySchema, rateSetSchema, revalueSchema } from '@ledgernest/shared';
 import type { Request } from 'express';
 import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
@@ -37,6 +37,14 @@ export class CurrenciesController {
   @ApiOkResponse({ description: 'Rates saved from the European Central Bank, currencies kept because a rate was typed by hand, and currencies it doesn’t cover' })
   fetch(@Body(new ZodValidationPipe(rateFetchSchema)) body: { date?: string }, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
     return this.currencies.fetchRates(body.date, { actor, tenant, req });
+  }
+
+  @Post('revalue')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('currencies.manage')
+  @ApiOkResponse({ description: 'Each foreign-currency account moved to the day’s rate, the entry that booked the differences, and currencies without a rate' })
+  revalue(@Body(new ZodValidationPipe(revalueSchema)) body: { date: string }, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    return this.currencies.revalue(body.date, { actor, tenant, req });
   }
 
   @Delete(':code')

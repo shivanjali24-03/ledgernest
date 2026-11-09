@@ -1,12 +1,15 @@
 import { BadGatewayException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { currencyDigits, normaliseRate, todayIn } from '@ledgernest/shared';
+import { currencyDigits, normaliseRate, todayIn, toBase } from '@ledgernest/shared';
+import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { JournalsService } from '../journals/journals.service.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { rateOn, rateText } from './rate-on.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -14,8 +17,6 @@ type Tx = Prisma.TransactionClient;
 const refuse = (message: string, reason: string, extra: object = {}) => new ConflictException({ message, details: { reason, ...extra } });
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
-/** Prisma returns NUMERIC as a Decimal; the API speaks in plain decimal strings like "83.25". */
-const rateText = (r: { toFixed(dp: number): string }) => normaliseRate(r.toFixed(10))!;
 
 /**
  * The foreign currencies an organisation trades in and their exchange rates against the base currency.
@@ -28,6 +29,7 @@ export class CurrenciesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<Env, true>,
+    private readonly journals: JournalsService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -35,10 +37,7 @@ export class CurrenciesService {
   }
 
   /** The rate on a day: the latest one on or before it. Journal lines in a foreign currency use this. */
-  static async rateOn(tx: Tx | PrismaService, organizationId: string, currency: string, day: string) {
-    const r = await tx.exchangeRate.findFirst({ where: { organizationId, currency, date: { lte: asDate(day) } }, orderBy: { date: 'desc' }, select: { date: true, rate: true, source: true } });
-    return r && { date: iso(r.date), rate: rateText(r.rate), source: r.source as 'manual' | 'ecb' };
-  }
+  static rateOn = rateOn;
 
   private async base(tx: Tx | PrismaService, organizationId: string) {
     return (await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { baseCurrency: true, timeZone: true } })) as { baseCurrency: string; timeZone: string };
@@ -79,6 +78,8 @@ export class CurrenciesService {
     await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       await this.findCurrency(tx, organizationId, code);
+      const accounts = await tx.account.count({ where: { organizationId, currency: code } });
+      if (accounts) throw refuse(`Accounts are kept in ${code}, so it stays enabled.`, 'in_use', { accounts });
       const rates = await tx.exchangeRate.count({ where: { organizationId, currency: code } });
       await tx.organizationCurrency.delete({ where: { organizationId_code: { organizationId, code } } });
       await this.audit.record({ action: 'org.currency.remove', actorId: ctx.actor.userId, organizationId, entityType: 'currency', before: { code, rates }, req: ctx.req }, tx);
@@ -174,6 +175,59 @@ export class CurrenciesService {
       }
       const result = { saved, keptManual, unsupported: unsupported.sort(), failed: failures };
       await this.audit.record({ action: 'org.exchange_rate.fetch', actorId: ctx.actor.userId, organizationId, entityType: 'currency', after: { requested: date ?? 'latest', saved: saved.map((s) => `${s.code} ${s.date} ${s.rate}`), keptManual, unsupported: result.unsupported }, req: ctx.req }, tx);
+      return result;
+    });
+  }
+
+  /**
+   * Revalues every foreign-currency account at a day's rate (usually a month's last day, before closing it):
+   * the base amount it carries moves to its foreign balance at that rate, and the difference is booked to
+   * Unrealised exchange gain or loss in one entry on that day. Later settlements then realise only what
+   * moves after it. Accounts whose currency has no rate yet are listed and left alone.
+   */
+  async revalue(date: string, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    return this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, organizationId);
+      const { baseCurrency } = await this.base(tx, organizationId);
+      const balances = await tx.$queryRaw<{ id: string; code: string; name: string; currency: string; f: bigint; b: bigint }[]>`
+        SELECT a.id, a.code, a.name, a.currency, coalesce(sum(l.foreign_debit - l.foreign_credit), 0)::bigint AS f, coalesce(sum(l.debit - l.credit), 0)::bigint AS b
+        FROM accounts a
+        JOIN journal_lines l ON l.account_id = a.id
+        JOIN journal_entries e ON e.id = l.entry_id AND e.status = 'posted' AND e.date <= ${asDate(date)}::date
+        WHERE a.organization_id = ${organizationId}::uuid AND a.currency IS NOT NULL
+        GROUP BY a.id, a.code, a.name, a.currency
+        ORDER BY a.code`;
+      const adjustments: { accountId: string; code: string; name: string; currency: string; foreignBalance: number; rate: string; before: number; after: number; difference: number }[] = [];
+      const missingRates = new Set<string>();
+      for (const a of balances) {
+        const r = await rateOn(tx, organizationId, a.currency, date);
+        if (!r) {
+          if (a.f !== 0n) missingRates.add(a.currency);
+          continue;
+        }
+        const after = toBase(Number(a.f), r.rate, currencyDigits(a.currency), currencyDigits(baseCurrency));
+        const difference = after - Number(a.b);
+        if (difference) adjustments.push({ accountId: a.id, code: a.code, name: a.name, currency: a.currency, foreignBalance: Number(a.f), rate: r.rate, before: Number(a.b), after, difference });
+      }
+      let entry: { id: string; number: string } | null = null;
+      if (adjustments.length) {
+        const fx = await ensureFxAccount(tx, organizationId, 'fx_unrealised');
+        const lines = adjustments.flatMap((x) => {
+          const amount = Math.abs(x.difference);
+          const up = x.difference > 0;
+          return [
+            { accountId: x.accountId, currency: x.currency, description: `${x.currency} at ${x.rate}`, debit: up ? amount : 0, credit: up ? 0 : amount },
+            { accountId: fx, description: `${x.code} ${x.currency} at ${x.rate}`, debit: up ? 0 : amount, credit: up ? amount : 0 },
+          ];
+        });
+        entry = await this.journals.postSystemEntry(tx, organizationId, { date, memo: `Revaluation of foreign-currency balances at ${date}`, lines }, ctx.actor.userId);
+      }
+      const result = { date, entry, adjustments, missingRates: [...missingRates].sort() };
+      await this.audit.record(
+        { action: 'org.currency.revalue', actorId: ctx.actor.userId, organizationId, entityType: 'currency', after: { date, entry: entry?.number ?? null, adjustments: adjustments.map((x) => `${x.code} ${x.difference}`), missingRates: result.missingRates }, req: ctx.req },
+        tx,
+      );
       return result;
     });
   }
