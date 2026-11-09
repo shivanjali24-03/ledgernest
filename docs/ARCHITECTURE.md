@@ -30,6 +30,20 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
 - **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
 
+## Organisation settings
+
+- `GET /api/v1/organization` returns the settings, what can no longer change (`locks`) and your access. `PATCH` changes them, with `org.settings.manage` (Owners and Admins).
+- **Company details:** legal name, tax ID (GSTIN, VAT…), contact email and phone, and address.
+- **Money and dates:** base currency (any ISO 4217 code), locale for number and date formats, IANA time zone, and the fiscal year start month.
+- The **time zone** decides which calendar day a moment belongs to, so period boundaries and report dates follow the business, not the server. New organisations get their country's zone.
+- Only values that actually change are written, and each change is audited before → after (`org.settings.update`). The web address (slug) is changed only by Super Admins.
+- **Locks:** the base currency can't change once journal entries exist, and the fiscal year start can't change once fiscal years exist. The response says which are locked, so the screens can explain it.
+- **Logo** (`PUT/GET/DELETE /organization/logo`):
+  - PNG, JPEG or WebP up to 256 KB, sent as base64. The file's first bytes must match its claimed type, and SVG is refused because it can carry scripts.
+  - Stored in its own table, so organisation queries never load image bytes. A database check repeats the type and size rules.
+  - Served with `nosniff` and a locked-down Content-Security-Policy.
+  - Only the logo route accepts bodies over the usual 100 KB.
+
 ## Audit log
 
 - Every sign-in, admin change and Super Admin support visit is recorded: who, what, when, from which IP and browser, with before and after values.
