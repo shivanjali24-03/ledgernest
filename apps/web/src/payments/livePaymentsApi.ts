@@ -12,7 +12,9 @@ export function createLivePaymentsApi(client: AuthClient, organizationId: string
       return r(`?${p}`);
     },
     openInvoices: (contactId) => r(`/open-invoices/${contactId}`),
+    openBills: (contactId) => r(`/open-bills/${contactId}`),
     receive: (input) => r('/receipts', { method: 'POST', json: input }),
+    pay: (input) => r('/payments', { method: 'POST', json: input }),
     void: (id, reason) => r(`/${id}/void`, { method: 'POST', json: reason ? { reason } : {} }),
   };
 }

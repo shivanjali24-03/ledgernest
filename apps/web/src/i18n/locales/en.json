@@ -1538,7 +1538,9 @@
       "not_archived": "This contact isn’t archived."
     },
     "owes": "Owes {{amount}}",
-    "inCredit": "In credit {{amount}}"
+    "inCredit": "In credit {{amount}}",
+    "weOwe": "We owe {{amount}}",
+    "paidAhead": "Paid ahead {{amount}}"
   },
   "items": {
     "title": "Products and services",
@@ -1735,10 +1737,10 @@
   },
   "payments": {
     "title": "Payments",
-    "description": "Money received from customers, and the invoices it paid.",
+    "description": "Money received from customers and paid to vendors, and the invoices and bills it settled.",
     "receive": "Record receipt",
-    "empty": "No receipts yet",
-    "emptyBody": "Record money a customer paid you: it settles their invoices.",
+    "empty": "No payments yet",
+    "emptyBody": "Record money a customer paid you, or a payment to a vendor: each settles their invoices or bills.",
     "void": "Void",
     "paid": "Paid",
     "onAccount": "{{amount}} on account",
@@ -1765,15 +1767,37 @@
       "bank": "Into",
       "amount": "Amount ({{currency}})",
       "reference": "Reference",
-      "apply": "Apply"
+      "apply": "Apply",
+      "datePaid": "Date paid",
+      "from": "From"
     },
     "problems": {
       "customer": "Choose a customer.",
       "bank": "Choose the account the money went into.",
       "amount": "Enter the amount received.",
       "allocation": "Check the highlighted amounts: no more than each invoice has left.",
-      "over": "You can’t apply more than was received."
-    }
+      "over": "You can’t apply more than was received.",
+      "vendor": "Choose a vendor.",
+      "amountPaid": "Enter the amount paid.",
+      "allocationPaid": "Check the highlighted amounts: no more than each bill has left.",
+      "overPaid": "You can’t apply more than was paid."
+    },
+    "payVendor": "Pay a vendor",
+    "payBill": "Pay bill",
+    "payTitle": "Pay a vendor",
+    "payBody": "Money paid to a vendor, applied to their bills. Anything left over is an advance to them.",
+    "recordPay": "Record payment",
+    "paidOut": "Recorded as {{number}}",
+    "allocateBills": "Apply to bills",
+    "nothingToPay": "Nothing left to pay on this vendor’s bills.",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "receipt": "Received",
+      "payment": "Paid out"
+    },
+    "voidPayment": "Void payment",
+    "voidPaymentBody": "Its entry is reversed today and the bills it paid are open again."
   },
   "bills": {
     "title": "Bills",

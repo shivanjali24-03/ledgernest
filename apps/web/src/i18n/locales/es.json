@@ -1538,7 +1538,9 @@
       "not_archived": "Este contacto no está archivado."
     },
     "owes": "Debe {{amount}}",
-    "inCredit": "A favor {{amount}}"
+    "inCredit": "A favor {{amount}}",
+    "weOwe": "Debemos {{amount}}",
+    "paidAhead": "Anticipado {{amount}}"
   },
   "items": {
     "title": "Productos y servicios",
@@ -1735,10 +1737,10 @@
   },
   "payments": {
     "title": "Pagos",
-    "description": "Dinero recibido de clientes y las facturas que pagó.",
+    "description": "Dinero cobrado a clientes y pagado a proveedores, y las facturas que liquidó.",
     "receive": "Registrar cobro",
-    "empty": "Aún no hay cobros",
-    "emptyBody": "Registra lo que te pagó un cliente: liquida sus facturas.",
+    "empty": "Aún no hay pagos",
+    "emptyBody": "Registra el dinero que te pagó un cliente o un pago a un proveedor: cada uno liquida sus facturas.",
     "void": "Anulado",
     "paid": "Pagó",
     "onAccount": "{{amount}} a cuenta",
@@ -1765,15 +1767,37 @@
       "bank": "En",
       "amount": "Importe ({{currency}})",
       "reference": "Referencia",
-      "apply": "Aplicar"
+      "apply": "Aplicar",
+      "datePaid": "Fecha de pago",
+      "from": "Desde"
     },
     "problems": {
       "customer": "Elige un cliente.",
       "bank": "Elige la cuenta donde entró el dinero.",
       "amount": "Escribe el importe cobrado.",
       "allocation": "Revisa los importes marcados: no más de lo que queda en cada factura.",
-      "over": "No puedes aplicar más de lo cobrado."
-    }
+      "over": "No puedes aplicar más de lo cobrado.",
+      "vendor": "Elige un proveedor.",
+      "amountPaid": "Introduce el importe pagado.",
+      "allocationPaid": "Revisa los importes marcados: no más de lo que queda en cada factura.",
+      "overPaid": "No puedes aplicar más de lo pagado."
+    },
+    "payVendor": "Pagar a un proveedor",
+    "payBill": "Pagar factura",
+    "payTitle": "Pagar a un proveedor",
+    "payBody": "Dinero pagado a un proveedor, aplicado a sus facturas. Lo que sobre queda como anticipo.",
+    "recordPay": "Registrar pago",
+    "paidOut": "Registrado como {{number}}",
+    "allocateBills": "Aplicar a facturas",
+    "nothingToPay": "No queda nada por pagar en las facturas de este proveedor.",
+    "filter": "Mostrar",
+    "filters": {
+      "all": "Todos",
+      "receipt": "Cobros",
+      "payment": "Pagos"
+    },
+    "voidPayment": "Anular pago",
+    "voidPaymentBody": "Su asiento se revierte hoy y las facturas que pagó vuelven a quedar pendientes."
   },
   "bills": {
     "title": "Facturas de proveedor",

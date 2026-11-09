@@ -140,6 +140,15 @@ function save(rows: Stored[]) {
     /* private mode */
   }
 }
+/** The bills already in the demo, without seeding them (seeding posts to the books): for contacts' balances */
+export function demoStoredBillViews(): Bill[] {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as Stored[]).map(view) : [];
+  } catch {
+    return [];
+  }
+}
 /** The demo's bills as the screens see them, for payments */
 export async function demoBillViews(): Promise<Bill[]> {
   return (await loadRows()).map(view);

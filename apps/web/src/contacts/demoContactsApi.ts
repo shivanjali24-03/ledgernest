@@ -77,18 +77,21 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
   return {
     list: (q) =>
       wait(async () => {
-        // What each customer owes: unpaid invoices less advances (loaded on demand: invoices use contacts too)
+        // What each customer owes and each vendor is owed: unpaid documents less advances (loaded on demand: invoices use contacts too)
         const { demoInvoiceViews } = await import('../invoices/demoInvoicesApi');
         const { demoAdvances } = await import('../payments/demoPaymentsApi');
+        const { demoStoredBillViews } = await import('../bills/demoBillsApi');
         const invoices = await demoInvoiceViews();
+        const bills = demoStoredBillViews();
         const owed = (cid: string) => invoices.filter((i) => i.contact.id === cid && i.status === 'issued').reduce((s, i) => s + i.balance, 0) - demoAdvances(cid);
+        const owing = (cid: string) => bills.filter((b) => b.contact.id === cid && b.status === 'open').reduce((s, b) => s + b.balance, 0) - demoAdvances(cid, 'payment');
         const s = q.search?.trim().toLowerCase();
         const items = load()
           .filter((c) => !!q.archived === c.archived)
           .filter((c) => !q.type || (q.type === 'customer' ? c.isCustomer : c.isVendor))
           .filter((c) => !s || [c.name, c.legalName, c.email, c.taxId].some((x) => x?.toLowerCase().includes(s)))
           .sort((a, b) => a.name.localeCompare(b.name));
-        return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((c) => ({ ...c, receivable: owed(c.id) })) };
+        return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((c) => ({ ...c, receivable: owed(c.id), payable: owing(c.id) })) };
       }),
     get: (cid) => wait(() => find(load(), cid)),
     create: (input) =>

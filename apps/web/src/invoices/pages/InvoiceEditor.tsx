@@ -420,7 +420,7 @@ export default function InvoiceEditor() {
         <ReceiptDialog
           api={paymentsApi}
           contactId={invoice.contact.id}
-          invoiceId={invoice.id}
+          documentId={invoice.id}
           onClose={() => setReceiving(false)}
           onDone={() => {
             setReceiving(false);
