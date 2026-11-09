@@ -185,7 +185,7 @@ export class ContactsService {
     await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       const c = await this.find(tx, organizationId, id);
-      if (await tx.invoice.count({ where: { organizationId, contactId: id } })) throw refuse(ConflictException, 'Invoices are made out to this contact. Archive it instead.', 'in_use');
+      if ((await tx.invoice.count({ where: { organizationId, contactId: id } })) || (await tx.bill.count({ where: { organizationId, contactId: id } }))) throw refuse(ConflictException, 'Invoices or bills use this contact. Archive it instead.', 'in_use');
       await tx.contact.delete({ where: { id } });
       await this.audit.record({ action: 'org.contact.delete', actorId: ctx.actor.userId, organizationId, entityType: 'contact', entityId: id, before: { name: c.name }, req: ctx.req }, tx);
     });

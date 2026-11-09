@@ -541,7 +541,8 @@
       "contacts": "ग्राहक और विक्रेता",
       "items": "उत्पाद और सेवाएँ",
       "invoices": "चालान",
-      "payments": "प्राप्तियाँ और भुगतान"
+      "payments": "प्राप्तियाँ और भुगतान",
+      "bills": "बिल"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "चालान जारी किया गया",
       "org_invoice_void": "चालान रद्द किया गया",
       "org_payment_receive": "प्राप्ति दर्ज की गई",
-      "org_payment_void": "भुगतान रद्द किया गया"
+      "org_payment_void": "भुगतान रद्द किया गया",
+      "org_bill_create": "बिल का ड्राफ़्ट बना",
+      "org_bill_update": "बिल ड्राफ़्ट संपादित",
+      "org_bill_delete": "बिल ड्राफ़्ट हटाया गया",
+      "org_bill_record": "बिल दर्ज किया गया",
+      "org_bill_void": "बिल रद्द किया गया"
     },
     "entities": {
       "membership": "सदस्य",
@@ -645,7 +651,8 @@
       "contact": "संपर्क",
       "item": "आइटम",
       "invoice": "चालान",
-      "payment": "भुगतान"
+      "payment": "भुगतान",
+      "bill": "बिल"
     },
     "fields": {
       "user": "व्यक्ति",

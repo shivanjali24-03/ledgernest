@@ -15,3 +15,4 @@ export * from './contacts/index.js';
 export * from './items/index.js';
 export * from './invoices/index.js';
 export * from './payments/index.js';
+export * from './bills/index.js';

@@ -541,7 +541,8 @@
       "contacts": "العملاء والموردون",
       "items": "المنتجات والخدمات",
       "invoices": "الفواتير",
-      "payments": "المقبوضات والمدفوعات"
+      "payments": "المقبوضات والمدفوعات",
+      "bills": "فواتير الموردين"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "أُصدرت فاتورة",
       "org_invoice_void": "أُلغيت فاتورة",
       "org_payment_receive": "سُجّل مقبوض",
-      "org_payment_void": "أُلغي دفع"
+      "org_payment_void": "أُلغي دفع",
+      "org_bill_create": "أُنشئت مسودة فاتورة مورد",
+      "org_bill_update": "عُدّلت مسودة فاتورة مورد",
+      "org_bill_delete": "حُذفت مسودة فاتورة مورد",
+      "org_bill_record": "سُجّلت فاتورة مورد",
+      "org_bill_void": "أُلغيت فاتورة مورد"
     },
     "entities": {
       "membership": "عضو",
@@ -645,7 +651,8 @@
       "contact": "جهة اتصال",
       "item": "صنف",
       "invoice": "فاتورة",
-      "payment": "دفعة"
+      "payment": "دفعة",
+      "bill": "فاتورة مورد"
     },
     "fields": {
       "user": "الشخص",

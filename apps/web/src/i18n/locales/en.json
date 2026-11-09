@@ -541,7 +541,8 @@
       "contacts": "Customers and vendors",
       "items": "Products and services",
       "invoices": "Invoices",
-      "payments": "Receipts and payments"
+      "payments": "Receipts and payments",
+      "bills": "Bills"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "Invoice issued",
       "org_invoice_void": "Invoice voided",
       "org_payment_receive": "Receipt recorded",
-      "org_payment_void": "Payment voided"
+      "org_payment_void": "Payment voided",
+      "org_bill_create": "Bill drafted",
+      "org_bill_update": "Bill draft edited",
+      "org_bill_delete": "Bill draft deleted",
+      "org_bill_record": "Bill recorded",
+      "org_bill_void": "Bill voided"
     },
     "entities": {
       "membership": "Member",
@@ -645,7 +651,8 @@
       "contact": "Contact",
       "item": "Item",
       "invoice": "Invoice",
-      "payment": "Payment"
+      "payment": "Payment",
+      "bill": "Bill"
     },
     "fields": {
       "user": "Person",
