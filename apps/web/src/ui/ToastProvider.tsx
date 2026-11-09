@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
@@ -14,10 +14,26 @@ let next = 1;
 
 export default function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  // Clear pending dismissals on unmount, so none fires after the provider (or a test's page) is gone.
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      pending.forEach(clearTimeout);
+      pending.clear();
+    };
+  }, []);
   const show = useCallback((message: string, tone: ToastTone = 'success') => {
     const id = next++;
     setToasts((t) => [...t.slice(-2), { id, message, tone }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), tone === 'error' ? 6000 : 3500);
+    const timer = setTimeout(
+      () => {
+        timers.current.delete(timer);
+        setToasts((t) => t.filter((x) => x.id !== id));
+      },
+      tone === 'error' ? 6000 : 3500,
+    );
+    timers.current.add(timer);
   }, []);
 
   return (
