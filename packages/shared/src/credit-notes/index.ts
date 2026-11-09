@@ -20,6 +20,8 @@ export const creditNoteSchema = z.object({
   invoiceId: z.uuid(),
   date: isoDaySchema,
   reason: text(500),
+  /** Goods came back: tracked items return to stock at the cost they left at, out of cost of sales */
+  returnsStock: z.boolean().optional().default(false),
   lines: z
     .array(
       z.object({

@@ -2179,7 +2179,9 @@
       "over_applied": "Das ist mehr als das übrige Guthaben dieser Gutschrift.",
       "has_refunds": "Ein Teil wurde erstattet, daher kann sie nicht storniert werden.",
       "before_credit_note": "Eine Erstattung kann nicht vor ihrer Gutschrift datiert sein."
-    }
+    },
+    "returnsStock": "Ware kam zurück ins Lager",
+    "returnsStockHint": "Geführte Artikel kommen zu den Kosten zurück, zu denen sie abgingen, aus dem Wareneinsatz. Für eine reine Preiskorrektur nicht ankreuzen."
   },
   "recurring": {
     "title": "Wiederkehrende Rechnungen",
@@ -2748,7 +2750,9 @@
       "invoice": "Rechnung",
       "invoice_void": "Rechnung storniert",
       "adjustment": "Anpassung",
-      "adjustment_undo": "Anpassung rückgängig"
+      "adjustment_undo": "Anpassung rückgängig",
+      "credit_note": "Gutschrift",
+      "credit_note_void": "Gutschrift storniert"
     },
     "onHandPill": "Bestand: {{quantity}} {{unit}}",
     "track": "Bestand führen",

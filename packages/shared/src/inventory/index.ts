@@ -7,7 +7,7 @@ import { isoDaySchema } from '../periods/index.js';
  * each movement out (an invoice, an adjustment down) takes the quantity at the average cost of what is on hand,
  * so taking everything clears the value exactly. Quantities are in ten-thousandths, like invoice lines.
  */
-export const STOCK_MOVEMENT_KINDS = ['bill', 'bill_void', 'invoice', 'invoice_void', 'adjustment', 'adjustment_undo'] as const;
+export const STOCK_MOVEMENT_KINDS = ['bill', 'bill_void', 'invoice', 'invoice_void', 'credit_note', 'credit_note_void', 'adjustment', 'adjustment_undo'] as const;
 export type StockMovementKind = (typeof STOCK_MOVEMENT_KINDS)[number];
 
 /** The value of some of what's on hand, at its average cost (rounded half up) */
