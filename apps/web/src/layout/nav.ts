@@ -15,6 +15,7 @@ import {
   Package,
   Percent,
   ListTree,
+  Monitor,
   Receipt,
   Repeat,
   ScrollText,
@@ -55,6 +56,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/accounts', labelKey: 'nav.items.accounts', icon: ListTree, permission: 'accounts.view', ready: true, keywords: 'coa ledger codes chart sub-accounts' },
       { to: '/periods', labelKey: 'nav.items.periods', icon: CalendarRange, permission: 'accounts.view', ready: true, keywords: 'financial year fiscal period month close lock' },
+      { to: '/fixed-assets', labelKey: 'nav.items.fixedAssets', icon: Monitor, permission: 'accounts.view', ready: true, keywords: 'fixed assets depreciation register equipment disposal' },
       { to: '/journals', labelKey: 'nav.items.journals', icon: BookOpen, permission: 'journals.view', ready: true, keywords: 'debit credit posting voucher jv reverse' },
       { to: '/taxes', labelKey: 'nav.items.taxes', icon: Percent, permission: 'accounts.view', ready: true, keywords: 'gst vat sales tax cgst sgst igst utgst rates slabs' },
       { to: '/currencies', labelKey: 'nav.items.currencies', icon: Coins, permission: 'accounts.view', ready: true, keywords: 'foreign currency exchange rate usd eur forex fx ecb revalue' },
