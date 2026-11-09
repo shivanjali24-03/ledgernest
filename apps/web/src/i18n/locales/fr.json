@@ -2148,7 +2148,69 @@
       "to_amount_differs": "Les deux comptes sont dans la même devise : le même montant arrive.",
       "tax_group_invalid": "Choisissez un groupe de taxes actif.",
       "account_archived": "Ce compte est archivé.",
-      "no_fx_account": "Aucun compte de gains ou pertes de change pour la différence."
+      "no_fx_account": "Aucun compte de gains ou pertes de change pour la différence.",
+      "layout_unknown": "Les colonnes n’ont pas pu être reconnues. Choisissez-les ci-dessous.",
+      "nothing_to_import": "Aucune opération n’a pu être lue dans ce fichier.",
+      "has_reconciled": "Certaines de ces lignes sont rapprochées. Annulez cela d’abord."
+    },
+    "fromBank": "De la banque",
+    "fromBankHint": "Importez le relevé de la banque pour voir ici son propre enregistrement, prêt à rapprocher.",
+    "fromBankCount": "{{count}} lignes des relevés de la banque",
+    "lineStatus": {
+      "unmatched": "À rapprocher",
+      "matched": "Rapprochée",
+      "ignored": "Ignorée"
+    },
+    "import": {
+      "button": "Importer un relevé",
+      "title": "Importer un relevé pour {{name}}",
+      "body": "Un fichier CSV ou OFX de votre banque. Les lignes déjà importées sont ignorées : les relevés qui se chevauchent ne posent pas de problème.",
+      "choose": "Choisir un fichier CSV ou OFX (jusqu’à 2 Mo)",
+      "file": "Fichier du relevé",
+      "tooBig": "Les relevés peuvent faire jusqu’à 2 Mo.",
+      "unknownLayout": "Les colonnes n’ont pas pu être reconnues. Indiquez laquelle est laquelle : l’aperçu se met à jour au fur et à mesure.",
+      "layout": "Colonnes",
+      "none": "Aucune",
+      "noneYet": "Aucun relevé importé pour l’instant.",
+      "amounts": "Montants",
+      "single": "Une colonne, sorties en négatif",
+      "split": "Colonnes crédit et débit",
+      "dateFormat": "Dates",
+      "dateFormats": {
+        "DMY": "Jour d’abord (31/05/2026)",
+        "MDY": "Mois d’abord (05/31/2026)",
+        "YMD": "Année d’abord (2026-05-31)"
+      },
+      "decimal": "Nombres",
+      "headerRows": "Lignes avant la première opération",
+      "roles": {
+        "date": "Date",
+        "description": "Libellé",
+        "reference": "Référence",
+        "amount": "Montant",
+        "moneyIn": "Crédit",
+        "moneyOut": "Débit",
+        "balance": "Solde"
+      },
+      "summary": "{{count}} opérations : {{fresh}} nouvelles, {{duplicates}} déjà importées",
+      "inOut": "{{moneyIn}} en entrée, {{moneyOut}} en sortie",
+      "issues": "{{count}} lignes illisibles seront laissées de côté :",
+      "already": "déjà importée",
+      "import": "Importer",
+      "importN": "Importer {{count}} nouvelles",
+      "done": "{{added}} nouvelles lignes importées ({{duplicates}} déjà présentes)",
+      "history": "Relevés importés",
+      "historyLine": "{{added}} ajoutées, {{duplicates}} déjà présentes",
+      "undo": "Annuler l’import",
+      "undoTitle": "Annuler l’import de {{file}} ?",
+      "undoBody": "Ses lignes sont retirées. Vous pourrez réimporter le fichier plus tard.",
+      "undone": "{{file}} retiré",
+      "problems": {
+        "date": "Ligne {{row}} : « {{text}} » n’est pas une date",
+        "amount": "Ligne {{row}} : pas de montant (« {{text}} »)",
+        "description": "Ligne {{row}} : pas de libellé",
+        "columns": "Ligne {{row}} : les colonnes ne correspondent pas"
+      }
     }
   }
 }

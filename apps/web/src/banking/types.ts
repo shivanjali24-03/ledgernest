@@ -1,4 +1,4 @@
-import type { BankMoneyInput, BankTransactionKind, BankTransferInput } from '@ledgernest/shared';
+import type { BankMoneyInput, BankTransactionKind, BankTransferInput, StatementImportInput, StatementIssue, StatementLine, StatementLineStatus, StatementMapping } from '@ledgernest/shared';
 import type { Ledger } from '../reports/types';
 
 export interface BankAccount {
@@ -40,6 +40,44 @@ export interface BankTransaction {
   voidEntry: { id: string; number: string | null } | null;
 }
 
+export interface StatementPreview {
+  format: 'csv' | 'ofx';
+  mapping: StatementMapping | null;
+  headers: string[];
+  currency: string | null;
+  total: number;
+  duplicates: number;
+  moneyIn: number;
+  moneyOut: number;
+  firstDate: string | null;
+  lastDate: string | null;
+  lines: (StatementLine & { duplicate: boolean })[];
+  issues: StatementIssue[];
+}
+export interface StatementImport {
+  id: string;
+  fileName: string;
+  format: 'csv' | 'ofx';
+  added: number;
+  duplicates: number;
+  rejected: number;
+  firstDate: string | null;
+  lastDate: string | null;
+  createdAt: string;
+  /** Lines already reconciled (the import can't be undone while there are any) */
+  reconciled: number;
+}
+export interface BankStatementLine {
+  id: string;
+  date: string;
+  description: string;
+  reference: string | null;
+  amount: number;
+  balance: number | null;
+  status: StatementLineStatus;
+  importId: string;
+}
+
 /** Banking. Live and demo both implement it. */
 export interface BankingApi {
   accounts(): Promise<BankAccount[]>;
@@ -48,4 +86,9 @@ export interface BankingApi {
   money(input: BankMoneyInput): Promise<BankTransaction>;
   transfer(input: BankTransferInput): Promise<BankTransaction>;
   void(id: string, reason?: string): Promise<BankTransaction>;
+  previewStatement(input: StatementImportInput): Promise<StatementPreview>;
+  importStatement(input: StatementImportInput): Promise<{ id: string; added: number; duplicates: number; rejected: number }>;
+  statementImports(bankAccountId: string): Promise<StatementImport[]>;
+  statementLines(q: { bankAccountId: string; status?: StatementLineStatus; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: BankStatementLine[] }>;
+  undoImport(id: string): Promise<void>;
 }

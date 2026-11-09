@@ -77,6 +77,38 @@ describe('banking', () => {
     await waitFor(() => expect(screen.getByText('HDFC Bank current account → Petty cash – Pune office')).toBeInTheDocument(), { timeout: 4000 });
   }, 30_000);
 
+  it('imports the bank’s statement once, and can take it back out', async () => {
+    renderApp();
+    await screen.findByRole('list', { name: 'Bank and cash accounts' }, { timeout: 4000 });
+    const csv = ['HDFC BANK Ltd.', 'Date,Narration,Chq./Ref.No.,Withdrawal Amt.,Deposit Amt.,Closing Balance', '04/05/26,UPI-SHARMA OFFICE SUPPLIES,000412,"5,900.00",,"2,10,100.00"', '06/05/26,NEFT CR-KUMAR LOGISTICS,UTR402918,,"1,18,000.00","3,28,100.00"', '31/02/26,BROKEN,,10.00,,'].join('\n');
+    const upload = async () => {
+      const dialog = await openDialog('Import statement', /^A CSV or OFX file from your bank/);
+      await userEvent.upload(within(dialog).getByLabelText('Statement file'), new File([csv], 'hdfc-may.csv', { type: 'text/csv' }));
+      return dialog;
+    };
+    let dialog = await upload();
+    await waitFor(() => expect(within(dialog).getByRole('status')).toHaveTextContent('2 transactions: 2 new, 0 already imported'), { timeout: 4000 });
+    expect(within(dialog).getByText(/^Row 5: .31\/02\/26. isn.t a date$/)).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Money out')).toHaveValue('3');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Import 2 new' }));
+    expect(await screen.findByText('Imported 2 new lines (0 already there)', {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/^2 lines from the bank.s statements$/)).toBeInTheDocument(), { timeout: 4000 });
+    expect(screen.getByText('NEFT CR-KUMAR LOGISTICS').closest('tr')!).toHaveTextContent('To reconcile');
+
+    // The same file again brings nothing new
+    dialog = await upload();
+    await waitFor(() => expect(within(dialog).getByRole('status')).toHaveTextContent('2 transactions: 0 new, 2 already imported'), { timeout: 4000 });
+    expect(within(dialog).getByRole('button', { name: 'Import 0 new' })).toBeDisabled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    const history = screen.getByText('hdfc-may.csv').closest('li')!;
+    await userEvent.click(within(history).getByRole('button', { name: /^Actions for / }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Undo import' }));
+    const confirm = (await screen.findByText(/^Its lines are taken out/, {}, { timeout: 3000 })).closest('[role="dialog"]') as HTMLElement;
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Undo import' }));
+    expect(await screen.findByText('hdfc-may.csv taken out', {}, { timeout: 4000 })).toBeInTheDocument();
+  }, 30_000);
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('button', { name: 'Spend money' }, { timeout: 4000 });

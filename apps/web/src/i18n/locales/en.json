@@ -2148,7 +2148,69 @@
       "to_amount_differs": "Both accounts are in the same currency, so the same amount arrives.",
       "tax_group_invalid": "Choose an active tax group.",
       "account_archived": "That account is archived.",
-      "no_fx_account": "There's no exchange gain or loss account for the difference."
+      "no_fx_account": "There's no exchange gain or loss account for the difference.",
+      "layout_unknown": "The columns couldn't be worked out. Choose them below.",
+      "nothing_to_import": "No transactions could be read from this file.",
+      "has_reconciled": "Some of these lines are reconciled. Undo that first."
+    },
+    "fromBank": "From the bank",
+    "fromBankHint": "Import the bank's statement to see its own record here, ready to reconcile.",
+    "fromBankCount": "{{count}} lines from the bank's statements",
+    "lineStatus": {
+      "unmatched": "To reconcile",
+      "matched": "Reconciled",
+      "ignored": "Ignored"
+    },
+    "import": {
+      "button": "Import statement",
+      "title": "Import a statement for {{name}}",
+      "body": "A CSV or OFX file from your bank. Lines already imported are skipped, so overlapping statements are fine.",
+      "choose": "Choose a CSV or OFX file (up to 2 MB)",
+      "file": "Statement file",
+      "tooBig": "Statements can be up to 2 MB.",
+      "unknownLayout": "The columns couldn't be worked out. Choose which column is which: the preview updates as you go.",
+      "layout": "Columns",
+      "none": "None",
+      "noneYet": "No statements imported yet.",
+      "amounts": "Amounts",
+      "single": "One column, out negative",
+      "split": "Money in and out columns",
+      "dateFormat": "Dates",
+      "dateFormats": {
+        "DMY": "Day first (31/05/2026)",
+        "MDY": "Month first (05/31/2026)",
+        "YMD": "Year first (2026-05-31)"
+      },
+      "decimal": "Numbers",
+      "headerRows": "Rows above the first transaction",
+      "roles": {
+        "date": "Date",
+        "description": "Description",
+        "reference": "Reference",
+        "amount": "Amount",
+        "moneyIn": "Money in",
+        "moneyOut": "Money out",
+        "balance": "Balance"
+      },
+      "summary": "{{count}} transactions: {{fresh}} new, {{duplicates}} already imported",
+      "inOut": "{{moneyIn}} in, {{moneyOut}} out",
+      "issues": "{{count}} rows can't be read and will be left out:",
+      "already": "already imported",
+      "import": "Import",
+      "importN": "Import {{count}} new",
+      "done": "Imported {{added}} new lines ({{duplicates}} already there)",
+      "history": "Imported statements",
+      "historyLine": "{{added}} added, {{duplicates}} already there",
+      "undo": "Undo import",
+      "undoTitle": "Undo the import of {{file}}?",
+      "undoBody": "Its lines are taken out. You can import the file again later.",
+      "undone": "{{file}} taken out",
+      "problems": {
+        "date": "Row {{row}}: “{{text}}” isn't a date",
+        "amount": "Row {{row}}: no amount (“{{text}}”)",
+        "description": "Row {{row}}: no description",
+        "columns": "Row {{row}}: the columns don't match"
+      }
     }
   }
 }

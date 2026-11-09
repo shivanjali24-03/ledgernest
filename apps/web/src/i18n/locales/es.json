@@ -2148,7 +2148,69 @@
       "to_amount_differs": "Ambas cuentas están en la misma moneda, así que llega el mismo importe.",
       "tax_group_invalid": "Elige un grupo de impuestos activo.",
       "account_archived": "Esa cuenta está archivada.",
-      "no_fx_account": "No hay cuenta de diferencias de cambio para la diferencia."
+      "no_fx_account": "No hay cuenta de diferencias de cambio para la diferencia.",
+      "layout_unknown": "No se pudieron identificar las columnas. Elígelas abajo.",
+      "nothing_to_import": "No se pudo leer ningún movimiento de este archivo.",
+      "has_reconciled": "Algunas de estas líneas están conciliadas. Deshazlo primero."
+    },
+    "fromBank": "Del banco",
+    "fromBankHint": "Importa el extracto del banco para ver aquí su propio registro, listo para conciliar.",
+    "fromBankCount": "{{count}} líneas de los extractos del banco",
+    "lineStatus": {
+      "unmatched": "Por conciliar",
+      "matched": "Conciliada",
+      "ignored": "Ignorada"
+    },
+    "import": {
+      "button": "Importar extracto",
+      "title": "Importar un extracto para {{name}}",
+      "body": "Un archivo CSV u OFX de tu banco. Las líneas ya importadas se omiten, así que los extractos solapados no son problema.",
+      "choose": "Elige un archivo CSV u OFX (hasta 2 MB)",
+      "file": "Archivo del extracto",
+      "tooBig": "Los extractos pueden tener hasta 2 MB.",
+      "unknownLayout": "No se pudieron identificar las columnas. Elige cuál es cuál: la vista previa se actualiza al momento.",
+      "layout": "Columnas",
+      "none": "Ninguna",
+      "noneYet": "Aún no se ha importado ningún extracto.",
+      "amounts": "Importes",
+      "single": "Una columna, salidas en negativo",
+      "split": "Columnas de entradas y salidas",
+      "dateFormat": "Fechas",
+      "dateFormats": {
+        "DMY": "Día primero (31/05/2026)",
+        "MDY": "Mes primero (05/31/2026)",
+        "YMD": "Año primero (2026-05-31)"
+      },
+      "decimal": "Números",
+      "headerRows": "Filas sobre el primer movimiento",
+      "roles": {
+        "date": "Fecha",
+        "description": "Concepto",
+        "reference": "Referencia",
+        "amount": "Importe",
+        "moneyIn": "Entradas",
+        "moneyOut": "Salidas",
+        "balance": "Saldo"
+      },
+      "summary": "{{count}} movimientos: {{fresh}} nuevos, {{duplicates}} ya importados",
+      "inOut": "{{moneyIn}} de entrada, {{moneyOut}} de salida",
+      "issues": "{{count}} filas no se pueden leer y se omitirán:",
+      "already": "ya importado",
+      "import": "Importar",
+      "importN": "Importar {{count}} nuevos",
+      "done": "Importadas {{added}} líneas nuevas ({{duplicates}} ya estaban)",
+      "history": "Extractos importados",
+      "historyLine": "{{added}} añadidas, {{duplicates}} ya estaban",
+      "undo": "Deshacer importación",
+      "undoTitle": "¿Deshacer la importación de {{file}}?",
+      "undoBody": "Se retiran sus líneas. Puedes volver a importar el archivo más tarde.",
+      "undone": "{{file}} retirado",
+      "problems": {
+        "date": "Fila {{row}}: «{{text}}» no es una fecha",
+        "amount": "Fila {{row}}: sin importe («{{text}}»)",
+        "description": "Fila {{row}}: sin concepto",
+        "columns": "Fila {{row}}: las columnas no coinciden"
+      }
     }
   }
 }

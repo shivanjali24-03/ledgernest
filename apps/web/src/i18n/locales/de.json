@@ -2148,7 +2148,69 @@
       "to_amount_differs": "Beide Konten haben dieselbe Währung, also kommt derselbe Betrag an.",
       "tax_group_invalid": "Wählen Sie eine aktive Steuergruppe.",
       "account_archived": "Dieses Konto ist archiviert.",
-      "no_fx_account": "Kein Konto für Kursdifferenzen vorhanden."
+      "no_fx_account": "Kein Konto für Kursdifferenzen vorhanden.",
+      "layout_unknown": "Die Spalten konnten nicht erkannt werden. Wählen Sie sie unten.",
+      "nothing_to_import": "Aus dieser Datei konnten keine Buchungen gelesen werden.",
+      "has_reconciled": "Einige dieser Zeilen sind abgeglichen. Machen Sie das zuerst rückgängig."
+    },
+    "fromBank": "Von der Bank",
+    "fromBankHint": "Importieren Sie den Kontoauszug, um hier die Buchungen der Bank zu sehen, bereit zum Abgleich.",
+    "fromBankCount": "{{count}} Zeilen aus Kontoauszügen",
+    "lineStatus": {
+      "unmatched": "Abzugleichen",
+      "matched": "Abgeglichen",
+      "ignored": "Ignoriert"
+    },
+    "import": {
+      "button": "Kontoauszug importieren",
+      "title": "Kontoauszug für {{name}} importieren",
+      "body": "Eine CSV- oder OFX-Datei Ihrer Bank. Bereits importierte Zeilen werden übersprungen, überlappende Auszüge sind also kein Problem.",
+      "choose": "CSV- oder OFX-Datei wählen (bis 2 MB)",
+      "file": "Auszugsdatei",
+      "tooBig": "Auszüge dürfen bis zu 2 MB groß sein.",
+      "unknownLayout": "Die Spalten konnten nicht erkannt werden. Wählen Sie, welche Spalte was ist: Die Vorschau aktualisiert sich sofort.",
+      "layout": "Spalten",
+      "none": "Keine",
+      "noneYet": "Noch keine Kontoauszüge importiert.",
+      "amounts": "Beträge",
+      "single": "Eine Spalte, Ausgänge negativ",
+      "split": "Spalten für Eingang und Ausgang",
+      "dateFormat": "Datumsformat",
+      "dateFormats": {
+        "DMY": "Tag zuerst (31.05.2026)",
+        "MDY": "Monat zuerst (05/31/2026)",
+        "YMD": "Jahr zuerst (2026-05-31)"
+      },
+      "decimal": "Zahlen",
+      "headerRows": "Zeilen vor der ersten Buchung",
+      "roles": {
+        "date": "Datum",
+        "description": "Verwendungszweck",
+        "reference": "Referenz",
+        "amount": "Betrag",
+        "moneyIn": "Eingang",
+        "moneyOut": "Ausgang",
+        "balance": "Saldo"
+      },
+      "summary": "{{count}} Buchungen: {{fresh}} neu, {{duplicates}} schon importiert",
+      "inOut": "{{moneyIn}} Eingang, {{moneyOut}} Ausgang",
+      "issues": "{{count}} Zeilen sind unlesbar und werden ausgelassen:",
+      "already": "schon importiert",
+      "import": "Importieren",
+      "importN": "{{count}} neue importieren",
+      "done": "{{added}} neue Zeilen importiert ({{duplicates}} schon vorhanden)",
+      "history": "Importierte Auszüge",
+      "historyLine": "{{added}} hinzugefügt, {{duplicates}} schon vorhanden",
+      "undo": "Import rückgängig machen",
+      "undoTitle": "Import von {{file}} rückgängig machen?",
+      "undoBody": "Seine Zeilen werden entfernt. Sie können die Datei später erneut importieren.",
+      "undone": "{{file}} entfernt",
+      "problems": {
+        "date": "Zeile {{row}}: „{{text}}“ ist kein Datum",
+        "amount": "Zeile {{row}}: kein Betrag („{{text}}“)",
+        "description": "Zeile {{row}}: kein Verwendungszweck",
+        "columns": "Zeile {{row}}: Spalten passen nicht"
+      }
     }
   }
 }
