@@ -56,6 +56,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Credit notes and refunds | Against the original invoice (some or all of its lines, tax included); the credit comes off the invoice, then goes onto another invoice or is refunded | ✅ #67 |
 | Bills and payments | Vendor bills with input GST to expense or asset accounts, and payments against one or many bills | ✅ #68, #69 |
 | Aging reports | Who owes what, and for how long (receivables and payables), at any date, with each document and CSV export | ✅ #70 |
+| Statements of account | A customer's or vendor's invoices, credit notes, bills, payments and voids over some dates, with the balance brought forward, a running balance and the balance carried down, per currency; CSV, Excel or PDF | ✅ |
 
 ## Phase 4: Banking
 

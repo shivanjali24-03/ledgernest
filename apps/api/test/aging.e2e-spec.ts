@@ -347,4 +347,141 @@ describe('Aging reports (e2e)', () => {
     await as('viewer').get('/reports/aging?side=receivables').expect(200);
     await as().get('/reports/aging?side=sideways').expect(400);
   });
+
+  type Statement = {
+    contact: { name: string };
+    sections: {
+      currency: string;
+      opening: number;
+      debits: number;
+      credits: number;
+      closing: number;
+      lines: {
+        date: string;
+        kind: string;
+        voided: string | null;
+        number: string;
+        debit: number;
+        credit: number;
+        balance: number;
+      }[];
+    }[];
+  };
+  const statement = async (q: string, who = 'owner') =>
+    (await as(who).get(`/reports/statement?${q}`).expect(200))
+      .body as Statement;
+
+  it('makes a customer’s statement: brought forward, each document and void, carried down', async () => {
+    const s = await statement(
+      `contactId=${contact.kumar}&side=receivables&from=2026-06-01&to=2026-07-31`,
+    );
+    expect(s.contact.name).toBe('Kumar Logistics');
+    expect(s.sections).toHaveLength(1);
+    const [inr] = s.sections;
+    expect(inr).toMatchObject({
+      currency: 'INR',
+      opening: 120_000,
+      debits: 80_000,
+      credits: 115_000,
+      closing: 85_000,
+    });
+    expect(
+      inr!.lines.map((l) => [
+        l.date,
+        l.kind,
+        l.voided,
+        l.number,
+        l.debit,
+        l.credit,
+        l.balance,
+      ]),
+    ).toEqual([
+      ['2026-06-01', 'invoice', null, 'INV/2026-27/0003', 50_000, 0, 170_000],
+      ['2026-06-20', 'invoice', null, 'INV/2026-27/0004', 30_000, 0, 200_000],
+      ['2026-06-25', 'receipt', null, 'RCT/2026-27/0001', 0, 40_000, 160_000],
+      ['2026-06-28', 'receipt', null, 'RCT/2026-27/0002', 0, 5_000, 155_000],
+      ['2026-07-01', 'void', 'invoice', 'INV/2026-27/0002', 0, 20_000, 135_000],
+      ['2026-07-05', 'receipt', null, 'RCT/2026-27/0003', 0, 50_000, 85_000],
+    ]);
+    // A foreign-currency customer's statement stays in their currency
+    const usd = await statement(
+      `contactId=${contact.northwind}&side=receivables&from=2026-04-01&to=2026-12-31`,
+    );
+    expect(usd.sections.map((x) => [x.currency, x.closing])).toEqual([
+      ['USD', 50_000],
+    ]);
+    await as('viewer')
+      .get(
+        `/reports/statement?contactId=${contact.kumar}&side=receivables&from=2026-06-01&to=2026-07-31`,
+      )
+      .expect(200);
+  });
+
+  it('makes a vendor’s statement, and turns away bad requests', async () => {
+    const s = await statement(
+      `contactId=${contact.sharma}&side=payables&from=2026-04-01&to=2026-04-30`,
+    );
+    expect(s.sections[0]).toMatchObject({
+      opening: 0,
+      closing: 25_000,
+      lines: [{ kind: 'bill', number: 'BILL/2026-27/0001', debit: 25_000 }],
+    });
+    // Nothing yet in March
+    expect(
+      (
+        await statement(
+          `contactId=${contact.sharma}&side=payables&from=2026-03-01&to=2026-03-31`,
+        )
+      ).sections,
+    ).toEqual([]);
+    await as()
+      .get(
+        `/reports/statement?contactId=${randomUUID()}&side=payables&from=2026-04-01&to=2026-04-30`,
+      )
+      .expect(404);
+    await as()
+      .get(
+        `/reports/statement?contactId=${contact.sharma}&side=payables&from=2026-05-01&to=2026-04-30`,
+      )
+      .expect(400);
+  });
+
+  it('downloads a statement as CSV or PDF', async () => {
+    const q = `contactId=${contact.kumar}&side=receivables&from=2026-06-01&to=2026-07-31`;
+    const csv = await as().get(`/reports/statement/export?${q}`).expect(200);
+    expect(csv.headers['content-type']).toContain('text/csv');
+    expect(csv.headers['content-disposition']).toContain(
+      'statement-kumar-logistics-2026-06-01-2026-07-31.csv',
+    );
+    const lines = csv.text
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .split('\r\n')
+      .map((l) => l.replaceAll('"', ''));
+    expect(lines[1]).toBe('2026-06-01,Balance brought forward,,,INR,,,1200.00');
+    expect(lines).toContain(
+      '2026-07-01,Invoice voided,INV/2026-27/0002,,INR,,200.00,1350.00',
+    );
+    expect(lines.at(-1)).toBe(
+      '2026-07-31,Balance carried down,,,INR,800.00,1150.00,850.00',
+    );
+    const pdf = await as()
+      .get(`/reports/statement/export?${q}&format=pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(pdf.headers['content-type']).toContain('application/pdf');
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text.startsWith('%PDF-1.4')).toBe(true);
+    expect(text).toContain('(Statement of account: Kumar Logistics) Tj');
+    const audit = await prisma.auditLog.findFirst({
+      where: { organizationId: org, action: 'org.report.export' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit?.entityId).toBe('statement');
+  });
 });

@@ -1497,7 +1497,35 @@
     "print": "Drucken oder PDF",
     "excel": "Excel",
     "printAsOf": "Stand {{date}}",
-    "printRange": "{{from}} bis {{to}}"
+    "printRange": "{{from}} bis {{to}}",
+    "statement": {
+      "title": "Kontoauszüge",
+      "customers": "Kunden",
+      "vendors": "Lieferanten",
+      "contact": "Kontakt",
+      "pickContact": "Kontakt wählen",
+      "hint": "Jede Rechnung, Gutschrift, Eingangsrechnung und Zahlung in diesem Zeitraum, mit Saldovortrag und Endsaldo. Schicken Sie ihn einem Kunden oder gleichen Sie ihn mit dem eines Lieferanten ab.",
+      "pdf": "PDF herunterladen",
+      "empty": "Nichts in diesem Zeitraum und kein Saldovortrag",
+      "inCurrency": "In {{currency}}",
+      "broughtForward": "Saldovortrag zum {{date}}",
+      "carriedDown": "Endsaldo zum {{date}}",
+      "voided": "{{kind}} storniert",
+      "kinds": {
+        "invoice": "Rechnung",
+        "credit_note": "Gutschrift",
+        "receipt": "Zahlungseingang",
+        "bill": "Eingangsrechnung",
+        "payment": "Zahlung"
+      },
+      "columns": {
+        "date": "Datum",
+        "type": "Art",
+        "number": "Nummer",
+        "debit": "Soll",
+        "credit": "Haben"
+      }
+    }
   },
   "taxes": {
     "title": "Steuern",

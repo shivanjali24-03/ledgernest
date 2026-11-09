@@ -1497,7 +1497,35 @@
     "print": "Print or PDF",
     "excel": "Excel",
     "printAsOf": "As of {{date}}",
-    "printRange": "{{from}} to {{to}}"
+    "printRange": "{{from}} to {{to}}",
+    "statement": {
+      "title": "Statements",
+      "customers": "Customers",
+      "vendors": "Vendors",
+      "contact": "Contact",
+      "pickContact": "Choose a contact",
+      "hint": "Every invoice, credit note, bill and payment in these dates, with the balance brought forward and carried down. Send it to a customer, or check it against a vendor’s.",
+      "pdf": "Download PDF",
+      "empty": "Nothing in these dates, and nothing brought forward",
+      "inCurrency": "In {{currency}}",
+      "broughtForward": "Balance brought forward on {{date}}",
+      "carriedDown": "Balance carried down on {{date}}",
+      "voided": "{{kind}} voided",
+      "kinds": {
+        "invoice": "Invoice",
+        "credit_note": "Credit note",
+        "receipt": "Receipt",
+        "bill": "Bill",
+        "payment": "Payment"
+      },
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "number": "Number",
+        "debit": "Debit",
+        "credit": "Credit"
+      }
+    }
   },
   "taxes": {
     "title": "Taxes",

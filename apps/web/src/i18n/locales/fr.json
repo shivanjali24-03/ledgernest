@@ -1497,7 +1497,35 @@
     "print": "Imprimer ou PDF",
     "excel": "Excel",
     "printAsOf": "Au {{date}}",
-    "printRange": "Du {{from}} au {{to}}"
+    "printRange": "Du {{from}} au {{to}}",
+    "statement": {
+      "title": "Relevés de compte",
+      "customers": "Clients",
+      "vendors": "Fournisseurs",
+      "contact": "Contact",
+      "pickContact": "Choisissez un contact",
+      "hint": "Chaque facture, avoir, facture fournisseur et paiement sur ces dates, avec le solde reporté et le solde à reporter. Envoyez-le à un client, ou rapprochez-le de celui d’un fournisseur.",
+      "pdf": "Télécharger le PDF",
+      "empty": "Rien sur ces dates, et aucun solde reporté",
+      "inCurrency": "En {{currency}}",
+      "broughtForward": "Solde reporté au {{date}}",
+      "carriedDown": "Solde à reporter au {{date}}",
+      "voided": "{{kind}} annulé(e)",
+      "kinds": {
+        "invoice": "Facture",
+        "credit_note": "Avoir",
+        "receipt": "Encaissement",
+        "bill": "Facture fournisseur",
+        "payment": "Paiement"
+      },
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "number": "Numéro",
+        "debit": "Débit",
+        "credit": "Crédit"
+      }
+    }
   },
   "taxes": {
     "title": "Taxes",

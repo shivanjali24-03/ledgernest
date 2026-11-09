@@ -1497,7 +1497,35 @@
     "print": "प्रिंट या PDF",
     "excel": "Excel",
     "printAsOf": "{{date}} तक",
-    "printRange": "{{from}} से {{to}}"
+    "printRange": "{{from}} से {{to}}",
+    "statement": {
+      "title": "विवरण",
+      "customers": "ग्राहक",
+      "vendors": "विक्रेता",
+      "contact": "संपर्क",
+      "pickContact": "संपर्क चुनें",
+      "hint": "इन तारीखों के हर इनवॉइस, क्रेडिट नोट, बिल और भुगतान, आगे लाई गई और आगे ले जाई गई शेष राशि के साथ। इसे ग्राहक को भेजें, या विक्रेता के विवरण से मिलाएँ।",
+      "pdf": "PDF डाउनलोड करें",
+      "empty": "इन तारीखों में कुछ नहीं, और आगे लाई गई कोई शेष राशि नहीं",
+      "inCurrency": "{{currency}} में",
+      "broughtForward": "{{date}} को आगे लाई गई शेष राशि",
+      "carriedDown": "{{date}} को आगे ले जाई गई शेष राशि",
+      "voided": "{{kind}} रद्द",
+      "kinds": {
+        "invoice": "इनवॉइस",
+        "credit_note": "क्रेडिट नोट",
+        "receipt": "प्राप्ति",
+        "bill": "बिल",
+        "payment": "भुगतान"
+      },
+      "columns": {
+        "date": "तारीख",
+        "type": "प्रकार",
+        "number": "संख्या",
+        "debit": "डेबिट",
+        "credit": "क्रेडिट"
+      }
+    }
   },
   "taxes": {
     "title": "कर",

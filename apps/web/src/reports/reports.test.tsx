@@ -79,6 +79,24 @@ describe('reports', () => {
     expect(await screen.findByText('Nothing owed to vendors on this day', {}, { timeout: 4000 })).toBeInTheDocument();
   }, 20_000);
 
+  it('makes a customer’s statement of account, and downloads it', async () => {
+    const router = renderApp('/reports?tab=statement');
+    expect(await screen.findByText('Choose a contact', { selector: 'h3, p, div' }, { timeout: 4000 })).toBeInTheDocument();
+    const contact = screen.getByLabelText('Contact');
+    await waitFor(() => expect(within(contact).getByRole('option', { name: 'Kumar Logistics' })).toBeInTheDocument(), { timeout: 4000 });
+    await userEvent.selectOptions(contact, within(contact).getByRole('option', { name: 'Kumar Logistics' }));
+    await waitFor(() => expect(router.state.location.search).toContain('contact='));
+    const invoice = (await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 })).closest('tr')!;
+    expect(invoice).toHaveTextContent('Invoice');
+    expect(within(invoice).getAllByRole('cell').at(-1)).toHaveTextContent('1,18,000.00');
+    expect(screen.getByText(/^Balance carried down on/).closest('tr')!).toHaveTextContent('1,18,000.00');
+    expect(screen.getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
+    // Vendors list the vendors instead
+    await userEvent.click(screen.getByRole('radio', { name: 'Vendors' }));
+    await waitFor(() => expect(within(screen.getByLabelText('Contact')).getByRole('option', { name: 'Sharma Office Supplies' })).toBeInTheDocument(), { timeout: 4000 });
+    expect(within(screen.getByLabelText('Contact')).queryByRole('option', { name: 'Kumar Logistics' })).not.toBeInTheDocument();
+  }, 20_000);
+
   it('shows the profit and loss with its sub-totals, and a balance sheet that balances', async () => {
     renderApp('/reports?tab=pnl');
     const table = await screen.findByRole('table', { name: 'Profit and loss' }, { timeout: 4000 });

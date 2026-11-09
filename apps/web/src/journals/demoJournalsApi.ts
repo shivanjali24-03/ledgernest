@@ -145,6 +145,16 @@ export const demoJournalLinesTagged = (costCentreId: string) => {
   }
 };
 
+/** The day of each of the demo's journal entries, by id (voids are dated by their reversing entry) */
+export const demoJournalDates = (): Map<string, string> => {
+  try {
+    const raw = localStorage.getItem(KEY);
+    return new Map(raw ? (JSON.parse(raw) as Stored[]).map((e) => [e.id, e.date]) : []);
+  } catch {
+    return new Map();
+  }
+};
+
 export const resetDemoJournals = () => {
   try {
     localStorage.removeItem(KEY);
