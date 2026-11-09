@@ -544,7 +544,8 @@
       "items": "المنتجات والخدمات",
       "invoices": "الفواتير",
       "payments": "المقبوضات والمدفوعات",
-      "bills": "فواتير الموردين"
+      "bills": "فواتير الموردين",
+      "banking": "الخدمات المصرفية"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -645,7 +646,10 @@
       "org_recurring_pause": "أُوقف جدول تكرار مؤقتًا",
       "org_recurring_resume": "استُؤنف جدول تكرار",
       "org_recurring_delete": "حُذف جدول تكرار",
-      "org_recurring_raise": "أُنشئت فاتورة من جدول"
+      "org_recurring_raise": "أُنشئت فاتورة من جدول",
+      "org_banking_spend": "صُرف مبلغ",
+      "org_banking_receive": "استُلم مبلغ",
+      "org_banking_void": "أُلغيت حركة مصرفية"
     },
     "entities": {
       "membership": "عضو",

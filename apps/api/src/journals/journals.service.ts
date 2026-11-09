@@ -892,6 +892,20 @@ export class JournalsService {
           'document_entry',
           { creditNoteId: note.id },
         );
+      const banked = await tx.bankTransaction.findFirst({
+        where: {
+          organizationId,
+          OR: [{ journalEntryId: id }, { voidEntryId: id }],
+        },
+        select: { id: true },
+      });
+      if (banked)
+        throw refuse(
+          ConflictException,
+          'This entry belongs to a bank transaction. Void it under Banking instead.',
+          'document_entry',
+          { bankTransactionId: banked.id },
+        );
       if (
         await tx.fiscalYear.findFirst({
           where: { organizationId, closingEntryId: id },

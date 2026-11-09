@@ -544,7 +544,8 @@
       "items": "Produits et services",
       "invoices": "Factures",
       "payments": "Encaissements et paiements",
-      "bills": "Factures fournisseurs"
+      "bills": "Factures fournisseurs",
+      "banking": "Banque"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -645,7 +646,10 @@
       "org_recurring_pause": "Récurrence suspendue",
       "org_recurring_resume": "Récurrence reprise",
       "org_recurring_delete": "Récurrence supprimée",
-      "org_recurring_raise": "Facture émise par une récurrence"
+      "org_recurring_raise": "Facture émise par une récurrence",
+      "org_banking_spend": "Dépense enregistrée",
+      "org_banking_receive": "Recette enregistrée",
+      "org_banking_void": "Opération bancaire annulée"
     },
     "entities": {
       "membership": "Membre",
