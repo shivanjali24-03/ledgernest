@@ -34,7 +34,8 @@
       "fixedAssets": "Fixed assets",
       "budgets": "Budgets",
       "costCentres": "Cost centres",
-      "inventory": "Inventory"
+      "inventory": "Inventory",
+      "approvals": "Approvals"
     },
     "soon": "Soon"
   },
@@ -2768,6 +2769,70 @@
       "inventory_account_type": "Stock sits in an asset account.",
       "cogs_account_type": "The cost of stock sold goes to an expense account.",
       "in_use": "Invoices, bills or stock movements use this item. Archive it instead."
+    }
+  },
+  "approvals": {
+    "title": "Approvals",
+    "description": "A second pair of eyes before money moves: entries, bills and payments over a limit wait here for someone else’s yes.",
+    "view": "Show",
+    "pending": "Waiting",
+    "pendingCount": "Waiting ({{count}})",
+    "history": "Decided",
+    "nothingPending": "Nothing waiting for approval",
+    "nothingPendingBody": "Entries, bills and payments held by a rule appear here.",
+    "noHistory": "Nothing decided yet",
+    "documents": {
+      "journal": "Journal entry",
+      "bill": "Bill",
+      "payment": "Vendor payment"
+    },
+    "statuses": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Sent back",
+      "cancelled": "Withdrawn"
+    },
+    "sentBy": "Sent by {{name}} {{when}}",
+    "approvedBy": "approved by {{name}}",
+    "sentBackBy": "sent back by {{name}}",
+    "closedBy": "closed by {{name}}",
+    "withdraw": "Withdraw",
+    "withdrawn": "Request withdrawn",
+    "sendBack": "Send back",
+    "sendBackFor": "Send back {{summary}}",
+    "approve": "Approve",
+    "approveFor": "Approve {{summary}}",
+    "approvedToast": "{{summary}} approved and posted",
+    "sentBackToast": "{{summary}} sent back",
+    "approveTitle": "Approve and post",
+    "sendBackTitle": "Send it back",
+    "approveAndPost": "Approve and post",
+    "approveBody": "It posts now, under your name.",
+    "sendBackBody": "It stays as it is; the person who sent it sees your note and can change it and send it again.",
+    "noteOptional": "Note (optional)",
+    "note": "What needs to change",
+    "rulesTitle": "Approval rules",
+    "rulesBody": "Documents at or above an amount wait for someone other than the person who sent them.",
+    "rulesReadOnly": "Set by the organisation’s owners and admins.",
+    "ruleSaved": "Rule for {{document}} saved",
+    "rules": {
+      "journal": "Journal entries need approval",
+      "bill": "Bills need approval",
+      "payment": "Vendor payments need approval"
+    },
+    "atOrAbove": "At or above ({{currency}})",
+    "badAmount": "Enter an amount.",
+    "saveRule": "Save the rule: {{rule}}",
+    "sent": "Sent for approval. It posts once someone approves it.",
+    "alreadyWaiting": "This is already waiting for approval.",
+    "errors": {
+      "own_request": "Someone else has to approve what you sent.",
+      "already_decided": "Someone has already decided on this.",
+      "document_changed": "It has changed since it was sent. Send it back so it can be sent again.",
+      "document_gone": "It’s no longer a draft, so there’s nothing to approve.",
+      "not_yours": "Only the person who sent it can withdraw it.",
+      "forbidden": "You don’t have permission to decide on approvals.",
+      "generic": "That didn’t work. Try again."
     }
   }
 }

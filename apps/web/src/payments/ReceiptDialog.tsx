@@ -14,6 +14,7 @@ import { SelectField, TextField } from '../ui/Field';
 import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
 import type { Payment, PaymentsApi } from './types';
+import { heldForApproval, heldMessage } from '../approvals/errors';
 
 /**
  * Record money received from a customer against their open invoices, or paid to a vendor against their open
@@ -72,7 +73,12 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
       toast(t(receipt ? 'payments.received' : 'payments.paidOut', { number: p.number }));
       onDone(p);
     },
-    onError: (e) => toast(billErrorMessage(e, t), 'error'),
+    onError: (e) => {
+      if (!heldForApproval(e)) return toast(billErrorMessage(e, t), 'error');
+      void queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      toast(heldMessage(e, t));
+      onClose();
+    },
   });
   const submit = (e: FormEvent) => {
     e.preventDefault();

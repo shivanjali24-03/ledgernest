@@ -1,4 +1,5 @@
 import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
+import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoCheckUndo, demoInventoryAccountOf, demoSaveMovements, demoStockReceipts, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
@@ -298,7 +299,8 @@ function view(i: Stored): Bill {
   };
 }
 
-export function createDemoBillsApi(canManage: () => boolean, seeding = false): BillsApi {
+/** opts.approvalsAs: recording from the app as this role, so approval rules apply */
+export function createDemoBillsApi(canManage: () => boolean, seeding = false, opts: { approvalsAs?: string } = {}): BillsApi {
   const load = () => loadRows(seeding);
   const guard = () => {
     if (!canManage())
@@ -441,6 +443,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
         const i = find(rows, iid);
         if (i.status !== 'draft') throw refuse(409, 'not_draft');
         const v = view(i);
+        if (opts.approvalsAs) demoApprovalCheck('bill', { documentId: iid, amount: v.total, summary: `Bill from ${v.contact.name}${v.vendorReference ? ` · ${v.vendorReference}` : ''}` }, opts.approvalsAs);
         if (v.total <= 0) throw refuse(400, 'zero_total');
         const payable = v.payableAccount;
         if (!payable) throw refuse(409, 'no_payable_account', { currency: i.currency });

@@ -1,4 +1,5 @@
 import { currencyDigits, paymentNumber, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind } from '@ledgernest/shared';
+import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -44,7 +45,8 @@ const adjust = (kind: 'invoice' | 'bill', id: string, delta: number, payment?: {
 const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 
-export function createDemoPaymentsApi(canManage: () => boolean): PaymentsApi {
+/** opts.approvalsAs: paying from the app as this role, so approval rules apply */
+export function createDemoPaymentsApi(canManage: () => boolean, opts: { approvalsAs?: string } = {}): PaymentsApi {
   const guard = () => {
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['payments.manage'] });
   };
@@ -160,6 +162,8 @@ export function createDemoPaymentsApi(canManage: () => boolean): PaymentsApi {
       wait(() => {
         const p = vendorPaymentSchema.safeParse(input);
         if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+        const vendor = demoContactRows().find((c) => c.id === p.data.contactId);
+        if (opts.approvalsAs && vendor) demoApprovalCheck('payment', { documentId: null, amount: p.data.amount, summary: `Payment to ${vendor.name}${p.data.reference ? ` · ${p.data.reference}` : ''}`, payload: input }, opts.approvalsAs);
         return settle('payment', { ...p.data, allocations: p.data.allocations.map((x) => ({ documentId: x.billId, amount: x.amount })) });
       }),
     void: (id, reason) =>

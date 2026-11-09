@@ -34,7 +34,8 @@
       "fixedAssets": "Immobilisations",
       "budgets": "Budgets",
       "costCentres": "Centres de coûts",
-      "inventory": "Stocks"
+      "inventory": "Stocks",
+      "approvals": "Approbations"
     },
     "soon": "Bientôt"
   },
@@ -2768,6 +2769,70 @@
       "inventory_account_type": "Le stock se trouve dans un compte d’actif.",
       "cogs_account_type": "Le coût du stock vendu va dans un compte de charges.",
       "in_use": "Des factures, factures fournisseurs ou mouvements de stock utilisent cet article. Archivez-le plutôt."
+    }
+  },
+  "approvals": {
+    "title": "Approbations",
+    "description": "Un second regard avant que l’argent bouge : les écritures, factures et paiements au-dessus d’un seuil attendent ici le oui de quelqu’un d’autre.",
+    "view": "Afficher",
+    "pending": "En attente",
+    "pendingCount": "En attente ({{count}})",
+    "history": "Décidées",
+    "nothingPending": "Rien en attente d’approbation",
+    "nothingPendingBody": "Les écritures, factures et paiements retenus par une règle apparaissent ici.",
+    "noHistory": "Aucune décision pour l’instant",
+    "documents": {
+      "journal": "Écriture",
+      "bill": "Facture fournisseur",
+      "payment": "Paiement fournisseur"
+    },
+    "statuses": {
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Renvoyé",
+      "cancelled": "Retiré"
+    },
+    "sentBy": "Envoyé par {{name}} {{when}}",
+    "approvedBy": "approuvé par {{name}}",
+    "sentBackBy": "renvoyé par {{name}}",
+    "closedBy": "clos par {{name}}",
+    "withdraw": "Retirer",
+    "withdrawn": "Demande retirée",
+    "sendBack": "Renvoyer",
+    "sendBackFor": "Renvoyer {{summary}}",
+    "approve": "Approuver",
+    "approveFor": "Approuver {{summary}}",
+    "approvedToast": "{{summary}} approuvé et comptabilisé",
+    "sentBackToast": "{{summary}} renvoyé",
+    "approveTitle": "Approuver et comptabiliser",
+    "sendBackTitle": "Le renvoyer",
+    "approveAndPost": "Approuver et comptabiliser",
+    "approveBody": "Il est comptabilisé maintenant, à votre nom.",
+    "sendBackBody": "Il reste tel quel ; la personne qui l’a envoyé verra votre note et pourra le modifier et le renvoyer.",
+    "noteOptional": "Note (facultative)",
+    "note": "Ce qui doit changer",
+    "rulesTitle": "Règles d’approbation",
+    "rulesBody": "Les documents à partir d’un montant attendent une autre personne que celle qui les a envoyés.",
+    "rulesReadOnly": "Définies par les propriétaires et administrateurs.",
+    "ruleSaved": "Règle des {{document}} enregistrée",
+    "rules": {
+      "journal": "Les écritures doivent être approuvées",
+      "bill": "Les factures fournisseurs doivent être approuvées",
+      "payment": "Les paiements fournisseurs doivent être approuvés"
+    },
+    "atOrAbove": "À partir de ({{currency}})",
+    "badAmount": "Saisissez un montant.",
+    "saveRule": "Enregistrer la règle : {{rule}}",
+    "sent": "Envoyé pour approbation. Il sera comptabilisé une fois approuvé.",
+    "alreadyWaiting": "Ceci attend déjà une approbation.",
+    "errors": {
+      "own_request": "Quelqu’un d’autre doit approuver ce que vous avez envoyé.",
+      "already_decided": "Quelqu’un a déjà décidé.",
+      "document_changed": "Il a changé depuis son envoi. Renvoyez-le pour qu’il soit envoyé à nouveau.",
+      "document_gone": "Ce n’est plus un brouillon : il n’y a rien à approuver.",
+      "not_yours": "Seule la personne qui l’a envoyé peut le retirer.",
+      "forbidden": "Vous n’avez pas le droit de décider des approbations.",
+      "generic": "Cela n’a pas fonctionné. Réessayez."
     }
   }
 }

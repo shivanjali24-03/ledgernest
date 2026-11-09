@@ -1,5 +1,6 @@
 import { currencyDigits, enteredLines, invoiceNumber, expandTax, journalDraftSchema, journalNumber, postingProblem, realisedDifferences, sniffAttachmentType, todayIn, toBase, totals, type EnteredLine } from '@ledgernest/shared';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
+import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
 import { createDemoAccountsApi, demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
@@ -166,7 +167,8 @@ export interface DemoYearEnd {
   revalue(date: string): Promise<{ date: string; entry: { id: string; number: string } | null; adjustments: { accountId: string; code: string; name: string; currency: string; foreignBalance: number; rate: string; before: number; after: number; difference: number }[]; missingRates: string[] }>;
 }
 
-export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.post' | 'journals.reverse') => boolean): JournalsApi & DemoYearEnd {
+/** opts.approvalsAs: posting from the app as this role, so approval rules apply (the demo's own postings skip them) */
+export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.post' | 'journals.reverse') => boolean, opts: { approvalsAs?: string } = {}): JournalsApi & DemoYearEnd {
   const accounts = createDemoAccountsApi(() => true);
   const periods = createDemoPeriodsApi(() => true);
 
@@ -493,6 +495,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         const all = await load();
         const e = find(all, id);
         if (e.status !== 'draft') throw refuse(409, 'posted');
+        if (opts.approvalsAs) demoApprovalCheck('journal', { documentId: id, amount: totals(e.lines).debit, summary: `Journal entry${e.memo ? `: ${e.memo}` : ''}` }, opts.approvalsAs);
         // Tax lines are recomputed from the rates' current accounts, as the API does
         if (e.lines.some((l) => l.taxGroupId || l.taxRateId)) e.lines = await linesFor(enteredLines(e.lines.map((l, i) => ({ ...l, lineNo: i + 1, taxGroupId: l.taxGroupId ?? null, taxInclusive: !!l.taxInclusive, taxRateId: l.taxRateId ?? null, taxSourceLine: l.taxSourceLine ?? null }))), e.date);
         // Settling foreign balances realises exchange differences (shared with the API, so the figures match)
