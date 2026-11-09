@@ -13,4 +13,5 @@ export const OrganizationAudit = lazy(() => import('../audit/pages/OrganizationA
 export const PlatformAudit = lazy(() => import('../audit/pages/PlatformAudit'));
 export const Settings = lazy(() => import('../settings/pages/Settings'));
 export const ChartOfAccounts = lazy(() => import('../accounts/pages/ChartOfAccounts'));
+export const FiscalYears = lazy(() => import('../periods/pages/FiscalYears'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

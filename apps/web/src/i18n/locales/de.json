@@ -22,7 +22,8 @@
       "organizations": "Organisationen",
       "platformUsers": "Plattformbenutzer",
       "platformOverview": "Plattformübersicht",
-      "platformAudit": "Plattform-Audit-Log"
+      "platformAudit": "Plattform-Audit-Log",
+      "periods": "Geschäftsjahre"
     },
     "soon": "Bald"
   },
@@ -526,7 +527,8 @@
       "platformUsers": "Plattformkonten",
       "exports": "Exporte",
       "settings": "Einstellungen",
-      "accounts": "Konten"
+      "accounts": "Konten",
+      "periods": "Geschäftsjahre"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -565,7 +567,10 @@
       "org_account_archive": "Konto archiviert",
       "org_account_restore": "Konto wiederhergestellt",
       "org_account_delete": "Konto gelöscht",
-      "org_account_template_apply": "Vorlage angewendet"
+      "org_account_template_apply": "Vorlage angewendet",
+      "org_fiscal_year_create": "Geschäftsjahr angelegt",
+      "org_period_close": "Monat abgeschlossen",
+      "org_period_reopen": "Monat wieder geöffnet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -573,7 +578,9 @@
       "role": "Rolle",
       "organization": "Organisation",
       "user": "Konto",
-      "account": "Konto"
+      "account": "Konto",
+      "fiscal_year": "Geschäftsjahr",
+      "period": "Monat"
     },
     "fields": {
       "user": "Person",
@@ -617,7 +624,10 @@
       "subtype": "Untertyp",
       "parentId": "Übergeordnetes Konto",
       "industry": "Branche",
-      "accounts": "Konten"
+      "accounts": "Konten",
+      "period": "Monat",
+      "startDate": "Beginn",
+      "endDate": "Ende"
     },
     "details": {
       "when": "Wann",
@@ -891,6 +901,41 @@
         "name": "Landwirtschaft",
         "description": "Ernte, Vieh, Landmaschinen, Subventionen"
       }
+    }
+  },
+  "periods": {
+    "title": "Geschäftsjahre",
+    "description": "Ihre Bücher werden monatlich geführt. Schließen Sie einen Monat, wenn seine Buchungen final sind: Danach kann nichts mit einem Datum darin gebucht oder geändert werden.",
+    "addFirst": "Dieses Geschäftsjahr anlegen",
+    "addNext": "Nächstes Geschäftsjahr anlegen",
+    "addPrevious": "Früheres Jahr anlegen",
+    "yearCreated": "{{name}} angelegt",
+    "empty": "Noch keine Geschäftsjahre",
+    "emptyBody": "Legen Sie dieses Geschäftsjahr an, um Buchungen zu erfassen.",
+    "current": "Aktuell",
+    "yearClosed": "Abgeschlossen",
+    "closedBy": "Abgeschlossen von {{name}}",
+    "currentMonth": "Dieser Monat",
+    "open": "Offen",
+    "close": "Monat abschließen",
+    "reopen": "Wieder öffnen",
+    "done": {
+      "close": "{{month}} abgeschlossen",
+      "reopen": "{{month}} wieder geöffnet"
+    },
+    "confirm": {
+      "closeTitle": "{{month}} abschließen?",
+      "closeBody": "Bis zur Wiedereröffnung kann nichts mit einem Datum in diesem Monat gebucht, geändert oder storniert werden.",
+      "reopenTitle": "{{month}} wieder öffnen?",
+      "reopenBody": "Die Buchungen können wieder geändert werden. Die Wiedereröffnung wird mit Ihrem Grund im Audit-Log festgehalten."
+    },
+    "errors": {
+      "exists": "Dieses Geschäftsjahr gibt es bereits.",
+      "not_contiguous": "Geschäftsjahre müssen lückenlos aufeinander folgen.",
+      "already_closed": "Dieser Monat ist bereits abgeschlossen.",
+      "already_open": "Dieser Monat ist bereits offen.",
+      "earlier_open": "Schließen Sie zuerst frühere Monate ab: Monate werden der Reihe nach abgeschlossen.",
+      "later_closed": "Öffnen Sie zuerst spätere Monate: Monate werden in umgekehrter Reihenfolge geöffnet."
     }
   }
 }

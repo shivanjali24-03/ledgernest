@@ -7,3 +7,4 @@ export * from './team/index.js';
 export * from './audit/index.js';
 export * from './organization/index.js';
 export * from './accounts/index.js';
+export * from './periods/index.js';

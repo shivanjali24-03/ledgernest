@@ -22,7 +22,8 @@
       "organizations": "Organisations",
       "platformUsers": "Platform users",
       "platformOverview": "Platform overview",
-      "platformAudit": "Platform audit log"
+      "platformAudit": "Platform audit log",
+      "periods": "Financial years"
     },
     "soon": "Soon"
   },
@@ -526,7 +527,8 @@
       "platformUsers": "Platform accounts",
       "exports": "Exports",
       "settings": "Settings",
-      "accounts": "Accounts"
+      "accounts": "Accounts",
+      "periods": "Financial years"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -565,7 +567,10 @@
       "org_account_archive": "Account archived",
       "org_account_restore": "Account restored",
       "org_account_delete": "Account deleted",
-      "org_account_template_apply": "Template applied"
+      "org_account_template_apply": "Template applied",
+      "org_fiscal_year_create": "Financial year added",
+      "org_period_close": "Month closed",
+      "org_period_reopen": "Month reopened"
     },
     "entities": {
       "membership": "Member",
@@ -573,7 +578,9 @@
       "role": "Role",
       "organization": "Organisation",
       "user": "Account",
-      "account": "Account"
+      "account": "Account",
+      "fiscal_year": "Financial year",
+      "period": "Month"
     },
     "fields": {
       "user": "Person",
@@ -617,7 +624,10 @@
       "subtype": "Sub-type",
       "parentId": "Parent account",
       "industry": "Industry",
-      "accounts": "Accounts"
+      "accounts": "Accounts",
+      "period": "Month",
+      "startDate": "Starts",
+      "endDate": "Ends"
     },
     "details": {
       "when": "When",
@@ -891,6 +901,41 @@
         "name": "Agriculture",
         "description": "Crops, livestock, farm equipment, subsidies"
       }
+    }
+  },
+  "periods": {
+    "title": "Financial years",
+    "description": "Your books are kept by month. Close a month when its books are final: nothing dated in it can then be posted or changed.",
+    "addFirst": "Add this financial year",
+    "addNext": "Add next financial year",
+    "addPrevious": "Add earlier year",
+    "yearCreated": "{{name}} added",
+    "empty": "No financial years yet",
+    "emptyBody": "Add this financial year to start recording entries.",
+    "current": "Current",
+    "yearClosed": "Closed",
+    "closedBy": "Closed by {{name}}",
+    "currentMonth": "This month",
+    "open": "Open",
+    "close": "Close month",
+    "reopen": "Reopen",
+    "done": {
+      "close": "{{month}} closed",
+      "reopen": "{{month}} reopened"
+    },
+    "confirm": {
+      "closeTitle": "Close {{month}}?",
+      "closeBody": "Nothing dated in this month can be posted, changed or reversed until it's reopened.",
+      "reopenTitle": "Reopen {{month}}?",
+      "reopenBody": "Its entries can be changed again. Reopening is recorded in the audit log with your reason."
+    },
+    "errors": {
+      "exists": "That financial year already exists.",
+      "not_contiguous": "Financial years must follow on from each other without gaps.",
+      "already_closed": "This month is already closed.",
+      "already_open": "This month is already open.",
+      "earlier_open": "Close earlier months first: months close in order.",
+      "later_closed": "Reopen later months first: months reopen in reverse order."
     }
   }
 }

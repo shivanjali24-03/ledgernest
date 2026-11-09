@@ -66,11 +66,12 @@ export class OrganizationService {
   ) {}
 
   /**
-   * Settings that can no longer change. The base currency locks once journal entries exist (#42),
-   * and the fiscal year start once fiscal years exist (#41); those features fill these checks in.
+   * Settings that can no longer change. The fiscal year start locks once financial years exist,
+   * because their periods were cut from it. The base currency locks once journal entries exist (#42).
    */
-  private async locks(_organizationId: string) {
-    return { baseCurrency: false, fiscalYearStartMonth: false };
+  private async locks(organizationId: string) {
+    const years = await this.prisma.fiscalYear.count({ where: { organizationId } });
+    return { baseCurrency: false, fiscalYearStartMonth: years > 0 };
   }
 
   async get(organizationId: string) {
