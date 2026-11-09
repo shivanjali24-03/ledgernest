@@ -3048,5 +3048,76 @@
       "succeeded": "livré",
       "failed": "échoué"
     }
+  },
+  "scheduledReports": {
+    "tab": "Planifiés",
+    "title": "Rapports planifiés",
+    "body": "Des rapports faits chaque semaine ou chaque mois, gardés ici et envoyés par e-mail aux personnes choisies.",
+    "new": "Planifier un rapport",
+    "empty": "Aucun rapport planifié pour l’instant",
+    "emptyBody": "Recevez le compte de résultat du mois, ou qui doit quoi, sans y penser.",
+    "failed": "Cela n’a pas fonctionné. Réessayez.",
+    "ranEmailed": "Rapport fait et envoyé à {{count}} personnes",
+    "ran": "Rapport fait",
+    "resumed": "Planification reprise",
+    "paused": "Planification en pause",
+    "removed": "Planification supprimée",
+    "everyWeek": "Chaque {{day}}",
+    "everyMonth": "Chaque mois le {{day}}",
+    "reports": {
+      "profit_and_loss": "Compte de résultat",
+      "balance_sheet": "Bilan",
+      "trial_balance": "Balance générale",
+      "receivables_aging": "Balance âgée clients",
+      "payables_aging": "Balance âgée fournisseurs"
+    },
+    "pausedPill": "En pause",
+    "recipients": "Destinataires : {{count}}",
+    "next": "prochain {{date}}",
+    "last": "dernier {{when}}",
+    "actionsFor": "Actions pour {{name}}",
+    "runs": "Exécutions passées",
+    "runNow": "Le faire maintenant",
+    "pause": "Mettre en pause",
+    "resume": "Reprendre",
+    "remove": "Supprimer",
+    "removeTitle": "Supprimer {{name}} ?",
+    "removeBody": "Plus rien ne sera fait, et les fichiers déjà faits partent aussi.",
+    "defaultName": {
+      "weekly": "{{report}} hebdomadaire",
+      "monthly": "{{report}} mensuel"
+    },
+    "created": "Rapport planifié",
+    "recipientsFailed": "Impossible de planifier : vérifiez que les destinataires peuvent voir les rapports.",
+    "newTitle": "Planifier un rapport",
+    "newBody": "Il est fait pour la période qui vient de finir, gardé ici, et envoyé quand l’e-mail est configuré.",
+    "create": "Le planifier",
+    "fields": {
+      "report": "Rapport",
+      "name": "Nom",
+      "frequency": "Fréquence",
+      "weekday": "Le",
+      "dayOfMonth": "Jour du mois",
+      "format": "Fichier",
+      "recipients": "Envoyer à"
+    },
+    "frequencies": {
+      "weekly": "Hebdomadaire",
+      "monthly": "Mensuel"
+    },
+    "formats": {
+      "xlsx": "Excel (XLSX)",
+      "csv": "CSV"
+    },
+    "periodHint": {
+      "weekly": "Chaque semaine couvre les sept jours avant le jour où il est fait.",
+      "monthly": "Chaque mois couvre le mois civil précédent ; les soldes sont à son dernier jour."
+    },
+    "recipientsHint": "Seuls les membres qui peuvent voir les rapports les reçoivent.",
+    "runsTitle": "Exécutions passées : {{name}}",
+    "noRuns": "Rien de fait pour l’instant.",
+    "emailedTo": "envoyé à {{count}}",
+    "notEmailed": "gardé ici (pas d’e-mail)",
+    "download": "Télécharger {{name}}"
   }
 }
