@@ -1287,6 +1287,49 @@
       "totalIn": "Total en {{currency}}",
       "daysLate": "Vence {{due}} · {{count}} d de retraso",
       "due": "Vence {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "Pérdidas y ganancias",
+      "bsTitle": "Balance",
+      "account": "Cuenta",
+      "change": "Variación",
+      "totalOf": "Total {{section}}",
+      "empty": "Nada que mostrar en estas fechas",
+      "emptyBody": "Contabiliza algunos asientos o elige otras fechas.",
+      "compare": "Comparar con",
+      "compares": {
+        "none": "Nada",
+        "previous": "Periodo anterior",
+        "year": "Año anterior",
+        "months": "Por mes"
+      },
+      "compareWith": "Comparar con otra fecha",
+      "compareDate": "Comparado con",
+      "pnl": {
+        "revenue": "Ingresos",
+        "costOfSales": "Coste de ventas",
+        "grossProfit": "Margen bruto",
+        "operatingExpenses": "Gastos de explotación",
+        "operatingProfit": "Resultado de explotación",
+        "otherIncome": "Otros ingresos",
+        "otherExpenses": "Otros gastos",
+        "netProfit": "Beneficio neto",
+        "netLoss": "Pérdida neta"
+      },
+      "bs": {
+        "currentAssets": "Activo corriente",
+        "nonCurrentAssets": "Activo no corriente",
+        "totalAssets": "Total activo",
+        "currentLiabilities": "Pasivo corriente",
+        "nonCurrentLiabilities": "Pasivo no corriente",
+        "totalLiabilities": "Total pasivo",
+        "equity": "Patrimonio neto",
+        "profitThisYear": "Resultado desde el {{date}}",
+        "profitEarlier": "Resultados de años anteriores sin cerrar",
+        "totalLiabilitiesEquity": "Total pasivo y patrimonio neto",
+        "balanced": "El activo cuadra con el pasivo y el patrimonio neto",
+        "notBalanced": "El activo no cuadra con el pasivo y el patrimonio neto"
+      }
     }
   },
   "taxes": {

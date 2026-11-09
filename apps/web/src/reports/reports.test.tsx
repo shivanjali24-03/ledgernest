@@ -77,4 +77,23 @@ describe('reports', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'We owe' }));
     expect(await screen.findByText('Nothing owed to vendors on this day', {}, { timeout: 4000 })).toBeInTheDocument();
   }, 20_000);
+
+  it('shows the profit and loss with its sub-totals, and a balance sheet that balances', async () => {
+    renderApp('/reports?tab=pnl');
+    const table = await screen.findByRole('table', { name: 'Profit and loss' }, { timeout: 4000 });
+    // ₹1,00,000 of sales less ₹38,200 hosting is ₹61,800 gross; less rent and salaries, a loss
+    expect(within(table).getByText('Gross profit').closest('tr')!).toHaveTextContent('61,800.00');
+    expect(within(table).getByText('Net loss').closest('tr')!).toHaveTextContent(/4,43,200\.00/);
+    // The reversed AWS bill and its reversal leave only the corrected one
+    expect(within(table).getByRole('button', { name: /Cloud hosting/ }).closest('tr')!).toHaveTextContent('38,200.00');
+    await userEvent.click(within(table).getByRole('button', { name: /Office rent/ }));
+    expect(await screen.findByRole('tab', { name: 'General ledger', selected: true })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Balance sheet' }));
+    expect(await screen.findByText('Assets equal liabilities and equity', {}, { timeout: 4000 })).toBeInTheDocument();
+    const bs = screen.getByRole('table', { name: 'Balance sheet' });
+    expect(within(bs).getByText('Total assets').closest('tr')!).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText('Compare with another date'));
+    await waitFor(() => expect(within(screen.getByRole('table', { name: 'Balance sheet' })).getAllByRole('columnheader')).toHaveLength(4), { timeout: 4000 });
+  }, 20_000);
 });

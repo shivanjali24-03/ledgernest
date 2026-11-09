@@ -1287,6 +1287,49 @@
       "totalIn": "Total en {{currency}}",
       "daysLate": "Échéance {{due}} · {{count}} j de retard",
       "due": "Échéance {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "Compte de résultat",
+      "bsTitle": "Bilan",
+      "account": "Compte",
+      "change": "Variation",
+      "totalOf": "Total {{section}}",
+      "empty": "Rien à afficher pour ces dates",
+      "emptyBody": "Comptabilisez des écritures ou choisissez d’autres dates.",
+      "compare": "Comparer avec",
+      "compares": {
+        "none": "Rien",
+        "previous": "Période précédente",
+        "year": "Année précédente",
+        "months": "Par mois"
+      },
+      "compareWith": "Comparer avec une autre date",
+      "compareDate": "Comparé au",
+      "pnl": {
+        "revenue": "Chiffre d’affaires",
+        "costOfSales": "Coût des ventes",
+        "grossProfit": "Marge brute",
+        "operatingExpenses": "Charges d’exploitation",
+        "operatingProfit": "Résultat d’exploitation",
+        "otherIncome": "Autres produits",
+        "otherExpenses": "Autres charges",
+        "netProfit": "Bénéfice net",
+        "netLoss": "Perte nette"
+      },
+      "bs": {
+        "currentAssets": "Actif circulant",
+        "nonCurrentAssets": "Actif immobilisé",
+        "totalAssets": "Total de l’actif",
+        "currentLiabilities": "Dettes à court terme",
+        "nonCurrentLiabilities": "Dettes à long terme",
+        "totalLiabilities": "Total des dettes",
+        "equity": "Capitaux propres",
+        "profitThisYear": "Résultat depuis le {{date}}",
+        "profitEarlier": "Résultats antérieurs non clôturés",
+        "totalLiabilitiesEquity": "Total des dettes et capitaux propres",
+        "balanced": "L’actif est égal au passif",
+        "notBalanced": "L’actif n’est pas égal au passif"
+      }
     }
   },
   "taxes": {

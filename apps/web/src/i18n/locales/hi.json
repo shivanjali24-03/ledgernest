@@ -1287,6 +1287,49 @@
       "totalIn": "{{currency}} में कुल",
       "daysLate": "देय {{due}} · {{count}} दिन विलंब",
       "due": "देय {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "लाभ और हानि",
+      "bsTitle": "तुलन पत्र",
+      "account": "खाता",
+      "change": "बदलाव",
+      "totalOf": "कुल {{section}}",
+      "empty": "इन तारीख़ों के लिए दिखाने को कुछ नहीं",
+      "emptyBody": "कुछ प्रविष्टियाँ पोस्ट करें, या दूसरी तारीख़ें चुनें।",
+      "compare": "तुलना करें",
+      "compares": {
+        "none": "कुछ नहीं",
+        "previous": "पिछली अवधि",
+        "year": "पिछला साल",
+        "months": "महीनेवार"
+      },
+      "compareWith": "दूसरी तारीख़ से तुलना करें",
+      "compareDate": "तुलना की तारीख़",
+      "pnl": {
+        "revenue": "राजस्व",
+        "costOfSales": "बिक्री की लागत",
+        "grossProfit": "सकल लाभ",
+        "operatingExpenses": "परिचालन व्यय",
+        "operatingProfit": "परिचालन लाभ",
+        "otherIncome": "अन्य आय",
+        "otherExpenses": "अन्य व्यय",
+        "netProfit": "शुद्ध लाभ",
+        "netLoss": "शुद्ध हानि"
+      },
+      "bs": {
+        "currentAssets": "चालू परिसंपत्तियाँ",
+        "nonCurrentAssets": "गैर-चालू परिसंपत्तियाँ",
+        "totalAssets": "कुल परिसंपत्तियाँ",
+        "currentLiabilities": "चालू देनदारियाँ",
+        "nonCurrentLiabilities": "गैर-चालू देनदारियाँ",
+        "totalLiabilities": "कुल देनदारियाँ",
+        "equity": "इक्विटी",
+        "profitThisYear": "{{date}} से लाभ",
+        "profitEarlier": "पिछले वर्षों का लाभ, अभी बंद नहीं",
+        "totalLiabilitiesEquity": "कुल देनदारियाँ और इक्विटी",
+        "balanced": "परिसंपत्तियाँ देनदारियों और इक्विटी के बराबर हैं",
+        "notBalanced": "परिसंपत्तियाँ देनदारियों और इक्विटी के बराबर नहीं हैं"
+      }
     }
   },
   "taxes": {
