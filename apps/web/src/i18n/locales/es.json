@@ -529,7 +529,9 @@
       "settings": "Configuración",
       "accounts": "Cuentas",
       "periods": "Ejercicios fiscales",
-      "journals": "Asientos contables"
+      "journals": "Asientos contables",
+      "taxes": "Impuestos",
+      "gstSlabs": "Tramos de GST"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -578,7 +580,19 @@
       "org_journal_post": "Asiento contabilizado",
       "org_journal_reverse": "Asiento revertido",
       "org_journal_attach": "Documento adjuntado",
-      "org_journal_detach": "Documento quitado"
+      "org_journal_detach": "Documento quitado",
+      "org_tax_rate_create": "Tipo impositivo añadido",
+      "org_tax_rate_update": "Tipo impositivo editado",
+      "org_tax_rate_archive": "Tipo impositivo archivado",
+      "org_tax_rate_restore": "Tipo impositivo restaurado",
+      "org_tax_group_create": "Grupo de impuestos añadido",
+      "org_tax_group_update": "Grupo de impuestos renombrado",
+      "org_tax_group_archive": "Grupo de impuestos archivado",
+      "org_tax_group_restore": "Grupo de impuestos restaurado",
+      "org_tax_setup_gst": "GST configurado",
+      "platform_gst_slab_create": "Tramo de GST añadido",
+      "platform_gst_slab_update": "Tramo de GST editado",
+      "platform_gst_slab_delete": "Tramo de GST eliminado"
     },
     "entities": {
       "membership": "Miembro",
@@ -589,7 +603,10 @@
       "account": "Cuenta",
       "fiscal_year": "Ejercicio fiscal",
       "period": "Mes",
-      "journal": "Asiento contable"
+      "journal": "Asiento contable",
+      "tax_rate": "Tipo impositivo",
+      "tax_group": "Grupo de impuestos",
+      "gst_slab": "Tramo de GST"
     },
     "fields": {
       "user": "Persona",
@@ -645,7 +662,19 @@
       "reversal": "Reversión",
       "fileName": "Archivo",
       "date": "Fecha",
-      "memo": "Concepto"
+      "memo": "Concepto",
+      "kind": "Impuesto",
+      "rate": "Tipo",
+      "label": "Etiqueta",
+      "effectiveFrom": "Vigente desde",
+      "effectiveTo": "Vigente hasta",
+      "outputAccountId": "Cuenta del impuesto en ventas",
+      "inputAccountId": "Cuenta del impuesto en compras",
+      "total": "Tipo total",
+      "rates": "Tipos",
+      "groups": "Grupos",
+      "utgst": "UTGST",
+      "state": "Estado"
     },
     "details": {
       "when": "Cuándo",

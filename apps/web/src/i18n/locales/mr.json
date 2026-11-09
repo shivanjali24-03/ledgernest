@@ -529,7 +529,9 @@
       "settings": "सेटिंग्ज",
       "accounts": "खाती",
       "periods": "आर्थिक वर्षे",
-      "journals": "जर्नल नोंदी"
+      "journals": "जर्नल नोंदी",
+      "taxes": "कर",
+      "gstSlabs": "जीएसटी स्लॅब"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -578,7 +580,19 @@
       "org_journal_post": "नोंद पोस्ट केली",
       "org_journal_reverse": "नोंद उलटवली",
       "org_journal_attach": "दस्तऐवज जोडला",
-      "org_journal_detach": "दस्तऐवज काढला"
+      "org_journal_detach": "दस्तऐवज काढला",
+      "org_tax_rate_create": "कर दर जोडला",
+      "org_tax_rate_update": "कर दर संपादित",
+      "org_tax_rate_archive": "कर दर संग्रहित",
+      "org_tax_rate_restore": "कर दर पुनर्संचयित",
+      "org_tax_group_create": "कर गट जोडला",
+      "org_tax_group_update": "कर गटाचे नाव बदलले",
+      "org_tax_group_archive": "कर गट संग्रहित",
+      "org_tax_group_restore": "कर गट पुनर्संचयित",
+      "org_tax_setup_gst": "जीएसटी सेट केला",
+      "platform_gst_slab_create": "जीएसटी स्लॅब जोडला",
+      "platform_gst_slab_update": "जीएसटी स्लॅब संपादित",
+      "platform_gst_slab_delete": "जीएसटी स्लॅब हटवला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -589,7 +603,10 @@
       "account": "खाते",
       "fiscal_year": "आर्थिक वर्ष",
       "period": "महिना",
-      "journal": "जर्नल नोंद"
+      "journal": "जर्नल नोंद",
+      "tax_rate": "कर दर",
+      "tax_group": "कर गट",
+      "gst_slab": "जीएसटी स्लॅब"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -645,7 +662,19 @@
       "reversal": "उलट नोंद",
       "fileName": "फाइल",
       "date": "तारीख",
-      "memo": "तपशील"
+      "memo": "तपशील",
+      "kind": "कर",
+      "rate": "दर",
+      "label": "नाव",
+      "effectiveFrom": "पासून लागू",
+      "effectiveTo": "पर्यंत लागू",
+      "outputAccountId": "विक्रीवरील कराचे खाते",
+      "inputAccountId": "खरेदीवरील कराचे खाते",
+      "total": "एकूण दर",
+      "rates": "दर",
+      "groups": "गट",
+      "utgst": "यूटीजीएसटी",
+      "state": "राज्य"
     },
     "details": {
       "when": "केव्हा",

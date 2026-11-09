@@ -99,6 +99,10 @@ export class AccountsService {
     return JournalsService.accountsHaveLines(tx, organizationId, accountIds);
   }
 
+  private async usedByTax(tx: Tx, organizationId: string, id: string) {
+    return (await tx.taxRate.count({ where: { organizationId, OR: [{ outputAccountId: id }, { inputAccountId: id }] } })) > 0;
+  }
+
   private lock(tx: Tx, organizationId: string) {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'accounts:' + organizationId}))`;
   }
@@ -206,6 +210,7 @@ export class AccountsService {
       if (changed.includes('type')) {
         if (childCount) throw refuse(ConflictException, 'An account with sub-accounts can’t change type.', 'has_children');
         if (await this.hasEntries(tx, organizationId, [id])) throw refuse(ConflictException, 'An account with entries can’t change type.', 'has_entries');
+        if (await this.usedByTax(tx, organizationId, id)) throw refuse(ConflictException, 'A tax rate posts to this account, so its type can’t change.', 'used_by_tax');
       }
       if (!subtypeBelongsTo(type, subtype)) throw refuse(BadRequestException, 'Choose a sub-type that belongs to this type.', 'subtype');
 
@@ -278,6 +283,7 @@ export class AccountsService {
       if (a.systemKey) throw refuse(BadRequestException, 'System accounts can’t be deleted.', 'system');
       if (await tx.account.count({ where: { organizationId, parentId: id } })) throw refuse(ConflictException, 'Delete or move its sub-accounts first.', 'has_children');
       if (await this.hasEntries(tx, organizationId, [id])) throw refuse(ConflictException, 'This account has entries. Archive it instead.', 'has_entries');
+      if (await this.usedByTax(tx, organizationId, id)) throw refuse(ConflictException, 'A tax rate posts to this account. Change the tax rate first.', 'used_by_tax');
       await tx.account.delete({ where: { id } });
       await this.audit.record({ action: 'org.account.delete', actorId: ctx.actor.userId, organizationId, entityType: 'account', entityId: id, before: snapshot(a), req: ctx.req }, tx);
     });

@@ -176,6 +176,13 @@ How a request is checked:
 - Posted entries are immutable: corrections are made with a reversing entry.
 - Periods can be locked; nothing posts into a locked period.
 
+## Taxes
+
+- **Rates in parts per million.** 18% is stored as 180000 and CGST on the 0.25% slab (0.125%) as 1250, so tax maths is integer-only like money.
+- **Rates and groups.** A rate is one component (CGST 9%) with the accounts it posts to: a liability for tax on sales and an asset (input credit) for tax on purchases. A group bundles rates and is what a line picks (GST 18% = CGST 9% + SGST 9%). Percentages and a group's rates never change once created, so what an entry was taxed at can't shift underneath it.
+- **GST slabs (India).** A platform-wide table the Super Admin manages. A slab's rate never changes; when the GST Council changes rates, the old slab gets an end date and a new one starts. The database refuses two slabs of the same rate in force on the same day (an `EXCLUDE` constraint), and a slab an organisation uses can only be retired, not deleted.
+- **GST setup.** One step creates the input and output accounts (reusing the industry template's 1300/2100 accounts), the rates, and for each slab an intra-state group (half CGST, half SGST) and an inter-state group (IGST at the full rate). Union Territories without a legislature (Chandigarh, Ladakh, Lakshadweep, Andaman and Nicobar, Dadra and Nagar Haveli and Daman and Diu) get UTGST instead of SGST, decided from the organisation's state. Running it again only adds what's missing.
+
 ## Decisions
 
 Architecture decision records live in [`docs/adr`](adr).

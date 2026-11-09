@@ -36,11 +36,11 @@ model User {
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
-  memberships   Membership[]
-  invitesSent   Invitation[]   @relation("InvitedBy")
-  auditEntries  AuditLog[]
-  refreshTokens RefreshToken[]
-  periodsClosed Period[]       @relation("PeriodClosedBy")
+  memberships     Membership[]
+  invitesSent     Invitation[]   @relation("InvitedBy")
+  auditEntries    AuditLog[]
+  refreshTokens   RefreshToken[]
+  periodsClosed   Period[]       @relation("PeriodClosedBy")
   journalsCreated JournalEntry[] @relation("JournalCreatedBy")
   journalsPosted  JournalEntry[] @relation("JournalPostedBy")
 
@@ -71,17 +71,20 @@ model Organization {
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
-  memberships  Membership[]
-  roles        Role[]
-  invitations  Invitation[]
-  auditEntries AuditLog[]
-  logo         OrganizationLogo?
-  accounts     Account[]
-  fiscalYears  FiscalYear[]
-  periods      Period[]
-  journals     JournalEntry[]
-  journalLines JournalLine[]
-  journalFiles JournalAttachment[]
+  memberships   Membership[]
+  roles         Role[]
+  invitations   Invitation[]
+  auditEntries  AuditLog[]
+  logo          OrganizationLogo?
+  accounts      Account[]
+  fiscalYears   FiscalYear[]
+  periods       Period[]
+  journals      JournalEntry[]
+  journalLines  JournalLine[]
+  journalFiles  JournalAttachment[]
+  taxRates      TaxRate[]
+  taxGroups     TaxGroup[]
+  taxGroupRates TaxGroupRate[]
 
   @@map("organizations")
 }
@@ -114,10 +117,12 @@ model Account {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   /// Composite key: a parent always belongs to the same organisation, enforced by the database
-  parent       Account?     @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
-  children     Account[]    @relation("AccountTree")
+  parent       Account?      @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
+  children     Account[]     @relation("AccountTree")
+  taxOutputs   TaxRate[]     @relation("TaxOutputAccount")
+  taxInputs    TaxRate[]     @relation("TaxInputAccount")
   lines        JournalLine[]
 
   @@unique([organizationId, id])
@@ -136,7 +141,7 @@ model FiscalYear {
   endDate        DateTime @map("end_date") @db.Date
   createdAt      DateTime @default(now()) @map("created_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   periods      Period[]
   journals     JournalEntry[]
 
@@ -349,4 +354,77 @@ model RefreshToken {
   @@index([familyId])
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+/// A GST slab India's GST Council has set (0%, 5%, 18%, 40%…). Platform-wide and managed by the Super Admin;
+/// organisations build their tax groups from it. A rate never changes: a slab is retired with an end date.
+model GstSlab {
+  id            String    @id @default(uuid()) @db.Uuid
+  ratePpm       Int       @map("rate_ppm") /// parts per million: 180000 = 18%
+  label         String
+  description   String?
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  groups TaxGroup[]
+
+  @@index([effectiveFrom])
+  @@map("gst_slabs")
+}
+
+/// One tax component (CGST 9%, VAT 20%) and the accounts it posts to.
+model TaxRate {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  name            String
+  kind            String /// cgst | sgst | utgst | igst | cess | vat | sales_tax | other
+  ratePpm         Int       @map("rate_ppm")
+  outputAccountId String    @map("output_account_id") @db.Uuid /// tax on sales, a liability
+  inputAccountId  String?   @map("input_account_id") @db.Uuid /// tax on purchases, an asset (input credit)
+  archivedAt      DateTime? @map("archived_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  outputAccount Account        @relation("TaxOutputAccount", fields: [organizationId, outputAccountId], references: [organizationId, id], onDelete: NoAction)
+  inputAccount  Account?       @relation("TaxInputAccount", fields: [organizationId, inputAccountId], references: [organizationId, id], onDelete: NoAction)
+  groups        TaxGroupRate[]
+
+  @@unique([organizationId, id])
+  @@map("tax_rates")
+}
+
+/// What a line picks: one or more rates charged together (GST 18% = CGST 9% + SGST 9%).
+model TaxGroup {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  gstSlabId      String?   @map("gst_slab_id") @db.Uuid /// set when made from a GST slab
+  supply         String? /// intra | inter, for GST groups
+  archivedAt     DateTime? @map("archived_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  gstSlab      GstSlab?       @relation(fields: [gstSlabId], references: [id], onDelete: Restrict)
+  rates        TaxGroupRate[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, gstSlabId, supply])
+  @@map("tax_groups")
+}
+
+model TaxGroupRate {
+  organizationId String @map("organization_id") @db.Uuid
+  groupId        String @map("group_id") @db.Uuid
+  rateId         String @map("rate_id") @db.Uuid
+  position       Int
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  group        TaxGroup     @relation(fields: [organizationId, groupId], references: [organizationId, id], onDelete: Cascade)
+  rate         TaxRate      @relation(fields: [organizationId, rateId], references: [organizationId, id], onDelete: NoAction)
+
+  @@id([groupId, rateId])
+  @@index([organizationId, rateId])
+  @@map("tax_group_rates")
 }

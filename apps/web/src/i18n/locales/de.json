@@ -529,7 +529,9 @@
       "settings": "Einstellungen",
       "accounts": "Konten",
       "periods": "Geschäftsjahre",
-      "journals": "Buchungen"
+      "journals": "Buchungen",
+      "taxes": "Steuern",
+      "gstSlabs": "GST-Sätze"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -578,7 +580,19 @@
       "org_journal_post": "Buchung gebucht",
       "org_journal_reverse": "Buchung storniert",
       "org_journal_attach": "Beleg angehängt",
-      "org_journal_detach": "Beleg entfernt"
+      "org_journal_detach": "Beleg entfernt",
+      "org_tax_rate_create": "Steuersatz hinzugefügt",
+      "org_tax_rate_update": "Steuersatz bearbeitet",
+      "org_tax_rate_archive": "Steuersatz archiviert",
+      "org_tax_rate_restore": "Steuersatz wiederhergestellt",
+      "org_tax_group_create": "Steuergruppe hinzugefügt",
+      "org_tax_group_update": "Steuergruppe umbenannt",
+      "org_tax_group_archive": "Steuergruppe archiviert",
+      "org_tax_group_restore": "Steuergruppe wiederhergestellt",
+      "org_tax_setup_gst": "GST eingerichtet",
+      "platform_gst_slab_create": "GST-Satz hinzugefügt",
+      "platform_gst_slab_update": "GST-Satz bearbeitet",
+      "platform_gst_slab_delete": "GST-Satz gelöscht"
     },
     "entities": {
       "membership": "Mitglied",
@@ -589,7 +603,10 @@
       "account": "Konto",
       "fiscal_year": "Geschäftsjahr",
       "period": "Monat",
-      "journal": "Buchung"
+      "journal": "Buchung",
+      "tax_rate": "Steuersatz",
+      "tax_group": "Steuergruppe",
+      "gst_slab": "GST-Satz"
     },
     "fields": {
       "user": "Person",
@@ -645,7 +662,19 @@
       "reversal": "Storno",
       "fileName": "Datei",
       "date": "Datum",
-      "memo": "Buchungstext"
+      "memo": "Buchungstext",
+      "kind": "Steuer",
+      "rate": "Satz",
+      "label": "Bezeichnung",
+      "effectiveFrom": "Gültig ab",
+      "effectiveTo": "Gültig bis",
+      "outputAccountId": "Konto für Umsatzsteuer",
+      "inputAccountId": "Konto für Vorsteuer",
+      "total": "Gesamtsatz",
+      "rates": "Sätze",
+      "groups": "Gruppen",
+      "utgst": "UTGST",
+      "state": "Bundesstaat"
     },
     "details": {
       "when": "Wann",

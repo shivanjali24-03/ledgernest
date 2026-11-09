@@ -9,3 +9,4 @@ export * from './organization/index.js';
 export * from './accounts/index.js';
 export * from './periods/index.js';
 export * from './journals/index.js';
+export * from './taxes/index.js';
