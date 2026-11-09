@@ -23,6 +23,7 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { BillsModule } from './bills/bills.module.js';
 import { CreditNotesModule } from './credit-notes/credit-notes.module.js';
 import { RecurringModule } from './recurring/recurring.module.js';
+import { BankingModule } from './banking/banking.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -51,6 +52,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     BillsModule,
     CreditNotesModule,
     RecurringModule,
+    BankingModule,
     PlatformModule,
   ],
   providers: [

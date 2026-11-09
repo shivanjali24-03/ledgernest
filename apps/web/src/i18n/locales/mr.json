@@ -544,7 +544,8 @@
       "items": "उत्पादने आणि सेवा",
       "invoices": "बीजके",
       "payments": "जमा आणि देयके",
-      "bills": "बिले"
+      "bills": "बिले",
+      "banking": "बँकिंग"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -645,7 +646,10 @@
       "org_recurring_pause": "आवर्ती वेळापत्रक थांबवले",
       "org_recurring_resume": "आवर्ती वेळापत्रक पुन्हा सुरू",
       "org_recurring_delete": "आवर्ती वेळापत्रक हटवले",
-      "org_recurring_raise": "वेळापत्रकातून इनव्हॉइस तयार"
+      "org_recurring_raise": "वेळापत्रकातून इनव्हॉइस तयार",
+      "org_banking_spend": "पैसे खर्च केले",
+      "org_banking_receive": "पैसे मिळाले",
+      "org_banking_void": "बँक व्यवहार रद्द केला"
     },
     "entities": {
       "membership": "सदस्य",

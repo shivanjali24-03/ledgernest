@@ -97,6 +97,7 @@ model Organization {
   creditNoteLines    CreditNoteLine[]
   creditApplications CreditApplication[]
   recurringInvoices  RecurringInvoice[]
+  bankTransactions   BankTransaction[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -150,6 +151,8 @@ model Account {
   creditNoteReceivables CreditNote[]        @relation("CreditNoteReceivable")
   creditNoteIncome      CreditNoteLine[]    @relation("CreditNoteLineAccount")
   creditRefundBanks     CreditApplication[] @relation("CreditRefundBank")
+  bankTransactions      BankTransaction[]   @relation("BankTransactionAccount")
+  bankTransfersIn       BankTransaction[]   @relation("BankTransferTo")
 
   paymentBanks Payment[] @relation("PaymentBank")
 
@@ -254,9 +257,11 @@ model JournalEntry {
   bill       Bill? @relation("BillEntry")
   voidedBill Bill? @relation("BillVoidEntry")
 
-  creditNote       CreditNote?        @relation("CreditNoteEntry")
-  voidedCreditNote CreditNote?        @relation("CreditNoteVoidEntry")
-  creditRefund     CreditApplication? @relation("CreditRefundEntry")
+  creditNote            CreditNote?        @relation("CreditNoteEntry")
+  voidedCreditNote      CreditNote?        @relation("CreditNoteVoidEntry")
+  creditRefund          CreditApplication? @relation("CreditRefundEntry")
+  bankTransaction       BankTransaction?   @relation("BankTransactionEntry")
+  voidedBankTransaction BankTransaction?   @relation("BankTransactionVoidEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -578,6 +583,7 @@ model Contact {
   invoices          Invoice[]
   creditNotes       CreditNote[]
   recurringInvoices RecurringInvoice[]
+  bankTransactions  BankTransaction[]
 
   payments Payment[]
 
@@ -982,4 +988,48 @@ model RecurringInvoice {
   @@unique([organizationId, id])
   @@index([status, nextDate])
   @@map("recurring_invoices")
+}
+
+/// Money in or out of a bank or cash account that isn't an invoice or bill, or a transfer between two of them.
+model BankTransaction {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  kind           String /// spend | receive | transfer
+  status         String    @default("posted") /// posted | void
+  /// The account money leaves (spend, transfer) or arrives in (receive)
+  bankAccountId  String    @map("bank_account_id") @db.Uuid
+  /// A transfer's other account
+  toAccountId    String?   @map("to_account_id") @db.Uuid
+  date           DateTime  @db.Date
+  contactId      String?   @map("contact_id") @db.Uuid
+  reference      String?
+  description    String?
+  /// The bank account's currency (null = base); a transfer's receiving side may differ
+  currency       String?   @db.Char(3)
+  amount         BigInt
+  toCurrency     String?   @map("to_currency") @db.Char(3)
+  toAmount       BigInt?   @map("to_amount")
+  rate           Decimal?  @db.Decimal(20, 10)
+  taxInclusive   Boolean   @default(false) @map("tax_inclusive")
+  /// What each line went to, as entered
+  lines          Json?
+  journalEntryId String    @map("journal_entry_id") @db.Uuid
+  voidEntryId    String?   @map("void_entry_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  voidedAt       DateTime? @map("voided_at")
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccount  Account       @relation("BankTransactionAccount", fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  toAccount    Account?      @relation("BankTransferTo", fields: [organizationId, toAccountId], references: [organizationId, id], onDelete: NoAction)
+  contact      Contact?      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry JournalEntry  @relation("BankTransactionEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry    JournalEntry? @relation("BankTransactionVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, journalEntryId])
+  @@unique([organizationId, voidEntryId])
+  @@index([organizationId, bankAccountId, date])
+  @@index([organizationId, toAccountId, date])
+  @@map("bank_transactions")
 }

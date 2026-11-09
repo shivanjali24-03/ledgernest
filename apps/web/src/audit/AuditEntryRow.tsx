@@ -23,6 +23,7 @@ const ICONS: Record<AuditActionGroup, LucideIcon> = {
   invoices: FileText,
   payments: HandCoins,
   bills: Receipt,
+  banking: Landmark,
   gstSlabs: Landmark,
   signIns: LogIn,
   members: Users,
