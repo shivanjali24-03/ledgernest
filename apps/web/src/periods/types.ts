@@ -21,6 +21,8 @@ export interface FiscalYear {
   endDate: string;
   current: boolean;
   closed: boolean;
+  /** The entry that moved the year's profit to retained earnings when its last month closed */
+  closingEntry: { id: string; number: string } | null;
   periods: FiscalPeriod[];
 }
 
@@ -40,4 +42,6 @@ export interface PeriodsApi {
   createYear(startYear: number): Promise<{ id: string; name: string; startDate: string; endDate: string }>;
   close(periodId: string, reason?: string): Promise<void>;
   reopen(periodId: string, reason?: string): Promise<void>;
+  /** The profit (negative: loss) closing this year would move to retained earnings */
+  yearEnd(yearId: string): Promise<{ name: string; profit: number; accounts: number }>;
 }

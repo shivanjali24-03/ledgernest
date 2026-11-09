@@ -140,13 +140,17 @@ model FiscalYear {
   startDate      DateTime @map("start_date") @db.Date
   endDate        DateTime @map("end_date") @db.Date
   createdAt      DateTime @default(now()) @map("created_at")
+  /// The entry that moved the year's profit to retained earnings when its last month closed (none if there was nothing to move)
+  closingEntryId String?  @map("closing_entry_id") @db.Uuid
 
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   periods      Period[]
-  journals     JournalEntry[]
+  journals     JournalEntry[] @relation("FiscalYearEntries")
+  closingEntry JournalEntry?  @relation("YearClosingEntry", fields: [organizationId, closingEntryId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, startDate])
+  @@unique([organizationId, closingEntryId])
   @@map("fiscal_years")
 }
 
@@ -193,7 +197,8 @@ model JournalEntry {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  fiscalYear   FiscalYear?         @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  fiscalYear   FiscalYear?         @relation("FiscalYearEntries", fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  closesYear   FiscalYear?         @relation("YearClosingEntry")
   reversalOf   JournalEntry?       @relation("Reversal", fields: [organizationId, reversalOfId], references: [organizationId, id], onDelete: NoAction)
   reversedBy   JournalEntry?       @relation("Reversal")
   createdBy    User?               @relation("JournalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

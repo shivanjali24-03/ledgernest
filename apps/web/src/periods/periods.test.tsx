@@ -4,6 +4,9 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { fiscalYearName, fiscalYearOf, todayIn } from '@ledgernest/shared';
 import AppProviders from '../AppProviders';
 import { routes } from '../routes';
+import { resetDemoAccounts } from '../accounts/demoAccountsApi';
+import { resetDemoJournals } from '../journals/demoJournalsApi';
+import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoPeriods } from './demoPeriodsApi';
 
 function renderApp(path = '/periods') {
@@ -21,6 +24,9 @@ const thisYear = fiscalYearOf(todayIn('Asia/Kolkata'), 4);
 
 beforeEach(() => {
   resetDemoPeriods();
+  resetDemoJournals();
+  resetDemoAccounts();
+  resetDemoTaxes();
   sessionStorage.clear();
 });
 
@@ -73,4 +79,32 @@ describe('financial years', () => {
     expect(screen.queryByRole('button', { name: 'Add next financial year' })).not.toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: fiscalYearName(thisYear, 4) })).toBeInTheDocument();
   });
+
+  it("closes the year with its last month, moving the year's result to retained earnings, and reopening reverses it", async () => {
+    renderApp();
+    const yearName = fiscalYearName(thisYear, 4);
+    await screen.findByRole('heading', { name: yearName });
+    // Close month after month until the year's last one, which offers "Close year"
+    for (let i = 0; i < 13 && !screen.queryByRole('button', { name: 'Close year' }); i++) {
+      await userEvent.click(await screen.findByRole('button', { name: 'Close month' }));
+      await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Close month' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      await screen.findByRole('button', { name: /^Close (month|year)$/ }, { timeout: 4000 });
+    }
+    await userEvent.click(screen.getByRole('button', { name: 'Close year' }));
+    const dialog = await screen.findByRole('dialog', { name: `Close ${yearName}?` });
+    // This month's sample entries: ₹1,00,000 of sales against rent, salaries and the AWS bill
+    expect(await within(dialog).findByText('A loss of ₹4,43,200.00 moves to Retained earnings.', {}, { timeout: 4000 })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Close year' }));
+    expect(await screen.findByText(`${yearName} closed`, {}, { timeout: 4000 })).toBeInTheDocument();
+    const link = await screen.findByRole('link', { name: /^JV\// }, { timeout: 4000 });
+    expect(link.closest('header')).toHaveTextContent('Closed with');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reopen' }));
+    const reopen = await screen.findByRole('dialog', { name: `Reopen ${yearName}?` });
+    expect(reopen).toHaveTextContent(`the year-end entry ${link.textContent} is reversed`);
+    await userEvent.click(within(reopen).getByRole('button', { name: 'Reopen' }));
+    expect(await screen.findByText(`${yearName} reopened`, {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Closed with')).not.toBeInTheDocument());
+  }, 30_000);
 });

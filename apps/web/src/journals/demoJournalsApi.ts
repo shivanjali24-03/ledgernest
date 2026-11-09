@@ -2,7 +2,7 @@ import { enteredLines, expandTax, journalDraftSchema, journalNumber, postingProb
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi, demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
-import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
+import { createDemoPeriodsApi, demoClosingEntryIds } from '../periods/demoPeriodsApi';
 import type { JournalEntry, JournalsApi, JournalSummary } from './types';
 
 /**
@@ -118,7 +118,19 @@ export const resetDemoJournals = () => {
   }
 };
 
-export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.post' | 'journals.reverse') => boolean): JournalsApi {
+/** What the demo's financial years need from journals to close a year (the API does this inside one transaction). */
+export interface DemoYearEnd {
+  /** Income and expense balances for the range, as closing lines, and the profit (negative: loss) */
+  yearEnd(startDate: string, endDate: string): Promise<{ lines: { accountId: string; debit: number; credit: number }[]; profit: number }>;
+  /** Posts the closing entry on the year's last day; null when there was nothing to move */
+  closeYear(yearName: string, startDate: string, endDate: string): Promise<string | null>;
+  /** Reverses a closing entry when the year's last month reopens */
+  reopenYear(entryId: string, yearName: string, endDate: string): Promise<void>;
+  /** The entry's number, e.g. JV/2025-26/0012 */
+  numberOf(entryId: string): Promise<string | null>;
+}
+
+export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.post' | 'journals.reverse') => boolean): JournalsApi & DemoYearEnd {
   const accounts = createDemoAccountsApi(() => true);
   const periods = createDemoPeriodsApi(() => true);
 
@@ -218,10 +230,10 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     if (tooSmall !== null) throw refuse(400, 'tax_too_small', { line: tooSmall });
     return rows;
   };
-  const postInto = async (all: Stored[], e: Stored) => {
+  const postInto = async (all: Stored[], e: Stored, { system = false } = {}) => {
     const problem = postingProblem(e.lines);
     if (problem) throw refuse(400, problem, totals(e.lines));
-    await checkAccounts(e.lines);
+    if (!system) await checkAccounts(e.lines);
     const info = await dayInfo(e.date);
     if (info.status === 'no_period') throw refuse(409, 'no_period');
     if (info.status === 'closed') throw refuse(409, 'period_closed');
@@ -236,7 +248,55 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     return e;
   };
 
+  const reversalOf = (e: Stored, date: string, memo: string): Stored => ({
+    id: crypto.randomUUID(),
+    number: null,
+    yearName: null,
+    date,
+    memo,
+    reference: e.reference,
+    status: 'draft',
+    reversalOfId: e.id,
+    postedAt: null,
+    createdAt: new Date().toISOString(),
+    lines: e.lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit })),
+    attachments: [],
+  });
+  const yearEnd = async (startDate: string, endDate: string) => {
+    const all = await load();
+    const types = new Map(demoAccountRows().map((a) => [a.id, a.type]));
+    const net = new Map<string, number>();
+    for (const e of all) {
+      if (e.status !== 'posted' || e.date < startDate || e.date > endDate) continue;
+      for (const l of e.lines) if (['income', 'expense'].includes(types.get(l.accountId) ?? '')) net.set(l.accountId, (net.get(l.accountId) ?? 0) + l.debit - l.credit);
+    }
+    const lines = [...net].filter(([, n]) => n !== 0).map(([accountId, n]) => ({ accountId, debit: n < 0 ? -n : 0, credit: n > 0 ? n : 0 }));
+    return { lines, profit: -[...net.values()].reduce((a, b) => a + b, 0) };
+  };
+
   return {
+    yearEnd,
+    async closeYear(yearName, startDate, endDate) {
+      const { lines, profit } = await yearEnd(startDate, endDate);
+      if (!lines.length) return null;
+      if (profit) lines.push({ accountId: sampleId('3900'), debit: profit < 0 ? -profit : 0, credit: profit > 0 ? profit : 0 });
+      const all = await load();
+      const e: Stored = { id: crypto.randomUUID(), number: null, yearName: null, date: endDate, memo: `Year-end close ${yearName}`, reference: null, status: 'draft', reversalOfId: null, postedAt: null, createdAt: new Date().toISOString(), lines: lines.map((l) => ({ ...l, description: null })), attachments: [] };
+      await postInto(all, e, { system: true });
+      all.push(e);
+      save(all);
+      return e.id;
+    },
+    async reopenYear(entryId, yearName, endDate) {
+      const all = await load();
+      const r = reversalOf(find(all, entryId), endDate, `Year-end close of ${yearName} reversed (year reopened)`);
+      await postInto(all, r, { system: true });
+      all.push(r);
+      save(all);
+    },
+    async numberOf(entryId) {
+      return label((await load()).find((x) => x.id === entryId));
+    },
     list: (q) =>
       wait(async () => {
         const all = await load();
@@ -322,20 +382,8 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         if (e.status !== 'posted') throw refuse(409, 'not_posted');
         if (all.some((x) => x.reversalOfId === id)) throw refuse(409, 'already_reversed');
         if (e.reversalOfId) throw refuse(409, 'is_reversal');
-        const r: Stored = {
-          id: crypto.randomUUID(),
-          number: null,
-          yearName: null,
-          date: input.date ?? e.date,
-          memo: input.memo || `Reversal of ${label(e)}`,
-          reference: e.reference,
-          status: 'draft',
-          reversalOfId: id,
-          postedAt: null,
-          createdAt: new Date().toISOString(),
-          lines: e.lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit })),
-          attachments: [],
-        };
+        if (demoClosingEntryIds().includes(id)) throw refuse(409, 'closing_entry');
+        const r = reversalOf(e, input.date ?? e.date, input.memo || `Reversal of ${label(e)}`);
         await postInto(all, r);
         all.push(r);
         save(all);

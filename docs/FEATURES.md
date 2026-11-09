@@ -41,7 +41,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | ✅ #42 |
 | General ledger | Every posted line per account with running balance and drill-down | ✅ #43 |
 | Trial balance | Balances of all accounts at any date | ✅ #43 |
-| Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41 (year-end close with #42) |
+| Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41, year-end close #58 |
 | Multi-currency | Transactions in any currency, exchange rates, realised and unrealised gain/loss | 📋 |
 | Taxes | Configurable GST / VAT / sales-tax rates and groups, tax on lines, tax summary. India: the Super Admin keeps the GST slab list (0%, 0.25%, 3%, 5%, 18%, 40% since GST 2.0; 12% and 28% kept for older entries), and an organisation sets up CGST + SGST/UTGST and IGST groups in one step | ✅ #45 |
 

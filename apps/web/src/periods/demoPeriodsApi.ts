@@ -1,5 +1,6 @@
 import { fiscalYearName, fiscalYearOf, fiscalYearSpan, todayIn } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import type { FiscalPeriod, FiscalYearsResponse, PeriodsApi } from './types';
 
 /**
@@ -9,7 +10,7 @@ import type { FiscalPeriod, FiscalYearsResponse, PeriodsApi } from './types';
 const KEY = 'ledgernest.demo.periods';
 const START_MONTH = 4;
 type StoredPeriod = { id: string; yearId: string; number: number; startDate: string; endDate: string; status: 'open' | 'closed'; closedAt: string | null; closeReason: string | null };
-type StoredYear = { id: string; name: string; startDate: string; endDate: string; startYear: number };
+type StoredYear = { id: string; name: string; startDate: string; endDate: string; startYear: number; closingEntryId?: string | null };
 type State = { years: StoredYear[]; periods: StoredPeriod[] };
 
 const today = () => todayIn('Asia/Kolkata');
@@ -58,17 +59,23 @@ export const resetDemoPeriods = () => {
   }
 };
 
+/** Entries that closed a year, which can't be reversed by hand (the demo journals check this) */
+export const demoClosingEntryIds = () => load().years.map((y) => y.closingEntryId).filter((x): x is string => !!x);
+
 const refuse = (status: 400 | 409, reason: string) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason });
-const wait = <T>(fn: () => T) => new Promise<T>((resolve, reject) => setTimeout(() => (async () => fn())().then(resolve, reject), 150));
+const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 
 export function createDemoPeriodsApi(can: (permission: 'periods.close' | 'periods.reopen') => boolean): PeriodsApi {
+  // Created when needed: the demo journals use the demo periods too
+  const journals = () => createDemoJournalsApi(() => true);
   const guard = (p: 'periods.close' | 'periods.reopen') => {
     if (!can(p)) throw new ApiError('forbidden', 403, undefined, undefined, { missing: [p] });
   };
   return {
     list: () =>
-      wait((): FiscalYearsResponse => {
+      wait(async (): Promise<FiscalYearsResponse> => {
         const s = load();
+        const numbers = new Map(await Promise.all(s.years.filter((y) => y.closingEntryId).map(async (y) => [y.id, await journals().numberOf(y.closingEntryId!)] as const)));
         const t = today();
         const sorted = [...s.periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
         const firstOpen = sorted.find((p) => p.status === 'open');
@@ -88,6 +95,7 @@ export function createDemoPeriodsApi(can: (permission: 'periods.close' | 'period
               endDate: y.endDate,
               current: y.startDate <= t && t <= y.endDate,
               closed: periods.every((p) => p.status === 'closed'),
+              closingEntry: y.closingEntryId ? { id: y.closingEntryId, number: numbers.get(y.id) ?? '' } : null,
               periods: periods.map(
                 (p): FiscalPeriod => ({
                   id: p.id,
@@ -107,6 +115,13 @@ export function createDemoPeriodsApi(can: (permission: 'periods.close' | 'period
           }),
         };
       }),
+    yearEnd: (yearId) =>
+      wait(async () => {
+        const y = load().years.find((x) => x.id === yearId);
+        if (!y) throw new ApiError('not_found', 404);
+        const { lines, profit } = await journals().yearEnd(y.startDate, y.endDate);
+        return { name: y.name, profit, accounts: lines.length };
+      }),
     createYear: (startYear) =>
       wait(() => {
         guard('periods.close');
@@ -119,18 +134,21 @@ export function createDemoPeriodsApi(can: (permission: 'periods.close' | 'period
         return { id: y.id, name: y.name, startDate: y.startDate, endDate: y.endDate };
       }),
     close: (id, reason) =>
-      wait(() => {
+      wait(async () => {
         guard('periods.close');
         const s = load();
         const p = s.periods.find((x) => x.id === id);
         if (!p) throw new ApiError('not_found', 404);
         if (p.status === 'closed') throw refuse(409, 'already_closed');
         if (s.periods.some((x) => x.status === 'open' && x.startDate < p.startDate)) throw refuse(409, 'earlier_open');
+        // Closing a year's last month closes the year: its profit moves to retained earnings first
+        const year = s.years.find((y) => y.id === p.yearId)!;
+        if (p.endDate === year.endDate) year.closingEntryId = await journals().closeYear(year.name, year.startDate, year.endDate);
         Object.assign(p, { status: 'closed', closedAt: new Date().toISOString(), closeReason: reason ?? null });
         save(s);
       }),
     reopen: (id, reason) =>
-      wait(() => {
+      wait(async () => {
         guard('periods.reopen');
         const s = load();
         const p = s.periods.find((x) => x.id === id);
@@ -140,6 +158,14 @@ export function createDemoPeriodsApi(can: (permission: 'periods.close' | 'period
         Object.assign(p, { status: 'open', closedAt: null, closeReason: null });
         void reason; // the demo keeps no audit log of reopen reasons
         save(s);
+        // Reopening a closed year's last month reverses its closing entry
+        const year = s.years.find((y) => y.id === p.yearId)!;
+        if (year.closingEntryId) {
+          const entryId = year.closingEntryId;
+          year.closingEntryId = null;
+          save(s);
+          await journals().reopenYear(entryId, year.name, year.endDate);
+        }
       }),
   };
 }

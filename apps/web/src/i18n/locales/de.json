@@ -594,7 +594,9 @@
       "org_tax_setup_gst": "GST eingerichtet",
       "platform_gst_slab_create": "GST-Satz hinzugefügt",
       "platform_gst_slab_update": "GST-Satz bearbeitet",
-      "platform_gst_slab_delete": "GST-Satz gelöscht"
+      "platform_gst_slab_delete": "GST-Satz gelöscht",
+      "org_fiscal_year_close": "Geschäftsjahr abgeschlossen",
+      "org_fiscal_year_reopen": "Geschäftsjahr wieder geöffnet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -676,7 +678,9 @@
       "rates": "Sätze",
       "groups": "Gruppen",
       "utgst": "UTGST",
-      "state": "Bundesstaat"
+      "state": "Bundesstaat",
+      "profit": "Übertragenes Ergebnis",
+      "closingEntry": "Abschlussbuchung"
     },
     "details": {
       "when": "Wann",
@@ -984,7 +988,24 @@
       "already_closed": "Dieser Monat ist bereits abgeschlossen.",
       "already_open": "Dieser Monat ist bereits offen.",
       "earlier_open": "Schließen Sie zuerst frühere Monate ab: Monate werden der Reihe nach abgeschlossen.",
-      "later_closed": "Öffnen Sie zuerst spätere Monate: Monate werden in umgekehrter Reihenfolge geöffnet."
+      "later_closed": "Öffnen Sie zuerst spätere Monate: Monate werden in umgekehrter Reihenfolge geöffnet.",
+      "no_retained_earnings": "Das Konto Gewinnrücklagen fehlt, daher kann das Jahr nicht abgeschlossen werden."
+    },
+    "yearEnd": {
+      "close": "Jahr abschließen",
+      "closeTitle": "{{name}} abschließen?",
+      "closeBody": "{{month}} wird abgeschlossen, und eine Abschlussbuchung am letzten Tag setzt jedes Ertrags- und Aufwandskonto gegen Gewinnrücklagen auf null.",
+      "profit": "Ein Gewinn von {{amount}} wird in die Gewinnrücklagen übertragen.",
+      "loss": "Ein Verlust von {{amount}} wird in die Gewinnrücklagen übertragen.",
+      "nothing": "Es gibt keine Ertrags- oder Aufwandssalden zu übertragen.",
+      "working": "Ergebnis wird berechnet…",
+      "reopenTitle": "{{name}} wieder öffnen?",
+      "reopenBody": "{{month}} wird wieder geöffnet und die Abschlussbuchung {{number}} storniert, damit das Jahr korrigiert und erneut abgeschlossen werden kann.",
+      "closedWith": "Abgeschlossen mit",
+      "done": {
+        "close": "{{name}} abgeschlossen",
+        "reopen": "{{name}} wieder geöffnet"
+      }
     }
   },
   "journals": {
@@ -1084,7 +1105,8 @@
       "missing_account": "Wählen Sie für jede Zeile ein Konto.",
       "tax_group_archived": "Eine Zeile verwendet eine archivierte Steuergruppe.",
       "tax_group_not_found": "Eine Zeile verwendet eine Steuergruppe, die es nicht mehr gibt.",
-      "tax_too_small": "Dieser Betrag ist zu klein für die Steuer."
+      "tax_too_small": "Dieser Betrag ist zu klein für die Steuer.",
+      "closing_entry": "Diese Buchung hat ein Geschäftsjahr abgeschlossen. Öffnen Sie stattdessen den letzten Monat des Jahres wieder; das storniert sie."
     },
     "tax": {
       "column": "Steuer",

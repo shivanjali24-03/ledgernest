@@ -594,7 +594,9 @@
       "org_tax_setup_gst": "GST configurado",
       "platform_gst_slab_create": "Tramo de GST añadido",
       "platform_gst_slab_update": "Tramo de GST editado",
-      "platform_gst_slab_delete": "Tramo de GST eliminado"
+      "platform_gst_slab_delete": "Tramo de GST eliminado",
+      "org_fiscal_year_close": "Ejercicio cerrado",
+      "org_fiscal_year_reopen": "Ejercicio reabierto"
     },
     "entities": {
       "membership": "Miembro",
@@ -676,7 +678,9 @@
       "rates": "Tipos",
       "groups": "Grupos",
       "utgst": "UTGST",
-      "state": "Estado"
+      "state": "Estado",
+      "profit": "Resultado trasladado",
+      "closingEntry": "Asiento de cierre"
     },
     "details": {
       "when": "Cuándo",
@@ -984,7 +988,24 @@
       "already_closed": "Este mes ya está cerrado.",
       "already_open": "Este mes ya está abierto.",
       "earlier_open": "Cierra primero los meses anteriores: los meses se cierran en orden.",
-      "later_closed": "Reabre primero los meses posteriores: los meses se reabren en orden inverso."
+      "later_closed": "Reabre primero los meses posteriores: los meses se reabren en orden inverso.",
+      "no_retained_earnings": "Falta la cuenta de Resultados acumulados, así que el ejercicio no puede cerrarse."
+    },
+    "yearEnd": {
+      "close": "Cerrar ejercicio",
+      "closeTitle": "¿Cerrar {{name}}?",
+      "closeBody": "Se cierra {{month}} y un asiento de cierre en su último día deja a cero cada cuenta de ingresos y gastos contra Resultados acumulados.",
+      "profit": "Un beneficio de {{amount}} pasa a Resultados acumulados.",
+      "loss": "Una pérdida de {{amount}} pasa a Resultados acumulados.",
+      "nothing": "No hay saldos de ingresos ni gastos que trasladar.",
+      "working": "Calculando el resultado…",
+      "reopenTitle": "¿Reabrir {{name}}?",
+      "reopenBody": "Se reabre {{month}} y se revierte el asiento de cierre {{number}}, para poder corregir el ejercicio y cerrarlo de nuevo.",
+      "closedWith": "Cerrado con",
+      "done": {
+        "close": "{{name}} cerrado",
+        "reopen": "{{name}} reabierto"
+      }
     }
   },
   "journals": {
@@ -1084,7 +1105,8 @@
       "missing_account": "Elige una cuenta para cada línea.",
       "tax_group_archived": "Una línea usa un grupo de impuestos archivado.",
       "tax_group_not_found": "Una línea usa un grupo de impuestos que ya no existe.",
-      "tax_too_small": "Este importe es demasiado pequeño para llevar el impuesto."
+      "tax_too_small": "Este importe es demasiado pequeño para llevar el impuesto.",
+      "closing_entry": "Este asiento cerró un ejercicio. Reabre el último mes del ejercicio, lo que lo revierte."
     },
     "tax": {
       "column": "Impuesto",

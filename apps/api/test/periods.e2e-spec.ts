@@ -4,7 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
-import { PeriodsService } from '../src/periods/periods.service.js';
+import { dayStatus } from '../src/periods/day-status.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
 
@@ -105,7 +105,7 @@ describe('Financial years and periods (e2e)', () => {
   });
 
   it('tells journal entries whether a day is open, closed or outside every year', async () => {
-    const status = (day: string) => prisma.$transaction((tx) => PeriodsService.dayStatus(tx, orgA, day));
+    const status = (day: string) => prisma.$transaction((tx) => dayStatus(tx, orgA, day));
     expect(await status('2025-04-15')).toBe('closed');
     expect(await status('2025-05-31')).toBe('open');
     expect(await status('2030-01-01')).toBe('no_period');

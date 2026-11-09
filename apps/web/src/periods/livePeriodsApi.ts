@@ -9,5 +9,6 @@ export function createLivePeriodsApi(client: AuthClient, organizationId: string)
     createYear: (startYear) => r('', { method: 'POST', json: { startYear } }),
     close: (id, reason) => r(`/periods/${id}/close`, { method: 'POST', json: reason ? { reason } : {} }),
     reopen: (id, reason) => r(`/periods/${id}/reopen`, { method: 'POST', json: reason ? { reason } : {} }),
+    yearEnd: (yearId) => r(`/${yearId}/year-end`),
   };
 }
