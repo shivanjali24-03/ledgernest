@@ -71,7 +71,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Feature | What it means | Status |
 |---|---|---|
 | Dashboard | Cash, receivables, payables and profit from the books, twelve months of profit, and alerts (overdue, to reconcile, recurring due, months open, drafts) | ✅ #105 |
-| Profit & loss | By period with sub-accounts in their parents, beside the previous period, last year or month by month (cost centres come with Phase 6) | ✅ #102 |
+| Profit & loss | By period with sub-accounts in their parents, beside the previous period, last year, month by month or cost centre | ✅ #102 |
 | Balance sheet | At any date, current and non-current, unclosed profit in equity, beside another date | ✅ #103 |
 | Cash flow statement | Direct and indirect methods, agreeing with opening and closing cash | ✅ #104 |
 | Tax reports | Tax summary by rate; GSTR-3B with set-off and GSTR-1 (B2B, B2C, exports, credit notes, HSN), JSON for the GST portal | ✅ #106 |
