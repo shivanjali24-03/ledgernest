@@ -1,0 +1,257 @@
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useBlocker } from 'react-router';
+import { AnimatePresence, motion } from 'motion/react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { organizationSettingsSchema } from '@ledgernest/shared';
+import { Building2, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ApiError } from '../../auth/client';
+import { useAuth } from '../../auth/context';
+import { useIntlLocale } from '../../i18n';
+import { useSession } from '../../layout/session';
+import { fadeUp, spring, stagger } from '../../motion/tokens';
+import { apiErrorMessage } from '../../platform/errors';
+import { countryOptions, currencyOptions, localeOptions, monthOptions } from '../../platform/options';
+import Button from '../../ui/Button';
+import ConfirmDialog from '../../ui/ConfirmDialog';
+import { SelectField, TextField } from '../../ui/Field';
+import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
+import { useToast } from '../../ui/toastContext';
+import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField } from '../form';
+import LogoCard from '../LogoCard';
+import type { OrganizationSettings, SettingsApi } from '../types';
+import { useSettingsApi } from '../useSettingsApi';
+
+function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <Card className="p-5">
+      <h2 className="font-semibold">{title}</h2>
+      {description && <p className="mt-1 text-sm text-ink-500">{description}</p>}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">{children}</div>
+    </Card>
+  );
+}
+
+const LockedHint = ({ text }: { text: string }) => (
+  <span className="inline-flex items-center gap-1">
+    <Lock className="size-3" aria-hidden /> {text}
+  </span>
+);
+
+/** The settings form, once the current values have loaded. */
+function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi; settings: OrganizationSettings; canManage: boolean; queryKey: readonly unknown[] }) {
+  const { t } = useTranslation();
+  const locale = useIntlLocale();
+  const toast = useToast();
+  const auth = useAuth();
+  const queryClient = useQueryClient();
+  const initial = useMemo(() => toValues(settings), [settings]);
+  const [v, setV] = useState(initial);
+  const [errors, setErrors] = useState<SettingsErrors>({});
+  // Start again from the saved values whenever they change (after saving, or someone else's edit)
+  const [shownFor, setShownFor] = useState(initial);
+  if (shownFor !== initial) {
+    setShownFor(initial);
+    setV(initial);
+  }
+
+  const diff = changes(initial, v);
+  const dirty = Object.keys(diff).length > 0;
+  const set = (k: SettingsField) => (e: { target: { value: string } }) => {
+    setV((x) => ({ ...x, [k]: e.target.value }));
+    setErrors((x) => ({ ...x, [k]: undefined }));
+  };
+
+  const save = useMutation({
+    mutationFn: () => api.update(diff),
+    onSuccess: async (saved) => {
+      queryClient.setQueryData(queryKey, saved);
+      toast(t('settings.saved'));
+      // The organisation's name also appears in the top bar
+      if (diff.name && auth.mode === 'live') await auth.reload();
+    },
+    onError: (e) => {
+      if (e instanceof ApiError && e.details?.reason === 'locked') toast(t(`settings.locked.${String(e.details.field)}`), 'error');
+      else toast(apiErrorMessage(e, t), 'error');
+    },
+  });
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!dirty) return;
+    // The same rules as the API, so problems show next to the field at once
+    const result = organizationSettingsSchema.safeParse(diff);
+    if (!result.success) {
+      const next: SettingsErrors = {};
+      for (const issue of result.error.issues) {
+        const f = fieldOf(issue.path);
+        if (f) next[f] = t(`settings.errors.${f}`, { defaultValue: t('settings.errors.invalid') });
+      }
+      setErrors(next);
+      // Move to the first field with a problem once it's marked
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('form [aria-invalid="true"]')?.focus());
+      return;
+    }
+    save.mutate();
+  };
+
+  // Ask before leaving with unsaved changes, inside the app and when closing the tab
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && currentLocation.pathname !== nextLocation.pathname);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  const text = (k: SettingsField, label: string, extra: Partial<Parameters<typeof TextField>[0]> = {}) => (
+    <TextField label={label} value={v[k]} onChange={set(k)} error={errors[k]} disabled={!canManage} {...extra} />
+  );
+  const zones = useMemo(() => timeZoneOptions(locale, v.timeZone), [locale, v.timeZone]);
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-6 pb-24">
+      <Section title={t('settings.company.title')} description={t('settings.company.description')}>
+        <div className="sm:col-span-2">{text('name', t('settings.fields.name'), { autoComplete: 'organization', dir: 'auto' })}</div>
+        {text('legalName', t('settings.fields.legalName'), { dir: 'auto', hint: t('settings.hints.legalName') })}
+        {text('taxId', t('settings.fields.taxId'), { dir: 'ltr', hint: t('settings.hints.taxId'), autoCapitalize: 'characters' })}
+        {text('email', t('settings.fields.email'), { type: 'email', inputMode: 'email', dir: 'ltr', autoComplete: 'email' })}
+        {text('phone', t('settings.fields.phone'), { type: 'tel', inputMode: 'tel', dir: 'ltr', autoComplete: 'tel' })}
+      </Section>
+
+      <Section title={t('settings.address.title')}>
+        <div className="sm:col-span-2">{text('line1', t('settings.fields.line1'), { autoComplete: 'address-line1', dir: 'auto' })}</div>
+        <div className="sm:col-span-2">{text('line2', t('settings.fields.line2'), { autoComplete: 'address-line2', dir: 'auto' })}</div>
+        {text('city', t('settings.fields.city'), { autoComplete: 'address-level2', dir: 'auto' })}
+        {text('region', t('settings.fields.region'), { autoComplete: 'address-level1', dir: 'auto' })}
+        {text('postalCode', t('settings.fields.postalCode'), { autoComplete: 'postal-code', dir: 'ltr' })}
+        <SelectField label={t('settings.fields.country')} value={v.country} onChange={set('country')} disabled={!canManage} options={countryOptions(locale, t('platform.form.noCountry'))} />
+      </Section>
+
+      <Section title={t('settings.money.title')} description={t('settings.money.description')}>
+        <SelectField
+          label={t('settings.fields.baseCurrency')}
+          value={v.baseCurrency}
+          onChange={set('baseCurrency')}
+          disabled={!canManage || settings.locks.baseCurrency}
+          options={currencyOptions(locale, v.baseCurrency)}
+          hint={settings.locks.baseCurrency ? <LockedHint text={t('settings.locked.baseCurrency')} /> : t('settings.hints.baseCurrency')}
+        />
+        <SelectField
+          label={t('settings.fields.fiscalYearStartMonth')}
+          value={v.fiscalYearStartMonth}
+          onChange={set('fiscalYearStartMonth')}
+          disabled={!canManage || settings.locks.fiscalYearStartMonth}
+          options={monthOptions(locale)}
+          hint={
+            settings.locks.fiscalYearStartMonth ? (
+              <LockedHint text={t('settings.locked.fiscalYearStartMonth')} />
+            ) : (
+              t('settings.hints.fiscalYear', { span: fiscalYearSpan(Number(v.fiscalYearStartMonth), locale) })
+            )
+          }
+        />
+        <SelectField label={t('settings.fields.locale')} value={v.locale} onChange={set('locale')} disabled={!canManage} options={localeOptions(locale)} hint={t('platform.form.localeHint')} />
+        <SelectField
+          label={t('settings.fields.timeZone')}
+          value={v.timeZone}
+          onChange={set('timeZone')}
+          disabled={!canManage}
+          options={zones}
+          error={errors.timeZone}
+          hint={t('settings.hints.timeZone', { time: timeIn(v.timeZone, locale) })}
+        />
+      </Section>
+
+      {/* Appears only with unsaved changes; slides with transform so it stays smooth at high refresh rates */}
+      <AnimatePresence>
+        {canManage && dirty && (
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1, transition: spring.snappy }}
+            exit={{ y: 24, opacity: 0, transition: { duration: 0.15 } }}
+            className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-200 bg-white/95 p-3 shadow-pop backdrop-blur dark:border-ink-700 dark:bg-ink-900/95"
+            role="region"
+            aria-label={t('settings.unsaved')}
+          >
+            <p className="ps-2 text-sm font-medium">{t('settings.unsaved')}</p>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setV(initial);
+                  setErrors({});
+                }}
+              >
+                {t('settings.discard')}
+              </Button>
+              <Button type="submit" loading={save.isPending}>
+                {t('common.save')}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ConfirmDialog
+        open={blocker.state === 'blocked'}
+        title={t('settings.leave.title')}
+        body={t('settings.leave.body')}
+        confirmLabel={t('settings.leave.confirm')}
+        tone="danger"
+        onConfirm={() => blocker.proceed?.()}
+        onClose={() => blocker.reset?.()}
+      />
+    </form>
+  );
+}
+
+/** Organisation settings: company details, logo, address, money and dates. */
+export default function Settings() {
+  const { t } = useTranslation();
+  const session = useSession();
+  const api = useSettingsApi();
+  const canManage = session.permissions.has('org.settings.manage');
+  const queryKey = ['settings', session.organizationId, session.role ?? session.customRoleName] as const;
+  const query = useQuery({ queryKey, queryFn: () => api!.get(), enabled: !!api });
+
+  if (!api) {
+    return (
+      <Card>
+        <EmptyState icon={<Building2 className="size-5" />} title={t('team.noOrganization')} body={t('team.noOrganizationBody')} />
+      </Card>
+    );
+  }
+
+  return (
+    <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
+      <motion.div variants={fadeUp}>
+        <PageHeader eyebrow={<span dir="auto">{session.organization}</span>} title={t('settings.title')} description={t('settings.description')} />
+        {!canManage && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-100 px-2.5 py-1 text-xs font-medium text-ink-600 dark:bg-ink-800 dark:text-ink-300">
+            <Lock className="size-3.5" aria-hidden /> {t('settings.readOnly')}
+          </p>
+        )}
+      </motion.div>
+      <motion.div variants={fadeUp}>
+        {query.isPending ? (
+          <Card>
+            <SkeletonRows rows={8} />
+          </Card>
+        ) : query.isError ? (
+          <Card>
+            <ErrorState onRetry={() => void query.refetch()} />
+          </Card>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            {/* First on phones; the right-hand column on wide screens */}
+            <div className="lg:sticky lg:top-20 lg:order-last">
+              <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} />
+            </div>
+            <SettingsForm api={api} settings={query.data} canManage={canManage} queryKey={queryKey} />
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}

@@ -11,4 +11,5 @@ export const PlatformUsers = lazy(() => import('../platform/pages/PlatformUsers'
 export const Team = lazy(() => import('../team/pages/Team'));
 export const OrganizationAudit = lazy(() => import('../audit/pages/OrganizationAudit'));
 export const PlatformAudit = lazy(() => import('../audit/pages/PlatformAudit'));
+export const Settings = lazy(() => import('../settings/pages/Settings'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

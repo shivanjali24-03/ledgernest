@@ -617,5 +617,82 @@
       "noChanges": "Für diesen Eintrag wurden keine Werte erfasst.",
       "entryId": "Eintrags-ID"
     }
+  },
+  "settings": {
+    "title": "Organisationseinstellungen",
+    "description": "Angaben zu Ihrem Unternehmen, Logo, Adresse, Währung und Datumsangaben.",
+    "readOnly": "Nur Inhaber und Admins können diese Einstellungen ändern",
+    "saved": "Einstellungen gespeichert",
+    "unsaved": "Sie haben ungespeicherte Änderungen",
+    "discard": "Verwerfen",
+    "company": {
+      "title": "Unternehmen",
+      "description": "So erscheint Ihr Unternehmen auf Rechnungen und Berichten."
+    },
+    "address": {
+      "title": "Adresse"
+    },
+    "money": {
+      "title": "Geld und Datum",
+      "description": "Wie Beträge, Datumsangaben und Geschäftsjahre in Ihren Büchern funktionieren."
+    },
+    "fields": {
+      "name": "Anzeigename",
+      "legalName": "Rechtlicher Name",
+      "taxId": "Steuernummer",
+      "email": "E-Mail der Buchhaltung",
+      "phone": "Telefon",
+      "line1": "Adresszeile 1",
+      "line2": "Adresszeile 2",
+      "city": "Stadt",
+      "region": "Bundesland oder Region",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "baseCurrency": "Basiswährung",
+      "fiscalYearStartMonth": "Geschäftsjahr beginnt im",
+      "locale": "Zahlen- und Datumsformat",
+      "timeZone": "Zeitzone"
+    },
+    "hints": {
+      "legalName": "Wie eingetragen, für Rechnungen und Steuererklärungen.",
+      "taxId": "USt-IdNr., GSTIN oder Ähnliches.",
+      "baseCurrency": "Ihre Bücher werden in dieser Währung geführt.",
+      "fiscalYear": "Ihr Geschäftsjahr läuft {{span}}.",
+      "timeZone": "Dort ist es jetzt {{time}}. Bestimmt, auf welchen Tag eine Buchung fällt."
+    },
+    "locked": {
+      "baseCurrency": "Nach dem Buchen von Einträgen nicht mehr änderbar",
+      "fiscalYearStartMonth": "Nicht mehr änderbar, sobald Geschäftsjahre existieren"
+    },
+    "errors": {
+      "name": "Geben Sie einen Namen mit mindestens 2 Zeichen ein.",
+      "taxId": "Verwenden Sie Buchstaben, Ziffern, Leerzeichen, Punkte, Bindestriche oder Schrägstriche.",
+      "email": "Geben Sie eine gültige E-Mail-Adresse ein.",
+      "phone": "Verwenden Sie Ziffern, Leerzeichen, Klammern oder Bindestriche, optional mit + am Anfang.",
+      "timeZone": "Wählen Sie eine Zeitzone aus der Liste.",
+      "invalid": "Prüfen Sie diesen Wert."
+    },
+    "leave": {
+      "title": "Ohne Speichern verlassen?",
+      "body": "Ihre Änderungen an den Einstellungen gehen verloren.",
+      "confirm": "Verlassen"
+    },
+    "logo": {
+      "title": "Logo",
+      "hint": "PNG, JPEG oder WebP, bis 256 KB. Erscheint auf Rechnungen und Berichten.",
+      "drop": "Bild hier ablegen",
+      "none": "Noch kein Logo",
+      "upload": "Logo hochladen",
+      "replace": "Ersetzen",
+      "remove": "Entfernen",
+      "uploaded": "Logo aktualisiert",
+      "removed": "Logo entfernt",
+      "alt": "Logo von {{name}}",
+      "problems": {
+        "type": "Verwenden Sie ein PNG-, JPEG- oder WebP-Bild. SVG ist nicht erlaubt.",
+        "size": "Verwenden Sie ein Bild unter 256 KB.",
+        "mismatch": "Diese Datei ist nicht der Bildtyp, den ihr Name angibt."
+      }
+    }
   }
 }

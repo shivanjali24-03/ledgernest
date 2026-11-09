@@ -617,5 +617,82 @@
       "noChanges": "No se registraron valores para esta entrada.",
       "entryId": "ID de entrada"
     }
+  },
+  "settings": {
+    "title": "Configuración de la organización",
+    "description": "Los datos de tu empresa, logotipo, dirección, moneda y fechas.",
+    "readOnly": "Solo los propietarios y administradores pueden cambiar esta configuración",
+    "saved": "Configuración guardada",
+    "unsaved": "Tienes cambios sin guardar",
+    "discard": "Descartar",
+    "company": {
+      "title": "Empresa",
+      "description": "Cómo aparece tu negocio en facturas e informes."
+    },
+    "address": {
+      "title": "Dirección"
+    },
+    "money": {
+      "title": "Dinero y fechas",
+      "description": "Cómo funcionan los importes, las fechas y los ejercicios fiscales en tus libros."
+    },
+    "fields": {
+      "name": "Nombre visible",
+      "legalName": "Razón social",
+      "taxId": "Identificación fiscal",
+      "email": "Correo de contabilidad",
+      "phone": "Teléfono",
+      "line1": "Dirección, línea 1",
+      "line2": "Dirección, línea 2",
+      "city": "Ciudad",
+      "region": "Estado o región",
+      "postalCode": "Código postal",
+      "country": "País",
+      "baseCurrency": "Moneda base",
+      "fiscalYearStartMonth": "El ejercicio fiscal empieza en",
+      "locale": "Formato de números y fechas",
+      "timeZone": "Zona horaria"
+    },
+    "hints": {
+      "legalName": "Tal como está registrada, para facturas y declaraciones.",
+      "taxId": "NIF, número de IVA, GSTIN o similar.",
+      "baseCurrency": "Tus libros se llevan en esta moneda.",
+      "fiscalYear": "Tu ejercicio fiscal va de {{span}}.",
+      "timeZone": "Allí son las {{time}}. Decide en qué día cae una transacción."
+    },
+    "locked": {
+      "baseCurrency": "No se puede cambiar una vez contabilizados asientos",
+      "fiscalYearStartMonth": "No se puede cambiar una vez que existen ejercicios"
+    },
+    "errors": {
+      "name": "Escribe un nombre de al menos 2 caracteres.",
+      "taxId": "Usa letras, números, espacios, puntos, guiones o barras.",
+      "email": "Escribe un correo electrónico válido.",
+      "phone": "Usa dígitos, espacios, paréntesis o guiones, opcionalmente empezando con +.",
+      "timeZone": "Elige una zona horaria de la lista.",
+      "invalid": "Revisa este valor."
+    },
+    "leave": {
+      "title": "¿Salir sin guardar?",
+      "body": "Se perderán tus cambios en la configuración.",
+      "confirm": "Salir"
+    },
+    "logo": {
+      "title": "Logotipo",
+      "hint": "PNG, JPEG o WebP, hasta 256 KB. Aparece en facturas e informes.",
+      "drop": "Suelta una imagen aquí",
+      "none": "Aún no hay logotipo",
+      "upload": "Subir logotipo",
+      "replace": "Reemplazar",
+      "remove": "Quitar",
+      "uploaded": "Logotipo actualizado",
+      "removed": "Logotipo eliminado",
+      "alt": "Logotipo de {{name}}",
+      "problems": {
+        "type": "Usa una imagen PNG, JPEG o WebP. SVG no está permitido.",
+        "size": "Usa una imagen de menos de 256 KB.",
+        "mismatch": "Ese archivo no es el tipo de imagen que indica su nombre."
+      }
+    }
   }
 }
