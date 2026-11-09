@@ -221,7 +221,10 @@
         "name": "Escribe un nombre de al menos 2 caracteres.",
         "slug": "Usa minúsculas, números y guiones.",
         "slugTaken": "Esa dirección web ya está en uso. Prueba otra."
-      }
+      },
+      "industry": "Sector",
+      "noIndustry": "Empezar vacío",
+      "industryHint": "Crea un plan de cuentas listo para este sector, en el idioma de la organización."
     },
     "detail": {
       "details": "Detalles",
@@ -561,7 +564,8 @@
       "org_account_update": "Cuenta editada",
       "org_account_archive": "Cuenta archivada",
       "org_account_restore": "Cuenta restaurada",
-      "org_account_delete": "Cuenta eliminada"
+      "org_account_delete": "Cuenta eliminada",
+      "org_account_template_apply": "Plantilla aplicada"
     },
     "entities": {
       "membership": "Miembro",
@@ -611,7 +615,9 @@
       "code": "Código",
       "type": "Tipo",
       "subtype": "Subtipo",
-      "parentId": "Cuenta principal"
+      "parentId": "Cuenta principal",
+      "industry": "Sector",
+      "accounts": "Cuentas"
     },
     "details": {
       "when": "Cuándo",
@@ -822,7 +828,8 @@
       "parent_archived": "Esa cuenta principal está archivada. Restáurala primero.",
       "parent_not_found": "Esa cuenta principal ya no existe.",
       "already_archived": "Esta cuenta ya está archivada.",
-      "not_archived": "Esta cuenta no está archivada."
+      "not_archived": "Esta cuenta no está archivada.",
+      "chart_not_empty": "Las plantillas solo se pueden aplicar a un plan de cuentas vacío."
     },
     "validation": {
       "code": "Usa hasta 12 letras, dígitos, puntos o guiones, como 1100.",
@@ -830,6 +837,60 @@
       "subtype": "Elige un subtipo que pertenezca a este tipo.",
       "parentId": "Elige una cuenta principal de la lista.",
       "description": "No superes los 500 caracteres."
+    },
+    "templates": {
+      "title": "Empezar con una plantilla",
+      "description": "Elige tu sector para obtener un plan de cuentas listo. Puedes cambiar cualquier cuenta después.",
+      "previewTitle": "Plantilla de {{industry}}",
+      "previewBody": "Se crearán {{count}} cuentas. Revísalas y aplica la plantilla.",
+      "back": "Atrás",
+      "apply": "Aplicar plantilla",
+      "applied": "{{count}} cuentas creadas",
+      "use": "Usar una plantilla",
+      "bannerTitle": "Empieza con un plan de cuentas listo",
+      "bannerBody": "Elige tu sector y obtén las cuentas que usan negocios como el tuyo, en tu idioma."
+    },
+    "industries": {
+      "retail": {
+        "name": "Comercio minorista",
+        "description": "Inventario, canales de venta, coste de ventas"
+      },
+      "services": {
+        "name": "Servicios profesionales",
+        "description": "Consultoría, agencias, autónomos"
+      },
+      "manufacturing": {
+        "name": "Fabricación",
+        "description": "Materias primas, productos en curso, costes de fábrica"
+      },
+      "healthcare": {
+        "name": "Salud",
+        "description": "Clínicas, hospitales, farmacias"
+      },
+      "education": {
+        "name": "Educación",
+        "description": "Colegios, academias, formación"
+      },
+      "nonprofit": {
+        "name": "Sin ánimo de lucro",
+        "description": "Donaciones, subvenciones, fondos restringidos"
+      },
+      "construction": {
+        "name": "Construcción",
+        "description": "Contratos, retenciones, subcontratistas"
+      },
+      "restaurant": {
+        "name": "Restaurantes y cafeterías",
+        "description": "Ventas de comida y bebida, plataformas de reparto"
+      },
+      "it_software": {
+        "name": "TI y software",
+        "description": "Suscripciones, ingresos diferidos, costes de nube"
+      },
+      "agriculture": {
+        "name": "Agricultura",
+        "description": "Cultivos, ganado, maquinaria agrícola, subvenciones"
+      }
     }
   }
 }

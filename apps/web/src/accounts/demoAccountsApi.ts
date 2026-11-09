@@ -1,4 +1,4 @@
-import { accountCreateSchema, accountUpdateSchema, MAX_ACCOUNT_DEPTH, NORMAL_SIDE, subtypeBelongsTo, type AccountSubtype, type AccountType } from '@ledgernest/shared';
+import { accountCreateSchema, accountUpdateSchema, MAX_ACCOUNT_DEPTH, namedTemplate, NORMAL_SIDE, subtypeBelongsTo, type AccountSubtype, type AccountType } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { heightOf, levelOf, subtreeIds } from './tree';
 import type { Account, AccountsApi } from './types';
@@ -187,6 +187,22 @@ export function createDemoAccountsApi(canManage: () => boolean): AccountsApi {
         a.archivedAt = null;
         save(rows);
         return view(rows)(a);
+      }),
+    previewTemplate: (industry) => wait(() => namedTemplate(industry, 'en-IN')),
+    applyTemplate: (industry) =>
+      wait(() => {
+        guard();
+        const rows = load();
+        if (rows.some((r) => !r.systemKey)) throw refuse(409, 'chart_not_empty');
+        const ids = new Map<string, string>();
+        const template = namedTemplate(industry, 'en-IN');
+        for (const a of template) {
+          const id = crypto.randomUUID();
+          ids.set(a.code, id);
+          rows.push({ id, code: a.code, name: a.name, type: a.type, subtype: a.subtype, description: null, parentId: a.parent ? ids.get(a.parent)! : null, systemKey: null, archivedAt: null });
+        }
+        save(rows);
+        return { industry, created: template.length };
       }),
     remove: (id) =>
       wait(() => {

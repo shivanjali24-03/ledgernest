@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { ApiError } from '../auth/client';
 import { apiErrorMessage } from '../platform/errors';
 
-const REASONS = ['code_taken', 'name_taken', 'parent_type', 'too_deep', 'cycle', 'has_children', 'has_active_children', 'has_entries', 'subtype', 'system', 'parent_archived', 'parent_not_found', 'already_archived', 'not_archived'];
+const REASONS = ['code_taken', 'name_taken', 'parent_type', 'too_deep', 'cycle', 'has_children', 'has_active_children', 'has_entries', 'subtype', 'system', 'parent_archived', 'parent_not_found', 'already_archived', 'not_archived', 'chart_not_empty'];
 
 /** A translated explanation for an account refusal, falling back to the general messages. */
 export function accountErrorMessage(e: unknown, t: TFunction): string {

@@ -76,6 +76,11 @@ describe('Super Admin console and invitations (e2e)', () => {
       const system = await prisma.account.findMany({ where: { organizationId: res.body.organization.id }, select: { systemKey: true }, orderBy: { code: 'asc' } });
       expect(system.map((a) => a.systemKey)).toEqual(['retained_earnings', 'opening_balance_equity']);
 
+      // Picking an industry starts the organisation with that chart of accounts
+      const withChart = await createOrg({ name: `Farm ${run}`, industry: 'agriculture', owner: { email: users.existingOwner!.email } });
+      expect(withChart.status).toBe(201);
+      expect(await prisma.account.count({ where: { organizationId: withChart.body.organization.id, systemKey: null } })).toBeGreaterThanOrEqual(25);
+
       const m = await prisma.membership.findFirstOrThrow({ where: { organizationId: res.body.organization.id } });
       expect(m).toMatchObject({ userId: users.existingOwner!.id, builtInRole: 'owner' });
       const audit = await prisma.auditLog.findFirstOrThrow({ where: { action: 'platform.organization.create', entityId: res.body.organization.id } });

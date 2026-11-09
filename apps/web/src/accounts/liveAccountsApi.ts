@@ -11,5 +11,7 @@ export function createLiveAccountsApi(client: AuthClient, organizationId: string
     archive: (id) => r(`/${id}/archive`, { method: 'POST' }),
     restore: (id) => r(`/${id}/restore`, { method: 'POST' }),
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
+    previewTemplate: (industry) => r(`/templates/${industry}`),
+    applyTemplate: (industry) => r(`/templates/${industry}/apply`, { method: 'POST' }),
   };
 }

@@ -108,3 +108,5 @@ export const systemAccountName = (key: SystemAccountKey, locale: string) => SYST
 
 /** Sorts account codes the way accountants read them: 2 < 10, and 1100 < 1100.01 < 1101. */
 export const compareCodes = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
+
+export * from './templates.js';

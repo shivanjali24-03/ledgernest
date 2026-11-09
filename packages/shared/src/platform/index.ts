@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { emailSchema, passwordSchema } from '../auth/index.js';
+import { INDUSTRIES } from '../accounts/templates.js';
 
 /** Turns a name into a URL-safe slug: "Asha's Café & Co." → "ashas-cafe-co". */
 export function slugify(name: string): string {
@@ -49,6 +50,8 @@ export const organizationCreateSchema = z.object({
   fiscalYearStartMonth: organizationFields.fiscalYearStartMonth.default(4),
   /** The first Owner. An existing user is added at once; anyone else gets an invitation link. */
   owner: z.object({ email: emailSchema }),
+  /** Start with this industry's chart of accounts (see INDUSTRIES); omitted = start empty */
+  industry: z.enum(INDUSTRIES).optional(),
 });
 export type OrganizationCreateInput = z.input<typeof organizationCreateSchema>;
 

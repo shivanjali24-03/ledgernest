@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, CheckCircle2, MailPlus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { Industry } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { useIntlLocale } from '../../i18n';
 import { formatDate, formatRelative } from '../../lib/format';
@@ -188,6 +189,7 @@ function CreateOrganizationModal({ open, onClose }: { open: boolean; onClose: ()
         locale: v.locale,
         fiscalYearStartMonth: v.fiscalYearStartMonth,
         owner: { email: v.ownerEmail },
+        industry: (v.industry || undefined) as Industry | undefined,
       }),
     onSuccess: (r) => {
       setResult(r);

@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query, Req, type PipeTransform } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiNoContentResponse, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { accountCreateSchema, accountUpdateSchema, type AccountUpdateInput } from '@ledgernest/shared';
+import { accountCreateSchema, accountUpdateSchema, INDUSTRIES, type AccountUpdateInput, type Industry } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
 import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
@@ -9,6 +9,12 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AccountsService } from './accounts.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
+const industry: PipeTransform<string, Industry> = {
+  transform: (v) => {
+    if (!(INDUSTRIES as readonly string[]).includes(v)) throw new NotFoundException('No template for that industry.');
+    return v as Industry;
+  },
+};
 
 /** The chart of accounts. Reading needs accounts.view; every change needs accounts.manage and is audited. */
 @ApiTags('accounts')
@@ -24,6 +30,21 @@ export class AccountsController {
   @ApiOkResponse({ description: 'Every account, ordered by code, with its parent, normal side and number of sub-accounts' })
   list(@Query('includeArchived') includeArchived?: string) {
     return this.accounts.list(includeArchived === 'true');
+  }
+
+  /** An industry's chart of accounts as it would be created here, named in the organisation's language. */
+  @Get('templates/:industry')
+  @RequirePermission('accounts.view')
+  @ApiOkResponse({ description: 'The template accounts, parents first' })
+  preview(@Param('industry', industry) ind: Industry, @CurrentTenant() tenant: Tenant) {
+    return this.accounts.previewTemplate(tenant.organizationId, ind);
+  }
+
+  /** Creates the template's accounts. Only for a chart that holds nothing but the system accounts. */
+  @Post('templates/:industry/apply')
+  @RequirePermission('accounts.manage')
+  applyTemplate(@Param('industry', industry) ind: Industry, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    return this.accounts.applyTemplateFor(ind, { actor, tenant, req });
   }
 
   @Post()

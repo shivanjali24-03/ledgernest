@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { organizationCreateSchema, slugify } from '@ledgernest/shared';
+import { INDUSTRIES, organizationCreateSchema, slugify } from '@ledgernest/shared';
 import { useIntlLocale } from '../i18n';
 import { SelectField, TextField } from '../ui/Field';
 import { countryOptions, currencyOptions, localeOptions, monthOptions } from './options';
@@ -113,6 +113,17 @@ export default function OrganizationForm({
         onChange={(e) => set('fiscalYearStartMonth', Number(e.target.value))}
         options={monthOptions(locale)}
       />
+      {mode === 'create' && (
+        <div className="sm:col-span-2">
+          <SelectField
+            label={t('platform.form.industry')}
+            value={v.industry}
+            onChange={(e) => set('industry', e.target.value)}
+            options={[{ value: '', label: t('platform.form.noIndustry') }, ...INDUSTRIES.map((i) => ({ value: i, label: t(`accounts.industries.${i}.name`) }))]}
+            hint={t('platform.form.industryHint')}
+          />
+        </div>
+      )}
       <SelectField label={t('platform.form.locale')} value={v.locale} onChange={(e) => set('locale', e.target.value)} options={localeOptions(locale)} hint={t('platform.form.localeHint')} />
     </form>
   );

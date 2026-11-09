@@ -221,7 +221,10 @@
         "name": "Enter a name of at least 2 characters.",
         "slug": "Use lowercase letters, numbers and dashes.",
         "slugTaken": "That web address is taken. Try another."
-      }
+      },
+      "industry": "Industry",
+      "noIndustry": "Start empty",
+      "industryHint": "Creates a ready chart of accounts for this industry, named in the organisation's language."
     },
     "detail": {
       "details": "Details",
@@ -561,7 +564,8 @@
       "org_account_update": "Account edited",
       "org_account_archive": "Account archived",
       "org_account_restore": "Account restored",
-      "org_account_delete": "Account deleted"
+      "org_account_delete": "Account deleted",
+      "org_account_template_apply": "Template applied"
     },
     "entities": {
       "membership": "Member",
@@ -611,7 +615,9 @@
       "code": "Code",
       "type": "Type",
       "subtype": "Sub-type",
-      "parentId": "Parent account"
+      "parentId": "Parent account",
+      "industry": "Industry",
+      "accounts": "Accounts"
     },
     "details": {
       "when": "When",
@@ -822,7 +828,8 @@
       "parent_archived": "That parent account is archived. Restore it first.",
       "parent_not_found": "That parent account no longer exists.",
       "already_archived": "This account is already archived.",
-      "not_archived": "This account isn't archived."
+      "not_archived": "This account isn't archived.",
+      "chart_not_empty": "Templates can only be applied to an empty chart of accounts."
     },
     "validation": {
       "code": "Use up to 12 letters, digits, dots or dashes, like 1100.",
@@ -830,6 +837,60 @@
       "subtype": "Choose a sub-type that belongs to this type.",
       "parentId": "Choose a parent account from the list.",
       "description": "Keep it under 500 characters."
+    },
+    "templates": {
+      "title": "Start from a template",
+      "description": "Pick your industry to get a ready chart of accounts. You can change any account afterwards.",
+      "previewTitle": "{{industry}} template",
+      "previewBody": "{{count}} accounts will be created. Review them, then apply.",
+      "back": "Back",
+      "apply": "Apply template",
+      "applied": "{{count}} accounts created",
+      "use": "Use a template",
+      "bannerTitle": "Start with a ready chart of accounts",
+      "bannerBody": "Pick your industry and get the accounts businesses like yours use, named in your language."
+    },
+    "industries": {
+      "retail": {
+        "name": "Retail and shops",
+        "description": "Stock, sales channels, cost of goods sold"
+      },
+      "services": {
+        "name": "Professional services",
+        "description": "Consulting, agencies, freelancers"
+      },
+      "manufacturing": {
+        "name": "Manufacturing",
+        "description": "Raw materials, work in progress, factory costs"
+      },
+      "healthcare": {
+        "name": "Healthcare",
+        "description": "Clinics, hospitals, pharmacies"
+      },
+      "education": {
+        "name": "Education",
+        "description": "Schools, coaching centres, training"
+      },
+      "nonprofit": {
+        "name": "Non-profit",
+        "description": "Donations, grants, restricted funds"
+      },
+      "construction": {
+        "name": "Construction",
+        "description": "Contracts, retention, subcontractors"
+      },
+      "restaurant": {
+        "name": "Restaurants and cafés",
+        "description": "Food and beverage sales, delivery platforms"
+      },
+      "it_software": {
+        "name": "IT and software",
+        "description": "Subscriptions, deferred revenue, cloud costs"
+      },
+      "agriculture": {
+        "name": "Agriculture",
+        "description": "Crops, livestock, farm equipment, subsidies"
+      }
     }
   }
 }

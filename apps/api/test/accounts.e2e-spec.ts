@@ -187,9 +187,40 @@ describe('Chart of accounts (e2e)', () => {
     expect(await prisma.account.count({ where: { organizationId: orgA, code: '8000' } })).toBe(1);
   });
 
+  describe('industry templates', () => {
+    it('previews a template in the organisation language', async () => {
+      const res = await as('viewer').get('/accounts/templates/retail').expect(200);
+      expect(res.body.length).toBeGreaterThanOrEqual(25);
+      // Parents come before their sub-accounts
+      const seen = new Set<string>();
+      for (const a of res.body as { code: string; parent?: string; name: string }[]) {
+        if (a.parent) expect(seen.has(a.parent)).toBe(true);
+        seen.add(a.code);
+      }
+      expect(res.body.some((a: { name: string }) => /[\u0900-\u097F]/.test(a.name))).toBe(true); // Hindi, the organisation's language
+      await as('viewer').get('/accounts/templates/spaceships').expect(404);
+    });
+
+    it('applies only to an empty chart, and only with accounts.manage', async () => {
+      await as('viewer').post('/accounts/templates/retail/apply').expect(403);
+      expect((await as('owner').post('/accounts/templates/retail/apply').expect(409)).body.details).toEqual({ reason: 'chart_not_empty' });
+
+      const res = await as('ownerB', orgB).post('/accounts/templates/restaurant/apply').expect(201);
+      const accounts = (await as('ownerB', orgB).get('/accounts').expect(200)).body as Account[];
+      expect(res.body.created).toBe(accounts.length - 2); // plus the two system accounts
+      expect(accounts.filter((a) => a.parentId).every((a) => accounts.find((p) => p.id === a.parentId)?.type === a.type)).toBe(true);
+      const entry = await prisma.auditLog.findFirst({ where: { organizationId: orgB, action: 'org.account.template_apply' } });
+      expect(entry?.after).toMatchObject({ industry: 'restaurant', accounts: res.body.created });
+      // A second time is refused: the chart isn't empty any more
+      await as('ownerB', orgB).post('/accounts/templates/restaurant/apply').expect(409);
+    });
+  });
+
   it('account changes have their own audit filter', async () => {
     const res = await as('owner').get('/organization/audit?group=accounts&limit=100').expect(200);
     const actions = new Set(res.body.items.map((i: { action: string }) => i.action));
     expect([...actions].sort((a, b) => String(a).localeCompare(String(b)))).toEqual(['org.account.archive', 'org.account.create', 'org.account.delete', 'org.account.restore', 'org.account.update']);
+    const b = await as('ownerB', orgB).get('/organization/audit?group=accounts').expect(200);
+    expect(b.body.items.map((i: { action: string }) => i.action)).toContain('org.account.template_apply');
   });
 });
