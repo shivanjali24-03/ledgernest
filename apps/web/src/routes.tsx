@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, ComingSoon, Dashboard, OrganizationAudit, OrganizationDetail, Organizations, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Team } from './pages';
+import { AcceptInvite, ChartOfAccounts, ComingSoon, Dashboard, OrganizationAudit, OrganizationDetail, Organizations, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -13,6 +13,7 @@ const page = (el: ReactNode, permission?: Permission) => (
 
 /** Pages that are built. Everything else in the menu opens the roadmap page. */
 const BUILT: RouteObject[] = [
+  { path: 'accounts', element: page(<ChartOfAccounts />, 'accounts.view') },
   { path: 'users', element: page(<Team />, 'users.view') },
   { path: 'audit', element: page(<OrganizationAudit />, 'audit.view') },
   { path: 'settings', element: page(<Settings />, 'org.settings.view') },

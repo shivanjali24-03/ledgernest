@@ -705,5 +705,131 @@
         "mismatch": "Ese archivo no es el tipo de imagen que indica su nombre."
       }
     }
+  },
+  "accounts": {
+    "title": "Plan de cuentas",
+    "description": "Todas las cuentas de tus libros, agrupadas por tipo. Las subcuentas se suman a su cuenta principal.",
+    "new": "Nueva cuenta",
+    "search": "Buscar por código o nombre",
+    "filter": "Tipo de cuenta",
+    "showArchived": "Mostrar archivadas",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "noMatches": "Ninguna cuenta coincide con tu búsqueda",
+    "empty": "Aún no hay cuentas",
+    "emptyBody": "Añade tu primera cuenta o empieza con una plantilla de tu sector.",
+    "expand": "Expandir {{name}}",
+    "collapse": "Contraer {{name}}",
+    "system": "Sistema",
+    "systemHint": "LedgerNest depende de esta cuenta. Puedes renombrarla, pero no quitarla.",
+    "archived": "Archivada",
+    "actionsFor": "Acciones para {{name}}",
+    "topLevel": "Ninguna (nivel superior)",
+    "saved": "{{name}} guardada",
+    "created": "{{name}} creada",
+    "types": {
+      "asset": "Activo",
+      "liability": "Pasivo",
+      "equity": "Patrimonio",
+      "income": "Ingreso",
+      "expense": "Gasto"
+    },
+    "typesPlural": {
+      "asset": "Activos",
+      "liability": "Pasivos",
+      "equity": "Patrimonio",
+      "income": "Ingresos",
+      "expense": "Gastos"
+    },
+    "subtypes": {
+      "bank": "Banco",
+      "cash": "Caja",
+      "accounts_receivable": "Cuentas por cobrar",
+      "inventory": "Inventario",
+      "current_asset": "Otro activo corriente",
+      "fixed_asset": "Activo fijo",
+      "other_asset": "Otro activo",
+      "accounts_payable": "Cuentas por pagar",
+      "credit_card": "Tarjeta de crédito",
+      "tax_payable": "Impuestos por pagar",
+      "current_liability": "Otro pasivo corriente",
+      "long_term_liability": "Pasivo a largo plazo",
+      "other_liability": "Otro pasivo",
+      "owner_equity": "Capital del propietario",
+      "retained_earnings": "Resultados acumulados",
+      "other_equity": "Otro patrimonio",
+      "operating_income": "Ingresos de explotación",
+      "other_income": "Otros ingresos",
+      "cost_of_sales": "Coste de ventas",
+      "operating_expense": "Gastos de explotación",
+      "payroll": "Nómina",
+      "depreciation": "Amortización",
+      "other_expense": "Otros gastos"
+    },
+    "hints": {
+      "normal": {
+        "debit": "Aumenta con cargos (debe)",
+        "credit": "Aumenta con abonos (haber)"
+      },
+      "systemType": "El tipo de una cuenta del sistema no puede cambiar.",
+      "typeLocked": "Las cuentas con subcuentas mantienen su tipo.",
+      "parent": "Las subcuentas se suman a su cuenta principal y comparten su tipo.",
+      "code": "Letras, dígitos, puntos y guiones, como 1100.01."
+    },
+    "fields": {
+      "type": "Tipo",
+      "subtype": "Subtipo",
+      "parent": "Cuenta principal",
+      "code": "Código",
+      "name": "Nombre",
+      "description": "Descripción"
+    },
+    "dialog": {
+      "newTitle": "Nueva cuenta",
+      "subTitle": "Nueva subcuenta de {{name}}",
+      "editTitle": "Editar {{name}}",
+      "create": "Crear cuenta"
+    },
+    "actions": {
+      "edit": "Editar",
+      "addSub": "Añadir subcuenta",
+      "archive": "Archivar",
+      "restore": "Restaurar",
+      "delete": "Eliminar"
+    },
+    "done": {
+      "archive": "{{name}} archivada",
+      "restore": "{{name}} restaurada",
+      "delete": "{{name}} eliminada"
+    },
+    "confirm": {
+      "archiveTitle": "¿Archivar {{name}}?",
+      "archiveBody": "No se ofrecerá para nuevos asientos. Su historial se conserva y puedes restaurarla en cualquier momento.",
+      "deleteTitle": "¿Eliminar {{name}}?",
+      "deleteBody": "No tiene asientos, así que se eliminará definitivamente."
+    },
+    "errors": {
+      "code_taken": "Otra cuenta ya usa este código.",
+      "name_taken": "Otra cuenta ya tiene este nombre.",
+      "parent_type": "Una subcuenta debe tener el mismo tipo que su cuenta principal.",
+      "too_deep": "Las subcuentas pueden tener como máximo {{max}} niveles.",
+      "cycle": "Una cuenta no puede estar bajo sí misma ni bajo sus subcuentas.",
+      "has_children": "Elimina o mueve primero sus subcuentas.",
+      "has_active_children": "Archiva primero sus subcuentas.",
+      "has_entries": "Esta cuenta tiene asientos. Archívala en su lugar.",
+      "subtype": "Elige un subtipo que pertenezca a este tipo.",
+      "system": "Las cuentas del sistema solo se pueden renombrar.",
+      "parent_archived": "Esa cuenta principal está archivada. Restáurala primero.",
+      "parent_not_found": "Esa cuenta principal ya no existe.",
+      "already_archived": "Esta cuenta ya está archivada.",
+      "not_archived": "Esta cuenta no está archivada."
+    },
+    "validation": {
+      "code": "Usa hasta 12 letras, dígitos, puntos o guiones, como 1100.",
+      "name": "Escribe un nombre de hasta 120 caracteres.",
+      "subtype": "Elige un subtipo que pertenezca a este tipo.",
+      "parentId": "Elige una cuenta principal de la lista.",
+      "description": "No superes los 500 caracteres."
+    }
   }
 }
