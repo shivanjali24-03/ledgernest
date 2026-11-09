@@ -18,5 +18,6 @@ export function createLiveQuotesApi(client: AuthClient, organizationId: string):
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
     move: (id, status) => r(`/${id}/status`, { method: 'POST', json: { status } }),
     convert: (id, input) => r(`/${id}/convert`, { method: 'POST', json: input }),
+    email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
   };
 }

@@ -47,6 +47,25 @@ export const quoteStatusSchema = z.object({ status: z.enum(['draft', 'sent', 'ac
 /** Turning a quote into a draft invoice, dated today unless another day is given */
 export const quoteConvertSchema = z.object({ issueDate: isoDaySchema.optional() });
 
+/** Emailing a quote as a PDF: to the customer's email unless another is given, with an optional note */
+export const quoteEmailSchema = z.object({
+  email: z.email('Enter a valid email address.').optional(),
+  message: z.string().trim().max(2000).optional(),
+});
+export type QuoteEmailInput = z.input<typeof quoteEmailSchema>;
+
+/** A quote's lines and totals as rows for the PDF (amounts in major units, e.g. rupees) */
+export function quoteRows(q: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { name: string } | null; amount: number }[]; subtotal: number; taxTotal: number; total: number }, digits: number): string[][] {
+  const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
+  return [
+    ['Description', 'Qty', `Price (${q.currency})`, 'Discount', 'Tax', `Amount (${q.currency})`],
+    ...q.lines.map((l) => [l.description, l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', l.taxGroup?.name ?? '', fmt(l.amount)]),
+    ['', '', '', '', 'Subtotal', fmt(q.subtotal)],
+    ['', '', '', '', 'Tax', fmt(q.taxTotal)],
+    ['', '', '', '', 'Total', fmt(q.total)],
+  ];
+}
+
 export const quoteListQuerySchema = z.object({
   state: z.enum([...QUOTE_STATUSES, 'expired', 'open']).optional(),
   contactId: z.uuid().optional(),

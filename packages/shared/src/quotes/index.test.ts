@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QUOTE_MOVES, quoteDraftSchema, quoteEditable, quoteNumber, quoteState } from './index.js';
+import { QUOTE_MOVES, quoteDraftSchema, quoteEditable, quoteNumber, quoteRows, quoteState } from './index.js';
 
 describe('quotes', () => {
   it('shows open quotes past their expiry as expired, and settled ones as they are', () => {
@@ -22,5 +22,14 @@ describe('quotes', () => {
     expect(quoteDraftSchema.safeParse({ ...base, expiryDate: '2026-11-09' }).success).toBe(false);
     expect(quoteDraftSchema.safeParse({ ...base, lines: [] }).success).toBe(false);
     expect(quoteNumber(7)).toBe('QT-0007');
+  });
+});
+
+describe('quoteRows', () => {
+  it('lays out lines and totals for the PDF', () => {
+    const rows = quoteRows({ currency: 'INR', subtotal: 1_000_000, taxTotal: 180_000, total: 1_180_000, lines: [{ description: 'Racking', quantity: '4', unitPrice: 250_000, discount: 10, taxGroup: { name: 'GST 18%' }, amount: 900_000 }] }, 2);
+    expect(rows[0]).toEqual(['Description', 'Qty', 'Price (INR)', 'Discount', 'Tax', 'Amount (INR)']);
+    expect(rows[1]).toEqual(['Racking', '4', '2500.00', '10%', 'GST 18%', '9000.00']);
+    expect(rows.at(-1)).toEqual(['', '', '', '', 'Total', '11800.00']);
   });
 });

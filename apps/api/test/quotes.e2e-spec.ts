@@ -4,6 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { MailService } from '../src/mail/mail.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
 
@@ -332,5 +333,66 @@ describe('Quotes (e2e)', () => {
         'org.quote.delete',
       ]),
     );
+  });
+
+  it('emails a quote as a PDF, marking a draft sent', async () => {
+    const q = (
+      await as()
+        .post(
+          '/quotes',
+          draft({ quoteDate: '2026-07-01', expiryDate: '2026-07-31' }),
+        )
+        .expect(201)
+    ).body as Quote;
+    delete process.env.SMTP_URL;
+    expect(
+      (await as().post(`/quotes/${q.id}/email`, {}).expect(409)).body.details,
+    ).toMatchObject({ reason: 'mail_off' });
+    process.env.SMTP_URL = 'json';
+    try {
+      expect(
+        (await as().post(`/quotes/${q.id}/email`, {}).expect(400)).body.details,
+      ).toMatchObject({ reason: 'no_email' });
+      const r = (
+        await as()
+          .post(`/quotes/${q.id}/email`, {
+            email: 'buyer@patil.example',
+            message: 'As discussed on the call.',
+          })
+          .expect(200)
+      ).body as { sentTo: string; quote: Quote };
+      expect(r.sentTo).toBe('buyer@patil.example');
+      expect(r.quote.status).toBe('sent');
+      expect(app.get(MailService).captured.at(-1)).toEqual({
+        to: ['buyer@patil.example'],
+        subject: `Quote ${q.number} from Quotes ${run}`,
+        attachments: [`quote-${q.number.toLowerCase()}.pdf`],
+      });
+      expect(
+        await prisma.auditLog.count({
+          where: {
+            organizationId: org,
+            action: 'org.quote.email',
+            entityId: q.id,
+          },
+        }),
+      ).toBe(1);
+      // Declined quotes aren't sent
+      await as()
+        .post(`/quotes/${q.id}/status`, { status: 'declined' })
+        .expect(200);
+      expect(
+        (
+          await as()
+            .post(`/quotes/${q.id}/email`, { email: 'buyer@patil.example' })
+            .expect(409)
+        ).body.details,
+      ).toMatchObject({ reason: 'not_sendable' });
+      await as('auditor')
+        .post(`/quotes/${q.id}/email`, { email: 'buyer@patil.example' })
+        .expect(403);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
   });
 });

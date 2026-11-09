@@ -750,7 +750,8 @@
       "org_quote_accept": "Presupuesto aceptado",
       "org_quote_decline": "Presupuesto rechazado",
       "org_quote_reopen": "Presupuesto reabierto",
-      "org_quote_invoice": "Presupuesto facturado"
+      "org_quote_invoice": "Presupuesto facturado",
+      "org_quote_email": "Presupuesto enviado por correo"
     },
     "entities": {
       "membership": "Miembro",
@@ -3302,7 +3303,11 @@
       "not_draft": "Solo se pueden eliminar borradores. Recházalo en su lugar.",
       "bad_move": "El presupuesto no puede pasar a ese estado.",
       "already_invoiced": "Este presupuesto ya es una factura.",
-      "declined": "Un presupuesto rechazado no se puede facturar. Márcalo como aceptado primero."
+      "declined": "Un presupuesto rechazado no se puede facturar. Márcalo como aceptado primero.",
+      "not_sendable": "Solo se pueden enviar presupuestos abiertos o aceptados.",
+      "mail_off": "El correo no está configurado en este servidor. Imprime el presupuesto y envíalo tú.",
+      "no_email": "Este cliente no tiene correo electrónico. Introduce uno para enviarlo.",
+      "mail_failed": "No se pudo enviar el correo. Inténtalo más tarde."
     },
     "moved": {
       "draft": "{{number}} vuelve a borrador",
@@ -3316,6 +3321,19 @@
     "fields": {
       "quoteDate": "Fecha del presupuesto",
       "expiryDate": "Válido hasta"
+    },
+    "email": {
+      "action": "Enviar por correo",
+      "title": "Enviar {{number}} al cliente",
+      "body": "Se envía en PDF con las líneas, los totales y la fecha de validez.",
+      "bodyDraft": "Se envía en PDF con las líneas, los totales y la fecha de validez, y el presupuesto queda marcado como enviado.",
+      "to": "Enviar a",
+      "badEmail": "Introduce un correo electrónico válido.",
+      "note": "Nota",
+      "noteHint": "Opcional: va al principio del correo.",
+      "send": "Enviar",
+      "sent": "Presupuesto enviado a {{email}}",
+      "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}"
     }
   }
 }
