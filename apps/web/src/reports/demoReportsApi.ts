@@ -4,7 +4,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { Aging, AgingContact, BalanceSheet, Dashboard, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
+import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -189,9 +189,9 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       .sort((x, y) => compareCodes(x.code, y.code))
       .map((a) => ({ section: sectionOf(a.type, a.subtype)!, accountId: a.id, code: a.code, name: a.name, depth: ancestors(a.id).length, parentId: a.parentId, hasChildren: a.childCount > 0, amounts: amounts.get(a.id)! }));
   };
-  const sums = async (from: string | null, to: string) => {
+  const sums = async (from: string | null, to: string, given?: Awaited<ReturnType<typeof postedLines>>) => {
     const out = new Map<string, number>();
-    for (const l of await postedLines()) if (l.date <= to && (!from || l.date >= from)) out.set(l.accountId, (out.get(l.accountId) ?? 0) + l.debit - l.credit);
+    for (const l of given ?? (await postedLines())) if (l.date <= to && (!from || l.date >= from)) out.set(l.accountId, (out.get(l.accountId) ?? 0) + l.debit - l.credit);
     return out;
   };
   const profitAndLoss = async (from: string, to: string, compare: PnlCompare): Promise<ProfitAndLoss> => {
@@ -254,12 +254,64 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
   };
 
+  /** The cash flow statement from the demo's books, both ways, as the API works it out */
+  const cashFlow = async (from: string, to: string): Promise<CashFlow> => {
+    const accs = await accounts.list(true);
+    const isCash = (a: { type: string; subtype: string }) => a.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash');
+    const cashIds = new Set(accs.filter(isCash).map((a) => a.id));
+    const before = new Date(Date.parse(`${from}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+    // One read of the books for everything below
+    const posted = await postedLines();
+    const [moves, opening, closing] = await Promise.all([sums(from, to, posted), sums(null, before, posted), sums(null, to, posted)]);
+    const cashOf = (m: Map<string, number>) => [...cashIds].reduce((s, id) => s + (m.get(id) ?? 0), 0);
+    const change = (id: string) => moves.get(id) ?? 0;
+    const netProfit = -accs.filter((a) => a.type === 'income' || a.type === 'expense').reduce((s, a) => s + change(a.id), 0);
+    const depreciation = accs.filter((a) => a.subtype === 'depreciation').reduce((s, a) => s + change(a.id), 0);
+    const rows = (pick: (a: (typeof accs)[number]) => boolean) => accs.filter(pick).map((a) => ({ accountId: a.id, code: a.code, name: a.name, amount: -change(a.id) })).filter((r) => r.amount !== 0).sort((x, y) => compareCodes(x.code, y.code));
+    const sec = (a: (typeof accs)[number]) => bsSectionOf(a.type, a.subtype);
+    const workingCapital = rows((a) => (a.type === 'asset' && !isCash(a) && sec(a) === 'currentAssets') || (a.type === 'liability' && sec(a) === 'currentLiabilities'));
+    const investingRows = rows((a) => a.type === 'asset' && sec(a) === 'nonCurrentAssets');
+    const financingRows = rows((a) => (a.type === 'liability' && sec(a) === 'nonCurrentLiabilities') || a.type === 'equity');
+    const sum = (r: { amount: number }[]) => r.reduce((s, x) => s + x.amount, 0);
+    const operating = netProfit + depreciation + sum(workingCapital);
+    const investing = sum(investingRows) - depreciation;
+    const financing = sum(financingRows);
+    const direct = { customers: 0, otherReceipts: 0, vendors: 0, staff: 0, taxes: 0, otherPayments: 0, investing: 0, financing: 0 };
+    const byId = new Map(accs.map((a) => [a.id, a]));
+    const entries = new Map<string, { accountId: string; net: number }[]>();
+    for (const l of posted.filter((x) => x.date >= from && x.date <= to)) entries.set(l.entryId, [...(entries.get(l.entryId) ?? []), { accountId: l.accountId, net: l.debit - l.credit }]);
+    for (const ls of entries.values()) {
+      const cash = ls.filter((l) => cashIds.has(l.accountId)).reduce((s, l) => s + l.net, 0);
+      const others = ls.filter((l) => !cashIds.has(l.accountId) && l.net);
+      if (!cash || !others.length) continue;
+      const weight = others.reduce((s, l) => s + Math.abs(l.net), 0);
+      let left = cash;
+      others.forEach((l, k) => {
+        const share = k === others.length - 1 ? left : Math.round((cash * Math.abs(l.net)) / weight);
+        left -= share;
+        const a = byId.get(l.accountId)!;
+        const key = a.subtype === 'accounts_receivable' || a.subtype === 'operating_income' ? 'customers' : ['accounts_payable', 'credit_card', 'cost_of_sales', 'operating_expense', 'other_expense'].includes(a.subtype) ? 'vendors' : a.subtype === 'payroll' ? 'staff' : a.subtype === 'tax_payable' ? 'taxes' : sec(a) === 'nonCurrentAssets' ? 'investing' : sec(a) === 'nonCurrentLiabilities' || sec(a) === 'equity' ? 'financing' : cash > 0 ? 'otherReceipts' : 'otherPayments';
+        direct[key] += share;
+      });
+    }
+    const directOperating = direct.customers + direct.otherReceipts + direct.vendors + direct.staff + direct.taxes + direct.otherPayments;
+    return { from, to, openingCash: cashOf(opening), closingCash: cashOf(closing), netChange: cashOf(closing) - cashOf(opening), indirect: { netProfit, depreciation, workingCapital, operating, investingRows, investing, financingRows, financing, total: operating + investing + financing }, direct: { ...direct, operating: directOperating, total: directOperating + direct.investing + direct.financing } };
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
     if (!canExport()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['reports.export'] });
   };
   return {
+    cashFlow,
+    async exportCashFlow(from, to) {
+      guard();
+      const c = await cashFlow(from, to);
+      const i = c.indirect;
+      const rows: unknown[][] = [['section', 'line', 'amount'], ['operating', 'Net profit', money(i.netProfit)], ['operating', 'Depreciation', money(i.depreciation)], ...i.workingCapital.map((r) => ['operating', `Change in ${r.code} ${r.name}`, money(r.amount)]), ['operating', 'Cash from operating activities', money(i.operating)], ['investing', 'Cash from investing activities', money(i.investing)], ['financing', 'Cash from financing activities', money(i.financing)], ['', 'Net change in cash', money(c.netChange)], ['', 'Cash at the start', money(c.openingCash)], ['', 'Cash at the end', money(c.closingCash)]];
+      return { filename: `cash-flow-${from}-${to}.csv`, blob: csv(rows) };
+    },
     dashboard,
     trialBalance,
     ledger,

@@ -18,11 +18,12 @@ import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } fro
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
 import AgingPanel from '../AgingPanel';
+import CashFlowPanel from '../CashFlowPanel';
 import { BalanceSheetPanel, ProfitAndLossPanel } from '../StatementsPanels';
 import TaxSummaryPanel from '../TaxSummaryPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'ledger' | 'tax' | 'aging';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ledger' | 'tax' | 'aging';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -74,11 +75,13 @@ export default function Reports() {
   const compareAsOf = params.get('compareAsOf');
   const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare], queryFn: () => api!.profitAndLoss(from, to, compare), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
+  const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
+  const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
   const side = (params.get('side') as AgingSide | null) ?? 'receivables';
   const aging = useQuery({ queryKey: [...key, 'aging', side, asOf], queryFn: () => api!.aging(side, asOf), enabled: !!api && tab === 'aging', placeholderData: keepPreviousData });
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
+    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -123,6 +126,7 @@ export default function Reports() {
             { value: 'trial-balance', label: t('reports.trialBalance') },
             { value: 'pnl', label: t('reports.statements.pnlTitle') },
             { value: 'balance-sheet', label: t('reports.statements.bsTitle') },
+            { value: 'cash-flow', label: t('reports.cashFlow.title') },
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
@@ -244,6 +248,27 @@ export default function Reports() {
             )}
           </div>
           <BalanceSheetPanel data={bs.data} isPending={bs.isPending} isError={bs.isError} onRetry={() => void bs.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id, from: year.startDate, to: asOf })} />
+        </motion.div>
+      ) : tab === 'cash-flow' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="w-44">
+              <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
+            </div>
+            <div className="w-44">
+              <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
+            </div>
+            <Segmented<'indirect' | 'direct'>
+              label={t('reports.cashFlow.method')}
+              value={method}
+              onChange={(v) => set({ method: v === 'indirect' ? null : v })}
+              options={[
+                { value: 'indirect', label: t('reports.cashFlow.indirect') },
+                { value: 'direct', label: t('reports.cashFlow.byPurpose') },
+              ]}
+            />
+          </div>
+          <CashFlowPanel data={cf.data} method={method} isPending={cf.isPending} isError={cf.isError} onRetry={() => void cf.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id })} />
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

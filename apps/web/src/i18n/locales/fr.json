@@ -1343,6 +1343,33 @@
         "balanced": "L’actif est égal au passif",
         "notBalanced": "L’actif n’est pas égal au passif"
       }
+    },
+    "cashFlow": {
+      "title": "Flux de trésorerie",
+      "method": "Méthode",
+      "indirect": "À partir du résultat",
+      "direct": {
+        "customers": "Encaissé des clients",
+        "otherReceipts": "Autres encaissements",
+        "vendors": "Payé aux fournisseurs et charges",
+        "staff": "Payé au personnel",
+        "taxes": "Impôts et taxes payés",
+        "otherPayments": "Autres décaissements"
+      },
+      "operating": "Activités opérationnelles",
+      "investing": "Activités d’investissement",
+      "financing": "Activités de financement",
+      "netProfit": "Résultat net",
+      "depreciation": "Plus amortissements",
+      "changeIn": "Variation de {{account}}",
+      "lessDepreciation": "Moins amortissements (sans trésorerie)",
+      "fromOperating": "Flux des activités opérationnelles",
+      "fromInvesting": "Flux des activités d’investissement",
+      "fromFinancing": "Flux des activités de financement",
+      "netChange": "Variation nette de trésorerie",
+      "opening": "Trésorerie au début",
+      "closing": "Trésorerie à la fin",
+      "byPurpose": "Par nature"
     }
   },
   "taxes": {

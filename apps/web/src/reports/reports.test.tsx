@@ -96,4 +96,16 @@ describe('reports', () => {
     await userEvent.click(screen.getByLabelText('Compare with another date'));
     await waitFor(() => expect(within(screen.getByRole('table', { name: 'Balance sheet' })).getAllByRole('columnheader')).toHaveLength(4), { timeout: 4000 });
   }, 20_000);
+
+  it('shows where the cash came from and went, both ways', async () => {
+    renderApp('/reports?tab=cash-flow');
+    const table = await screen.findByRole('table', { name: 'Cash flow' }, { timeout: 4000 });
+    // The owners' capital came in and the rent went out: financing in, operating out
+    const closing = within(table).getByText('Cash at the end').closest('tr')!.textContent!;
+    expect(within(table).getByText('Cash from financing activities').closest('tr')!).toHaveTextContent('25,00,000.00');
+    await userEvent.click(screen.getByRole('radio', { name: 'By what it was for' }));
+    const direct = await screen.findByRole('table', { name: 'Cash flow' });
+    await waitFor(() => expect(within(direct).getByText('Paid to vendors and for expenses').closest('tr')!).toHaveTextContent('85,000.00'));
+    expect(within(direct).getByText('Cash at the end').closest('tr')!.textContent).toBe(closing);
+  });
 });
