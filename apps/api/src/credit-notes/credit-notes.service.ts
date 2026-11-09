@@ -353,6 +353,7 @@ export class CreditNotesService {
               discountPpm: true,
               accountId: true,
               taxGroupId: true,
+              costCentreId: true,
               taxGroup: {
                 select: {
                   rates: {
@@ -476,6 +477,7 @@ export class CreditNotesService {
         credit: 0,
         taxGroupId: l.src.taxGroupId,
         taxInclusive: false,
+        costCentreId: l.src.costCentreId,
       }));
       const receivable = inv.currency
         ? {

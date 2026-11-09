@@ -643,6 +643,7 @@ export class ReconcileService {
             amount: Math.abs(amount),
             taxGroupId: input.taxGroupId,
             description: null,
+            costCentreId: null,
           },
         ],
       },

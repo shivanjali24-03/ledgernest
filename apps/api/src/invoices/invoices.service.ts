@@ -27,6 +27,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
+import { checkCostCentres } from '../cost-centres/check.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -39,6 +40,7 @@ type LineIn = {
   discount: number;
   taxGroupId: string | null;
   accountId: string | null;
+  costCentreId?: string | null;
 };
 type DraftIn = {
   contactId: string;
@@ -169,6 +171,8 @@ const select = {
       itemId: true,
       accountId: true,
       taxGroupId: true,
+      costCentreId: true,
+      costCentre: { select: { id: true, code: true, name: true } },
       item: { select: { id: true, name: true, hsnSac: true, unit: true } },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: groupSelect },
@@ -315,6 +319,7 @@ export class InvoicesService {
         taxAmount: amount(l.taxAmount),
         item: l.item,
         account: l.account,
+        costCentre: l.costCentre,
         taxGroup: l.taxGroup && {
           id: l.taxGroup.id,
           name: l.taxGroup.name,
@@ -593,6 +598,7 @@ export class InvoicesService {
       if (group) group = await forSupply(group);
       lines.push({ ...l, accountId, group });
     }
+    await checkCostCentres(tx, organizationId, lines);
     const accountIds = [...new Set(lines.map((l) => l.accountId))];
     const accounts = await tx.account.findMany({
       where: { organizationId, id: { in: accountIds } },
@@ -699,6 +705,7 @@ export class InvoicesService {
         discountPpm: l.discount,
         taxGroupId: l.group?.id ?? null,
         accountId: l.accountId,
+        costCentreId: l.costCentreId ?? null,
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -861,6 +868,7 @@ export class InvoicesService {
           discount: l.discountPpm,
           taxGroupId: l.taxGroupId,
           accountId: l.accountId,
+          costCentreId: l.costCentreId,
         })),
       });
       if (!p.receivableAccountId)
@@ -934,6 +942,7 @@ export class InvoicesService {
         credit: base(p.amounts.lines[n]!.net),
         taxGroupId: l.group?.id ?? null,
         taxInclusive: false,
+        costCentreId: l.costCentreId ?? null,
       }));
       const receivable = p.currency
         ? {

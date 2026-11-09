@@ -33,7 +33,7 @@ export const bankMoneySchema = z.object({
   /** For a foreign-currency account; omitted = that day's rate */
   rate: rateSchema.nullable().optional().default(null),
   lines: z
-    .array(z.object({ accountId: z.uuid(), amount, taxGroupId: z.uuid().nullable().optional().default(null), description: text(500) }))
+    .array(z.object({ accountId: z.uuid(), amount, taxGroupId: z.uuid().nullable().optional().default(null), description: text(500), costCentreId: z.uuid().nullable().optional().default(null) }))
     .min(1, 'Add at least one line.')
     .max(50),
 });

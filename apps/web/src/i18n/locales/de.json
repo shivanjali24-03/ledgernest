@@ -562,7 +562,8 @@
       "bills": "Eingangsrechnungen",
       "banking": "Bank",
       "assets": "Anlagevermögen",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "costCentres": "Kostenstellen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -685,7 +686,12 @@
       "org_asset_dispose": "Anlagegut abgegangen",
       "org_budget_create": "Budget erstellt",
       "org_budget_update": "Budget geändert",
-      "org_budget_delete": "Budget gelöscht"
+      "org_budget_delete": "Budget gelöscht",
+      "org_cost_centre_create": "Kostenstelle hinzugefügt",
+      "org_cost_centre_update": "Kostenstelle geändert",
+      "org_cost_centre_archive": "Kostenstelle archiviert",
+      "org_cost_centre_restore": "Kostenstelle wiederhergestellt",
+      "org_cost_centre_delete": "Kostenstelle gelöscht"
     },
     "entities": {
       "membership": "Mitglied",

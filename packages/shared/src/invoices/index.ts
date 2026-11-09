@@ -100,6 +100,8 @@ export const invoiceLineSchema = z.object({
   taxGroupId: z.uuid().nullable().optional().default(null),
   /** The income account; defaults to the item's */
   accountId: z.uuid().nullable().optional().default(null),
+  /** The cost centre or project the line belongs to */
+  costCentreId: z.uuid().nullable().optional().default(null),
 });
 export type InvoiceLineInput = z.input<typeof invoiceLineSchema>;
 

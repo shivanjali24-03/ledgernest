@@ -17,7 +17,8 @@ export function bsSectionOf(type: string, subtype: string): BsSection | null {
   return null;
 }
 
-export const PNL_COMPARE = ['none', 'previous', 'year', 'months'] as const;
+/** Beside the period: nothing, the period before, the same period last year, each month, or each cost centre */
+export const PNL_COMPARE = ['none', 'previous', 'year', 'months', 'costCentres'] as const;
 export type PnlCompare = (typeof PNL_COMPARE)[number];
 
 const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -52,6 +53,12 @@ export function pnlColumns(from: string, to: string, compare: PnlCompare): { fro
 }
 
 export const pnlQuerySchema = z
-  .object({ from: isoDaySchema, to: isoDaySchema, compare: z.enum(PNL_COMPARE).default('none') })
+  .object({
+    from: isoDaySchema,
+    to: isoDaySchema,
+    compare: z.enum(PNL_COMPARE).default('none'),
+    /** Only lines tagged with this cost centre or project, or "none" for the untagged ones */
+    costCentreId: z.union([z.uuid(), z.literal('none')]).optional(),
+  })
   .refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' });
 export const balanceSheetQuerySchema = z.object({ asOf: isoDaySchema.optional(), compareAsOf: isoDaySchema.optional() });

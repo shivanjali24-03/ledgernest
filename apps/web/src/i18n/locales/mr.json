@@ -562,7 +562,8 @@
       "bills": "बिले",
       "banking": "बँकिंग",
       "assets": "स्थिर मालमत्ता",
-      "budgets": "अंदाजपत्रके"
+      "budgets": "अंदाजपत्रके",
+      "costCentres": "खर्च केंद्रे"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -685,7 +686,12 @@
       "org_asset_dispose": "स्थिर मालमत्तेची विल्हेवाट",
       "org_budget_create": "अंदाजपत्रक तयार केले",
       "org_budget_update": "अंदाजपत्रक बदलले",
-      "org_budget_delete": "अंदाजपत्रक हटवले"
+      "org_budget_delete": "अंदाजपत्रक हटवले",
+      "org_cost_centre_create": "खर्च केंद्र जोडले",
+      "org_cost_centre_update": "खर्च केंद्र बदलले",
+      "org_cost_centre_archive": "खर्च केंद्र संग्रहित केले",
+      "org_cost_centre_restore": "खर्च केंद्र पुन्हा सुरू केले",
+      "org_cost_centre_delete": "खर्च केंद्र हटवले"
     },
     "entities": {
       "membership": "सदस्य",

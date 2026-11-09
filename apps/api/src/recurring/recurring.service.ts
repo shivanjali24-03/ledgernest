@@ -527,6 +527,7 @@ export class RecurringService
                   discount: l.discount,
                   taxGroupId: l.taxGroupId,
                   accountId: l.accountId,
+                  costCentreId: l.costCentreId ?? null,
                 })),
                 recurringInvoiceId: r.id,
               },

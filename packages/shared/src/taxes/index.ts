@@ -317,6 +317,8 @@ export interface EnteredLine {
   foreignDebit?: number;
   foreignCredit?: number;
   rate?: string | null;
+  /** The cost centre or project the line belongs to */
+  costCentreId?: string | null;
 }
 
 /** A line's foreign-currency part, carried through unchanged (foreign lines never carry tax) */
@@ -342,6 +344,8 @@ export interface ExpandedLine extends ForeignPart {
   /** Set on a generated tax line: the rate it charges and the line it was charged on */
   taxRateId: string | null;
   taxSourceLine: number | null;
+  /** The cost centre or project; generated tax lines have none (they sit on the balance sheet) */
+  costCentreId: string | null;
 }
 
 /**
@@ -361,20 +365,20 @@ export function expandTax(
     const lineNo = rows.length + 1;
     const rates = l.taxGroupId ? ratesOf(l.taxGroupId) : undefined;
     if (!l.taxGroupId || !rates) {
-      rows.push({ lineNo, accountId: l.accountId, description: l.description, debit: l.debit, credit: l.credit, taxGroupId: l.taxGroupId ?? null, taxInclusive: false, taxRateId: null, taxSourceLine: null, ...foreignOf(l) });
+      rows.push({ lineNo, accountId: l.accountId, description: l.description, debit: l.debit, credit: l.credit, taxGroupId: l.taxGroupId ?? null, taxInclusive: false, taxRateId: null, taxSourceLine: null, costCentreId: l.costCentreId ?? null, ...foreignOf(l) });
       return;
     }
     const onDebit = l.debit > 0;
     const split = splitTax(onDebit ? l.debit : l.credit, !!l.taxInclusive, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })));
     if (split.net <= 0 && tooSmall === null) tooSmall = index + 1;
     const side = (amount: number) => (onDebit ? { debit: amount, credit: 0 } : { debit: 0, credit: amount });
-    rows.push({ lineNo, accountId: l.accountId, description: l.description, ...side(split.net), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxInclusive, taxRateId: null, taxSourceLine: null, ...noForeign });
+    rows.push({ lineNo, accountId: l.accountId, description: l.description, ...side(split.net), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxInclusive, taxRateId: null, taxSourceLine: null, costCentreId: l.costCentreId ?? null, ...noForeign });
     const role = taxRole(accountType(l.accountId) ?? 'asset');
     split.taxes.forEach((t, i) => {
       if (!t.amount) return; // a 0% slab records the taxable value on the line and adds no tax line
       const rate = rates[i]!;
       const accountId = role === 'input' ? (rate.inputAccountId ?? rate.outputAccountId) : rate.outputAccountId;
-      rows.push({ lineNo: rows.length + 1, accountId, description: null, ...side(t.amount), taxGroupId: null, taxInclusive: false, taxRateId: rate.id, taxSourceLine: lineNo, ...noForeign });
+      rows.push({ lineNo: rows.length + 1, accountId, description: null, ...side(t.amount), taxGroupId: null, taxInclusive: false, taxRateId: rate.id, taxSourceLine: lineNo, costCentreId: null, ...noForeign });
     });
   });
   return { rows, tooSmall };
@@ -382,13 +386,13 @@ export function expandTax(
 
 /** The lines as they were entered, back from the stored ones: generated tax lines dropped, inclusive amounts made gross again. */
 export function enteredLines<
-  L extends { lineNo: number; accountId: string; description: string | null; debit: number; credit: number; taxGroupId: string | null; taxInclusive: boolean; taxRateId: string | null; taxSourceLine: number | null } & Partial<ForeignPart>,
+  L extends { lineNo: number; accountId: string; description: string | null; debit: number; credit: number; taxGroupId: string | null; taxInclusive: boolean; taxRateId: string | null; taxSourceLine: number | null; costCentreId?: string | null } & Partial<ForeignPart>,
 >(lines: readonly L[]): EnteredLine[] {
   return lines
     .filter((l) => !l.taxRateId && !l.fxSourceLine)
     .map((l) => {
       const tax = l.taxInclusive ? lines.filter((t) => t.taxSourceLine === l.lineNo).reduce((s, t) => s + t.debit + t.credit, 0) : 0;
-      const entered: EnteredLine = { accountId: l.accountId, description: l.description, debit: l.debit ? l.debit + tax : 0, credit: l.credit ? l.credit + tax : 0, taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive };
+      const entered: EnteredLine = { accountId: l.accountId, description: l.description, debit: l.debit ? l.debit + tax : 0, credit: l.credit ? l.credit + tax : 0, taxGroupId: l.taxGroupId, taxInclusive: l.taxInclusive, ...(l.costCentreId ? { costCentreId: l.costCentreId } : {}) };
       return l.currency ? { ...entered, currency: l.currency, foreignDebit: l.foreignDebit ?? 0, foreignCredit: l.foreignCredit ?? 0, rate: l.rate ?? null } : entered;
     });
 }

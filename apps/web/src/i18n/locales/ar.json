@@ -562,7 +562,8 @@
       "bills": "فواتير الموردين",
       "banking": "الخدمات المصرفية",
       "assets": "الأصول الثابتة",
-      "budgets": "الموازنات"
+      "budgets": "الموازنات",
+      "costCentres": "مراكز التكلفة"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -685,7 +686,12 @@
       "org_asset_dispose": "استُبعد أصل ثابت",
       "org_budget_create": "تم إنشاء موازنة",
       "org_budget_update": "تم تعديل موازنة",
-      "org_budget_delete": "تم حذف موازنة"
+      "org_budget_delete": "تم حذف موازنة",
+      "org_cost_centre_create": "تمت إضافة مركز تكلفة",
+      "org_cost_centre_update": "تم تعديل مركز تكلفة",
+      "org_cost_centre_archive": "تمت أرشفة مركز تكلفة",
+      "org_cost_centre_restore": "تمت استعادة مركز تكلفة",
+      "org_cost_centre_delete": "تم حذف مركز تكلفة"
     },
     "entities": {
       "membership": "عضو",

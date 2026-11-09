@@ -562,7 +562,8 @@
       "bills": "बिल",
       "banking": "बैंकिंग",
       "assets": "स्थायी परिसंपत्तियाँ",
-      "budgets": "बजट"
+      "budgets": "बजट",
+      "costCentres": "लागत केंद्र"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -685,7 +686,12 @@
       "org_asset_dispose": "स्थायी परिसंपत्ति का निपटान",
       "org_budget_create": "बजट बनाया गया",
       "org_budget_update": "बजट बदला गया",
-      "org_budget_delete": "बजट हटाया गया"
+      "org_budget_delete": "बजट हटाया गया",
+      "org_cost_centre_create": "लागत केंद्र जोड़ा गया",
+      "org_cost_centre_update": "लागत केंद्र बदला गया",
+      "org_cost_centre_archive": "लागत केंद्र संग्रहीत किया गया",
+      "org_cost_centre_restore": "लागत केंद्र वापस लाया गया",
+      "org_cost_centre_delete": "लागत केंद्र हटाया गया"
     },
     "entities": {
       "membership": "सदस्य",

@@ -43,6 +43,8 @@ export const journalLineSchema = z
     foreignCredit: amount.default(0),
     /** 1 unit of the currency in the base currency; omitted = the rate on the entry's date */
     rate: rateSchema.nullable().optional().default(null),
+    /** The cost centre or project the line belongs to */
+    costCentreId: z.uuid().nullable().optional().default(null),
   })
   .refine((l) => (l.currency ? (l.foreignDebit > 0) !== (l.foreignCredit > 0) : (l.debit > 0) !== (l.credit > 0)), { message: 'Each line is either a debit or a credit.', path: ['debit'] })
   .refine((l) => !l.currency || !l.taxGroupId, { message: 'Tax goes on the base-currency line (e.g. the sale), not the foreign one.', path: ['taxGroupId'] })

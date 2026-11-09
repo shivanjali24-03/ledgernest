@@ -562,7 +562,8 @@
       "bills": "Factures fournisseurs",
       "banking": "Banque",
       "assets": "Immobilisations",
-      "budgets": "Budgets"
+      "budgets": "Budgets",
+      "costCentres": "Centres de coûts"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -685,7 +686,12 @@
       "org_asset_dispose": "Immobilisation cédée",
       "org_budget_create": "Budget créé",
       "org_budget_update": "Budget modifié",
-      "org_budget_delete": "Budget supprimé"
+      "org_budget_delete": "Budget supprimé",
+      "org_cost_centre_create": "Centre de coûts ajouté",
+      "org_cost_centre_update": "Centre de coûts modifié",
+      "org_cost_centre_archive": "Centre de coûts archivé",
+      "org_cost_centre_restore": "Centre de coûts restauré",
+      "org_cost_centre_delete": "Centre de coûts supprimé"
     },
     "entities": {
       "membership": "Membre",
