@@ -21,6 +21,9 @@ import {
 } from '@nestjs/swagger';
 import {
   agingQuerySchema,
+  salesReportQuerySchema,
+  type SalesReportBy,
+  type SalesReportSide,
   statementEmailSchema,
   statementExportSchema,
   statementQuerySchema,
@@ -45,6 +48,7 @@ import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
 import { ReportsService } from './reports.service.js';
+import { SalesReportService } from './sales-report.service.js';
 import { StatementsService } from './statements.service.js';
 
 const tbQuery = new ZodValidationPipe(
@@ -87,6 +91,7 @@ export class ReportsController {
     private readonly dashboards: DashboardService,
     private readonly gst: GstReturnsService,
     private readonly statements: StatementsService,
+    private readonly sales: SalesReportService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -252,6 +257,45 @@ export class ReportsController {
       `attachment; filename="${q.side}-aging-${asOf}.csv"`,
     );
     return this.reports.agingCsv(a);
+  }
+
+  @Get('sales')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Sales (invoices less credit notes) or purchases (bills) between from and to, by customer, vendor or item, in the base currency',
+  })
+  salesReport(
+    @Query(new ZodValidationPipe(salesReportQuerySchema))
+    q: { side: SalesReportSide; by: SalesReportBy; from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.sales.report(tenant.organizationId, q.side, q.by, q.from, q.to);
+  }
+
+  @Get('sales/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async salesReportCsv(
+    @Query(new ZodValidationPipe(salesReportQuerySchema))
+    q: { side: SalesReportSide; by: SalesReportBy; from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const r = await this.sales.report(
+      tenant.organizationId,
+      q.side,
+      q.by,
+      q.from,
+      q.to,
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${q.side}-by-${q.by === 'item' ? 'item' : q.side === 'sales' ? 'customer' : 'vendor'}-${q.from}-${q.to}.csv"`,
+    );
+    return this.sales.csv(r);
   }
 
   @Get('statement')

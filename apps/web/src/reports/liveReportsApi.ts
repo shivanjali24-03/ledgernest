@@ -18,6 +18,8 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     exportTaxSummary: (from, to) => file(`/tax-summary/export?from=${from}&to=${to}`, `tax-summary-${from}-${to}.csv`),
     aging: (side, asOf) => r(`/aging?side=${side}&asOf=${asOf}`),
     exportAging: (side, asOf) => file(`/aging/export?side=${side}&asOf=${asOf}`, `${side}-aging-${asOf}.csv`),
+    sales: (side, by, from, to) => r(`/sales?side=${side}&by=${by}&from=${from}&to=${to}`),
+    exportSales: (side, by, from, to) => file(`/sales/export?side=${side}&by=${by}&from=${from}&to=${to}`, `${side}-by-${by}-${from}-${to}.csv`),
     statement: (contactId, side, from, to) => r(`/statement?contactId=${contactId}&side=${side}&from=${from}&to=${to}`),
     exportStatement: (contactId, side, from, to, format) => file(`/statement/export?contactId=${contactId}&side=${side}&from=${from}&to=${to}&format=${format}`, `statement-${from}-${to}.${format}`),
     emailStatement: (input) => client.request(`/reports/statement/email`, { method: 'POST', json: input, headers }),

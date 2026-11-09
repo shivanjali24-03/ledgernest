@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, currencyDigits, parseCsv, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare } from '@ledgernest/shared';
+import { ACCOUNT_TYPES, currencyDigits, parseCsv, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare, type SalesReportBy, type SalesReportSide } from '@ledgernest/shared';
 import { AlertTriangle, Building2, CheckCircle2, Download, FileSpreadsheet, Printer } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -23,13 +23,14 @@ import { useToast } from '../../ui/toastContext';
 import AgingPanel from '../AgingPanel';
 import CashFlowPanel from '../CashFlowPanel';
 import ContactStatementPanel from '../ContactStatementPanel';
+import SalesReportPanel from '../SalesReportPanel';
 import { Gstr1Panel, Gstr3bPanel } from '../GstReturnsPanel';
 import { BalanceSheetPanel, ProfitAndLossPanel } from '../StatementsPanels';
 import TaxSummaryPanel from '../TaxSummaryPanel';
 import ScheduledReportsPanel from '../../scheduled-reports/ScheduledReportsPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging' | 'statement' | 'scheduled';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -62,8 +63,10 @@ export default function Reports() {
   const to = params.get('to') ?? today;
   const accountId = params.get('account') ?? '';
   const contactId = params.get('contact') ?? '';
+  const salesSide = (params.get('sside') as SalesReportSide | null) ?? 'sales';
+  const salesBy = (params.get('by') as SalesReportBy | null) ?? 'contact';
   const canExport = session.permissions.has('reports.export');
-  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), scheduled: t('scheduledReports.tab') }[tab];
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -104,7 +107,7 @@ export default function Reports() {
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
     mutationFn: async (format: 'csv' | 'xlsx') => {
-      const csvFile = await (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare, costCentreId) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'statement' ? api!.exportStatement(contactId, side, from, to, 'csv') : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to));
+      const csvFile = await (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare, costCentreId) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'statement' ? api!.exportStatement(contactId, side, from, to, 'csv') : tab === 'sales' ? api!.exportSales(salesSide, salesBy, from, to) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to));
       if (format === 'csv') return csvFile;
       // Excel from the same figures, numbers as numbers
       return { filename: csvFile.filename.replace(/\.(csv|json)$/, '.xlsx'), blob: xlsx([{ name: reportTitle, rows: csvToRows(await csvFile.blob.text(), parseCsv) }]) };
@@ -176,6 +179,7 @@ export default function Reports() {
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
             { value: 'statement', label: t('reports.statement.title') },
+            { value: 'sales', label: t('reports.sales.title') },
             { value: 'scheduled', label: t('scheduledReports.tab') },
           ]}
         />
@@ -358,6 +362,10 @@ export default function Reports() {
       ) : tab === 'scheduled' ? (
         <motion.div variants={fadeUp} role="tabpanel">
           <ScheduledReportsPanel />
+        </motion.div>
+      ) : tab === 'sales' ? (
+        <motion.div variants={fadeUp} role="tabpanel">
+          <SalesReportPanel api={api} side={salesSide} by={salesBy} from={from} to={to} set={set} />
         </motion.div>
       ) : tab === 'statement' ? (
         <motion.div variants={fadeUp} role="tabpanel">

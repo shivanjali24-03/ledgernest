@@ -1550,6 +1550,32 @@
       "sent": "Statement sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
       "mailOff": "Email isn’t set up on this server. Download the PDF and send it yourself."
+    },
+    "sales": {
+      "title": "Sales & purchases",
+      "side": "Show",
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "by": "Group by",
+      "byCustomer": "Customer",
+      "byVendor": "Vendor",
+      "byItem": "Item",
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "item": "Item",
+      "invoices": "Invoices",
+      "bills": "Bills",
+      "quantity": "Quantity",
+      "net": "Net",
+      "tax": "Tax",
+      "total": "Total",
+      "noItem": "No item",
+      "hintSales": "Issued invoices less credit notes, in {{currency}}. Voided ones are left out.",
+      "hintPurchases": "Recorded bills, in {{currency}}. Voided ones are left out.",
+      "emptySales": "No sales in these dates",
+      "emptyPurchases": "No purchases in these dates",
+      "captionSales": "Sales",
+      "captionPurchases": "Purchases"
     }
   },
   "taxes": {

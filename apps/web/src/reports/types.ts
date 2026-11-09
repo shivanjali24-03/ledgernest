@@ -1,4 +1,4 @@
-import type { AccountStatement, AccountType, StatementEmailInput, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
+import type { AccountStatement, AccountType, SalesReportBy, SalesReportRow, SalesReportSide, StatementEmailInput, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
   accountId: string;
@@ -198,6 +198,9 @@ export interface ReportsApi {
   exportTaxSummary(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   aging(side: AgingSide, asOf: string): Promise<Aging>;
   exportAging(side: AgingSide, asOf: string): Promise<{ blob: Blob; filename: string }>;
+  /** Sales or purchases by customer, vendor or item, in the base currency */
+  sales(side: SalesReportSide, by: SalesReportBy, from: string, to: string): Promise<SalesReport>;
+  exportSales(side: SalesReportSide, by: SalesReportBy, from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   /** A contact's statement of account over some days */
   statement(contactId: string, side: AgingSide, from: string, to: string): Promise<AccountStatement & { baseCurrency: string }>;
   exportStatement(contactId: string, side: AgingSide, from: string, to: string, format: 'csv' | 'pdf'): Promise<{ blob: Blob; filename: string }>;
@@ -214,4 +217,14 @@ export interface ReportsApi {
   gstr1(from: string, to: string): Promise<Gstr1>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
+}
+
+export interface SalesReport {
+  side: SalesReportSide;
+  by: SalesReportBy;
+  from: string;
+  to: string;
+  baseCurrency: string;
+  rows: SalesReportRow[];
+  totals: { net: number; tax: number; total: number };
 }
