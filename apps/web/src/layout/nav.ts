@@ -5,6 +5,7 @@ import {
   Building2,
   FileText,
   Gauge,
+  History,
   Landmark,
   LayoutDashboard,
   ListTree,
@@ -63,7 +64,7 @@ export const NAV: NavGroup[] = [
     labelKey: 'nav.groups.organisation',
     items: [
       { to: '/users', labelKey: 'nav.items.users', icon: Users, permission: 'users.view', ready: true, keywords: 'team invite permissions roles members' },
-      { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', keywords: 'history activity' },
+      { to: '/audit', labelKey: 'nav.items.audit', icon: ScrollText, permission: 'audit.view', ready: true, keywords: 'history activity log changes export' },
       { to: '/settings', labelKey: 'nav.items.settings', icon: Settings, permission: 'org.settings.view', keywords: 'company fiscal year currency tax' },
     ],
   },
@@ -73,6 +74,7 @@ export const NAV: NavGroup[] = [
       { to: '/platform', labelKey: 'nav.items.platformOverview', icon: Gauge, permission: 'platform.organizations.view', ready: true, end: true, keywords: 'super admin stats console' },
       { to: '/platform/organizations', labelKey: 'nav.items.organizations', icon: Building2, permission: 'platform.organizations.view', ready: true, keywords: 'tenants companies super admin' },
       { to: '/platform/users', labelKey: 'nav.items.platformUsers', icon: ShieldCheck, permission: 'platform.users.view', ready: true, keywords: 'super admin accounts' },
+      { to: '/platform/audit', labelKey: 'nav.items.platformAudit', icon: History, permission: 'platform.audit.view', ready: true, keywords: 'super admin history sign-ins security log' },
     ],
   },
 ];

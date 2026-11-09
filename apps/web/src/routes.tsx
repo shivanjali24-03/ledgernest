@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, ComingSoon, Dashboard, OrganizationDetail, Organizations, PlatformOverview, PlatformUsers, SignIn, Team } from './pages';
+import { AcceptInvite, ComingSoon, Dashboard, OrganizationAudit, OrganizationDetail, Organizations, PlatformAudit, PlatformOverview, PlatformUsers, SignIn, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -14,10 +14,12 @@ const page = (el: ReactNode, permission?: Permission) => (
 /** Pages that are built. Everything else in the menu opens the roadmap page. */
 const BUILT: RouteObject[] = [
   { path: 'users', element: page(<Team />, 'users.view') },
+  { path: 'audit', element: page(<OrganizationAudit />, 'audit.view') },
   { path: 'platform', element: page(<PlatformOverview />, 'platform.organizations.view') },
   { path: 'platform/organizations', element: page(<Organizations />, 'platform.organizations.view') },
   { path: 'platform/organizations/:id', element: page(<OrganizationDetail />, 'platform.organizations.view') },
   { path: 'platform/users', element: page(<PlatformUsers />, 'platform.users.view') },
+  { path: 'platform/audit', element: page(<PlatformAudit />, 'platform.audit.view') },
 ];
 const builtPaths = new Set(BUILT.map((r) => `/${r.path}`));
 
