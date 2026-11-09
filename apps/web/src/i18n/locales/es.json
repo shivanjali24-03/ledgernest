@@ -1370,6 +1370,61 @@
       "opening": "Caja al inicio",
       "closing": "Caja al final",
       "byPurpose": "Por concepto"
+    },
+    "gst": {
+      "title": "Declaraciones de GST",
+      "return": "Declaración",
+      "hint": "Para un mes o trimestre, desde los libros. Compruébalas con el portal del GST antes de presentarlas.",
+      "nature": "Tipo de suministro",
+      "details": "Detalle",
+      "head": "Impuesto",
+      "taxable": "Base imponible",
+      "rate": "Tipo",
+      "heads": {
+        "igst": "IGST",
+        "cgst": "CGST",
+        "sgst": "SGST/UTGST",
+        "cess": "Cess"
+      },
+      "r3b": {
+        "outwardTitle": "3.1 Suministros emitidos",
+        "outward": "(a) Suministros gravados",
+        "untaxed": "(c, e) Tipo cero, exentos, no sujetos y exportaciones",
+        "itcTitle": "4 Crédito fiscal deducible",
+        "itc": "(A)(5) Resto de ITC",
+        "paymentTitle": "6.1 Pago del impuesto",
+        "paymentHint": "Crédito compensado en el orden del GST: IGST contra IGST, luego CGST y SGST; CGST y SGST contra el propio, luego IGST.",
+        "tax": "Impuesto a pagar",
+        "byIgst": "Con crédito IGST",
+        "byCgst": "Con crédito CGST",
+        "bySgst": "Con crédito SGST",
+        "cash": "En efectivo",
+        "totalCash": "A pagar en efectivo",
+        "carried": "Crédito a compensar después: {{amounts}}"
+      },
+      "r1": {
+        "empty": "No hay facturas ni notas de crédito en estas fechas",
+        "emptyBody": "Elige otro mes o trimestre.",
+        "json": "Descargar JSON para el portal del GST",
+        "b2b": "4A Facturas B2B",
+        "b2bHint": "A compradores registrados, por GSTIN y tipo",
+        "b2cl": "5A Facturas B2C grandes",
+        "b2clHint": "Interestatales, a no registrados, de más de ₹1 lakh",
+        "b2cs": "7 Otras B2C",
+        "b2csHint": "Otras ventas a no registrados, por lugar de suministro y tipo",
+        "exports": "6A Exportaciones",
+        "notes": "9B Notas de crédito",
+        "hsn": "12 Resumen HSN",
+        "noHsn": "Sin indicar",
+        "party": "Comprador",
+        "document": "Documento",
+        "pos": "Lugar de suministro",
+        "supply": "Suministro",
+        "intra": "Dentro del estado",
+        "inter": "Interestatal",
+        "quantity": "Cantidad",
+        "documents": "13 Documentos emitidos: {{total}} facturas ({{first}} a {{last}}), {{cancelled}} anuladas; {{notes}} notas de crédito."
+      }
     }
   },
   "taxes": {

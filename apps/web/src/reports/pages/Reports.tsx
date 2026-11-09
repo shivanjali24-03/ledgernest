@@ -19,11 +19,12 @@ import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
 import AgingPanel from '../AgingPanel';
 import CashFlowPanel from '../CashFlowPanel';
+import { Gstr1Panel, Gstr3bPanel } from '../GstReturnsPanel';
 import { BalanceSheetPanel, ProfitAndLossPanel } from '../StatementsPanels';
 import TaxSummaryPanel from '../TaxSummaryPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'ledger' | 'tax' | 'aging';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -52,7 +53,7 @@ export default function Reports() {
   const year = fiscalYearSpan(fiscalYearOf(today, settings?.fiscalYearStartMonth ?? 4), settings?.fiscalYearStartMonth ?? 4);
   const asOf = params.get('asOf') ?? today;
   // Tax is filed monthly, so its default range is this month
-  const from = params.get('from') ?? (tab === 'tax' ? `${today.slice(0, 8)}01` : year.startDate);
+  const from = params.get('from') ?? (tab === 'tax' || tab === 'gst' ? `${today.slice(0, 8)}01` : year.startDate);
   const to = params.get('to') ?? today;
   const accountId = params.get('account') ?? '';
   const canExport = session.permissions.has('reports.export');
@@ -77,11 +78,23 @@ export default function Reports() {
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
+  const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | null) ?? 'gstr-3b';
+  const india = settings?.country === 'IN';
+  const g3b = useQuery({ queryKey: [...key, 'gstr3b', from, to], queryFn: () => api!.gstr3b(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-3b' && from <= to, placeholderData: keepPreviousData });
+  const g1 = useQuery({ queryKey: [...key, 'gstr1', from, to], queryFn: () => api!.gstr1(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-1' && from <= to, placeholderData: keepPreviousData });
+  const jsonExport = useMutation({
+    mutationFn: () => api!.exportGstr1(from, to, 'json'),
+    onSuccess: (f) => {
+      saveBlob(f);
+      toast(t('audit.exported', { file: f.filename }));
+    },
+    onError: (e) => toast(apiErrorMessage(e, t), 'error'),
+  });
   const side = (params.get('side') as AgingSide | null) ?? 'receivables';
   const aging = useQuery({ queryKey: [...key, 'aging', side, asOf], queryFn: () => api!.aging(side, asOf), enabled: !!api && tab === 'aging', placeholderData: keepPreviousData });
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
+    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'cash-flow' ? api!.exportCashFlow(from, to) : tab === 'gst' ? api!.exportGstr1(from, to, 'csv') : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -127,6 +140,7 @@ export default function Reports() {
             { value: 'pnl', label: t('reports.statements.pnlTitle') },
             { value: 'balance-sheet', label: t('reports.statements.bsTitle') },
             { value: 'cash-flow', label: t('reports.cashFlow.title') },
+            ...(india ? [{ value: 'gst' as const, label: t('reports.gst.title') }] : []),
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
@@ -269,6 +283,28 @@ export default function Reports() {
             />
           </div>
           <CashFlowPanel data={cf.data} method={method} isPending={cf.isPending} isError={cf.isError} onRetry={() => void cf.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id })} />
+        </motion.div>
+      ) : tab === 'gst' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4">
+            <Segmented<'gstr-3b' | 'gstr-1'>
+              label={t('reports.gst.return')}
+              value={gstReturn}
+              onChange={(v) => set({ return: v === 'gstr-3b' ? null : v })}
+              options={[
+                { value: 'gstr-3b', label: 'GSTR-3B' },
+                { value: 'gstr-1', label: 'GSTR-1' },
+              ]}
+            />
+            <div className="w-44">
+              <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
+            </div>
+            <div className="w-44">
+              <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
+            </div>
+            <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
+          </div>
+          {gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

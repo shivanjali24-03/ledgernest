@@ -108,4 +108,16 @@ describe('reports', () => {
     await waitFor(() => expect(within(direct).getByText('Paid to vendors and for expenses').closest('tr')!).toHaveTextContent('85,000.00'));
     expect(within(direct).getByText('Cash at the end').closest('tr')!.textContent).toBe(closing);
   });
+
+  it('shows GSTR-3B with the tax to pay, and GSTR-1 by buyer', async () => {
+    renderApp('/reports?tab=gst');
+    const outward = await screen.findByRole('table', { name: '3.1 Outward supplies' }, { timeout: 4000 });
+    // The month's ₹1,00,000 sale within Maharashtra: ₹9,000 each of CGST and SGST, nothing to set off
+    expect(within(outward).getByText('(a) Taxable outward supplies').closest('tr')!).toHaveTextContent(/1,00,000\.00.*9,000\.00.*9,000\.00/);
+    expect(within(screen.getByRole('table', { name: '6.1 Payment of tax' })).getByText('Tax to pay in cash').closest('tr')!).toHaveTextContent('18,000.00');
+    await userEvent.click(screen.getByRole('radio', { name: 'GSTR-1' }));
+    const b2b = await screen.findByRole('table', { name: '4A B2B invoices' }, { timeout: 4000 });
+    expect(within(b2b).getByText('Kumar Logistics').closest('tr')!).toHaveTextContent(/INV\/.*18%.*1,00,000\.00/);
+    expect(screen.getByText(/^13 Documents issued/)).toBeInTheDocument();
+  });
 });
