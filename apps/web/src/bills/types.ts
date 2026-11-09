@@ -1,5 +1,5 @@
-import type { BillDraftInput, BillState, BillStatus } from "@ledgernest/shared";
-import type { InvoiceLine } from "../invoices/types";
+import type { BillDraftInput, BillState, BillStatus } from '@ledgernest/shared';
+import type { InvoiceLine } from '../invoices/types';
 
 export type BillLine = InvoiceLine;
 
@@ -55,17 +55,11 @@ export interface BillSummary {
   vendorReference: string | null;
 }
 
-export type BillFilter = BillState | "unpaid";
+export type BillFilter = BillState | 'unpaid';
 
 /** Purchase bills. Live and demo both implement it. */
 export interface BillsApi {
-  list(q: {
-    state?: BillFilter;
-    contactId?: string;
-    search?: string;
-    page: number;
-    pageSize: number;
-  }): Promise<{
+  list(q: { state?: BillFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{
     total: number;
     page: number;
     pageSize: number;

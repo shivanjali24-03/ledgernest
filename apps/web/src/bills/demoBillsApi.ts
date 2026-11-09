@@ -1,32 +1,21 @@
-import {
-  billDraftSchema,
-  billNumber,
-  billState,
-  currencyDigits,
-  dueDateFor,
-  invoiceAmounts,
-  splitTax,
-  todayIn,
-  toBase,
-  type BillStatus,
-} from "@ledgernest/shared";
-import { ApiError } from "../auth/client";
-import { demoAccountRows, sampleId } from "../accounts/demoAccountsApi";
-import { demoContactRows } from "../contacts/demoContactsApi";
-import { demoRateOn } from "../currencies/demoCurrenciesApi";
-import { demoItemRows } from "../items/demoItemsApi";
-import { createDemoJournalsApi } from "../journals/demoJournalsApi";
-import { createDemoPeriodsApi } from "../periods/demoPeriodsApi";
-import { demoTaxState } from "../taxes/demoTaxesApi";
-import { groupForSupply, supplyFor } from "../invoices/gst";
-import type { Bill, BillsApi } from "./types";
+import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
+import { ApiError } from '../auth/client';
+import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { demoContactRows } from '../contacts/demoContactsApi';
+import { demoRateOn } from '../currencies/demoCurrenciesApi';
+import { demoItemRows } from '../items/demoItemsApi';
+import { createDemoJournalsApi } from '../journals/demoJournalsApi';
+import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
+import { demoTaxState } from '../taxes/demoTaxesApi';
+import { groupForSupply, supplyFor } from '../invoices/gst';
+import type { Bill, BillsApi } from './types';
 
 /**
  * Bills in demo mode for the sample company in Pune: the month's rent bill from Sharma Office Supplies, in the
  * same state so CGST + SGST, recorded and waiting to be paid; and a draft for AWS hosting in US dollars.
  */
-const KEY = "ledgernest.demo.bills";
-const ORG_STATE = "27";
+const KEY = 'ledgernest.demo.bills';
+const ORG_STATE = '27';
 type StoredLine = {
   itemId: string | null;
   description: string;
@@ -57,20 +46,18 @@ type Stored = {
   lines: StoredLine[];
   payments?: { id: string; number: string; date: string; amount: number }[];
 };
-const today = () => todayIn("Asia/Kolkata");
-const thisMonth = (day: number) =>
-  `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, "0")}`;
+const today = () => todayIn('Asia/Kolkata');
+const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
 
 async function seed(): Promise<Stored[]> {
   const contacts = demoContactRows();
-  const sharma = contacts.find((c) => c.name === "Sharma Office Supplies")!;
-  const aws = contacts.find((c) => c.name === "Amazon Web Services")!;
-  const gst18 =
-    demoTaxState().groups.find((g) => g.name === "GST 18%")?.id ?? null;
+  const sharma = contacts.find((c) => c.name === 'Sharma Office Supplies')!;
+  const aws = contacts.find((c) => c.name === 'Amazon Web Services')!;
+  const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')?.id ?? null;
   const blank = {
     number: null,
     yearName: null,
-    status: "draft" as const,
+    status: 'draft' as const,
     rate: null,
     amountPaid: 0,
     journalEntryId: null,
@@ -87,17 +74,17 @@ async function seed(): Promise<Stored[]> {
       dueDate: dueDateFor(thisMonth(3), sharma.paymentTermsDays),
       currency: null,
       placeOfSupply: sharma.stateCode,
-      vendorReference: "SOS/887",
+      vendorReference: 'SOS/887',
       notes: null,
       lines: [
         {
           itemId: null,
-          description: "Office rent",
-          quantity: "1",
+          description: 'Office rent',
+          quantity: '1',
           unitPrice: 4_500_000,
           discountPpm: 0,
           taxGroupId: gst18,
-          accountId: sampleId("5300"),
+          accountId: sampleId('5300'),
         },
       ],
     },
@@ -107,19 +94,19 @@ async function seed(): Promise<Stored[]> {
       contactId: aws.id,
       billDate: today(),
       dueDate: today(),
-      currency: "USD",
+      currency: 'USD',
       placeOfSupply: null,
-      vendorReference: "EUINAWS-8812",
+      vendorReference: 'EUINAWS-8812',
       notes: null,
       lines: [
         {
           itemId: null,
-          description: "Cloud hosting, last month",
-          quantity: "1",
+          description: 'Cloud hosting, last month',
+          quantity: '1',
           unitPrice: 41_250,
           discountPpm: 0,
           taxGroupId: null,
-          accountId: sampleId("5100"),
+          accountId: sampleId('5100'),
         },
       ],
     },
@@ -158,18 +145,12 @@ export async function demoBillViews(): Promise<Bill[]> {
   return (await loadRows()).map(view);
 }
 /** A payment (or its void) changes what a bill has had paid */
-export async function demoAdjustBillPaid(
-  billId: string,
-  delta: number,
-  payment?: { id: string; number: string; date: string; amount: number },
-) {
+export async function demoAdjustBillPaid(billId: string, delta: number, payment?: { id: string; number: string; date: string; amount: number }) {
   const rows = await loadRows();
   const i = rows.find((r) => r.id === billId);
   if (!i) return;
   i.amountPaid += delta;
-  i.payments = payment
-    ? [...(i.payments ?? []), payment]
-    : (i.payments ?? []).filter((p) => p.amount !== -delta || delta > 0);
+  i.payments = payment ? [...(i.payments ?? []), payment] : (i.payments ?? []).filter((p) => p.amount !== -delta || delta > 0);
   save(rows);
 }
 
@@ -181,18 +162,8 @@ export const resetDemoBills = () => {
   }
 };
 
-const refuse = (status: 400 | 409, reason: string, extra: object = {}) =>
-  new ApiError(
-    status === 400 ? "validation" : "conflict",
-    status,
-    undefined,
-    undefined,
-    { reason, ...extra },
-  );
-const wait = <T>(fn: () => T | Promise<T>) =>
-  new Promise<T>((resolve, reject) =>
-    setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150),
-  );
+const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });
+const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 
 /** A group with its rates, from the demo's taxes */
 function groupOf(id: string | null) {
@@ -238,19 +209,9 @@ function view(i: Stored): Bill {
       a.lines[n]!.net,
       false,
       g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })),
-    ).taxes.forEach((t, k) =>
-      breakdown.set(
-        g.rates[k]!.name,
-        (breakdown.get(g.rates[k]!.name) ?? 0) + t.amount,
-      ),
-    );
+    ).taxes.forEach((t, k) => breakdown.set(g.rates[k]!.name, (breakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
   });
-  const payable = accounts.find(
-    (x) =>
-      x.type === "liability" &&
-      (x.currency ?? null) === i.currency &&
-      /accounts payable/i.test(x.name),
-  );
+  const payable = accounts.find((x) => x.type === 'liability' && (x.currency ?? null) === i.currency && /accounts payable/i.test(x.name));
   const base = {
     id: i.id,
     number: i.number && i.yearName ? billNumber(i.yearName, i.number) : null,
@@ -274,22 +235,16 @@ function view(i: Stored): Bill {
       },
       stateCode: contact.stateCode,
     },
-    payableAccount: payable
-      ? { id: payable.id, code: payable.code, name: payable.name }
-      : null,
+    payableAccount: payable ? { id: payable.id, code: payable.code, name: payable.name } : null,
     subtotal: a.subtotal,
     taxTotal: a.tax,
     total: a.total,
     amountPaid: i.amountPaid,
     balance: a.total - i.amountPaid,
     taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
-    journalEntry: i.journalEntryId
-      ? { id: i.journalEntryId, number: i.journalNumber }
-      : null,
+    journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
     payments: i.payments ?? [],
-    voidEntry: i.voidEntryId
-      ? { id: i.voidEntryId, number: i.voidNumber }
-      : null,
+    voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
       const acc = accounts.find((x) => x.id === l.accountId);
@@ -330,50 +285,31 @@ function view(i: Stored): Bill {
   };
 }
 
-export function createDemoBillsApi(
-  canManage: () => boolean,
-  seeding = false,
-): BillsApi {
+export function createDemoBillsApi(canManage: () => boolean, seeding = false): BillsApi {
   const load = () => loadRows(seeding);
   const guard = () => {
     if (!canManage())
-      throw new ApiError("forbidden", 403, undefined, undefined, {
-        missing: ["bills.manage"],
+      throw new ApiError('forbidden', 403, undefined, undefined, {
+        missing: ['bills.manage'],
       });
   };
   const find = (rows: Stored[], iid: string) => {
     const i = rows.find((r) => r.id === iid);
-    if (!i) throw new ApiError("not_found", 404);
+    if (!i) throw new ApiError('not_found', 404);
     return i;
   };
   /** The same checks and line rules as the API */
-  const prepare = (
-    input: unknown,
-  ): Omit<
-    Stored,
-    | "id"
-    | "number"
-    | "yearName"
-    | "status"
-    | "amountPaid"
-    | "journalEntryId"
-    | "journalNumber"
-    | "voidEntryId"
-    | "voidNumber"
-  > => {
+  const prepare = (input: unknown): Omit<Stored, 'id' | 'number' | 'yearName' | 'status' | 'amountPaid' | 'journalEntryId' | 'journalNumber' | 'voidEntryId' | 'voidNumber'> => {
     const p = billDraftSchema.safeParse(input);
     if (!p.success)
-      throw new ApiError("validation", 400, undefined, undefined, {
+      throw new ApiError('validation', 400, undefined, undefined, {
         fields: p.error.issues,
       });
     const d = p.data;
     const contact = demoContactRows().find((c) => c.id === d.contactId);
-    if (!contact)
-      throw refuse(400, "contact_not_found", { field: "contactId" });
-    if (!contact.isVendor)
-      throw refuse(400, "not_vendor", { field: "contactId" });
-    if (contact.archived)
-      throw refuse(400, "contact_archived", { field: "contactId" });
+    if (!contact) throw refuse(400, 'contact_not_found', { field: 'contactId' });
+    if (!contact.isVendor) throw refuse(400, 'not_vendor', { field: 'contactId' });
+    if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
     const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
     const supply = supplyFor(ORG_STATE, placeOfSupply);
     const items = demoItemRows();
@@ -381,19 +317,12 @@ export function createDemoBillsApi(
     const groups = allGroups();
     const lines = d.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
-      if (l.itemId && !item) throw refuse(400, "item_not_found");
+      if (l.itemId && !item) throw refuse(400, 'item_not_found');
       const accountId = l.accountId ?? item?.expenseAccountId ?? null;
-      if (!accountId) throw refuse(400, "account_required", { line: n + 1 });
-      if (
-        !["expense", "asset"].includes(
-          accounts.find((a) => a.id === accountId)?.type ?? "",
-        )
-      )
-        throw refuse(400, "not_expense", { line: n + 1 });
-      let group = l.taxGroupId
-        ? groups.find((g) => g.id === l.taxGroupId)
-        : null;
-      if (l.taxGroupId && !group) throw refuse(400, "tax_group_not_found");
+      if (!accountId) throw refuse(400, 'account_required', { line: n + 1 });
+      if (!['expense', 'asset'].includes(accounts.find((a) => a.id === accountId)?.type ?? '')) throw refuse(400, 'not_expense', { line: n + 1 });
+      let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
+      if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
       if (group) group = groupForSupply(group, supply, groups);
       return {
         itemId: l.itemId,
@@ -423,57 +352,33 @@ export function createDemoBillsApi(
         const all = (await load()).map(view);
         const s = q.search?.trim().toLowerCase();
         const items = all
-          .filter(
-            (i) =>
-              !q.state ||
-              (q.state === "unpaid"
-                ? i.status === "open" && i.balance > 0
-                : q.state === "open"
-                  ? i.status === "open"
-                  : i.state === q.state),
-          )
+          .filter((i) => !q.state || (q.state === 'unpaid' ? i.status === 'open' && i.balance > 0 : q.state === 'open' ? i.status === 'open' : i.state === q.state))
           .filter((i) => !q.contactId || i.contact.id === q.contactId)
-          .filter(
-            (i) =>
-              !s ||
-              [i.number, i.vendorReference, i.contact.name].some((x) =>
-                x?.toLowerCase().includes(s),
-              ),
-          )
-          .sort(
-            (a, b) =>
-              b.billDate.localeCompare(a.billDate) ||
-              (b.number ?? "").localeCompare(a.number ?? ""),
-          );
-        const open = all.filter(
-          (i) => i.status === "open" && i.balance > 0 && !i.currency,
-        );
+          .filter((i) => !s || [i.number, i.vendorReference, i.contact.name].some((x) => x?.toLowerCase().includes(s)))
+          .sort((a, b) => b.billDate.localeCompare(a.billDate) || (b.number ?? '').localeCompare(a.number ?? ''));
+        const open = all.filter((i) => i.status === 'open' && i.balance > 0 && !i.currency);
         return {
           total: items.length,
           page: q.page,
           pageSize: q.pageSize,
           summary: {
             outstanding: open.reduce((t, i) => t + i.balance, 0),
-            overdue: open
-              .filter((i) => i.dueDate < today())
-              .reduce((t, i) => t + i.balance, 0),
+            overdue: open.filter((i) => i.dueDate < today()).reduce((t, i) => t + i.balance, 0),
           },
-          items: items
-            .slice((q.page - 1) * q.pageSize, q.page * q.pageSize)
-            .map((i) => ({
-              id: i.id,
-              number: i.number,
-              status: i.status,
-              state: i.state,
-              contact: { id: i.contact.id, name: i.contact.name },
-              billDate: i.billDate,
-              dueDate: i.dueDate,
-              currency: i.currency,
-              total: i.total,
-              amountPaid: i.amountPaid,
-              balance: i.balance,
-              vendorReference: i.vendorReference,
-            })),
+          items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((i) => ({
+            id: i.id,
+            number: i.number,
+            status: i.status,
+            state: i.state,
+            contact: { id: i.contact.id, name: i.contact.name },
+            billDate: i.billDate,
+            dueDate: i.dueDate,
+            currency: i.currency,
+            total: i.total,
+            amountPaid: i.amountPaid,
+            balance: i.balance,
+            vendorReference: i.vendorReference,
+          })),
         };
       }),
     get: (iid) => wait(async () => view(find(await load(), iid))),
@@ -485,7 +390,7 @@ export function createDemoBillsApi(
           id: crypto.randomUUID(),
           number: null,
           yearName: null,
-          status: "draft",
+          status: 'draft',
           amountPaid: 0,
           journalEntryId: null,
           journalNumber: null,
@@ -502,7 +407,7 @@ export function createDemoBillsApi(
         guard();
         const rows = await load();
         const i = find(rows, iid);
-        if (i.status !== "draft") throw refuse(409, "not_draft");
+        if (i.status !== 'draft') throw refuse(409, 'not_draft');
         Object.assign(i, prepare(input));
         save(rows);
         return view(i);
@@ -511,7 +416,7 @@ export function createDemoBillsApi(
       wait(async () => {
         guard();
         const rows = await load();
-        if (find(rows, iid).status !== "draft") throw refuse(409, "not_draft");
+        if (find(rows, iid).status !== 'draft') throw refuse(409, 'not_draft');
         save(rows.filter((r) => r.id !== iid));
       }),
     record: (iid) =>
@@ -519,38 +424,28 @@ export function createDemoBillsApi(
         guard();
         const rows = await load();
         const i = find(rows, iid);
-        if (i.status !== "draft") throw refuse(409, "not_draft");
+        if (i.status !== 'draft') throw refuse(409, 'not_draft');
         const v = view(i);
-        if (v.total <= 0) throw refuse(400, "zero_total");
+        if (v.total <= 0) throw refuse(400, 'zero_total');
         const payable = v.payableAccount;
-        if (!payable)
-          throw refuse(409, "no_payable_account", { currency: i.currency });
+        if (!payable) throw refuse(409, 'no_payable_account', { currency: i.currency });
         const { years } = await createDemoPeriodsApi(() => true).list();
-        const year = years.find(
-          (y) => y.startDate <= i.billDate && i.billDate <= y.endDate,
-        );
-        if (!year) throw refuse(409, "no_period");
-        const number =
-          Math.max(
-            0,
-            ...rows
-              .filter((r) => r.yearName === year.name && r.number)
-              .map((r) => r.number!),
-          ) + 1;
+        const year = years.find((y) => y.startDate <= i.billDate && i.billDate <= y.endDate);
+        if (!year) throw refuse(409, 'no_period');
+        const number = Math.max(0, ...rows.filter((r) => r.yearName === year.name && r.number).map((r) => r.number!)) + 1;
         const label = billNumber(year.name, number);
         let rate: string | null = null;
         if (i.currency) {
           rate = i.rate ?? demoRateOn(i.currency, i.billDate);
           if (!rate)
-            throw refuse(400, "no_rate", {
+            throw refuse(400, 'no_rate', {
               currency: i.currency,
               date: i.billDate,
             });
         }
         const journals = createDemoJournalsApi(() => true);
         // Foreign bills keep the payable in their currency; costs are in rupees at the same rate
-        const toInr = (minor: number) =>
-          rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor;
+        const toInr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor);
         const lines = [
           ...v.lines
             .filter((l) => l.amount > 0)
@@ -576,14 +471,12 @@ export function createDemoBillsApi(
           reference: i.vendorReference ?? label,
           lines,
         });
-        const posted = await journals
-          .post(draft.id)
-          .catch(async (e: unknown) => {
-            await journals.remove(draft.id);
-            throw e;
-          });
+        const posted = await journals.post(draft.id).catch(async (e: unknown) => {
+          await journals.remove(draft.id);
+          throw e;
+        });
         Object.assign(i, {
-          status: "open",
+          status: 'open',
           number,
           yearName: year.name,
           rate,
@@ -598,17 +491,14 @@ export function createDemoBillsApi(
         guard();
         const rows = await load();
         const i = find(rows, iid);
-        if (i.status !== "open") throw refuse(409, "not_open");
-        if (i.amountPaid > 0) throw refuse(409, "has_payments");
-        const r = await createDemoJournalsApi(() => true).reverse(
-          i.journalEntryId!,
-          {
-            date: input.date ?? today(),
-            memo: `Bill voided${input.reason ? `: ${input.reason}` : ""}`,
-          },
-        );
+        if (i.status !== 'open') throw refuse(409, 'not_open');
+        if (i.amountPaid > 0) throw refuse(409, 'has_payments');
+        const r = await createDemoJournalsApi(() => true).reverse(i.journalEntryId!, {
+          date: input.date ?? today(),
+          memo: `Bill voided${input.reason ? `: ${input.reason}` : ''}`,
+        });
         Object.assign(i, {
-          status: "void",
+          status: 'void',
           voidEntryId: r.id,
           voidNumber: r.number,
         });
