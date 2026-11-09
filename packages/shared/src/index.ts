@@ -22,3 +22,4 @@ export * from './recurring/index.js';
 export * from './banking/index.js';
 export * from './statements/index.js';
 export * from './financial/index.js';
+export * from './assets/index.js';

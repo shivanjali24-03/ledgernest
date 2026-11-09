@@ -892,6 +892,21 @@ export class JournalsService {
           'document_entry',
           { creditNoteId: note.id },
         );
+      const asset = await tx.fixedAsset.findFirst({
+        where: { organizationId, disposalEntryId: id },
+        select: { id: true },
+      });
+      const run = await tx.depreciationRun.findFirst({
+        where: { organizationId, journalEntryId: id },
+        select: { id: true },
+      });
+      if (asset || run)
+        throw refuse(
+          ConflictException,
+          'This entry belongs to the fixed asset register. Undo it there instead.',
+          'document_entry',
+          { assetId: asset?.id, depreciationRunId: run?.id },
+        );
       const banked = await tx.bankTransaction.findFirst({
         where: {
           organizationId,
