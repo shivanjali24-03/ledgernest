@@ -88,6 +88,8 @@ model Organization {
   currencies    OrganizationCurrency[]
   contacts      Contact[]
   items         Item[]
+  invoices      Invoice[]
+  invoiceLines  InvoiceLine[]
   exchangeRates ExchangeRate[]
 
   @@map("organizations")
@@ -135,6 +137,9 @@ model Account {
   taxInputs     TaxRate[]             @relation("TaxInputAccount")
   lines         JournalLine[]
 
+  invoiceReceivables Invoice[]     @relation("InvoiceReceivable")
+  invoiceIncome      InvoiceLine[] @relation("InvoiceLineAccount")
+
   @@unique([organizationId, id])
   @@unique([organizationId, code])
   @@unique([organizationId, systemKey])
@@ -158,6 +163,8 @@ model FiscalYear {
   periods      Period[]
   journals     JournalEntry[] @relation("FiscalYearEntries")
   closingEntry JournalEntry?  @relation("YearClosingEntry", fields: [organizationId, closingEntryId], references: [organizationId, id], onDelete: NoAction)
+
+  invoices Invoice[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, startDate])
@@ -216,6 +223,9 @@ model JournalEntry {
   postedBy     User?               @relation("JournalPostedBy", fields: [postedById], references: [id], onDelete: SetNull)
   lines        JournalLine[]
   attachments  JournalAttachment[]
+
+  invoice       Invoice? @relation("InvoiceEntry")
+  voidedInvoice Invoice? @relation("InvoiceVoidEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -446,6 +456,8 @@ model TaxGroup {
   lines        JournalLine[]
   items        Item[]
 
+  invoiceLines InvoiceLine[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])
   @@map("tax_groups")
@@ -529,6 +541,8 @@ model Contact {
   organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orgCurrency  OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
 
+  invoices Invoice[]
+
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt])
   @@map("contacts")
@@ -560,8 +574,86 @@ model Item {
   incomeAccount  Account?     @relation("ItemIncome", fields: [organizationId, incomeAccountId], references: [organizationId, id], onDelete: NoAction)
   expenseAccount Account?     @relation("ItemExpense", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
 
+  invoiceLines InvoiceLine[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, sku])
   @@index([organizationId, archivedAt])
   @@map("items")
+}
+
+/// A sales invoice. Drafts change freely; issuing gives it a number and posts its journal entry.
+model Invoice {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  contactId           String    @map("contact_id") @db.Uuid
+  /// Gap-free per financial year, given on issue
+  number              Int?
+  fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
+  status              String    @default("draft") /// draft | issued | void
+  issueDate           DateTime  @map("issue_date") @db.Date
+  dueDate             DateTime  @map("due_date") @db.Date
+  /// null = the base currency
+  currency            String?   @db.Char(3)
+  /// For a foreign-currency invoice: the rate it was posted at
+  rate                Decimal?  @db.Decimal(20, 10)
+  /// GST state code of the place of supply
+  placeOfSupply       String?   @map("place_of_supply") @db.Char(2)
+  reference           String?
+  notes               String?
+  receivableAccountId String?   @map("receivable_account_id") @db.Uuid
+  /// In the invoice currency's smallest unit
+  subtotal            BigInt    @default(0)
+  taxTotal            BigInt    @default(0) @map("tax_total")
+  total               BigInt    @default(0)
+  amountPaid          BigInt    @default(0) @map("amount_paid")
+  journalEntryId      String?   @map("journal_entry_id") @db.Uuid
+  voidEntryId         String?   @map("void_entry_id") @db.Uuid
+  createdById         String?   @map("created_by_id") @db.Uuid
+  issuedAt            DateTime? @map("issued_at")
+  voidedAt            DateTime? @map("voided_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact           Contact       @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  fiscalYear        FiscalYear?   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  receivableAccount Account?      @relation("InvoiceReceivable", fields: [organizationId, receivableAccountId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry      JournalEntry? @relation("InvoiceEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry         JournalEntry? @relation("InvoiceVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+  lines             InvoiceLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, journalEntryId])
+  @@unique([organizationId, voidEntryId])
+  @@index([organizationId, contactId])
+  @@index([organizationId, status, dueDate])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  invoiceId      String  @map("invoice_id") @db.Uuid
+  lineNo         Int     @map("line_no")
+  itemId         String? @map("item_id") @db.Uuid
+  description    String
+  quantity       Decimal @db.Decimal(13, 4)
+  unitPrice      BigInt  @map("unit_price")
+  discountPpm    Int     @default(0) @map("discount_ppm")
+  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  accountId      String? @map("account_id") @db.Uuid
+  /// Worked out from the above: net of discount, and its tax
+  amount         BigInt
+  taxAmount      BigInt  @default(0) @map("tax_amount")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice      Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: Cascade)
+  item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account      Account?     @relation("InvoiceLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([invoiceId, lineNo])
+  @@map("invoice_lines")
 }

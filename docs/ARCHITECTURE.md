@@ -186,6 +186,13 @@ How a request is checked:
 - **Tax on lines.** A line picks a tax group and says whether its amount includes the tax. The API stores the line at its net value, followed by one generated line per tax component on the same side, so the entry still balances like any other. Sales (income) post output tax; purchases (expenses, assets) post input credit; a credit note runs the other way on the same account and so reduces the same tax. Each component is rounded on its own, as GST invoices show them; for an inclusive amount the net absorbs the rounding paisa so nothing is lost. Tax lines are recomputed when a draft posts, and a reversal mirrors them exactly. A database check keeps every tax line tied to its rate and the line it was charged on.
 - **Tax summary.** Per group, the taxable value and tax of outward and inward supplies; per rate, output tax, input credit and the net payable, for any date range, with CSV export.
 
+## Sales invoices
+
+- **Draft → issued → (void).** A draft changes freely. Issuing works its lines out again, gives it a gap-free number in its financial year (INV/2026-27/0001) and posts its entry through the same code as a journal typed by hand: the receivable against income, with tax lines generated from each line's tax group. Voiding reverses that entry; an issued invoice never changes, and its entry can't be reversed from Journals.
+- **Place of supply.** For an Indian organisation, each line's GST group follows the customer's state (from their GSTIN): CGST + SGST within the organisation's state, IGST otherwise, switching between the two groups of the same slab.
+- **Foreign customers.** A customer kept in USD is invoiced in USD, to a receivable kept in USD, at the issue date's rate. Converting the total and the parts separately can differ by a paisa; that difference is booked as an exchange difference.
+- **Amounts.** Quantities have up to 4 decimals; a line's net is quantity × price less its discount, rounded half up, and tax is added per line with each component rounded on its own, as on a GST invoice. The database checks an invoice's shape for each status and that its total equals subtotal plus tax.
+
 ## Currencies
 
 - **Base currency and foreign currencies.** The books are kept in the organisation's base currency. Foreign currencies are enabled per organisation; the base currency can't be one of them.

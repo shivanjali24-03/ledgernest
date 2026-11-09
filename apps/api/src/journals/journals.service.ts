@@ -367,6 +367,8 @@ export class JournalsService {
     const organizationId = ctx.tenant.organizationId;
     const reversalId = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
+      const invoice = await tx.invoice.findFirst({ where: { organizationId, OR: [{ journalEntryId: id }, { voidEntryId: id }] }, select: { id: true } });
+      if (invoice) throw refuse(ConflictException, 'This entry belongs to an invoice. Void the invoice instead.', 'document_entry', { invoiceId: invoice.id });
       if (await tx.fiscalYear.findFirst({ where: { organizationId, closingEntryId: id }, select: { id: true } })) {
         throw refuse(ConflictException, 'This entry closed a financial year. Reopen the year’s last month instead, which reverses it.', 'closing_entry');
       }
@@ -415,6 +417,18 @@ export class JournalsService {
     );
     const posted = await this.postInTx(tx, organizationId, r.id, actorId, { recomputeTax: false, system });
     return { id: r.id, number: posted.number, original, date };
+  }
+
+  /**
+   * Writes and posts an entry for another document (an invoice, a bill, a payment) inside the caller's
+   * transaction, with the same rules as one typed by hand: tax lines, currency conversion, open period, numbering.
+   */
+  async postEntryInTx(tx: Tx, organizationId: string, input: { date: string; memo: string; reference: string | null; lines: LineIn[] }, actorId: string) {
+    await this.lock(tx, organizationId);
+    const e = await tx.journalEntry.create({ data: { organizationId, date: asDate(input.date), memo: input.memo, reference: input.reference, createdById: actorId }, select: { id: true } });
+    await this.writeLines(tx, organizationId, e.id, input.date, input.lines);
+    const posted = await this.postInTx(tx, organizationId, e.id, actorId);
+    return { id: e.id, number: posted.number };
   }
 
   /** Posts an entry the system writes itself (the year-end close), inside the caller's transaction. */

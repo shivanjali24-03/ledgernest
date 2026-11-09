@@ -539,7 +539,8 @@
       "gstSlabs": "Tranches de GST",
       "currencies": "Devises",
       "contacts": "Clients et fournisseurs",
-      "items": "Produits et services"
+      "items": "Produits et services",
+      "invoices": "Factures"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -617,7 +618,12 @@
       "org_item_update": "Article modifié",
       "org_item_archive": "Article archivé",
       "org_item_restore": "Article restauré",
-      "org_item_delete": "Article supprimé"
+      "org_item_delete": "Article supprimé",
+      "org_invoice_create": "Facture en brouillon",
+      "org_invoice_update": "Brouillon de facture modifié",
+      "org_invoice_delete": "Brouillon de facture supprimé",
+      "org_invoice_issue": "Facture émise",
+      "org_invoice_void": "Facture annulée"
     },
     "entities": {
       "membership": "Membre",
@@ -634,7 +640,8 @@
       "gst_slab": "Tranche de GST",
       "currency": "Devise",
       "contact": "Contact",
-      "item": "Article"
+      "item": "Article",
+      "invoice": "Facture"
     },
     "fields": {
       "user": "Personne",
