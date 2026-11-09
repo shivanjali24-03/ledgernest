@@ -116,7 +116,8 @@ export class ContactsService {
     >`
       SELECT c.id AS contact_id,
              coalesce((SELECT sum(i.total - i.amount_paid) FROM invoices i WHERE i.organization_id = c.organization_id AND i.contact_id = c.id AND i.status = 'issued'), 0)
-           - coalesce((SELECT sum(p.amount - p.allocated) FROM payments p WHERE p.organization_id = c.organization_id AND p.contact_id = c.id AND p.kind = 'receipt' AND p.status = 'posted'), 0) AS owed,
+           - coalesce((SELECT sum(p.amount - p.allocated) FROM payments p WHERE p.organization_id = c.organization_id AND p.contact_id = c.id AND p.kind = 'receipt' AND p.status = 'posted'), 0)
+           - coalesce((SELECT sum(n.total - n.applied) FROM credit_notes n WHERE n.organization_id = c.organization_id AND n.contact_id = c.id AND n.status = 'issued'), 0) AS owed,
              coalesce((SELECT sum(b.total - b.amount_paid) FROM bills b WHERE b.organization_id = c.organization_id AND b.contact_id = c.id AND b.status = 'open'), 0)
            - coalesce((SELECT sum(p.amount - p.allocated) FROM payments p WHERE p.organization_id = c.organization_id AND p.contact_id = c.id AND p.kind = 'payment' AND p.status = 'posted'), 0) AS owing
       FROM contacts c

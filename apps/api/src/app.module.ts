@@ -21,6 +21,7 @@ import { ItemsModule } from './items/items.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { BillsModule } from './bills/bills.module.js';
+import { CreditNotesModule } from './credit-notes/credit-notes.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -47,6 +48,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     InvoicesModule,
     PaymentsModule,
     BillsModule,
+    CreditNotesModule,
     PlatformModule,
   ],
   providers: [
