@@ -521,7 +521,8 @@
       "supportAccess": "सपोर्ट ॲक्सेस",
       "organizations": "संस्था",
       "platformUsers": "प्लॅटफॉर्म खाती",
-      "exports": "निर्यात"
+      "exports": "निर्यात",
+      "settings": "सेटिंग्ज"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -551,7 +552,10 @@
       "platform_user_reactivate": "खाते पुन्हा सक्रिय केले",
       "platform_superadmin_create": "प्लॅटफॉर्म सेट अप केला",
       "org_audit_export": "ऑडिट लॉग निर्यात केला",
-      "platform_audit_export": "प्लॅटफॉर्म ऑडिट लॉग निर्यात केला"
+      "platform_audit_export": "प्लॅटफॉर्म ऑडिट लॉग निर्यात केला",
+      "org_settings_update": "सेटिंग्ज बदलल्या",
+      "org_logo_update": "लोगो बदलला",
+      "org_logo_remove": "लोगो काढला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -585,7 +589,18 @@
       "alreadyMember": "आधीच सदस्य",
       "invitationId": "मागील आमंत्रण",
       "familyId": "सत्र",
-      "value": "मूल्य"
+      "value": "मूल्य",
+      "legalName": "कायदेशीर नाव",
+      "taxId": "कर ID",
+      "phone": "फोन",
+      "timeZone": "वेळ क्षेत्र",
+      "addressLine1": "पत्ता ओळ 1",
+      "addressLine2": "पत्ता ओळ 2",
+      "city": "शहर",
+      "region": "राज्य किंवा प्रदेश",
+      "postalCode": "पिन कोड",
+      "contentType": "फाइल प्रकार",
+      "bytes": "आकार (बाइट)"
     },
     "details": {
       "when": "केव्हा",

@@ -521,7 +521,8 @@
       "supportAccess": "وصول الدعم",
       "organizations": "المؤسسات",
       "platformUsers": "حسابات المنصة",
-      "exports": "عمليات التصدير"
+      "exports": "عمليات التصدير",
+      "settings": "الإعدادات"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -551,7 +552,10 @@
       "platform_user_reactivate": "إعادة تفعيل حساب",
       "platform_superadmin_create": "إعداد المنصة",
       "org_audit_export": "تصدير سجل التدقيق",
-      "platform_audit_export": "تصدير سجل تدقيق المنصة"
+      "platform_audit_export": "تصدير سجل تدقيق المنصة",
+      "org_settings_update": "تغيير الإعدادات",
+      "org_logo_update": "تغيير الشعار",
+      "org_logo_remove": "إزالة الشعار"
     },
     "entities": {
       "membership": "عضو",
@@ -585,7 +589,18 @@
       "alreadyMember": "عضو بالفعل",
       "invitationId": "الدعوة السابقة",
       "familyId": "الجلسة",
-      "value": "القيمة"
+      "value": "القيمة",
+      "legalName": "الاسم القانوني",
+      "taxId": "الرقم الضريبي",
+      "phone": "الهاتف",
+      "timeZone": "المنطقة الزمنية",
+      "addressLine1": "سطر العنوان 1",
+      "addressLine2": "سطر العنوان 2",
+      "city": "المدينة",
+      "region": "الولاية أو المنطقة",
+      "postalCode": "الرمز البريدي",
+      "contentType": "نوع الملف",
+      "bytes": "الحجم (بايت)"
     },
     "details": {
       "when": "متى",

@@ -521,7 +521,8 @@
       "supportAccess": "Accès du support",
       "organizations": "Organisations",
       "platformUsers": "Comptes de la plateforme",
-      "exports": "Exports"
+      "exports": "Exports",
+      "settings": "Paramètres"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -551,7 +552,10 @@
       "platform_user_reactivate": "Compte réactivé",
       "platform_superadmin_create": "Plateforme configurée",
       "org_audit_export": "Journal d'audit exporté",
-      "platform_audit_export": "Journal d'audit de la plateforme exporté"
+      "platform_audit_export": "Journal d'audit de la plateforme exporté",
+      "org_settings_update": "Paramètres modifiés",
+      "org_logo_update": "Logo modifié",
+      "org_logo_remove": "Logo supprimé"
     },
     "entities": {
       "membership": "Membre",
@@ -585,7 +589,18 @@
       "alreadyMember": "Déjà membre",
       "invitationId": "Invitation précédente",
       "familyId": "Session",
-      "value": "Valeur"
+      "value": "Valeur",
+      "legalName": "Raison sociale",
+      "taxId": "Numéro fiscal",
+      "phone": "Téléphone",
+      "timeZone": "Fuseau horaire",
+      "addressLine1": "Adresse, ligne 1",
+      "addressLine2": "Adresse, ligne 2",
+      "city": "Ville",
+      "region": "État ou région",
+      "postalCode": "Code postal",
+      "contentType": "Type de fichier",
+      "bytes": "Taille (octets)"
     },
     "details": {
       "when": "Quand",

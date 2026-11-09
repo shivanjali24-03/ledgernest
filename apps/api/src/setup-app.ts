@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { json, type NextFunction, type Request, type Response } from 'express';
 import { tenantContextMiddleware } from './access/tenant-context.js';
 import helmet from 'helmet';
 import { requestId } from './common/request-id.middleware.js';
@@ -14,6 +15,12 @@ export function setupApp(app: INestApplication) {
   const hops = config.get('TRUST_PROXY', { infer: true });
   if (hops > 0) (app.getHttpAdapter().getInstance() as { set(k: string, v: unknown): void }).set('trust proxy', hops);
   app.use(requestId);
+  // Logo uploads (base64, up to 256 KB) are the one body allowed past the default 100 KB limit.
+  // Wrapped in its own function: Nest skips installing its JSON parser if it finds one named "jsonParser".
+  const logoJson = json({ limit: '400kb' });
+  app.use('/api/v1/organization/logo', function logoBodyParser(req: Request, res: Response, next: NextFunction) {
+    logoJson(req, res, next);
+  });
   app.use(helmet());
   app.use(cookieParser());
   app.use(tenantContextMiddleware);
