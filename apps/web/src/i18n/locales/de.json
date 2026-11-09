@@ -1528,7 +1528,9 @@
       "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
       "already_archived": "Dieser Kontakt ist bereits archiviert.",
       "not_archived": "Dieser Kontakt ist nicht archiviert."
-    }
+    },
+    "owes": "Schuldet {{amount}}",
+    "inCredit": "Guthaben {{amount}}"
   },
   "items": {
     "title": "Produkte und Leistungen",
@@ -1714,7 +1716,55 @@
       "document_entry": "Diese Buchung gehört zu einer Rechnung. Stornieren Sie die Rechnung stattdessen.",
       "no_rate": "Für das Rechnungsdatum gibt es keinen Wechselkurs. Fügen Sie einen unter Währungen hinzu.",
       "no_period": "Für das Rechnungsdatum gibt es kein Geschäftsjahr. Legen Sie es unter Geschäftsjahre an.",
-      "period_closed": "Das Rechnungsdatum liegt in einem abgeschlossenen Monat."
+      "period_closed": "Das Rechnungsdatum liegt in einem abgeschlossenen Monat.",
+      "over_allocated": "Das ist mehr, als auf der Rechnung noch offen ist.",
+      "bank_currency": "Dieses Bankkonto wird in einer anderen Währung geführt.",
+      "bank_invalid": "Wählen Sie ein aktives Bank- oder Kassenkonto.",
+      "invoice_not_issued": "Nur ausgestellte Rechnungen können bezahlt werden.",
+      "invoice_currency": "Eine Rechnung ist in einer anderen Währung.",
+      "already_void": "Das ist bereits storniert."
+    }
+  },
+  "payments": {
+    "title": "Zahlungen",
+    "description": "Geld von Kunden und die Rechnungen, die es bezahlt hat.",
+    "receive": "Zahlungseingang erfassen",
+    "empty": "Noch keine Zahlungseingänge",
+    "emptyBody": "Erfassen Sie, was ein Kunde bezahlt hat: Es begleicht seine Rechnungen.",
+    "void": "Storniert",
+    "paid": "Bezahlt",
+    "onAccount": "{{amount}} als Guthaben",
+    "actionsFor": "Aktionen für {{number}}",
+    "voidAction": "Zahlungseingang stornieren",
+    "voidTitle": "{{number}} stornieren?",
+    "voidBody": "Die Buchung wird heute storniert und die bezahlten Rechnungen sind wieder offen.",
+    "voided": "{{number}} storniert",
+    "received": "Erfasst als {{number}}",
+    "receiveTitle": "Zahlungseingang erfassen",
+    "receiveBody": "Geld, das ein Kunde bezahlt hat, auf seine Rechnungen verteilt. Der Rest bleibt als Guthaben.",
+    "record": "Erfassen",
+    "noBank": "Legen Sie zuerst ein Bank- oder Kassenkonto an",
+    "allocate": "Auf Rechnungen verteilen",
+    "oldestFirst": "Älteste zuerst",
+    "nothingOpen": "Bei diesem Kunden ist nichts mehr offen.",
+    "applyTo": "Auf {{number}} anwenden",
+    "leftOver": "{{amount}} bleibt als Guthaben",
+    "allAllocated": "Alles ist verteilt",
+    "recordPayment": "Zahlung erfassen",
+    "paidBy": "Bezahlt durch",
+    "fields": {
+      "date": "Eingangsdatum",
+      "bank": "Auf",
+      "amount": "Betrag ({{currency}})",
+      "reference": "Referenz",
+      "apply": "Anwenden"
+    },
+    "problems": {
+      "customer": "Wählen Sie einen Kunden.",
+      "bank": "Wählen Sie das Konto, auf dem das Geld einging.",
+      "amount": "Geben Sie den erhaltenen Betrag ein.",
+      "allocation": "Prüfen Sie die markierten Beträge: nicht mehr als jeweils offen.",
+      "over": "Sie können nicht mehr verteilen, als eingegangen ist."
     }
   }
 }

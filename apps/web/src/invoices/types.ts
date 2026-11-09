@@ -37,6 +37,8 @@ export interface Invoice {
   taxBreakdown: { name: string; amount: number }[];
   journalEntry: { id: string; number: string | null } | null;
   voidEntry: { id: string; number: string | null } | null;
+  /** Receipts that paid it */
+  payments: { id: string; number: string; date: string; amount: number }[];
   lines: InvoiceLine[];
 }
 

@@ -6,7 +6,8 @@ import clsx from 'clsx';
 import { INDIAN_STATES } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
-import { countryName } from '../../lib/format';
+import { countryName, formatMoney } from '../../lib/format';
+import { useMoney } from '../../lib/useMoney';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
@@ -26,6 +27,7 @@ const PAGE_SIZE = 25;
 export default function Contacts() {
   const { t } = useTranslation();
   const locale = useIntlLocale();
+  const money = useMoney();
   const session = useSession();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -145,6 +147,11 @@ export default function Contacts() {
                     <code className="text-xs text-ink-500" dir="ltr">
                       {c.taxId}
                     </code>
+                  )}
+                  {!!c.receivable && (
+                    <span className={clsx('text-end font-mono text-sm tabular-nums', c.receivable > 0 ? 'text-ink-800 dark:text-ink-100' : 'text-income')} dir="ltr">
+                      {t(c.receivable > 0 ? 'contacts.owes' : 'contacts.inCredit', { amount: c.currency ? formatMoney(Math.abs(c.receivable), c.currency, locale) : money.format(Math.abs(c.receivable)) })}
+                    </span>
                   )}
                   <span className="w-24 text-end text-xs text-ink-500">{c.paymentTermsDays ? t('contacts.terms', { days: c.paymentTermsDays }) : t('contacts.onReceipt')}</span>
                   {canManage && (

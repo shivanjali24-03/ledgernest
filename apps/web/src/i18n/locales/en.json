@@ -1528,7 +1528,9 @@
       "currency_not_enabled": "Enable this currency under Currencies first.",
       "already_archived": "This contact is already archived.",
       "not_archived": "This contact isn’t archived."
-    }
+    },
+    "owes": "Owes {{amount}}",
+    "inCredit": "In credit {{amount}}"
   },
   "items": {
     "title": "Products and services",
@@ -1714,7 +1716,55 @@
       "document_entry": "This entry belongs to an invoice. Void the invoice instead.",
       "no_rate": "There is no exchange rate for the issue date. Add one under Currencies.",
       "no_period": "There is no financial year for the issue date. Add it under Financial years.",
-      "period_closed": "The issue date is in a closed month."
+      "period_closed": "The issue date is in a closed month.",
+      "over_allocated": "That’s more than the invoice has left to pay.",
+      "bank_currency": "This bank account is kept in a different currency.",
+      "bank_invalid": "Choose an active bank or cash account.",
+      "invoice_not_issued": "Only issued invoices can be paid.",
+      "invoice_currency": "An invoice is in a different currency.",
+      "already_void": "This is already void."
+    }
+  },
+  "payments": {
+    "title": "Payments",
+    "description": "Money received from customers, and the invoices it paid.",
+    "receive": "Record receipt",
+    "empty": "No receipts yet",
+    "emptyBody": "Record money a customer paid you: it settles their invoices.",
+    "void": "Void",
+    "paid": "Paid",
+    "onAccount": "{{amount}} on account",
+    "actionsFor": "Actions for {{number}}",
+    "voidAction": "Void receipt",
+    "voidTitle": "Void {{number}}?",
+    "voidBody": "Its entry is reversed today and the invoices it paid are open again.",
+    "voided": "{{number}} voided",
+    "received": "Recorded as {{number}}",
+    "receiveTitle": "Record a receipt",
+    "receiveBody": "Money a customer paid you, applied to their invoices. Anything left over stays on their account.",
+    "record": "Record receipt",
+    "noBank": "Add a bank or cash account first",
+    "allocate": "Apply to invoices",
+    "oldestFirst": "Oldest first",
+    "nothingOpen": "Nothing left to pay on this customer’s invoices.",
+    "applyTo": "Apply to {{number}}",
+    "leftOver": "{{amount}} stays on account",
+    "allAllocated": "All of it is applied",
+    "recordPayment": "Record payment",
+    "paidBy": "Paid by",
+    "fields": {
+      "date": "Date received",
+      "bank": "Into",
+      "amount": "Amount ({{currency}})",
+      "reference": "Reference",
+      "apply": "Apply"
+    },
+    "problems": {
+      "customer": "Choose a customer.",
+      "bank": "Choose the account the money went into.",
+      "amount": "Enter the amount received.",
+      "allocation": "Check the highlighted amounts: no more than each invoice has left.",
+      "over": "You can’t apply more than was received."
     }
   }
 }

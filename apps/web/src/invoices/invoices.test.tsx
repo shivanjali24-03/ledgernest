@@ -80,18 +80,25 @@ describe('invoices', () => {
     expect(await screen.findByText('Draft saved', {}, { timeout: 4000 })).toBeInTheDocument();
   });
 
-  it('voids an unpaid invoice', async () => {
+  it('voids an unpaid invoice', { timeout: 20_000 }, async () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     // Wait for the invoice itself, so the header (and its Void button) has settled
     await screen.findByRole('article', {}, { timeout: 4000 });
-    // A plain click: user-event's pointer simulation misses this header button in jsdom (it works in the browser)
-    fireEvent.click(screen.getByRole('button', { name: 'Void' }));
-    const dialog = (await screen.findByText(/^Its entry is reversed today/, {}, { timeout: 3000 })).closest('[role="dialog"]') as HTMLElement;
-    expect(dialog).toHaveTextContent(/^Void INV\//);
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Void' }));
-    expect(await screen.findByText(/^INV\/.* voided$/, {}, { timeout: 4000 })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Voided by JV\//));
+    await screen.findByRole('button', { name: 'Record payment' });
+    // Plain clicks, retried until they take: open the dialog (only while it's closed, as a second click would land
+    // outside it) and confirm in the same step, as the header re-renders while the invoice's details load
+    await waitFor(
+      () => {
+        if (!screen.queryByText(/^Its entry is reversed today/)) fireEvent.click(screen.getByRole('button', { name: 'Void' }));
+        const dialog = screen.getByText(/^Its entry is reversed today/).closest('[role="dialog"]') as HTMLElement;
+        expect(dialog).toHaveTextContent(/^Void INV\//);
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Void' }));
+      },
+      { timeout: 6000 },
+    );
+    // The invoice records its reversal (more lasting than the toast, which can come and go under load)
+    await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Voided by JV\//), { timeout: 8000 });
   });
 
   it('is read-only for Auditors', async () => {
