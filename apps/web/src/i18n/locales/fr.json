@@ -541,7 +541,8 @@
       "contacts": "Clients et fournisseurs",
       "items": "Produits et services",
       "invoices": "Factures",
-      "payments": "Encaissements et paiements"
+      "payments": "Encaissements et paiements",
+      "bills": "Factures fournisseurs"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "Facture émise",
       "org_invoice_void": "Facture annulée",
       "org_payment_receive": "Encaissement enregistré",
-      "org_payment_void": "Paiement annulé"
+      "org_payment_void": "Paiement annulé",
+      "org_bill_create": "Facture fournisseur en brouillon",
+      "org_bill_update": "Brouillon de facture fournisseur modifié",
+      "org_bill_delete": "Brouillon de facture fournisseur supprimé",
+      "org_bill_record": "Facture fournisseur enregistrée",
+      "org_bill_void": "Facture fournisseur annulée"
     },
     "entities": {
       "membership": "Membre",
@@ -645,7 +651,8 @@
       "contact": "Contact",
       "item": "Article",
       "invoice": "Facture",
-      "payment": "Paiement"
+      "payment": "Paiement",
+      "bill": "Facture fournisseur"
     },
     "fields": {
       "user": "Personne",

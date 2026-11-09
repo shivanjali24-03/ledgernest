@@ -541,7 +541,8 @@
       "contacts": "ग्राहक आणि विक्रेते",
       "items": "उत्पादने आणि सेवा",
       "invoices": "बीजके",
-      "payments": "जमा आणि देयके"
+      "payments": "जमा आणि देयके",
+      "bills": "बिले"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "बीजक जारी केले",
       "org_invoice_void": "बीजक रद्द केले",
       "org_payment_receive": "जमा नोंदवली",
-      "org_payment_void": "देयक रद्द केले"
+      "org_payment_void": "देयक रद्द केले",
+      "org_bill_create": "बिलाचा मसुदा तयार",
+      "org_bill_update": "बिल मसुदा संपादित",
+      "org_bill_delete": "बिल मसुदा हटवला",
+      "org_bill_record": "बिल नोंदवले",
+      "org_bill_void": "बिल रद्द केले"
     },
     "entities": {
       "membership": "सदस्य",
@@ -645,7 +651,8 @@
       "contact": "संपर्क",
       "item": "आयटम",
       "invoice": "बीजक",
-      "payment": "देयक"
+      "payment": "देयक",
+      "bill": "बिल"
     },
     "fields": {
       "user": "व्यक्ती",

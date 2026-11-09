@@ -164,7 +164,7 @@ export class ItemsService {
     await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       const i = await this.find(tx, organizationId, id);
-      if (await tx.invoiceLine.count({ where: { organizationId, itemId: id } })) throw refuse(ConflictException, 'Invoices use this item. Archive it instead.', 'in_use');
+      if ((await tx.invoiceLine.count({ where: { organizationId, itemId: id } })) || (await tx.billLine.count({ where: { organizationId, itemId: id } }))) throw refuse(ConflictException, 'Invoices or bills use this item. Archive it instead.', 'in_use');
       await tx.item.delete({ where: { id } });
       await this.audit.record({ action: 'org.item.delete', actorId: ctx.actor.userId, organizationId, entityType: 'item', entityId: id, before: { name: i.name }, req: ctx.req }, tx);
     });

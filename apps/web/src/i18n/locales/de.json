@@ -541,7 +541,8 @@
       "contacts": "Kunden und Lieferanten",
       "items": "Produkte und Leistungen",
       "invoices": "Rechnungen",
-      "payments": "Zahlungseingänge und Zahlungen"
+      "payments": "Zahlungseingänge und Zahlungen",
+      "bills": "Eingangsrechnungen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "Rechnung ausgestellt",
       "org_invoice_void": "Rechnung storniert",
       "org_payment_receive": "Zahlungseingang erfasst",
-      "org_payment_void": "Zahlung storniert"
+      "org_payment_void": "Zahlung storniert",
+      "org_bill_create": "Eingangsrechnung als Entwurf",
+      "org_bill_update": "Entwurf einer Eingangsrechnung bearbeitet",
+      "org_bill_delete": "Entwurf einer Eingangsrechnung gelöscht",
+      "org_bill_record": "Eingangsrechnung erfasst",
+      "org_bill_void": "Eingangsrechnung storniert"
     },
     "entities": {
       "membership": "Mitglied",
@@ -645,7 +651,8 @@
       "contact": "Kontakt",
       "item": "Artikel",
       "invoice": "Rechnung",
-      "payment": "Zahlung"
+      "payment": "Zahlung",
+      "bill": "Eingangsrechnung"
     },
     "fields": {
       "user": "Person",

@@ -92,6 +92,8 @@ model Organization {
   invoiceLines  InvoiceLine[]
   payments      Payment[]
   allocations   PaymentAllocation[]
+  bills         Bill[]
+  billLines     BillLine[]
   exchangeRates ExchangeRate[]
 
   @@map("organizations")
@@ -144,6 +146,9 @@ model Account {
 
   paymentBanks Payment[] @relation("PaymentBank")
 
+  billPayables Bill[]     @relation("BillPayable")
+  billExpenses BillLine[] @relation("BillLineAccount")
+
   @@unique([organizationId, id])
   @@unique([organizationId, code])
   @@unique([organizationId, systemKey])
@@ -171,6 +176,8 @@ model FiscalYear {
   invoices Invoice[]
 
   payments Payment[]
+
+  bills Bill[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, startDate])
@@ -235,6 +242,9 @@ model JournalEntry {
 
   payment       Payment? @relation("PaymentEntry")
   voidedPayment Payment? @relation("PaymentVoidEntry")
+
+  bill       Bill? @relation("BillEntry")
+  voidedBill Bill? @relation("BillVoidEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -467,6 +477,8 @@ model TaxGroup {
 
   invoiceLines InvoiceLine[]
 
+  billLines BillLine[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])
   @@map("tax_groups")
@@ -554,6 +566,8 @@ model Contact {
 
   payments Payment[]
 
+  bills Bill[]
+
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt])
   @@map("contacts")
@@ -586,6 +600,8 @@ model Item {
   expenseAccount Account?     @relation("ItemExpense", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
 
   invoiceLines InvoiceLine[]
+
+  billLines BillLine[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, sku])
@@ -725,4 +741,75 @@ model PaymentAllocation {
   @@id([paymentId, invoiceId])
   @@index([organizationId, invoiceId])
   @@map("payment_allocations")
+}
+
+/// A vendor's bill. Drafts change freely; recording it gives it a number and posts its entry.
+model Bill {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  contactId        String    @map("contact_id") @db.Uuid
+  number           Int?
+  fiscalYearId     String?   @map("fiscal_year_id") @db.Uuid
+  status           String    @default("draft") /// draft | open | void
+  /// The vendor's own number for it
+  vendorReference  String?   @map("vendor_reference")
+  billDate         DateTime  @map("bill_date") @db.Date
+  dueDate          DateTime  @map("due_date") @db.Date
+  currency         String?   @db.Char(3)
+  rate             Decimal?  @db.Decimal(20, 10)
+  placeOfSupply    String?   @map("place_of_supply") @db.Char(2)
+  notes            String?
+  payableAccountId String?   @map("payable_account_id") @db.Uuid
+  subtotal         BigInt    @default(0)
+  taxTotal         BigInt    @default(0) @map("tax_total")
+  total            BigInt    @default(0)
+  amountPaid       BigInt    @default(0) @map("amount_paid")
+  journalEntryId   String?   @map("journal_entry_id") @db.Uuid
+  voidEntryId      String?   @map("void_entry_id") @db.Uuid
+  createdById      String?   @map("created_by_id") @db.Uuid
+  recordedAt       DateTime? @map("recorded_at")
+  voidedAt         DateTime? @map("voided_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact        Contact       @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  fiscalYear     FiscalYear?   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  payableAccount Account?      @relation("BillPayable", fields: [organizationId, payableAccountId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry   JournalEntry? @relation("BillEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry      JournalEntry? @relation("BillVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+  lines          BillLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, journalEntryId])
+  @@unique([organizationId, voidEntryId])
+  @@index([organizationId, contactId])
+  @@index([organizationId, status, dueDate])
+  @@map("bills")
+}
+
+model BillLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  billId         String  @map("bill_id") @db.Uuid
+  lineNo         Int     @map("line_no")
+  itemId         String? @map("item_id") @db.Uuid
+  description    String
+  quantity       Decimal @db.Decimal(13, 4)
+  unitPrice      BigInt  @map("unit_price")
+  discountPpm    Int     @default(0) @map("discount_ppm")
+  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  accountId      String? @map("account_id") @db.Uuid
+  amount         BigInt
+  taxAmount      BigInt  @default(0) @map("tax_amount")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bill         Bill         @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: Cascade)
+  item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account      Account?     @relation("BillLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([billId, lineNo])
+  @@map("bill_lines")
 }

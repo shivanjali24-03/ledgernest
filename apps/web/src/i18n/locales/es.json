@@ -541,7 +541,8 @@
       "contacts": "Clientes y proveedores",
       "items": "Productos y servicios",
       "invoices": "Facturas",
-      "payments": "Cobros y pagos"
+      "payments": "Cobros y pagos",
+      "bills": "Facturas de proveedor"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -626,7 +627,12 @@
       "org_invoice_issue": "Factura emitida",
       "org_invoice_void": "Factura anulada",
       "org_payment_receive": "Cobro registrado",
-      "org_payment_void": "Pago anulado"
+      "org_payment_void": "Pago anulado",
+      "org_bill_create": "Factura de proveedor en borrador",
+      "org_bill_update": "Borrador de factura de proveedor editado",
+      "org_bill_delete": "Borrador de factura de proveedor eliminado",
+      "org_bill_record": "Factura de proveedor registrada",
+      "org_bill_void": "Factura de proveedor anulada"
     },
     "entities": {
       "membership": "Miembro",
@@ -645,7 +651,8 @@
       "contact": "Contacto",
       "item": "Artículo",
       "invoice": "Factura",
-      "payment": "Pago"
+      "payment": "Pago",
+      "bill": "Factura de proveedor"
     },
     "fields": {
       "user": "Persona",
