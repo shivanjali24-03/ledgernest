@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, HandCoins, Plus, Printer, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, FileMinus, HandCoins, Plus, Printer, Send, Trash2, X } from 'lucide-react';
+import CreditNoteDialog from '../../credit-notes/CreditNoteDialog';
+import { useCreditNotesApi } from '../../credit-notes/useCreditNotesApi';
 import ReceiptDialog from '../../payments/ReceiptDialog';
 import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import clsx from 'clsx';
@@ -316,6 +318,8 @@ export default function InvoiceEditor() {
   const invoice = query.data;
   const [voiding, setVoiding] = useState(false);
   const [receiving, setReceiving] = useState(false);
+  const [crediting, setCrediting] = useState(false);
+  const creditNotesApi = useCreditNotesApi();
   const paymentsApi = usePaymentsApi();
   const canReceive = session.permissions.has('payments.manage');
   const voidIt = useMutation({
@@ -357,6 +361,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && canManage && (
+                  <Button variant="secondary" icon={<FileMinus className="size-4" />} onClick={() => setCrediting(true)}>
+                    {t('creditNotes.new')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canManage && invoice.amountPaid === 0 && (
@@ -403,6 +412,26 @@ export default function InvoiceEditor() {
                   </span>
                 </span>
               ))}
+              {invoice!.credits.map((c, n) => (
+                <span key={`${c.id}-${n}`}>
+                  {' · '}
+                  {t('creditNotes.creditedBy')}{' '}
+                  <Link to="/credit-notes" className="font-mono hover:underline" dir="ltr">
+                    {c.number}
+                  </Link>
+                </span>
+              ))}
+              {invoice!.creditNotes
+                .filter((c) => c.status === 'issued' && !invoice!.credits.some((x) => x.id === c.id))
+                .map((c) => (
+                  <span key={c.id}>
+                    {' · '}
+                    {t('creditNotes.creditedBy')}{' '}
+                    <Link to="/credit-notes" className="font-mono hover:underline" dir="ltr">
+                      {c.number}
+                    </Link>
+                  </span>
+                ))}
               {invoice!.voidEntry && (
                 <>
                   {' · '}
@@ -416,6 +445,17 @@ export default function InvoiceEditor() {
           </>
         )}
       </motion.div>
+      {crediting && invoice && creditNotesApi && (
+        <CreditNoteDialog
+          invoice={invoice}
+          api={creditNotesApi}
+          onClose={() => setCrediting(false)}
+          onDone={() => {
+            setCrediting(false);
+            void queryClient.invalidateQueries({ queryKey: key });
+          }}
+        />
+      )}
       {receiving && invoice && paymentsApi && (
         <ReceiptDialog
           api={paymentsApi}

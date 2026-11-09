@@ -39,6 +39,10 @@ export interface Invoice {
   voidEntry: { id: string; number: string | null } | null;
   /** Receipts that paid it */
   payments: { id: string; number: string; date: string; amount: number }[];
+  /** Credit that came off it, from its own credit notes or others */
+  credits: { id: string; number: string; date: string; amount: number }[];
+  /** Credit notes raised against it */
+  creditNotes: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
   lines: InvoiceLine[];
 }
 

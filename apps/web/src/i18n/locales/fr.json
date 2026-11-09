@@ -28,7 +28,8 @@
       "gstSlabs": "Tranches de GST",
       "currencies": "Devises",
       "contacts": "Clients et fournisseurs",
-      "items": "Produits et services"
+      "items": "Produits et services",
+      "creditNotes": "Avoirs"
     },
     "soon": "Bientôt"
   },
@@ -633,7 +634,11 @@
       "org_bill_delete": "Brouillon de facture fournisseur supprimé",
       "org_bill_record": "Facture fournisseur enregistrée",
       "org_bill_void": "Facture fournisseur annulée",
-      "org_payment_pay": "Paiement fournisseur enregistré"
+      "org_payment_pay": "Paiement fournisseur enregistré",
+      "org_credit_note_issue": "Avoir émis",
+      "org_credit_note_apply": "Avoir imputé sur une facture",
+      "org_credit_note_refund": "Avoir remboursé",
+      "org_credit_note_void": "Avoir annulé"
     },
     "entities": {
       "membership": "Membre",
@@ -1884,6 +1889,67 @@
       "bill_not_open": "Seules les factures enregistrées peuvent être payées.",
       "bill_currency": "Cette facture est dans une autre devise.",
       "bill_not_found": "Cette facture appartient à un autre fournisseur."
+    }
+  },
+  "creditNotes": {
+    "title": "Avoirs",
+    "description": "Corrections de factures émises, et l’usage de leur crédit.",
+    "empty": "Aucun avoir",
+    "emptyBody": "Ouvrez une facture émise et choisissez Avoir pour en reprendre une partie ou la totalité.",
+    "new": "Avoir",
+    "createTitle": "Avoir sur {{number}}",
+    "createBody": "Choisissez la part de chaque ligne à reprendre. La taxe est reprise aussi, et le crédit s’impute d’abord sur la facture.",
+    "fields": {
+      "date": "Date",
+      "reason": "Motif",
+      "invoice": "Facture"
+    },
+    "reasonPlaceholder": "Retour, surfacturation…",
+    "whichLines": "Que créditer",
+    "creditAll": "Tout créditer",
+    "left": "Reste à créditer",
+    "credit": "Créditer",
+    "creditLine": "Quantité à créditer pour {{description}}",
+    "tax": "Taxe",
+    "total": "Total de l’avoir",
+    "offInvoice": "Le tout s’impute sur ce qui reste dû sur la facture.",
+    "someLeftOver": "{{amount}} dépasse le solde de la facture : le client le garde en crédit.",
+    "issue": "Émettre l’avoir",
+    "issued": "{{number}} émis",
+    "creditedBy": "Crédité par",
+    "against": "sur",
+    "creditLeft": "{{amount}} de crédit restant",
+    "onInvoice": "{{amount}} sur",
+    "refundedFrom": "{{amount}} remboursé depuis {{bank}}",
+    "applyAction": "Imputer sur une facture",
+    "refundAction": "Rembourser",
+    "applyTitle": "Imputer {{number}}",
+    "applyBody": "Il reste {{amount}} de crédit à imputer sur une autre facture du client.",
+    "apply": "Imputer le crédit",
+    "applied": "{{number}} imputé sur {{invoice}}",
+    "refundTitle": "Rembourser {{number}}",
+    "refundBody": "Rembourser le crédit restant à {{name}}.",
+    "refund": "Enregistrer le remboursement",
+    "refunded": "Remboursement de {{number}} enregistré",
+    "void": "Annuler l’avoir",
+    "voidTitle": "Annuler {{number}} ?",
+    "voidBody": "Son écriture est contrepassée aujourd’hui et les factures concernées sont de nouveau dues.",
+    "voided": "{{number}} annulé",
+    "problems": {
+      "quantity": "Vérifiez les quantités signalées : pas plus que le reste de chaque ligne.",
+      "nothing": "Saisissez une quantité sur au moins une ligne.",
+      "invoice": "Choisissez une facture.",
+      "amount": "Vérifiez le montant : pas plus que le crédit restant ni le solde de la facture.",
+      "bank": "Choisissez le compte qui rembourse."
+    },
+    "errors": {
+      "over_credited": "C’est plus que ce qui reste à créditer sur une ligne.",
+      "line_not_found": "Une ligne n’appartient pas à cette facture.",
+      "before_invoice": "Un avoir ne peut pas précéder sa facture.",
+      "credit_note_void": "Cet avoir est annulé.",
+      "over_applied": "C’est plus que le crédit restant sur cet avoir.",
+      "has_refunds": "Une partie de ce crédit a été remboursée : il ne peut pas être annulé.",
+      "before_credit_note": "Un remboursement ne peut pas précéder son avoir."
     }
   }
 }

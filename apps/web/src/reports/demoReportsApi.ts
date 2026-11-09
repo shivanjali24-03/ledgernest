@@ -125,7 +125,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     const totals = { buckets: zero(), total: 0, advance: 0 };
     for (const d of docs) {
       if (d.date > asOf || !d.number) continue;
-      const outstanding = d.total - d.payments.filter((p) => p.date <= asOf).reduce((s, p) => s + p.amount, 0);
+      const credited = 'credits' in d ? d.credits.filter((c) => c.date <= asOf).reduce((s, c) => s + c.amount, 0) : 0;
+      const outstanding = d.total - credited - d.payments.filter((p) => p.date <= asOf).reduce((s, p) => s + p.amount, 0);
       if (outstanding <= 0) continue;
       const bucket = agingBucket(d.dueDate, asOf);
       const r = rowFor(d.contact, d.currency);
@@ -143,6 +144,18 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       r.advance += p.unallocated;
       r.baseAdvance += base;
       totals.advance += base;
+    }
+    if (receivables) {
+      const { demoCreditNoteRows } = await import('../credit-notes/demoCreditNotesApi');
+      for (const n of demoCreditNoteRows().filter((x) => x.status === 'issued' && x.date <= asOf)) {
+        const left = n.total - n.applications.filter((a) => a.date <= asOf).reduce((s, a) => s + a.amount, 0);
+        if (left <= 0) continue;
+        const r = rowFor(n.contact, n.currency);
+        const base = inBase(left, n.currency, n.rate);
+        r.advance += left;
+        r.baseAdvance += base;
+        totals.advance += base;
+      }
     }
     const contacts = [...rows.values()].sort((x, y) => x.contact.name.localeCompare(y.contact.name));
     for (const c of contacts) c.documents.sort((x, y) => x.dueDate.localeCompare(y.dueDate));

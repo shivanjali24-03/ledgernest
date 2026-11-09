@@ -28,7 +28,8 @@
       "gstSlabs": "Tramos de GST",
       "currencies": "Monedas",
       "contacts": "Clientes y proveedores",
-      "items": "Productos y servicios"
+      "items": "Productos y servicios",
+      "creditNotes": "Notas de crédito"
     },
     "soon": "Pronto"
   },
@@ -633,7 +634,11 @@
       "org_bill_delete": "Borrador de factura de proveedor eliminado",
       "org_bill_record": "Factura de proveedor registrada",
       "org_bill_void": "Factura de proveedor anulada",
-      "org_payment_pay": "Pago a proveedor registrado"
+      "org_payment_pay": "Pago a proveedor registrado",
+      "org_credit_note_issue": "Nota de crédito emitida",
+      "org_credit_note_apply": "Crédito aplicado a una factura",
+      "org_credit_note_refund": "Crédito reembolsado",
+      "org_credit_note_void": "Nota de crédito anulada"
     },
     "entities": {
       "membership": "Miembro",
@@ -1884,6 +1889,67 @@
       "bill_not_open": "Solo se pueden pagar facturas registradas.",
       "bill_currency": "Esa factura está en otra moneda.",
       "bill_not_found": "Esa factura es de otro proveedor."
+    }
+  },
+  "creditNotes": {
+    "title": "Notas de crédito",
+    "description": "Correcciones de facturas emitidas y a dónde fue su crédito.",
+    "empty": "Aún no hay notas de crédito",
+    "emptyBody": "Abre una factura emitida y elige Nota de crédito para devolver parte o toda ella.",
+    "new": "Nota de crédito",
+    "createTitle": "Nota de crédito para {{number}}",
+    "createBody": "Elige cuánto de cada línea devolver. Su impuesto también se devuelve, y el crédito sale primero de la factura.",
+    "fields": {
+      "date": "Fecha",
+      "reason": "Motivo",
+      "invoice": "Factura"
+    },
+    "reasonPlaceholder": "Devuelto, cobrado de más…",
+    "whichLines": "Qué acreditar",
+    "creditAll": "Acreditar todo lo pendiente",
+    "left": "Por acreditar",
+    "credit": "Acreditar",
+    "creditLine": "Cantidad a acreditar de {{description}}",
+    "tax": "Impuesto",
+    "total": "Total del crédito",
+    "offInvoice": "Todo se descuenta de lo que la factura tiene pendiente.",
+    "someLeftOver": "{{amount}} supera lo pendiente de la factura: el cliente lo conserva como crédito.",
+    "issue": "Emitir nota de crédito",
+    "issued": "Emitida {{number}}",
+    "creditedBy": "Acreditada por",
+    "against": "sobre",
+    "creditLeft": "{{amount}} de crédito",
+    "onInvoice": "{{amount}} en",
+    "refundedFrom": "{{amount}} reembolsado desde {{bank}}",
+    "applyAction": "Aplicar a una factura",
+    "refundAction": "Reembolsar",
+    "applyTitle": "Aplicar {{number}}",
+    "applyBody": "Quedan {{amount}} de crédito para otra factura del cliente.",
+    "apply": "Aplicar crédito",
+    "applied": "{{number}} aplicada a {{invoice}}",
+    "refundTitle": "Reembolsar {{number}}",
+    "refundBody": "Devuelve el crédito pendiente a {{name}}.",
+    "refund": "Registrar reembolso",
+    "refunded": "Reembolso de {{number}} registrado",
+    "void": "Anular nota de crédito",
+    "voidTitle": "¿Anular {{number}}?",
+    "voidBody": "Su asiento se revierte hoy y las facturas en las que se aplicó vuelven a deberse.",
+    "voided": "{{number}} anulada",
+    "problems": {
+      "quantity": "Revisa las cantidades marcadas: no más de lo que queda en cada línea.",
+      "nothing": "Indica una cantidad en al menos una línea.",
+      "invoice": "Elige una factura.",
+      "amount": "Revisa el importe: no más del crédito restante ni del saldo de la factura.",
+      "bank": "Elige la cuenta desde la que se reembolsa."
+    },
+    "errors": {
+      "over_credited": "Supera lo que queda por acreditar en una línea.",
+      "line_not_found": "Una línea no pertenece a esta factura.",
+      "before_invoice": "Una nota de crédito no puede ser anterior a su factura.",
+      "credit_note_void": "Esta nota de crédito está anulada.",
+      "over_applied": "Supera el crédito que queda en esta nota.",
+      "has_refunds": "Parte de este crédito se reembolsó, así que no se puede anular.",
+      "before_credit_note": "Un reembolso no puede ser anterior a su nota de crédito."
     }
   }
 }

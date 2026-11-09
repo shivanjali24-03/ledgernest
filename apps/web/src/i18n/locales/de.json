@@ -28,7 +28,8 @@
       "gstSlabs": "GST-Sätze",
       "currencies": "Währungen",
       "contacts": "Kunden & Lieferanten",
-      "items": "Produkte & Leistungen"
+      "items": "Produkte & Leistungen",
+      "creditNotes": "Gutschriften"
     },
     "soon": "Bald"
   },
@@ -633,7 +634,11 @@
       "org_bill_delete": "Entwurf einer Eingangsrechnung gelöscht",
       "org_bill_record": "Eingangsrechnung erfasst",
       "org_bill_void": "Eingangsrechnung storniert",
-      "org_payment_pay": "Lieferantenzahlung erfasst"
+      "org_payment_pay": "Lieferantenzahlung erfasst",
+      "org_credit_note_issue": "Gutschrift erstellt",
+      "org_credit_note_apply": "Gutschrift auf Rechnung verrechnet",
+      "org_credit_note_refund": "Gutschrift erstattet",
+      "org_credit_note_void": "Gutschrift storniert"
     },
     "entities": {
       "membership": "Mitglied",
@@ -1884,6 +1889,67 @@
       "bill_not_open": "Nur erfasste Rechnungen können bezahlt werden.",
       "bill_currency": "Diese Rechnung ist in einer anderen Währung.",
       "bill_not_found": "Diese Rechnung gehört zu einem anderen Lieferanten."
+    }
+  },
+  "creditNotes": {
+    "title": "Gutschriften",
+    "description": "Korrekturen ausgestellter Rechnungen und wohin ihr Guthaben ging.",
+    "empty": "Noch keine Gutschriften",
+    "emptyBody": "Öffnen Sie eine ausgestellte Rechnung und wählen Sie Gutschrift, um sie ganz oder teilweise zurückzunehmen.",
+    "new": "Gutschrift",
+    "createTitle": "Gutschrift zu {{number}}",
+    "createBody": "Wählen Sie, wie viel jeder Zeile zurückgenommen wird. Die Steuer wird mit zurückgenommen, und das Guthaben geht zuerst auf die Rechnung.",
+    "fields": {
+      "date": "Datum",
+      "reason": "Grund",
+      "invoice": "Rechnung"
+    },
+    "reasonPlaceholder": "Retoure, zu viel berechnet…",
+    "whichLines": "Was gutgeschrieben wird",
+    "creditAll": "Alles Offene gutschreiben",
+    "left": "Noch gutschreibbar",
+    "credit": "Gutschrift",
+    "creditLine": "Menge zur Gutschrift für {{description}}",
+    "tax": "Steuer",
+    "total": "Gutschrift gesamt",
+    "offInvoice": "Alles wird mit dem offenen Betrag der Rechnung verrechnet.",
+    "someLeftOver": "{{amount}} übersteigt den offenen Betrag: Der Kunde behält es als Guthaben.",
+    "issue": "Gutschrift erstellen",
+    "issued": "{{number}} erstellt",
+    "creditedBy": "Gutgeschrieben durch",
+    "against": "zu",
+    "creditLeft": "{{amount}} Guthaben übrig",
+    "onInvoice": "{{amount}} auf",
+    "refundedFrom": "{{amount}} erstattet von {{bank}}",
+    "applyAction": "Auf Rechnung verrechnen",
+    "refundAction": "Erstatten",
+    "applyTitle": "{{number}} verrechnen",
+    "applyBody": "{{amount}} Guthaben übrig für eine andere Rechnung des Kunden.",
+    "apply": "Guthaben verrechnen",
+    "applied": "{{number}} mit {{invoice}} verrechnet",
+    "refundTitle": "{{number}} erstatten",
+    "refundBody": "Das übrige Guthaben an {{name}} zurückzahlen.",
+    "refund": "Erstattung erfassen",
+    "refunded": "Erstattung von {{number}} erfasst",
+    "void": "Gutschrift stornieren",
+    "voidTitle": "{{number}} stornieren?",
+    "voidBody": "Die Buchung wird heute storniert und die verrechneten Rechnungen sind wieder offen.",
+    "voided": "{{number}} storniert",
+    "problems": {
+      "quantity": "Prüfen Sie die markierten Mengen: nicht mehr als je Zeile offen.",
+      "nothing": "Geben Sie für mindestens eine Zeile eine Menge ein.",
+      "invoice": "Wählen Sie eine Rechnung.",
+      "amount": "Prüfen Sie den Betrag: nicht mehr als das Guthaben oder der offene Rechnungsbetrag.",
+      "bank": "Wählen Sie das Konto für die Erstattung."
+    },
+    "errors": {
+      "over_credited": "Das ist mehr, als auf einer Zeile noch gutgeschrieben werden kann.",
+      "line_not_found": "Eine Zeile gehört nicht zu dieser Rechnung.",
+      "before_invoice": "Eine Gutschrift kann nicht vor ihrer Rechnung datiert sein.",
+      "credit_note_void": "Diese Gutschrift ist storniert.",
+      "over_applied": "Das ist mehr als das übrige Guthaben dieser Gutschrift.",
+      "has_refunds": "Ein Teil wurde erstattet, daher kann sie nicht storniert werden.",
+      "before_credit_note": "Eine Erstattung kann nicht vor ihrer Gutschrift datiert sein."
     }
   }
 }

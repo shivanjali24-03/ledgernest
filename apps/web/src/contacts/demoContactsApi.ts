@@ -80,10 +80,11 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
         // What each customer owes and each vendor is owed: unpaid documents less advances (loaded on demand: invoices use contacts too)
         const { demoInvoiceViews } = await import('../invoices/demoInvoicesApi');
         const { demoAdvances } = await import('../payments/demoPaymentsApi');
+        const { demoUnappliedCredit } = await import('../credit-notes/demoCreditNotesApi');
         const { demoStoredBillViews } = await import('../bills/demoBillsApi');
         const invoices = await demoInvoiceViews();
         const bills = demoStoredBillViews();
-        const owed = (cid: string) => invoices.filter((i) => i.contact.id === cid && i.status === 'issued').reduce((s, i) => s + i.balance, 0) - demoAdvances(cid);
+        const owed = (cid: string) => invoices.filter((i) => i.contact.id === cid && i.status === 'issued').reduce((s, i) => s + i.balance, 0) - demoAdvances(cid) - demoUnappliedCredit(cid);
         const owing = (cid: string) => bills.filter((b) => b.contact.id === cid && b.status === 'open').reduce((s, b) => s + b.balance, 0) - demoAdvances(cid, 'payment');
         const s = q.search?.trim().toLowerCase();
         const items = load()

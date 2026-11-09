@@ -28,7 +28,8 @@
       "gstSlabs": "GST slabs",
       "currencies": "Currencies",
       "contacts": "Customers & vendors",
-      "items": "Products & services"
+      "items": "Products & services",
+      "creditNotes": "Credit notes"
     },
     "soon": "Soon"
   },
@@ -633,7 +634,11 @@
       "org_bill_delete": "Bill draft deleted",
       "org_bill_record": "Bill recorded",
       "org_bill_void": "Bill voided",
-      "org_payment_pay": "Vendor payment recorded"
+      "org_payment_pay": "Vendor payment recorded",
+      "org_credit_note_issue": "Credit note issued",
+      "org_credit_note_apply": "Credit applied to an invoice",
+      "org_credit_note_refund": "Credit refunded",
+      "org_credit_note_void": "Credit note voided"
     },
     "entities": {
       "membership": "Member",
@@ -1884,6 +1889,67 @@
       "bill_not_open": "Only recorded bills can be paid.",
       "bill_currency": "That bill is in a different currency.",
       "bill_not_found": "That bill belongs to another vendor."
+    }
+  },
+  "creditNotes": {
+    "title": "Credit notes",
+    "description": "Corrections to issued invoices, and where their credit went.",
+    "empty": "No credit notes yet",
+    "emptyBody": "Open an issued invoice and choose Credit note to take back some or all of it.",
+    "new": "Credit note",
+    "createTitle": "Credit note for {{number}}",
+    "createBody": "Choose how much of each line to take back. Its tax comes back too, and the credit comes off the invoice first.",
+    "fields": {
+      "date": "Date",
+      "reason": "Reason",
+      "invoice": "Invoice"
+    },
+    "reasonPlaceholder": "Returned, overcharged…",
+    "whichLines": "What to credit",
+    "creditAll": "Credit everything left",
+    "left": "Left to credit",
+    "credit": "Credit",
+    "creditLine": "Quantity to credit for {{description}}",
+    "tax": "Tax",
+    "total": "Credit total",
+    "offInvoice": "All of it comes off what the invoice still has to be paid.",
+    "someLeftOver": "{{amount}} is more than the invoice has left: the customer keeps it as credit.",
+    "issue": "Issue credit note",
+    "issued": "Issued {{number}}",
+    "creditedBy": "Credited by",
+    "against": "against",
+    "creditLeft": "{{amount}} credit left",
+    "onInvoice": "{{amount}} on",
+    "refundedFrom": "{{amount}} refunded from {{bank}}",
+    "applyAction": "Apply to an invoice",
+    "refundAction": "Refund",
+    "applyTitle": "Apply {{number}}",
+    "applyBody": "{{amount}} of credit left to put on another of the customer’s invoices.",
+    "apply": "Apply credit",
+    "applied": "{{number}} applied to {{invoice}}",
+    "refundTitle": "Refund {{number}}",
+    "refundBody": "Pay the remaining credit back to {{name}}.",
+    "refund": "Record refund",
+    "refunded": "Refund of {{number}} recorded",
+    "void": "Void credit note",
+    "voidTitle": "Void {{number}}?",
+    "voidBody": "Its entry is reversed today and the invoices it went onto are owed again.",
+    "voided": "{{number}} voided",
+    "problems": {
+      "quantity": "Check the highlighted quantities: no more than is left on each line.",
+      "nothing": "Enter a quantity to credit on at least one line.",
+      "invoice": "Choose an invoice.",
+      "amount": "Check the amount: no more than the credit left or the invoice’s balance.",
+      "bank": "Choose the account the refund is paid from."
+    },
+    "errors": {
+      "over_credited": "That’s more than is left to credit on a line.",
+      "line_not_found": "A line isn’t on this invoice.",
+      "before_invoice": "A credit note can’t be dated before its invoice.",
+      "credit_note_void": "This credit note is void.",
+      "over_applied": "That’s more credit than is left on this note.",
+      "has_refunds": "Some of this credit was refunded, so it can’t be voided.",
+      "before_credit_note": "A refund can’t be dated before its credit note."
     }
   }
 }
