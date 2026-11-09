@@ -558,7 +558,8 @@
       "invoices": "बीजके",
       "payments": "जमा आणि देयके",
       "bills": "बिले",
-      "banking": "बँकिंग"
+      "banking": "बँकिंग",
+      "assets": "स्थिर मालमत्ता"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -672,7 +673,13 @@
       "org_banking_unignore": "बँक ओळ परत आणली",
       "org_banking_reconcile": "खाते जुळवले",
       "org_banking_reconcile_undo": "जुळवणी मागे घेतली",
-      "org_report_export": "अहवाल डाउनलोड केला"
+      "org_report_export": "अहवाल डाउनलोड केला",
+      "org_asset_create": "स्थिर मालमत्ता जोडली",
+      "org_asset_update": "स्थिर मालमत्ता बदलली",
+      "org_asset_delete": "स्थिर मालमत्ता काढली",
+      "org_asset_depreciate": "घसारा लावला",
+      "org_asset_depreciate_undo": "घसारा मागे घेतला",
+      "org_asset_dispose": "स्थिर मालमत्तेची विल्हेवाट"
     },
     "entities": {
       "membership": "सदस्य",

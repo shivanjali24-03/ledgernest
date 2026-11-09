@@ -558,7 +558,8 @@
       "invoices": "Factures",
       "payments": "Encaissements et paiements",
       "bills": "Factures fournisseurs",
-      "banking": "Banque"
+      "banking": "Banque",
+      "assets": "Immobilisations"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -672,7 +673,13 @@
       "org_banking_unignore": "Ligne bancaire rétablie",
       "org_banking_reconcile": "Compte rapproché",
       "org_banking_reconcile_undo": "Rapprochement annulé",
-      "org_report_export": "Rapport téléchargé"
+      "org_report_export": "Rapport téléchargé",
+      "org_asset_create": "Immobilisation ajoutée",
+      "org_asset_update": "Immobilisation modifiée",
+      "org_asset_delete": "Immobilisation supprimée",
+      "org_asset_depreciate": "Amortissement comptabilisé",
+      "org_asset_depreciate_undo": "Amortissement annulé",
+      "org_asset_dispose": "Immobilisation cédée"
     },
     "entities": {
       "membership": "Membre",

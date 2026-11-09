@@ -558,7 +558,8 @@
       "invoices": "Rechnungen",
       "payments": "Zahlungseingänge und Zahlungen",
       "bills": "Eingangsrechnungen",
-      "banking": "Bank"
+      "banking": "Bank",
+      "assets": "Anlagevermögen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -672,7 +673,13 @@
       "org_banking_unignore": "Bankzeile wiederhergestellt",
       "org_banking_reconcile": "Konto abgeglichen",
       "org_banking_reconcile_undo": "Abgleich rückgängig gemacht",
-      "org_report_export": "Bericht heruntergeladen"
+      "org_report_export": "Bericht heruntergeladen",
+      "org_asset_create": "Anlagegut hinzugefügt",
+      "org_asset_update": "Anlagegut geändert",
+      "org_asset_delete": "Anlagegut entfernt",
+      "org_asset_depreciate": "Abschreibung gebucht",
+      "org_asset_depreciate_undo": "Abschreibung rückgängig gemacht",
+      "org_asset_dispose": "Anlagegut abgegangen"
     },
     "entities": {
       "membership": "Mitglied",

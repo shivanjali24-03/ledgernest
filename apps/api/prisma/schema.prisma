@@ -103,6 +103,9 @@ model Organization {
   statementLayouts   BankStatementLayout[]
   bankMatches        BankMatch[]
   reconciliations    BankReconciliation[]
+  fixedAssets        FixedAsset[]
+  depreciationRuns   DepreciationRun[]
+  depreciationLines  DepreciationLine[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -162,6 +165,9 @@ model Account {
   statementLines        BankStatementLine[]
   statementLayout       BankStatementLayout?
   reconciliations       BankReconciliation[]
+  assetsAt              FixedAsset[]          @relation("AssetCostAccount")
+  assetsDepreciatedIn   FixedAsset[]          @relation("AssetAccumulatedAccount")
+  assetsExpensedTo      FixedAsset[]          @relation("AssetExpenseAccount")
 
   paymentBanks Payment[] @relation("PaymentBank")
 
@@ -271,6 +277,8 @@ model JournalEntry {
   creditRefund          CreditApplication? @relation("CreditRefundEntry")
   bankTransaction       BankTransaction?   @relation("BankTransactionEntry")
   voidedBankTransaction BankTransaction?   @relation("BankTransactionVoidEntry")
+  depreciationRun       DepreciationRun?   @relation("DepreciationEntry")
+  assetDisposal         FixedAsset?        @relation("AssetDisposalEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -1161,4 +1169,88 @@ model BankReconciliation {
   @@unique([organizationId, id])
   @@index([organizationId, bankAccountId, statementDate])
   @@map("bank_reconciliations")
+}
+
+/// Something the business owns and uses for years, worn down month by month.
+model FixedAsset {
+  id                   String    @id @default(uuid()) @db.Uuid
+  organizationId       String    @map("organization_id") @db.Uuid
+  name                 String
+  /// e.g. FA-0001, unique in the organisation
+  tag                  String
+  description          String?
+  costAccountId        String    @map("cost_account_id") @db.Uuid
+  accumulatedAccountId String    @map("accumulated_account_id") @db.Uuid
+  expenseAccountId     String    @map("expense_account_id") @db.Uuid
+  cost                 BigInt
+  residual             BigInt    @default(0)
+  inServiceDate        DateTime  @map("in_service_date") @db.Date
+  method               String /// straight_line | wdv
+  usefulLifeMonths     Int?      @map("useful_life_months")
+  /// Written-down value: the yearly rate, in ppm
+  wdvRatePpm           Int?      @map("wdv_rate_ppm")
+  /// Depreciation already charged before the asset was added here
+  openingAccumulated   BigInt    @default(0) @map("opening_accumulated")
+  /// Depreciation so far: the opening amount plus every run since
+  accumulated          BigInt    @default(0)
+  /// The last day depreciation has been charged up to
+  depreciatedTo        DateTime? @map("depreciated_to") @db.Date
+  status               String    @default("active") /// active | disposed
+  disposedOn           DateTime? @map("disposed_on") @db.Date
+  proceeds             BigInt?
+  disposalEntryId      String?   @map("disposal_entry_id") @db.Uuid
+  createdById          String?   @map("created_by_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  costAccount        Account            @relation("AssetCostAccount", fields: [organizationId, costAccountId], references: [organizationId, id], onDelete: NoAction)
+  accumulatedAccount Account            @relation("AssetAccumulatedAccount", fields: [organizationId, accumulatedAccountId], references: [organizationId, id], onDelete: NoAction)
+  expenseAccount     Account            @relation("AssetExpenseAccount", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
+  disposalEntry      JournalEntry?      @relation("AssetDisposalEntry", fields: [organizationId, disposalEntryId], references: [organizationId, id], onDelete: NoAction)
+  depreciation       DepreciationLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, tag])
+  @@unique([organizationId, disposalEntryId])
+  @@map("fixed_assets")
+}
+
+/// One posting of depreciation up to a month's end: a single entry, a line per asset.
+model DepreciationRun {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  upTo           DateTime @map("up_to") @db.Date
+  total          BigInt
+  journalEntryId String   @map("journal_entry_id") @db.Uuid
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry       @relation("DepreciationEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  lines        DepreciationLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, journalEntryId])
+  @@index([organizationId, upTo])
+  @@map("depreciation_runs")
+}
+
+/// An asset's share of a run: the days charged, and where it stood before (so the run can be undone)
+model DepreciationLine {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  runId          String    @map("run_id") @db.Uuid
+  assetId        String    @map("asset_id") @db.Uuid
+  fromDate       DateTime  @map("from_date") @db.Date
+  toDate         DateTime  @map("to_date") @db.Date
+  amount         BigInt
+  previousTo     DateTime? @map("previous_to") @db.Date
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  run          DepreciationRun @relation(fields: [organizationId, runId], references: [organizationId, id], onDelete: Cascade)
+  asset        FixedAsset      @relation(fields: [organizationId, assetId], references: [organizationId, id], onDelete: Cascade)
+
+  @@index([organizationId, assetId])
+  @@map("depreciation_lines")
 }

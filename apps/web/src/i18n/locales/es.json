@@ -558,7 +558,8 @@
       "invoices": "Facturas",
       "payments": "Cobros y pagos",
       "bills": "Facturas de proveedor",
-      "banking": "Banca"
+      "banking": "Banca",
+      "assets": "Activos fijos"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -672,7 +673,13 @@
       "org_banking_unignore": "Línea bancaria recuperada",
       "org_banking_reconcile": "Cuenta conciliada",
       "org_banking_reconcile_undo": "Conciliación deshecha",
-      "org_report_export": "Informe descargado"
+      "org_report_export": "Informe descargado",
+      "org_asset_create": "Activo fijo añadido",
+      "org_asset_update": "Activo fijo modificado",
+      "org_asset_delete": "Activo fijo eliminado",
+      "org_asset_depreciate": "Amortización contabilizada",
+      "org_asset_depreciate_undo": "Amortización deshecha",
+      "org_asset_dispose": "Activo fijo dado de baja"
     },
     "entities": {
       "membership": "Miembro",

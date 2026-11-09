@@ -558,7 +558,8 @@
       "invoices": "الفواتير",
       "payments": "المقبوضات والمدفوعات",
       "bills": "فواتير الموردين",
-      "banking": "الخدمات المصرفية"
+      "banking": "الخدمات المصرفية",
+      "assets": "الأصول الثابتة"
     },
     "actions": {
       "auth_login_success": "تسجيل دخول",
@@ -672,7 +673,13 @@
       "org_banking_unignore": "أُعيد سطر بنكي",
       "org_banking_reconcile": "سُوّي الحساب",
       "org_banking_reconcile_undo": "أُلغيت التسوية",
-      "org_report_export": "نُزّل تقرير"
+      "org_report_export": "نُزّل تقرير",
+      "org_asset_create": "أُضيف أصل ثابت",
+      "org_asset_update": "عُدّل أصل ثابت",
+      "org_asset_delete": "حُذف أصل ثابت",
+      "org_asset_depreciate": "قُيّد الإهلاك",
+      "org_asset_depreciate_undo": "أُلغي قيد الإهلاك",
+      "org_asset_dispose": "استُبعد أصل ثابت"
     },
     "entities": {
       "membership": "عضو",
