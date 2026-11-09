@@ -24,10 +24,12 @@ import { useToast } from '../../ui/toastContext';
 import { journalErrorMessage } from '../errors';
 import type { JournalEntry, JournalsApi } from '../types';
 import { useJournalsApi } from '../useJournalsApi';
+import CostCentreSelect from '../../cost-centres/CostCentreSelect';
+import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 
 /** For a line on a foreign-currency account, debit and credit are in that currency, and rate is typed or empty (= the day's rate) */
-type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean; rate: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '', taxGroupId: '', inclusive: false, rate: '' });
+type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean; rate: string; costCentreId: string };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '', taxGroupId: '', inclusive: false, rate: '', costCentreId: '' });
 
 /** An amount in a currency's smallest unit as plain digits, e.g. 100000 → "1,000.00" */
 const plainIn = (minor: number, digits: number, locale: string) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
@@ -202,6 +204,11 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
                         <Pill tone="brand">{l.taxInclusive ? t('journals.tax.groupInclusive', { name: l.taxGroup.name }) : l.taxGroup.name}</Pill>
                       </span>
                     )}
+                    {l.costCentre && (
+                      <span className="ms-2 inline-block" title={t('costCentres.field')}>
+                        <Pill>{l.costCentre.code}</Pill>
+                      </span>
+                    )}
                     {(l.description || l.taxRate) && (
                       <span className="block text-xs text-ink-400" dir="auto">
                         {l.taxRate ? t('journals.tax.lineFor', { name: l.taxRate.name, n: l.taxSourceLine }) : l.description}
@@ -308,6 +315,7 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const locale = useIntlLocale();
   const accountById = useMemo(() => new Map((accounts.data ?? []).map((a) => [a.id, a])), [accounts.data]);
   const taxesApi = useTaxesApi();
+  const centres = useCostCentres(true).data ?? [];
   const taxes = useQuery({ queryKey: ['taxes', session.organizationId, session.role ?? session.customRoleName], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
   const [date, setDate] = useState(entry?.date ?? todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [reference, setReference] = useState(entry?.reference ?? '');
@@ -315,7 +323,7 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const [lines, setLines] = useState<Line[]>(
     entry?.lines.length
       ? // Generated tax lines are left out: they're made again from each line's tax group
-        enteredLines(entry.lines.map((l) => ({ ...l, taxGroupId: l.taxGroup?.id ?? null, taxRateId: l.taxRate?.id ?? null }))).map((l) => {
+        enteredLines(entry.lines.map((l) => ({ ...l, taxGroupId: l.taxGroup?.id ?? null, taxRateId: l.taxRate?.id ?? null, costCentreId: l.costCentre?.id ?? null }))).map((l) => {
           // Foreign lines reopen in their currency, with the rate they were converted at
           const foreign = (minor: number | undefined) => (minor ? plainIn(minor, currencyDigits(l.currency!), locale) : '');
           return {
@@ -327,6 +335,7 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
             taxGroupId: l.taxGroupId ?? '',
             inclusive: !!l.taxInclusive,
             rate: l.currency ? (l.rate ?? '') : '',
+            costCentreId: l.costCentreId ?? '',
           };
         })
       : [blankLine(), blankLine()],
@@ -390,8 +399,8 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
     memo,
     lines: filled.map((l) =>
       l.currency
-        ? { accountId: l.accountId, description: l.description, currency: l.currency, foreignDebit: l.fd ?? 0, foreignCredit: l.fc ?? 0, ...(l.rate && l.rate.trim() && normaliseRate(l.rate) && l.rate !== dayRate(l.currency) ? { rate: normaliseRate(l.rate)! } : {}) }
-        : { accountId: l.accountId, description: l.description, debit: l.d ?? 0, credit: l.c ?? 0, taxGroupId: l.taxGroupId || null, taxInclusive: !!l.taxGroupId && l.inclusive },
+        ? { accountId: l.accountId, description: l.description, currency: l.currency, foreignDebit: l.fd ?? 0, foreignCredit: l.fc ?? 0, costCentreId: l.costCentreId || null, ...(l.rate && l.rate.trim() && normaliseRate(l.rate) && l.rate !== dayRate(l.currency) ? { rate: normaliseRate(l.rate)! } : {}) }
+        : { accountId: l.accountId, description: l.description, debit: l.d ?? 0, credit: l.c ?? 0, taxGroupId: l.taxGroupId || null, taxInclusive: !!l.taxGroupId && l.inclusive, costCentreId: l.costCentreId || null },
     ),
   });
 
@@ -501,6 +510,7 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
                         dir="auto"
                         className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}
                       />
+                      <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: i + 1 })} disabled={!canEdit} />
                     </td>
                     {hasTaxes && (
                       <td className="px-3 py-1.5">

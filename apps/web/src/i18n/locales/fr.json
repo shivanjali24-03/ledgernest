@@ -2668,6 +2668,8 @@
       "cost_centre_archived": "Ce centre de coûts est archivé. Choisissez-en un autre ou restaurez-le.",
       "forbidden": "Vous n’avez pas le droit de modifier les centres de coûts.",
       "generic": "Le centre de coûts n’a pas pu être enregistré. Réessayez."
-    }
+    },
+    "none": "Aucun centre de coûts",
+    "lineLabel": "Centre de coûts, ligne {{n}}"
   }
 }

@@ -120,7 +120,7 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
           memo: `Credit note ${label} · ${inv.contact.name} · ${inv.number}`,
           reference: label,
           lines: [
-            ...lines.map((l, n) => ({ accountId: l.src.account!.id, description: l.src.description, debit: toInr(amounts.lines[n]!.net), taxGroupId: inv.currency ? null : (l.src.taxGroup?.id ?? null) })).filter((l) => l.debit > 0),
+            ...lines.map((l, n) => ({ accountId: l.src.account!.id, description: l.src.description, debit: toInr(amounts.lines[n]!.net), taxGroupId: inv.currency ? null : (l.src.taxGroup?.id ?? null), costCentreId: l.src.costCentre?.id ?? null })).filter((l) => l.debit > 0),
             inv.currency ? { accountId: receivable.id, description: label, currency: inv.currency, foreignCredit: amounts.total, rate: inv.rate! } : { accountId: receivable.id, description: label, credit: amounts.total },
           ],
         });

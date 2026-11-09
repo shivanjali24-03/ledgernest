@@ -2668,6 +2668,8 @@
       "cost_centre_archived": "Diese Kostenstelle ist archiviert. Wählen Sie eine andere oder stellen Sie sie wieder her.",
       "forbidden": "Sie dürfen Kostenstellen nicht ändern.",
       "generic": "Die Kostenstelle konnte nicht gespeichert werden. Versuchen Sie es erneut."
-    }
+    },
+    "none": "Keine Kostenstelle",
+    "lineLabel": "Kostenstelle, Zeile {{n}}"
   }
 }

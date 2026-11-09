@@ -13,6 +13,8 @@ export interface InvoiceLine {
   item: { id: string; name: string; hsnSac: string | null; unit: string | null } | null;
   account: { id: string; code: string; name: string } | null;
   taxGroup: { id: string; name: string; supply: 'intra' | 'inter' | null } | null;
+  /** The cost centre or project the line belongs to */
+  costCentre?: { id: string; code: string; name: string } | null;
 }
 
 export interface Invoice {

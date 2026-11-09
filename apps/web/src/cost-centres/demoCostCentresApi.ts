@@ -39,6 +39,11 @@ export const resetDemoCostCentres = () => {
 };
 /** The demo's cost centres, for the demo journals and reports */
 export const demoCostCentreRows = (): readonly Stored[] => load();
+/** A demo cost centre as a document line shows it */
+export const demoCostCentreRef = (id: string | null | undefined) => {
+  const c = id ? load().find((x) => x.id === id) : undefined;
+  return c ? { id: c.id, code: c.code, name: c.name } : null;
+};
 
 const countLines = (id: string) => demoJournalLinesTagged(id);
 

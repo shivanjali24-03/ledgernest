@@ -65,3 +65,25 @@ describe('cost centres', () => {
     await waitFor(() => expect(screen.getByRole('table', { name: 'Profit and loss' })).toHaveTextContent('38,200.00'), { timeout: 4000 });
   }, 30_000);
 });
+
+describe('tagging lines', () => {
+  it('tags a journal line with a cost centre, which shows once it is posted', async () => {
+    renderApp('/journals/new');
+    await waitFor(() => expect((screen.getByLabelText('Line 1 account') as HTMLSelectElement).options.length).toBeGreaterThan(10), { timeout: 4000 });
+    const pick = async (n: number, name: RegExp) => {
+      const select = screen.getByLabelText(`Line ${n} account`) as HTMLSelectElement;
+      await userEvent.selectOptions(select, [...select.options].find((o) => name.test(o.textContent ?? ''))!.value);
+    };
+    await userEvent.type(screen.getByLabelText('Memo'), 'Team lunch, Mumbai');
+    await pick(1, /Internet and phone/);
+    await userEvent.type(screen.getByLabelText('Line 1 debit'), '1200');
+    const centre = (await screen.findByLabelText('Cost centre, line 1', {}, { timeout: 4000 })) as HTMLSelectElement;
+    await userEvent.selectOptions(centre, [...centre.options].find((o) => o.textContent === 'MUM · Mumbai branch')!.value);
+    await pick(2, /HDFC Bank current/);
+    await userEvent.type(screen.getByLabelText('Line 2 credit'), '1200');
+    await userEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByText(/^Posted as JV\//, {}, { timeout: 4000 })).toBeInTheDocument();
+    const line = (await screen.findByText(/Internet and phone/, {}, { timeout: 4000 })).closest('tr')!;
+    expect(within(line).getByText('MUM')).toBeInTheDocument();
+  }, 30_000);
+});
