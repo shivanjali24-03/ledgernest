@@ -577,7 +577,8 @@
       "inventory": "Inventory",
       "approvals": "Approvals",
       "imports": "Imports",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "scheduledReports": "Scheduled reports"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "API key revoked",
       "org_webhook_create": "Webhook added",
       "org_webhook_update": "Webhook changed",
-      "org_webhook_delete": "Webhook removed"
+      "org_webhook_delete": "Webhook removed",
+      "org_scheduled_report_create": "Scheduled report set up",
+      "org_scheduled_report_update": "Scheduled report changed",
+      "org_scheduled_report_delete": "Scheduled report removed"
     },
     "entities": {
       "membership": "Member",

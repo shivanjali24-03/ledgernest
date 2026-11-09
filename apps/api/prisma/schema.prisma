@@ -123,6 +123,8 @@ model Organization {
   exchangeRates       ExchangeRate[]
   webhookEndpoints    WebhookEndpoint[]
   webhookDeliveries   WebhookDelivery[]
+  scheduledReports    ScheduledReport[]
+  reportDeliveries    ReportDelivery[]
 
   @@map("organizations")
 }
@@ -1521,4 +1523,56 @@ model WebhookDelivery {
   @@index([status, nextAttemptAt])
   @@index([organizationId, endpointId, createdAt])
   @@map("webhook_deliveries")
+}
+
+/// A report that arrives by itself: built weekly or monthly, kept, and emailed to members chosen.
+model ScheduledReport {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  /// profit_and_loss | balance_sheet | trial_balance | receivables_aging | payables_aging
+  report         String
+  /// weekly | monthly
+  frequency      String
+  /// weekly: 1 (Monday) to 7; monthly: the day, 1 to 28
+  day            Int
+  /// xlsx | csv
+  format         String
+  /// Members it goes to (user ids)
+  recipients     String[]
+  active         Boolean   @default(true)
+  nextRunAt      DateTime  @map("next_run_at") @db.Timestamptz(3)
+  lastRunAt      DateTime? @map("last_run_at") @db.Timestamptz(3)
+  createdById    String    @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries   ReportDelivery[]
+
+  @@unique([organizationId, id])
+  @@index([active, nextRunAt])
+  @@map("scheduled_reports")
+}
+
+/// One run of a scheduled report: the file made, the period it covers, and who it was emailed to.
+model ReportDelivery {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  scheduleId     String   @map("schedule_id") @db.Uuid
+  periodFrom     DateTime @map("period_from") @db.Date
+  periodTo       DateTime @map("period_to") @db.Date
+  fileName       String   @map("file_name")
+  contentType    String   @map("content_type")
+  data           Bytes
+  /// The addresses it was emailed to (none when email isn't set up)
+  emailedTo      String[] @map("emailed_to")
+  error          String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  schedule     ScheduledReport @relation(fields: [organizationId, scheduleId], references: [organizationId, id], onDelete: Cascade)
+
+  @@index([organizationId, scheduleId, createdAt])
+  @@map("report_deliveries")
 }

@@ -577,7 +577,8 @@
       "inventory": "Inventario",
       "approvals": "Aprobaciones",
       "imports": "Importaciones",
-      "integrations": "Integraciones"
+      "integrations": "Integraciones",
+      "scheduledReports": "Informes programados"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -729,7 +730,10 @@
       "org_api_key_revoke": "Clave de API revocada",
       "org_webhook_create": "Webhook añadido",
       "org_webhook_update": "Webhook modificado",
-      "org_webhook_delete": "Webhook eliminado"
+      "org_webhook_delete": "Webhook eliminado",
+      "org_scheduled_report_create": "Informe programado creado",
+      "org_scheduled_report_update": "Informe programado modificado",
+      "org_scheduled_report_delete": "Informe programado eliminado"
     },
     "entities": {
       "membership": "Miembro",
