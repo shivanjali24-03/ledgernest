@@ -1886,7 +1886,17 @@
     "weOwe": "Nous devons {{amount}}",
     "paidAhead": "Avance de {{amount}}",
     "customerStatement": "Relevé de compte",
-    "vendorStatement": "Relevé fournisseur"
+    "vendorStatement": "Relevé fournisseur",
+    "page": {
+      "address": "Adresse",
+      "terms": "Conditions de paiement",
+      "owedToUs": "On nous doit",
+      "weOwe": "Nous devons",
+      "noInvoices": "Pas encore de facture pour ce client",
+      "noQuotes": "Pas encore de devis pour ce client",
+      "noBills": "Pas encore de facture de ce fournisseur",
+      "more": "et {{count}} de plus dans Factures"
+    }
   },
   "items": {
     "title": "Produits et services",

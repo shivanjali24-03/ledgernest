@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, ArchiveRestore, Building2, Contact as ContactIcon, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -134,9 +134,9 @@ export default function Contacts() {
                 <li key={c.id} className={clsx('flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3', c.archived && 'opacity-70')}>
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-2">
-                      <button type="button" className="text-start font-medium hover:underline" dir="auto" onClick={() => setEditing(c)} disabled={!canManage}>
+                      <Link to={`/contacts/${c.id}`} className="text-start font-medium hover:underline" dir="auto">
                         {c.name}
-                      </button>
+                      </Link>
                       {c.isCustomer && <Pill tone="brand">{t('contacts.customer')}</Pill>}
                       {c.isVendor && <Pill>{t('contacts.vendor')}</Pill>}
                       {c.currency && <Pill>{c.currency}</Pill>}

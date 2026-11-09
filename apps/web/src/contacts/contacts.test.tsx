@@ -17,7 +17,7 @@ function renderApp(path = '/contacts') {
   return router;
 }
 const previewAs = (role: string) => userEvent.selectOptions(screen.getByLabelText('Preview the app as a role'), role);
-const row = async (name: string) => (await screen.findByRole('button', { name }, { timeout: 5000 })).closest('li')!;
+const row = async (name: string) => (await screen.findByRole('link', { name }, { timeout: 5000 })).closest('li')!;
 
 beforeEach(() => {
   resetDemoContacts();
@@ -42,12 +42,12 @@ describe('customers and vendors', () => {
     renderApp();
     await row('Kumar Logistics');
     await userEvent.click(screen.getByRole('radio', { name: 'Vendors' }));
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Kumar Logistics' })).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Sharma Office Supplies' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('link', { name: 'Kumar Logistics' })).not.toBeInTheDocument());
+    expect(screen.getByRole('link', { name: 'Sharma Office Supplies' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('radio', { name: 'All' }));
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search name, email or tax ID' }), '29AAQ');
     await waitFor(() => expect(screen.getAllByRole('listitem').filter((li) => li.querySelector('code'))).toHaveLength(1));
-    expect(screen.getByRole('button', { name: 'Bluewave Clinics' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Bluewave Clinics' })).toBeInTheDocument();
   });
 
   it('adds a customer, filling the state from the GSTIN and refusing an invalid one', async () => {
@@ -74,7 +74,7 @@ describe('customers and vendors', () => {
     await userEvent.click(within(await row('Sharma Office Supplies')).getByRole('button', { name: 'Actions for Sharma Office Supplies' }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Archive' }));
     expect(await screen.findByText('Sharma Office Supplies archived', {}, { timeout: 5000 })).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Sharma Office Supplies' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('link', { name: 'Sharma Office Supplies' })).not.toBeInTheDocument());
     await userEvent.click(screen.getByLabelText('Show archived'));
     await userEvent.click(within(await row('Sharma Office Supplies')).getByRole('button', { name: 'Actions for Sharma Office Supplies' }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Restore' }));
@@ -104,5 +104,18 @@ describe('customers and vendors', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/reports'));
     expect(router.state.location.search).toMatch(/tab=statement&contact=/);
     expect(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 6000 })).toBeInTheDocument();
+  });
+
+  it("opens a customer's page: details, balance, recent invoices and quotes, and a new invoice for them", async () => {
+    const router = renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: 'Kumar Logistics' }, { timeout: 5000 }));
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/contacts\/[0-9a-f-]{36}$/));
+    expect(await screen.findByRole('heading', { name: 'Kumar Logistics' }, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByText(/^27AAKCK4821R1Z/)).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByText('No quotes for this customer yet')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'New invoice' }));
+    await waitFor(() => expect(router.state.location.search).toMatch(/^\?contact=/));
+    await waitFor(() => expect((screen.getByLabelText('Customer') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe('Kumar Logistics'), { timeout: 5000 });
   });
 });

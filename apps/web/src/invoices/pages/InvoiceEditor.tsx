@@ -73,6 +73,7 @@ export default function InvoiceEditor() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const copyId = isNew ? params.get('copy') : null;
+  const forContact = isNew ? params.get('contact') : null;
   const copy = useQuery({ queryKey: ['invoices', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const [voiding, setVoiding] = useState(false);
   const [receiving, setReceiving] = useState(false);
@@ -171,7 +172,7 @@ export default function InvoiceEditor() {
               </Card>
             )
           ) : (
-            <DraftForm key="new" invoice={null} api={api} />
+            <DraftForm key={`new-${forContact ?? ''}`} invoice={null} template={forContact ? ({ contact: { id: forContact }, lines: [], currency: null, notes: null, placeOfSupply: null } as unknown as Invoice) : undefined} api={api} />
           )
         ) : query.isPending ? (
           <Card>

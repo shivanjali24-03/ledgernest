@@ -65,7 +65,7 @@ describe('receipts', () => {
 
     document.body.innerHTML = '';
     renderApp('/contacts');
-    const kumar = (await screen.findByRole('button', { name: 'Kumar Logistics' }, { timeout: 4000 })).closest('li')!;
+    const kumar = (await screen.findByRole('link', { name: 'Kumar Logistics' }, { timeout: 4000 })).closest('li')!;
     await waitFor(() => expect(kumar).toHaveTextContent('Owes ₹68,000.00'));
 
     document.body.innerHTML = '';
@@ -114,7 +114,7 @@ describe('vendor payments', () => {
     await screen.findByRole('link', { name: /^BILL\// }, { timeout: 4000 });
     document.body.innerHTML = '';
     renderApp('/contacts');
-    const sharma = (await screen.findByRole('button', { name: 'Sharma Office Supplies' }, { timeout: 4000 })).closest('li')!;
+    const sharma = (await screen.findByRole('link', { name: 'Sharma Office Supplies' }, { timeout: 4000 })).closest('li')!;
     await waitFor(() => expect(sharma).toHaveTextContent('We owe ₹53,100.00'));
   }, 20_000);
 });
