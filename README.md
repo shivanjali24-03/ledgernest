@@ -16,6 +16,16 @@ Double-entry bookkeeping, invoices, banking and real-time reports, with role-bas
 
 > **Status:** early development. See the [feature list](docs/FEATURES.md) for what's planned and what's done.
 
+## Try it
+
+| | |
+|---|---|
+| **Demo** (sample company, no sign-up, works offline) | https://shivanjali24-03.github.io/ledgernest/demo/ |
+| **Production** | https://shivanjali24-03.github.io/ledgernest/ |
+| Staging · Development | [/staging/](https://shivanjali24-03.github.io/ledgernest/staging/) · [/dev/](https://shivanjali24-03.github.io/ledgernest/dev/) |
+
+The API runs on a free plan that sleeps when idle, so the first sign-in can take up to a minute. How it's hosted: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Why LedgerNest
 
 - **Works for any domain:** industry chart-of-accounts templates for retail, services, healthcare, education, manufacturing, non-profits and more.
@@ -30,7 +40,7 @@ Double-entry bookkeeping, invoices, banking and real-time reports, with role-bas
 apps/web         React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · i18next
 apps/api         NestJS · Prisma · PostgreSQL · JWT · role-based access control
 packages/shared  Roles, permissions and accounting rules used by both apps
-docs/            Feature list, architecture and decision records
+docs/            Feature list, architecture, deployment and decision records
 ```
 
 ## Getting started
@@ -40,9 +50,11 @@ docs/            Feature list, architecture and decision records
 ```bash
 npm install                 # installs every workspace
 npm run build -w @ledgernest/shared
-npm run dev:api             # API on http://localhost:3000
+npm run dev:api             # API on http://localhost:3000/api/v1 (docs at /docs)
 npm run dev:web             # web app on http://localhost:5173
 ```
+
+Full setup, including the local database and seeding the first Super Admin: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 | Script | What it does |
 |---|---|

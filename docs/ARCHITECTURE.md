@@ -21,11 +21,80 @@ Browser (React SPA)  ──HTTPS / JSON──►  NestJS API  ──Prisma──
 - The API resolves the current organisation from the signed-in user's membership and **always** filters by it.
 - Super Admins act at the platform level; organisation roles act inside one organisation.
 
+## Super Admin console
+
+Platform endpoints live under `/api/v1/platform` and need a platform permission, so only Super Admins can use them. Every change is written to the audit log with before and after values.
+
+- **Organisations:** search and filter, create, edit, suspend (members are locked out at once) and reactivate. A web address (slug) is generated from the name and made unique automatically.
+- **First Owner:** if the email already has an account, they're added as Owner straight away. Otherwise an invitation is created and its one-time link is returned to the Super Admin to share. Email delivery comes later.
+- **Platform users:** search, promote to or demote from Super Admin, suspend (ending their sessions at once) and reactivate. LedgerNest always keeps at least one active Super Admin. These changes run under a database lock, so two admins demoting each other at the same instant can't both succeed.
+- **Stats:** organisations and users by status, sign-ins in the last 7 days, and recent platform activity.
+
+## Audit log
+
+- Every sign-in, admin change and Super Admin support visit is recorded: who, what, when, from which IP and browser, with before and after values.
+- **Append-only, enforced by PostgreSQL.** Database triggers refuse any `UPDATE`, `DELETE` or `TRUNCATE` on `audit_logs`, whatever the application does. The only allowed change is the database clearing `actor_id` or `organization_id` when that user or organisation row is deleted.
+- **Who it was is never lost:** a trigger copies the actor's email into the entry when it's written, so it survives even if the user is later deleted.
+- **Organisations** see their own log (`GET /api/v1/organization/audit`, needs `audit.view`): team and role changes, invitations, exports, and every Super Admin support visit to their data.
+- **Super Admins** see everything (`GET /api/v1/platform/audit`), including sign-ins, and can narrow it to one organisation.
+- Filters: kind of action, person, organisation and date range. Paging uses a cursor on (time, id), so it stays stable while new entries arrive.
+- **CSV export** of up to 10,000 entries. Cells that a spreadsheet would run as a formula are neutralised, and every export is itself recorded.
+- `GET …/audit/actors` lists the people who appear in a log, for the person filter.
+- **Screens:** *Audit log* (organisation) and *Platform audit log* (Super Admins). Entries are grouped by day in the reader's time zone, and each expands to show when, IP address, device and a field-by-field **before → after** comparison. Permission changes show exactly what was added and removed. Filters live in the address bar, so a filtered view can be shared as a link. Date filters turn the reader's local days into exact UTC instants before calling the API. On phones the comparison stacks instead of scrolling sideways.
+- The demo has its own realistic history, with the same actions and before/after shapes as the API, and checks the previewed role just like the real log.
+- Note for development: because the log is append-only, test runs leave audit entries in the test database. That's expected, and tests never depend on them.
+
+## Team management
+
+An organisation's own admins manage their team under `/api/v1/organization` (`members`, `invitations`, `roles`). One rule runs through all of it: **nobody can grant more access than they have.**
+
+- To change someone's role, you must be allowed to give both their **current** role and the **new** one. So an Admin can't demote an Owner or promote anyone to Admin, and only an Owner can make another Owner.
+- Custom roles rank below Admin, and you can only build or edit a role from permissions you hold yourself.
+- Every organisation keeps at least one Owner, checked under a per-organisation database lock.
+- Nobody changes their own role or removes themselves, so nobody locks themselves out by accident.
+- Editing a custom role changes its members' access on their next request.
+- A role still assigned to people can't be deleted. Deleting one withdraws its pending invitations.
+- Resending an invitation issues a new link and kills the old one, and a revoked link stops working at once.
+- Refusals include a `details.reason` (`exceeds_your_access` with the `missing` permissions, `last_owner`, `self`, `already_member`, `already_invited`, `name_taken`, `in_use`) so the web app can explain them in any language.
+
+## Invitations
+
+- The link holds a random token. Only its hash is stored, it expires after 7 days and it works once. Tokens travel in request bodies, never in URLs, so they don't end up in server logs.
+- **New people** accept on the public page by choosing a name and password, and are signed in straight away.
+- **People who already have an account** accept while signed in, and only for their own email. The public page can't be used to guess an existing account's password around the sign-in lockout.
+- The invitation is claimed before anything else happens, so a double click can't create two accounts.
+
+## Authentication
+
+- Passwords are hashed with **Argon2id**. Policy (12+ characters, upper, lower, number) lives in `packages/shared` so the web form and the API agree.
+- Sign-in returns a **15-minute access token** (JWT, sent as `Authorization: Bearer`). The **refresh token** (14 days) is set as an `httpOnly` cookie limited to `/api/v1/auth`, so page scripts can never read it.
+- Only a SHA-256 hash of each refresh token is stored. Every refresh **rotates** the token; presenting an already-used token is treated as theft and revokes the whole session.
+- Unknown email and wrong password get the same message and take about the same time. After 5 wrong passwords the account locks for 15 minutes. Sign-in is also rate-limited per IP.
+- Every sign-in, failure, lockout, token reuse and sign-out is written to the audit log.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/auth/login` | Email + password → access token, sets the refresh cookie |
+| `POST /api/v1/auth/refresh` | Rotates the refresh cookie → new access token |
+| `POST /api/v1/auth/logout` | Revokes the session, clears the cookie |
+| `GET /api/v1/auth/me` | The user, their organisations, role and permissions in each |
+
+In the web app, the access token is kept in memory only (never in `localStorage`). A 401 triggers one silent refresh and retry. Refreshes run inside a browser-wide lock (`navigator.locks`), so two tabs never send the same refresh token at once, which the API would treat as theft. Signing out in one tab signs out every open tab (`BroadcastChannel`).
+
 ## Authorisation
 
 - Permissions are strings like `journal.post` or `users.invite`, defined in `packages/shared`.
 - Each role is a set of permissions. Custom roles are stored per organisation.
 - API endpoints declare their permission with a decorator, and a guard checks it. The web app uses the same matrix to hide what you can't do.
+
+How a request is checked:
+
+1. **Signed in?** Every endpoint requires a valid access token unless marked `@Public()`. The user is re-read from the database on each request, so a suspension or a removed Super Admin takes effect at once.
+2. **Which organisation?** Organisation endpoints need an `X-Organization-Id` header. If the caller isn't a member, the answer is `404 Organisation not found`, the same as for an id that doesn't exist, so outsiders can't probe which organisations exist.
+3. **Allowed?** `@RequirePermission('users.view')` is checked against the caller's role there. A `403` lists the missing permission. Platform permissions (`platform.*`) are only for Super Admins and can't be granted by an organisation role, even a custom one.
+4. **Scoped data.** The organisation is stored for the rest of the request. `TenantPrisma` adds it to every query on organisation tables (reads, updates, deletes and creates), overriding anything the code passes in. Without an organisation it refuses to run.
+
+**Support access:** a Super Admin can open any organisation, including suspended ones, to help a customer. Each such request is written to the audit log as `platform.support_access` with the method and path.
 
 ## Accounting rules
 

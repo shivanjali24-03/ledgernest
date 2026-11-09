@@ -1,0 +1,137 @@
+# Render Blueprint: one free API service per environment, each with its own Neon database branch.
+# Apply it once from the Render dashboard (New → Blueprint → this repository).
+# Values marked "sync: false" are secrets: Render asks for them when the Blueprint is applied,
+# and they live only in Render, never in this repository.
+#
+# The web app is on github.io and the API on onrender.com, so the refresh cookie is cross-site:
+# SameSite=None, Secure and Partitioned. Render puts one proxy in front of the API (TRUST_PROXY=1).
+
+services:
+  - type: web
+    name: ledgernest-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build -w @ledgernest/shared && npm run db:generate -w @ledgernest/api && npm run build -w @ledgernest/api
+    # Applies new migrations, creates the first Super Admin if SEED_SUPERADMIN_* is set, then starts
+    startCommand: npm run start:render -w @ledgernest/api
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - package-lock.json
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: COOKIE_PARTITIONED
+        value: 'true'
+      - key: TRUST_PROXY
+        value: '1'
+      - key: CORS_ORIGINS
+        value: https://shivanjali24-03.github.io
+      - key: WEB_APP_URL
+        value: https://shivanjali24-03.github.io/ledgernest
+      - key: SEED_SUPERADMIN_EMAIL
+        sync: false
+      - key: SEED_SUPERADMIN_PASSWORD
+        sync: false
+
+  - type: web
+    name: ledgernest-api-staging
+    runtime: node
+    plan: free
+    region: singapore
+    branch: staging
+    buildCommand: npm ci --include=dev && npm run build -w @ledgernest/shared && npm run db:generate -w @ledgernest/api && npm run build -w @ledgernest/api
+    # Applies new migrations, creates the first Super Admin if SEED_SUPERADMIN_* is set, then starts
+    startCommand: npm run start:render -w @ledgernest/api
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - package-lock.json
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: COOKIE_PARTITIONED
+        value: 'true'
+      - key: TRUST_PROXY
+        value: '1'
+      - key: CORS_ORIGINS
+        value: https://shivanjali24-03.github.io
+      - key: WEB_APP_URL
+        value: https://shivanjali24-03.github.io/ledgernest/staging
+      - key: SEED_SUPERADMIN_EMAIL
+        sync: false
+      - key: SEED_SUPERADMIN_PASSWORD
+        sync: false
+
+  - type: web
+    name: ledgernest-api-dev
+    runtime: node
+    plan: free
+    region: singapore
+    branch: develop
+    buildCommand: npm ci --include=dev && npm run build -w @ledgernest/shared && npm run db:generate -w @ledgernest/api && npm run build -w @ledgernest/api
+    # Applies new migrations, creates the first Super Admin if SEED_SUPERADMIN_* is set, then starts
+    startCommand: npm run start:render -w @ledgernest/api
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/shared/**
+        - package-lock.json
+        - render.yaml
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: COOKIE_PARTITIONED
+        value: 'true'
+      - key: TRUST_PROXY
+        value: '1'
+      - key: CORS_ORIGINS
+        value: https://shivanjali24-03.github.io
+      - key: WEB_APP_URL
+        value: https://shivanjali24-03.github.io/ledgernest/dev
+      - key: SEED_SUPERADMIN_EMAIL
+        sync: false
+      - key: SEED_SUPERADMIN_PASSWORD
+        sync: false
