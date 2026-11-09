@@ -1108,7 +1108,8 @@
     "problems": {
       "invalid": "Einige Beträge sind keine Zahlen.",
       "too_few_lines": "Fügen Sie mindestens zwei Zeilen hinzu.",
-      "zero": "Geben Sie Beträge ein."
+      "zero": "Geben Sie Beträge ein.",
+      "no_rate": "Eine Fremdwährungszeile hat für dieses Datum keinen Wechselkurs."
     },
     "errors": {
       "unbalanced": "Soll und Haben müssen gleich sein.",
@@ -1129,7 +1130,11 @@
       "tax_group_archived": "Eine Zeile verwendet eine archivierte Steuergruppe.",
       "tax_group_not_found": "Eine Zeile verwendet eine Steuergruppe, die es nicht mehr gibt.",
       "tax_too_small": "Dieser Betrag ist zu klein für die Steuer.",
-      "closing_entry": "Diese Buchung hat ein Geschäftsjahr abgeschlossen. Öffnen Sie stattdessen den letzten Monat des Jahres wieder; das storniert sie."
+      "closing_entry": "Diese Buchung hat ein Geschäftsjahr abgeschlossen. Öffnen Sie stattdessen den letzten Monat des Jahres wieder; das storniert sie.",
+      "currency_required": "Dieses Konto wird in einer Fremdwährung geführt: Erfassen Sie die Zeile in dieser Währung.",
+      "currency_mismatch": "Nur Fremdwährungskonten nehmen Fremdwährungsbeträge an.",
+      "no_rate": "Für dieses Datum gibt es keinen Wechselkurs. Fügen Sie einen unter Währungen hinzu oder geben Sie den Kurs in der Zeile ein.",
+      "amount_too_small": "Dieser Betrag ist zu klein für die Basiswährung."
     },
     "tax": {
       "column": "Steuer",
@@ -1139,6 +1144,14 @@
       "net": "Nettobetrag",
       "groupInclusive": "{{name}}, inkl. Steuer",
       "lineFor": "{{name}} auf Zeile {{n}}"
+    },
+    "fx": {
+      "amountAt": "{{amount}} zu {{rate}}",
+      "lineFor": "Kursdifferenz zu Zeile {{n}}",
+      "lineRate": "{{code}}-Kurs für Zeile {{n}}",
+      "noRate": "Kein {{code}}-Kurs am oder vor dem {{date}}: unter Währungen hinzufügen oder hier eingeben.",
+      "typedRate": "Für diese Zeile eingegebener Kurs",
+      "dayRate": "Tageskurs"
     }
   },
   "reports": {
@@ -1177,7 +1190,9 @@
       "byRate": "Nach Steuer",
       "rate": "Steuer",
       "net": "Netto"
-    }
+    },
+    "fxAmount": "Betrag ({{code}})",
+    "fxBalance": "Saldo ({{code}})"
   },
   "taxes": {
     "title": "Steuern",
@@ -1392,6 +1407,22 @@
       "source_unavailable": "Der Wechselkursdienst war nicht erreichbar. Versuchen Sie es später erneut oder geben Sie die Kurse ein.",
       "currency_not_enabled": "Aktivieren Sie diese Währung zuerst unter Währungen.",
       "currency_type": "Nur Aktiv- und Passivkonten können in einer Fremdwährung geführt werden."
+    },
+    "revalue": {
+      "open": "Salden bewerten",
+      "title": "Fremdwährungssalden bewerten",
+      "body": "Jedes Fremdwährungskonto wird zum Tageskurs bewertet, die Differenz wird in einer Buchung auf Unrealisierte Kursgewinne und -verluste gebucht. Am letzten Tag des Monats vor dem Abschluss ausführen.",
+      "date": "Bewerten zum",
+      "dateHint": "Der Tag muss in einem offenen Monat liegen.",
+      "run": "Bewerten",
+      "done": "Fertig",
+      "posted": "Bewertet zum {{date}} mit",
+      "nothing": "Die Salden standen bereits zu den Kursen dieses Tages: nichts zu buchen.",
+      "balance": "Fremdwährungssaldo",
+      "before": "Vorher",
+      "after": "Nachher",
+      "difference": "Differenz",
+      "missing": "Kein Kurs für {{list}} an diesem Tag, diese Konten blieben unverändert."
     }
   }
 }

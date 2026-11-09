@@ -1,8 +1,9 @@
 import { Fragment, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, enteredLines, postingProblem, sniffAttachmentType, splitTax, toMinor, todayIn, totals, type AttachmentType } from '@ledgernest/shared';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCurrenciesApi } from '../../currencies/useCurrenciesApi';
+import { ACCOUNT_TYPES, ATTACHMENT_MAX_BYTES, ATTACHMENT_TYPES, currencyDigits, enteredLines, normaliseRate, postingProblem, sniffAttachmentType, splitTax, toBase, toMinor, todayIn, totals, type AttachmentType } from '@ledgernest/shared';
 import { ArrowLeft, CheckCircle2, Download, Paperclip, Plus, Send, Trash2, Undo2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -24,8 +25,12 @@ import { journalErrorMessage } from '../errors';
 import type { JournalEntry, JournalsApi } from '../types';
 import { useJournalsApi } from '../useJournalsApi';
 
-type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '', taxGroupId: '', inclusive: false });
+/** For a line on a foreign-currency account, debit and credit are in that currency, and rate is typed or empty (= the day's rate) */
+type Line = { key: string; accountId: string; description: string; debit: string; credit: string; taxGroupId: string; inclusive: boolean; rate: string };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), accountId: '', description: '', debit: '', credit: '', taxGroupId: '', inclusive: false, rate: '' });
+
+/** An amount in a currency's smallest unit as plain digits, e.g. 100000 → "1,000.00" */
+const plainIn = (minor: number, digits: number, locale: string) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
 
 function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -184,7 +189,7 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
             </thead>
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
               {entry.lines.map((l) => (
-                <tr key={l.id} className={clsx(l.taxRate && 'text-ink-500')}>
+                <tr key={l.id} className={clsx((l.taxRate || l.fxSourceLine) && 'text-ink-500')}>
                   <td className={clsx('px-5 py-2', l.credit > 0 && 'ps-10')}>
                     <span dir="auto">
                       <code className="me-2 text-xs text-ink-400" dir="ltr">
@@ -202,6 +207,12 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
                         {l.taxRate ? t('journals.tax.lineFor', { name: l.taxRate.name, n: l.taxSourceLine }) : l.description}
                       </span>
                     )}
+                    {l.currency && (l.foreignDebit > 0 || l.foreignCredit > 0) && (
+                      <span className="block text-xs text-ink-500" dir="ltr">
+                        {t('journals.fx.amountAt', { amount: `${l.currency} ${plainIn(l.foreignDebit || l.foreignCredit, currencyDigits(l.currency), locale)}`, rate: l.rate })}
+                      </span>
+                    )}
+                    {l.fxSourceLine && <span className="block text-xs text-ink-500">{t('journals.fx.lineFor', { n: l.fxSourceLine })}</span>}
                   </td>
                   <td className="px-5 py-2 text-end font-mono tabular-nums" dir="ltr">
                     {l.debit ? money.plain(l.debit) : ''}
@@ -294,6 +305,8 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const canEdit = session.permissions.has('journals.create');
 
   const fmt = (minor: number) => (minor ? money.plain(minor) : '');
+  const locale = useIntlLocale();
+  const accountById = useMemo(() => new Map((accounts.data ?? []).map((a) => [a.id, a])), [accounts.data]);
   const taxesApi = useTaxesApi();
   const taxes = useQuery({ queryKey: ['taxes', session.organizationId, session.role ?? session.customRoleName], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
   const [date, setDate] = useState(entry?.date ?? todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
@@ -302,26 +315,49 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
   const [lines, setLines] = useState<Line[]>(
     entry?.lines.length
       ? // Generated tax lines are left out: they're made again from each line's tax group
-        enteredLines(entry.lines.map((l) => ({ ...l, taxGroupId: l.taxGroup?.id ?? null, taxRateId: l.taxRate?.id ?? null }))).map((l) => ({
-          key: crypto.randomUUID(),
-          accountId: l.accountId,
-          description: l.description ?? '',
-          debit: fmt(l.debit),
-          credit: fmt(l.credit),
-          taxGroupId: l.taxGroupId ?? '',
-          inclusive: !!l.taxInclusive,
-        }))
+        enteredLines(entry.lines.map((l) => ({ ...l, taxGroupId: l.taxGroup?.id ?? null, taxRateId: l.taxRate?.id ?? null }))).map((l) => {
+          // Foreign lines reopen in their currency, with the rate they were converted at
+          const foreign = (minor: number | undefined) => (minor ? plainIn(minor, currencyDigits(l.currency!), locale) : '');
+          return {
+            key: crypto.randomUUID(),
+            accountId: l.accountId,
+            description: l.description ?? '',
+            debit: l.currency ? foreign(l.foreignDebit) : fmt(l.debit),
+            credit: l.currency ? foreign(l.foreignCredit) : fmt(l.credit),
+            taxGroupId: l.taxGroupId ?? '',
+            inclusive: !!l.taxInclusive,
+            rate: l.currency ? (l.rate ?? '') : '',
+          };
+        })
       : [blankLine(), blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
+
+  // The day's rate for each foreign currency on the lines (the latest on or before the entry's date)
+  const currenciesApi = useCurrenciesApi();
+  const foreignCodes = [...new Set(lines.map((l) => accountById.get(l.accountId)?.currency).filter((c): c is string => !!c))].sort();
+  const rateQueries = useQueries({
+    queries: foreignCodes.map((code) => ({ queryKey: ['currencies', session.organizationId, 'rates', code], queryFn: () => currenciesApi!.rates(code), enabled: !!currenciesApi })),
+  });
+  const dayRate = (code: string) => rateQueries[foreignCodes.indexOf(code)]?.data?.find((r) => r.date <= date)?.rate ?? null;
 
   const taxGroups = taxes.data?.groups ?? [];
   const groupById = new Map(taxGroups.map((g) => [g.id, g]));
   // Each line's tax as the API will generate it: the net amount, then one amount per rate
   const parsed = lines.map((l) => {
-    const d = toMinor(l.debit, money.digits);
-    const c = toMinor(l.credit, money.digits);
-    const group = l.taxGroupId ? groupById.get(l.taxGroupId) : undefined;
+    const currency = accountById.get(l.accountId)?.currency ?? null;
+    const digits = currency ? currencyDigits(currency) : money.digits;
+    const fd = toMinor(l.debit, digits);
+    const fc = toMinor(l.credit, digits);
+    // A foreign line's base amount, at the typed rate or the day's
+    const typedRate = l.rate.trim() ? normaliseRate(l.rate) : null;
+    const badRate = !!currency && !!l.rate.trim() && !typedRate;
+    const rate = currency ? (typedRate ?? (l.rate.trim() ? null : dayRate(currency))) : null;
+    const toBaseAmount = (minor: number | null) => (minor === null ? null : !minor ? 0 : rate ? toBase(minor, rate, digits, money.digits) : 0);
+    const d = currency ? toBaseAmount(fd) : fd;
+    const c = currency ? toBaseAmount(fc) : fc;
+    const noRate = !!currency && !rate && !badRate && !!((fd ?? 0) || (fc ?? 0));
+    const group = !currency && l.taxGroupId ? groupById.get(l.taxGroupId) : undefined;
     const amount = (d ?? 0) || (c ?? 0);
     const split =
       group && amount
@@ -332,17 +368,18 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
           )
         : null;
     const taxLines = split ? split.taxes.map((x, i) => ({ name: group!.rates[i]!.name, amount: x.amount })).filter((x) => x.amount) : [];
-    return { ...l, d, c, net: split?.net ?? amount, taxLines, onDebit: !!d };
+    return { ...l, currency, digits, fd, fc, effRate: rate, badRate, noRate, d, c, net: split?.net ?? amount, taxLines, onDebit: !!(currency ? fd : d) };
   });
   const filled = parsed.filter((l) => l.accountId || l.d || l.c || l.description);
-  const invalid = parsed.some((l) => l.d === null || l.c === null);
+  const invalid = parsed.some((l) => l.d === null || l.c === null || l.badRate);
+  const missingRate = filled.find((l) => l.noRate);
   // Totals count the tax lines too
   const asStored = filled.flatMap((l) => [
     { debit: l.onDebit ? l.net : 0, credit: l.onDebit ? 0 : l.net },
     ...l.taxLines.map((x) => ({ debit: l.onDebit ? x.amount : 0, credit: l.onDebit ? 0 : x.amount })),
   ]);
   const t2 = totals(asStored);
-  const problem = invalid ? 'invalid' : postingProblem(filled.length < 2 ? filled.map((l) => ({ debit: l.d ?? 0, credit: l.c ?? 0 })) : asStored);
+  const problem = invalid ? 'invalid' : missingRate ? 'no_rate' : postingProblem(filled.length < 2 ? filled.map((l) => ({ debit: l.d ?? 0, credit: l.c ?? 0 })) : asStored);
   const hasTaxes = taxGroups.length > 0 || lines.some((l) => l.taxGroupId);
   const missingAccount = filled.some((l) => !l.accountId);
 
@@ -351,14 +388,11 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
     date,
     reference,
     memo,
-    lines: filled.map((l) => ({
-      accountId: l.accountId,
-      description: l.description,
-      debit: l.d ?? 0,
-      credit: l.c ?? 0,
-      taxGroupId: l.taxGroupId || null,
-      taxInclusive: !!l.taxGroupId && l.inclusive,
-    })),
+    lines: filled.map((l) =>
+      l.currency
+        ? { accountId: l.accountId, description: l.description, currency: l.currency, foreignDebit: l.fd ?? 0, foreignCredit: l.fc ?? 0, ...(l.rate && l.rate.trim() && normaliseRate(l.rate) && l.rate !== dayRate(l.currency) ? { rate: normaliseRate(l.rate)! } : {}) }
+        : { accountId: l.accountId, description: l.description, debit: l.d ?? 0, credit: l.c ?? 0, taxGroupId: l.taxGroupId || null, taxInclusive: !!l.taxGroupId && l.inclusive },
+    ),
   });
 
   const groups = useMemo(() => {
@@ -472,8 +506,8 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
                       <td className="px-3 py-1.5">
                         <select
                           aria-label={t('journals.tax.lineTax', { n: i + 1 })}
-                          value={l.taxGroupId}
-                          disabled={!canEdit}
+                          value={l.currency ? '' : l.taxGroupId}
+                          disabled={!canEdit || !!l.currency}
                           onChange={(e) => set(l.key, { taxGroupId: e.target.value, inclusive: e.target.value ? l.inclusive : false })}
                           className={clsx(inputClass, 'h-9 border-ink-200 dark:border-ink-700')}
                         >
@@ -503,19 +537,27 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
                     {(['debit', 'credit'] as const).map((side) => {
                       const value = side === 'debit' ? l.d : l.c;
                       return (
-                        <td key={side} className="px-3 py-1.5">
+                        <td key={side} className="relative px-3 py-1.5">
+                          {l.currency && (
+                            <span className="pointer-events-none absolute start-5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-ink-400" aria-hidden>
+                              {l.currency}
+                            </span>
+                          )}
                           <input
                             aria-label={t(side === 'debit' ? 'journals.lineDebit' : 'journals.lineCredit', { n: i + 1 })}
                             inputMode="decimal"
                             dir="ltr"
                             value={l[side]}
                             disabled={!canEdit}
-                            aria-invalid={value === null || undefined}
+                            aria-invalid={(l.currency ? (side === 'debit' ? l.fd : l.fc) : value) === null || undefined}
                             onChange={(e) =>
                               set(l.key, side === 'debit' ? { debit: e.target.value, credit: e.target.value ? '' : l.credit } : { credit: e.target.value, debit: e.target.value ? '' : l.debit })
                             }
-                            onBlur={() => value && set(l.key, { [side]: money.plain(value) })}
-                            className={clsx(inputClass, 'h-9 text-end font-mono tabular-nums', value === null ? 'border-expense' : 'border-ink-200 dark:border-ink-700')}
+                            onBlur={() => {
+                              const minor = l.currency ? (side === 'debit' ? l.fd : l.fc) : value;
+                              if (minor) set(l.key, { [side]: l.currency ? plainIn(minor, l.digits, locale) : money.plain(minor) });
+                            }}
+                            className={clsx(inputClass, 'h-9 text-end font-mono tabular-nums', l.currency && 'ps-12', (l.currency ? (side === 'debit' ? l.fd : l.fc) : value) === null ? 'border-expense' : 'border-ink-200 dark:border-ink-700')}
                           />
                         </td>
                       );
@@ -533,6 +575,37 @@ function DraftForm({ entry, api }: { entry: JournalEntry | null; api: JournalsAp
                       )}
                     </td>
                   </tr>
+                  {l.currency && (
+                    <tr className="text-xs text-ink-500" data-testid="fx-row">
+                      <td className="px-3 pb-2 ps-6" colSpan={hasTaxes ? 3 : 2}>
+                        <label className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <span dir="ltr">1 {l.currency} =</span>
+                          <input
+                            aria-label={t('journals.fx.lineRate', { n: i + 1, code: l.currency })}
+                            value={l.rate}
+                            placeholder={dayRate(l.currency) ?? ''}
+                            disabled={!canEdit}
+                            inputMode="decimal"
+                            dir="ltr"
+                            onChange={(e) => set(l.key, { rate: e.target.value })}
+                            className={clsx(
+                              'h-7 w-28 rounded-lg border bg-white px-2 text-end font-mono text-xs outline-none placeholder:text-ink-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 disabled:opacity-60 dark:bg-ink-900',
+                              l.badRate ? 'border-expense' : 'border-ink-200 dark:border-ink-700',
+                            )}
+                          />
+                          <span dir="ltr">{money.currency}</span>
+                        </label>
+                        <span className="ms-2">{l.noRate ? t('journals.fx.noRate', { code: l.currency, date }) : l.rate.trim() ? t('journals.fx.typedRate') : t('journals.fx.dayRate')}</span>
+                      </td>
+                      <td className="px-3 pb-2 text-end font-mono tabular-nums" dir="ltr">
+                        {l.onDebit && l.d ? money.plain(l.d) : ''}
+                      </td>
+                      <td className="px-3 pb-2 text-end font-mono tabular-nums" dir="ltr">
+                        {!l.onDebit && l.c ? money.plain(l.c) : ''}
+                      </td>
+                      <td />
+                    </tr>
+                  )}
                   {l.taxLines.length > 0 && (
                     <>
                       {l.inclusive && (

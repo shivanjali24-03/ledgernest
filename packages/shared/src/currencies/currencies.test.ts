@@ -28,3 +28,16 @@ describe('currencies', () => {
     expect(toBase(123_456_789, '93.9234567891', 2, 2)).toBe(11_595_488_387);
   });
 });
+
+describe('realised exchange differences', () => {
+  it('takes out the carrying amount of what is settled, at the average rate', async () => {
+    const { realisedDifferences } = await import('./index.js');
+    const line = (lineNo: number, f: number, b: number) => ({ lineNo, accountId: 'debtors', currency: 'USD', foreignDebit: f > 0 ? f : 0, foreignCredit: f < 0 ? -f : 0, debit: b > 0 ? b : 0, credit: b < 0 ? -b : 0 });
+    // USD 1,000 receivable carried at 90; USD 400 collected at 93 → ₹1,200 gain (account debited 1,200)
+    expect(realisedDifferences([line(2, -40_000, -3_720_000)], () => ({ foreign: 100_000, base: 9_000_000 }))).toEqual([{ sourceLine: 2, accountId: 'debtors', currency: 'USD', adjust: 120_000 }]);
+    // Paying more than the balance: only the balance is settled; the rest opens at the line's rate
+    expect(realisedDifferences([line(1, -150_000, -13_950_000)], () => ({ foreign: 100_000, base: 9_000_000 }))[0]!.adjust).toBe(300_000);
+    // Adding to the balance realises nothing; base lines are ignored
+    expect(realisedDifferences([line(1, 10_000, 930_000), { ...line(2, 0, 5), currency: null }], () => ({ foreign: 100_000, base: 9_000_000 }))).toEqual([]);
+  });
+});

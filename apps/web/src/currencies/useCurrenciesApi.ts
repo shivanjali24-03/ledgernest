@@ -1,6 +1,7 @@
 import { useContext, useMemo } from 'react';
 import { ApiClientContext } from '../auth/apiClientContext';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
+import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { useSession } from '../layout/session';
 import { createDemoCurrenciesApi } from './demoCurrenciesApi';
 import { createLiveCurrenciesApi } from './liveCurrenciesApi';
@@ -16,7 +17,7 @@ export function useCurrenciesApi(): CurrenciesApi | null {
     return createDemoCurrenciesApi(
       () => canManage,
       (code) => demoAccountRows().filter((a) => a.currency === code).length,
-      async (date) => ({ date, entry: null, adjustments: [], missingRates: [] }),
+      (date) => createDemoJournalsApi(() => true).revalue(date),
     );
   }, [client, organizationId, canManage]);
 }

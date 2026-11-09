@@ -1,6 +1,7 @@
-import { enteredLines, expandTax, journalDraftSchema, journalNumber, postingProblem, sniffAttachmentType, todayIn, totals, type EnteredLine } from '@ledgernest/shared';
+import { currencyDigits, enteredLines, expandTax, journalDraftSchema, journalNumber, postingProblem, realisedDifferences, sniffAttachmentType, todayIn, toBase, totals, type EnteredLine } from '@ledgernest/shared';
+import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { ApiError } from '../auth/client';
-import { createDemoAccountsApi, demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { createDemoAccountsApi, demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { createDemoPeriodsApi, demoClosingEntryIds } from '../periods/demoPeriodsApi';
 import type { JournalEntry, JournalsApi, JournalSummary } from './types';
@@ -13,7 +14,21 @@ import type { JournalEntry, JournalsApi, JournalSummary } from './types';
 
 // v2: lines carry tax (the sample sale's GST is generated from the GST 18% group)
 const KEY = 'ledgernest.demo.journals.v2';
-type StoredLine = { accountId: string; description: string | null; debit: number; credit: number; taxGroupId?: string | null; taxInclusive?: boolean; taxRateId?: string | null; taxSourceLine?: number | null };
+type StoredLine = {
+  accountId: string;
+  description: string | null;
+  debit: number;
+  credit: number;
+  taxGroupId?: string | null;
+  taxInclusive?: boolean;
+  taxRateId?: string | null;
+  taxSourceLine?: number | null;
+  currency?: string | null;
+  foreignDebit?: number;
+  foreignCredit?: number;
+  rate?: string | null;
+  fxSourceLine?: number | null;
+};
 
 /** The demo company's lines as stored, from the lines as entered: the same tax rules as the API. */
 function expandDemo(lines: readonly EnteredLine[]) {
@@ -128,6 +143,8 @@ export interface DemoYearEnd {
   reopenYear(entryId: string, yearName: string, endDate: string): Promise<void>;
   /** The entry's number, e.g. JV/2025-26/0012 */
   numberOf(entryId: string): Promise<string | null>;
+  /** Revalues foreign-currency accounts at a day's rate (Currencies → Revalue) */
+  revalue(date: string): Promise<{ date: string; entry: { id: string; number: string } | null; adjustments: { accountId: string; code: string; name: string; currency: string; foreignBalance: number; rate: string; before: number; after: number; difference: number }[]; missingRates: string[] }>;
 }
 
 export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.post' | 'journals.reverse') => boolean): JournalsApi & DemoYearEnd {
@@ -189,7 +206,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
           id: `${e.id}-${i}`,
           lineNo: i + 1,
           accountId: l.accountId,
-          account: { code: a?.code ?? '?', name: a?.name ?? '?', type: a?.type ?? 'asset' },
+          account: { code: a?.code ?? '?', name: a?.name ?? '?', type: a?.type ?? 'asset', currency: a?.currency ?? null },
           description: l.description,
           debit: l.debit,
           credit: l.credit,
@@ -197,6 +214,11 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
           taxInclusive: !!l.taxInclusive,
           taxRate: rate ? { id: rate.id, name: rate.name, kind: rate.kind, ratePpm: rate.ratePpm } : null,
           taxSourceLine: l.taxSourceLine ?? null,
+          currency: l.currency ?? null,
+          foreignDebit: l.foreignDebit ?? 0,
+          foreignCredit: l.foreignCredit ?? 0,
+          rate: l.rate ?? null,
+          fxSourceLine: l.fxSourceLine ?? null,
         };
       }),
       totals: totals(e.lines),
@@ -217,8 +239,24 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     return r.data;
   };
   /** Checks the lines' accounts and tax groups, then generates the tax lines. */
-  const linesFor = async (lines: EnteredLine[]): Promise<StoredLine[]> => {
-    await checkAccounts(lines);
+  /** Lines on foreign-currency accounts are in that currency, converted at the line's rate or the day's (as the API does). */
+  const convert = (lines: EnteredLine[], date: string): EnteredLine[] => {
+    const accs = demoAccountRows();
+    return lines.map((l, i) => {
+      const cur = accs.find((a) => a.id === l.accountId)?.currency ?? null;
+      if (cur && l.currency !== cur) throw refuse(400, 'currency_required', { line: i + 1, currency: cur });
+      if (!l.currency) return l;
+      if (l.currency !== cur) throw refuse(400, 'currency_mismatch', { line: i + 1 });
+      const rate = l.rate ?? demoRateOn(l.currency, date);
+      if (!rate) throw refuse(400, 'no_rate', { line: i + 1, currency: l.currency, date });
+      const base = toBase((l.foreignDebit ?? 0) || (l.foreignCredit ?? 0), rate, currencyDigits(l.currency), currencyDigits(DEMO_BASE_CURRENCY));
+      if (base <= 0) throw refuse(400, 'amount_too_small', { line: i + 1 });
+      return { ...l, rate, debit: l.foreignDebit ? base : 0, credit: l.foreignDebit ? 0 : base };
+    });
+  };
+  const linesFor = async (entered: EnteredLine[], date: string): Promise<StoredLine[]> => {
+    await checkAccounts(entered);
+    const lines = convert(entered, date);
     const tax = demoTaxState();
     for (const l of lines) {
       if (!l.taxGroupId) continue;
@@ -259,7 +297,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     reversalOfId: e.id,
     postedAt: null,
     createdAt: new Date().toISOString(),
-    lines: e.lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit })),
+    lines: e.lines.map((l) => ({ ...l, debit: l.credit, credit: l.debit, foreignDebit: l.foreignCredit ?? 0, foreignCredit: l.foreignDebit ?? 0 })),
     attachments: [],
   });
   const yearEnd = async (startDate: string, endDate: string) => {
@@ -274,7 +312,66 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
     return { lines, profit: -[...net.values()].reduce((a, b) => a + b, 0) };
   };
 
+  /** Moves every foreign-currency account to a day's rate in one entry, booking to Unrealised exchange gain or loss. */
+  const revalue = async (date: string) => {
+    const all = await load();
+    const accs = demoAccountRows().filter((a) => a.currency);
+    const adjustments: { accountId: string; code: string; name: string; currency: string; foreignBalance: number; rate: string; before: number; after: number; difference: number }[] = [];
+    const missing = new Set<string>();
+    for (const a of accs) {
+      let f = 0;
+      let b = 0;
+      for (const x of all) {
+        if (x.status !== 'posted' || x.date > date) continue;
+        for (const l of x.lines) {
+          if (l.accountId !== a.id) continue;
+          f += (l.foreignDebit ?? 0) - (l.foreignCredit ?? 0);
+          b += l.debit - l.credit;
+        }
+      }
+      if (!f && !b) continue;
+      const rate = demoRateOn(a.currency!, date);
+      if (!rate) {
+        if (f) missing.add(a.currency!);
+        continue;
+      }
+      const after = toBase(f, rate, currencyDigits(a.currency!), currencyDigits(DEMO_BASE_CURRENCY));
+      if (after !== b) adjustments.push({ accountId: a.id, code: a.code, name: a.name, currency: a.currency!, foreignBalance: f, rate, before: b, after, difference: after - b });
+    }
+    let entry: { id: string; number: string } | null = null;
+    if (adjustments.length) {
+      const fx = demoEnsureFxAccount('fx_unrealised');
+      const e: Stored = {
+        id: crypto.randomUUID(),
+        number: null,
+        yearName: null,
+        date,
+        memo: `Revaluation of foreign-currency balances at ${date}`,
+        reference: null,
+        status: 'draft',
+        reversalOfId: null,
+        postedAt: null,
+        createdAt: new Date().toISOString(),
+        lines: adjustments.flatMap((x) => {
+          const amount = Math.abs(x.difference);
+          const up = x.difference > 0;
+          return [
+            { accountId: x.accountId, currency: x.currency, description: `${x.currency} at ${x.rate}`, debit: up ? amount : 0, credit: up ? 0 : amount },
+            { accountId: fx, description: `${x.code} ${x.currency} at ${x.rate}`, debit: up ? 0 : amount, credit: up ? amount : 0 },
+          ];
+        }),
+        attachments: [],
+      };
+      await postInto(all, e, { system: true });
+      all.push(e);
+      save(all);
+      entry = { id: e.id, number: label(e)! };
+    }
+    return { date, entry, adjustments, missingRates: [...missing].sort() };
+  };
+
   return {
+    revalue,
     yearEnd,
     async closeYear(yearName, startDate, endDate) {
       const { lines, profit } = await yearEnd(startDate, endDate);
@@ -336,7 +433,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
       wait(async () => {
         guard('journals.create');
         const d = parse(input);
-        const lines = await linesFor(d.lines);
+        const lines = await linesFor(d.lines, d.date);
         const all = await load();
         const e: Stored = { id: crypto.randomUUID(), number: null, yearName: null, date: d.date, memo: d.memo, reference: d.reference, status: 'draft', reversalOfId: null, postedAt: null, createdAt: new Date().toISOString(), lines, attachments: [] };
         all.push(e);
@@ -350,7 +447,7 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         const all = await load();
         const e = find(all, id);
         if (e.status !== 'draft') throw refuse(409, 'posted');
-        const lines = await linesFor(d.lines);
+        const lines = await linesFor(d.lines, d.date);
         Object.assign(e, { date: d.date, memo: d.memo, reference: d.reference, lines });
         save(all);
         return view(all, e);
@@ -369,7 +466,33 @@ export function createDemoJournalsApi(can: (p: 'journals.create' | 'journals.pos
         const e = find(all, id);
         if (e.status !== 'draft') throw refuse(409, 'posted');
         // Tax lines are recomputed from the rates' current accounts, as the API does
-        if (e.lines.some((l) => l.taxGroupId || l.taxRateId)) e.lines = await linesFor(enteredLines(e.lines.map((l, i) => ({ ...l, lineNo: i + 1, taxGroupId: l.taxGroupId ?? null, taxInclusive: !!l.taxInclusive, taxRateId: l.taxRateId ?? null, taxSourceLine: l.taxSourceLine ?? null }))));
+        if (e.lines.some((l) => l.taxGroupId || l.taxRateId)) e.lines = await linesFor(enteredLines(e.lines.map((l, i) => ({ ...l, lineNo: i + 1, taxGroupId: l.taxGroupId ?? null, taxInclusive: !!l.taxInclusive, taxRateId: l.taxRateId ?? null, taxSourceLine: l.taxSourceLine ?? null }))), e.date);
+        // Settling foreign balances realises exchange differences (shared with the API, so the figures match)
+        if (e.lines.some((l) => l.currency && !l.fxSourceLine)) {
+          const before = (accountId: string) => {
+            let foreign = 0;
+            let base = 0;
+            for (const x of all) {
+              if (x.status !== 'posted') continue;
+              for (const l of x.lines) {
+                if (l.accountId !== accountId) continue;
+                foreign += (l.foreignDebit ?? 0) - (l.foreignCredit ?? 0);
+                base += l.debit - l.credit;
+              }
+            }
+            return { foreign, base };
+          };
+          const diffs = realisedDifferences(
+            e.lines.map((l, i) => ({ lineNo: i + 1, accountId: l.accountId, currency: l.fxSourceLine ? null : (l.currency ?? null), foreignDebit: l.foreignDebit ?? 0, foreignCredit: l.foreignCredit ?? 0, debit: l.debit, credit: l.credit })),
+            before,
+          );
+          for (const d of diffs) {
+            const fx = demoEnsureFxAccount('fx_realised');
+            const amount = Math.abs(d.adjust);
+            e.lines.push({ accountId: d.accountId, description: null, currency: d.currency, debit: d.adjust > 0 ? amount : 0, credit: d.adjust > 0 ? 0 : amount, fxSourceLine: d.sourceLine });
+            e.lines.push({ accountId: fx, description: null, debit: d.adjust > 0 ? 0 : amount, credit: d.adjust > 0 ? amount : 0, fxSourceLine: d.sourceLine });
+          }
+        }
         await postInto(all, e);
         save(all);
         return view(all, e);

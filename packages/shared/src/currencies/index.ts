@@ -90,3 +90,56 @@ export const rateFetchSchema = z.object({ date: isoDaySchema.optional() });
 export const revalueSchema = z.object({ date: isoDaySchema });
 export const rateListQuerySchema = z.object({ from: isoDaySchema.optional(), to: isoDaySchema.optional() });
 export type CurrencyAddInput = z.input<typeof currencyAddSchema>;
+
+// ---------- exchange differences ----------
+
+export interface ForeignLineAmounts {
+  lineNo: number;
+  accountId: string;
+  currency: string | null;
+  foreignDebit: number;
+  foreignCredit: number;
+  debit: number;
+  credit: number;
+}
+
+/** a × b ÷ c, rounded half away from zero */
+const mulDiv = (a: bigint, b: bigint, c: bigint) => {
+  const n = a * b;
+  const neg = n < 0n !== c < 0n;
+  const [an, ac] = [n < 0n ? -n : n, c < 0n ? -c : c];
+  const q = (an * 2n + ac) / (ac * 2n);
+  return neg ? -q : q;
+};
+
+/**
+ * Realised exchange differences for an entry's foreign lines, given each account's posted balance before it
+ * (foreign and base). A foreign account carries its balance at an average rate: a line that reduces the balance
+ * takes out the carrying amount of the part it settles, and any difference from the line's own base amount is
+ * the realised gain (negative adjust: the account is credited) or loss. Lines are taken in order.
+ * Returns, per settling line, the base adjustment to the account (debit positive).
+ */
+export function realisedDifferences(lines: readonly ForeignLineAmounts[], before: (accountId: string) => { foreign: number; base: number }): { sourceLine: number; accountId: string; currency: string; adjust: number }[] {
+  const running = new Map<string, { f: bigint; b: bigint }>();
+  const out: { sourceLine: number; accountId: string; currency: string; adjust: number }[] = [];
+  for (const l of lines) {
+    if (!l.currency) continue;
+    let acc = running.get(l.accountId);
+    if (!acc) {
+      const b = before(l.accountId);
+      acc = { f: BigInt(b.foreign), b: BigInt(b.base) };
+      running.set(l.accountId, acc);
+    }
+    const lf = BigInt(l.foreignDebit - l.foreignCredit);
+    const lb = BigInt(l.debit - l.credit);
+    let adjust = 0n;
+    if (acc.f !== 0n && lf !== 0n && acc.f > 0n !== lf > 0n) {
+      const settled = (lf < 0n ? -lf : lf) <= (acc.f < 0n ? -acc.f : acc.f) ? lf : -acc.f;
+      adjust = mulDiv(acc.b, settled, acc.f) - mulDiv(lb, settled, lf);
+    }
+    acc.f += lf;
+    acc.b += lb + adjust;
+    if (adjust !== 0n) out.push({ sourceLine: l.lineNo, accountId: l.accountId, currency: l.currency, adjust: Number(adjust) });
+  }
+  return out;
+}

@@ -1108,7 +1108,8 @@
     "problems": {
       "invalid": "Some amounts aren't numbers.",
       "too_few_lines": "Add at least two lines.",
-      "zero": "Enter some amounts."
+      "zero": "Enter some amounts.",
+      "no_rate": "A foreign-currency line has no exchange rate for this date."
     },
     "errors": {
       "unbalanced": "Debits and credits must be equal.",
@@ -1129,7 +1130,11 @@
       "tax_group_archived": "A line uses an archived tax group.",
       "tax_group_not_found": "A line uses a tax group that no longer exists.",
       "tax_too_small": "This amount is too small to carry the tax.",
-      "closing_entry": "This entry closed a financial year. Reopen the year’s last month instead, which reverses it."
+      "closing_entry": "This entry closed a financial year. Reopen the year’s last month instead, which reverses it.",
+      "currency_required": "This account is kept in a foreign currency: enter the line in that currency.",
+      "currency_mismatch": "Only foreign-currency accounts take foreign amounts.",
+      "no_rate": "There is no exchange rate for this date. Add one under Currencies, or type the rate on the line.",
+      "amount_too_small": "This amount is too small to show in the base currency."
     },
     "tax": {
       "column": "Tax",
@@ -1139,6 +1144,14 @@
       "net": "Net amount",
       "groupInclusive": "{{name}}, tax included",
       "lineFor": "{{name}} on line {{n}}"
+    },
+    "fx": {
+      "amountAt": "{{amount}} at {{rate}}",
+      "lineFor": "Exchange difference on line {{n}}",
+      "lineRate": "Line {{n}} rate for {{code}}",
+      "noRate": "No {{code}} rate on or before {{date}}: add one under Currencies, or type it here.",
+      "typedRate": "Rate typed for this line",
+      "dayRate": "Day’s rate"
     }
   },
   "reports": {
@@ -1177,7 +1190,9 @@
       "byRate": "By tax",
       "rate": "Tax",
       "net": "Net"
-    }
+    },
+    "fxAmount": "Amount ({{code}})",
+    "fxBalance": "Balance ({{code}})"
   },
   "taxes": {
     "title": "Taxes",
@@ -1392,6 +1407,22 @@
       "source_unavailable": "The exchange-rate service couldn’t be reached. Try again later, or type the rates.",
       "currency_not_enabled": "Enable this currency under Currencies first.",
       "currency_type": "Only asset and liability accounts can be in a foreign currency."
+    },
+    "revalue": {
+      "open": "Revalue balances",
+      "title": "Revalue foreign-currency balances",
+      "body": "Every foreign-currency account moves to the day’s rate, and the difference is booked to Unrealised exchange gain or loss in one entry. Do this on a month’s last day, before closing the month.",
+      "date": "Revalue at",
+      "dateHint": "The day must be in an open month.",
+      "run": "Revalue",
+      "done": "Done",
+      "posted": "Revalued at {{date}} in",
+      "nothing": "Balances were already at that day’s rates: nothing to post.",
+      "balance": "Foreign balance",
+      "before": "Before",
+      "after": "After",
+      "difference": "Difference",
+      "missing": "No rate for {{list}} on that day, so those accounts were left alone."
     }
   }
 }

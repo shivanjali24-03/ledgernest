@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { ATTACHMENT_MAX_BYTES, currencyDigits, enteredLines, expandTax, journalNumber, postingProblem, sniffAttachmentType, toBase, totals, type AttachmentType, type EnteredLine, type ExpandedLine } from '@ledgernest/shared';
+import { ATTACHMENT_MAX_BYTES, currencyDigits, realisedDifferences, enteredLines, expandTax, journalNumber, postingProblem, sniffAttachmentType, toBase, totals, type AttachmentType, type EnteredLine, type ExpandedLine } from '@ledgernest/shared';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Request } from 'express';
@@ -234,43 +234,26 @@ export class JournalsService {
   private async addRealised(tx: Tx, organizationId: string, e: EntryRow) {
     const foreign = e.lines.filter((l) => l.currency && !l.fxSourceLine);
     if (!foreign.length) return;
-    const running = new Map<string, { f: bigint; b: bigint }>();
+    const before = new Map<string, { foreign: number; base: number }>();
     for (const accountId of new Set(foreign.map((l) => l.accountId))) {
       const [r] = await tx.$queryRaw<{ f: bigint | null; b: bigint | null }[]>`
         SELECT sum(l.foreign_debit - l.foreign_credit)::bigint AS f, sum(l.debit - l.credit)::bigint AS b
         FROM journal_lines l JOIN journal_entries x ON x.id = l.entry_id
         WHERE l.organization_id = ${organizationId}::uuid AND l.account_id = ${accountId}::uuid AND x.status = 'posted'`;
-      running.set(accountId, { f: r?.f ?? 0n, b: r?.b ?? 0n });
+      before.set(accountId, { foreign: Number(r?.f ?? 0), base: Number(r?.b ?? 0) });
     }
-    // Rounded half away from zero
-    const div = (n: bigint, d: bigint) => {
-      const neg = n < 0n !== d < 0n;
-      const [an, ad] = [n < 0n ? -n : n, d < 0n ? -d : d];
-      const q = (an * 2n + ad) / (ad * 2n);
-      return neg ? -q : q;
-    };
+    const differences = realisedDifferences(
+      foreign.map((l) => ({ lineNo: l.lineNo, accountId: l.accountId, currency: l.currency, foreignDebit: Number(l.foreignDebit), foreignCredit: Number(l.foreignCredit), debit: Number(l.debit), credit: Number(l.credit) })),
+      (id) => before.get(id)!,
+    );
     const extra: LineRow[] = [];
     let lineNo = e.lines.length;
-    for (const l of foreign) {
-      const acc = running.get(l.accountId)!;
-      const lf = l.foreignDebit - l.foreignCredit;
-      const lb = l.debit - l.credit;
-      let adjust = 0n;
-      if (acc.f !== 0n && lf !== 0n && acc.f > 0n !== lf > 0n) {
-        // The part of the balance this line settles (all of it, or the whole line when it settles only part)
-        const settled = (lf < 0n ? -lf : lf) <= (acc.f < 0n ? -acc.f : acc.f) ? lf : -acc.f;
-        const carrying = div(acc.b * settled, acc.f);
-        const atLineRate = div(lb * settled, lf);
-        adjust = carrying - atLineRate;
-      }
-      acc.f += lf;
-      acc.b += lb + adjust;
-      if (adjust === 0n) continue;
+    for (const d of differences) {
       const fxAccount = await ensureFxAccount(tx, organizationId, 'fx_realised');
-      const amount = Number(adjust < 0n ? -adjust : adjust);
-      const onAccount = adjust > 0n ? { debit: amount, credit: 0 } : { debit: 0, credit: amount };
-      const base = { description: null, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null, foreignDebit: 0, foreignCredit: 0, rate: null, fxSourceLine: l.lineNo };
-      extra.push({ ...base, lineNo: ++lineNo, accountId: l.accountId, currency: l.currency, ...onAccount });
+      const amount = Math.abs(d.adjust);
+      const onAccount = d.adjust > 0 ? { debit: amount, credit: 0 } : { debit: 0, credit: amount };
+      const base = { description: null, taxGroupId: null, taxInclusive: false, taxRateId: null, taxSourceLine: null, foreignDebit: 0, foreignCredit: 0, rate: null, fxSourceLine: d.sourceLine };
+      extra.push({ ...base, lineNo: ++lineNo, accountId: d.accountId, currency: d.currency, ...onAccount });
       extra.push({ ...base, lineNo: ++lineNo, accountId: fxAccount, currency: null, debit: onAccount.credit, credit: onAccount.debit });
     }
     if (extra.length) await tx.journalLine.createMany({ data: extra.map((r) => this.dbRow(organizationId, e.id, r)) });

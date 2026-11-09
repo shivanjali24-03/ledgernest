@@ -29,6 +29,11 @@ export interface LedgerRow {
   debit: number;
   credit: number;
   balance: number;
+  /** Foreign-currency accounts only */
+  foreignDebit?: number;
+  foreignCredit?: number;
+  rate?: string | null;
+  foreignBalance?: number;
 }
 export interface Ledger {
   account: { id: string; code: string; name: string; type: AccountType; normalSide: 'debit' | 'credit' };
@@ -38,6 +43,8 @@ export interface Ledger {
   rows: LedgerRow[];
   totals: { debit: number; credit: number };
   closingBalance: number;
+  /** For a foreign-currency account: its balances in that currency */
+  foreign?: { currency: string; openingBalance: number; closingBalance: number };
 }
 
 export interface TaxSummary {

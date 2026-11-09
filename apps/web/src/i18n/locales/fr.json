@@ -1108,7 +1108,8 @@
     "problems": {
       "invalid": "Certains montants ne sont pas des nombres.",
       "too_few_lines": "Ajoutez au moins deux lignes.",
-      "zero": "Saisissez des montants."
+      "zero": "Saisissez des montants.",
+      "no_rate": "Une ligne en devise n’a pas de taux de change pour cette date."
     },
     "errors": {
       "unbalanced": "Les débits et les crédits doivent être égaux.",
@@ -1129,7 +1130,11 @@
       "tax_group_archived": "Une ligne utilise un groupe de taxes archivé.",
       "tax_group_not_found": "Une ligne utilise un groupe de taxes qui n’existe plus.",
       "tax_too_small": "Ce montant est trop faible pour porter la taxe.",
-      "closing_entry": "Cette écriture a clôturé un exercice. Rouvrez plutôt le dernier mois de l’exercice, ce qui la contrepasse."
+      "closing_entry": "Cette écriture a clôturé un exercice. Rouvrez plutôt le dernier mois de l’exercice, ce qui la contrepasse.",
+      "currency_required": "Ce compte est tenu en devise : saisissez la ligne dans cette devise.",
+      "currency_mismatch": "Seuls les comptes en devise acceptent des montants en devise.",
+      "no_rate": "Il n’y a pas de taux de change pour cette date. Ajoutez-en un dans Devises, ou saisissez le taux sur la ligne.",
+      "amount_too_small": "Ce montant est trop faible pour apparaître dans la devise de base."
     },
     "tax": {
       "column": "Taxe",
@@ -1139,6 +1144,14 @@
       "net": "Montant net",
       "groupInclusive": "{{name}}, taxe incluse",
       "lineFor": "{{name}} sur la ligne {{n}}"
+    },
+    "fx": {
+      "amountAt": "{{amount}} à {{rate}}",
+      "lineFor": "Écart de change de la ligne {{n}}",
+      "lineRate": "Taux {{code}} de la ligne {{n}}",
+      "noRate": "Pas de taux {{code}} au {{date}} ou avant : ajoutez-en un dans Devises, ou saisissez-le ici.",
+      "typedRate": "Taux saisi pour cette ligne",
+      "dayRate": "Taux du jour"
     }
   },
   "reports": {
@@ -1177,7 +1190,9 @@
       "byRate": "Par taxe",
       "rate": "Taxe",
       "net": "Net"
-    }
+    },
+    "fxAmount": "Montant ({{code}})",
+    "fxBalance": "Solde ({{code}})"
   },
   "taxes": {
     "title": "Taxes",
@@ -1392,6 +1407,22 @@
       "source_unavailable": "Le service des taux de change est injoignable. Réessayez plus tard ou saisissez les taux.",
       "currency_not_enabled": "Activez d’abord cette devise dans Devises.",
       "currency_type": "Seuls les comptes d’actif et de passif peuvent être en devise étrangère."
+    },
+    "revalue": {
+      "open": "Réévaluer les soldes",
+      "title": "Réévaluer les soldes en devises",
+      "body": "Chaque compte en devise passe au taux du jour et l’écart est enregistré en Écarts de change latents dans une écriture. Faites-le le dernier jour du mois, avant de le clôturer.",
+      "date": "Réévaluer au",
+      "dateHint": "Le jour doit être dans un mois ouvert.",
+      "run": "Réévaluer",
+      "done": "Terminé",
+      "posted": "Réévalué au {{date}} par",
+      "nothing": "Les soldes étaient déjà aux taux de ce jour : rien à comptabiliser.",
+      "balance": "Solde en devise",
+      "before": "Avant",
+      "after": "Après",
+      "difference": "Écart",
+      "missing": "Pas de taux pour {{list}} ce jour-là : ces comptes n’ont pas été modifiés."
     }
   }
 }
