@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, ChartOfAccounts, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, ChartOfAccounts, ComingSoon, Contacts, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -22,6 +22,8 @@ const BUILT: RouteObject[] = [
   { path: 'currencies', element: page(<Currencies />, 'accounts.view') },
   { path: 'contacts', element: page(<Contacts />, 'contacts.view') },
   { path: 'items', element: page(<Items />, 'invoices.view') },
+  { path: 'invoices', element: page(<Invoices />, 'invoices.view') },
+  { path: 'invoices/:id', element: page(<InvoiceEditor />, 'invoices.view') },
   { path: 'users', element: page(<Team />, 'users.view') },
   { path: 'audit', element: page(<OrganizationAudit />, 'audit.view') },
   { path: 'settings', element: page(<Settings />, 'org.settings.view') },

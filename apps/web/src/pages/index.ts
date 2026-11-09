@@ -22,4 +22,6 @@ export const GstSlabs = lazy(() => import('../taxes/pages/GstSlabs'));
 export const Currencies = lazy(() => import('../currencies/pages/Currencies'));
 export const Contacts = lazy(() => import('../contacts/pages/Contacts'));
 export const Items = lazy(() => import('../items/pages/Items'));
+export const Invoices = lazy(() => import('../invoices/pages/Invoices'));
+export const InvoiceEditor = lazy(() => import('../invoices/pages/InvoiceEditor'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

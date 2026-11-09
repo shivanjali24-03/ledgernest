@@ -105,12 +105,12 @@ export default function AppShell() {
   );
 
   return (
-    <div className="flex h-dvh overflow-hidden">
+    <div className="flex h-dvh overflow-hidden print:block print:h-auto print:overflow-visible">
       {/* Desktop sidebar */}
       <aside
         className={clsx(
           // Width changes instantly (animating width would re-layout every frame); the content fades instead
-          'hidden shrink-0 border-e border-ink-200 bg-white/70 backdrop-blur-xl lg:block dark:border-ink-800 dark:bg-ink-900/60',
+          'hidden shrink-0 border-e border-ink-200 bg-white/70 backdrop-blur-xl lg:block print:hidden dark:border-ink-800 dark:bg-ink-900/60',
           collapsed ? 'w-[76px]' : 'w-64',
         )}
       >
@@ -136,7 +136,7 @@ export default function AppShell() {
       </AnimatePresence>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-ink-200 bg-white/70 px-4 backdrop-blur-xl lg:px-6 dark:border-ink-800 dark:bg-ink-900/60">
+        <header className="flex h-16 shrink-0 items-center gap-3 print:hidden border-b border-ink-200 bg-white/70 px-4 backdrop-blur-xl lg:px-6 dark:border-ink-800 dark:bg-ink-900/60">
           <button className="rounded-xl p-2 hover:bg-ink-100 lg:hidden dark:hover:bg-ink-800" onClick={() => setMobileOpen(true)} aria-label={t('shell.openMenu')}>
             <Menu className="size-5" />
           </button>
@@ -184,7 +184,7 @@ export default function AppShell() {
           <UserMenu />
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto print:overflow-visible">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={location.pathname} variants={page} initial="hidden" animate="show" exit="exit" className="mx-auto max-w-7xl p-4 lg:p-8">
               <Outlet />
