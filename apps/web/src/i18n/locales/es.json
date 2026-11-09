@@ -1108,7 +1108,8 @@
     "problems": {
       "invalid": "Algunos importes no son números.",
       "too_few_lines": "Añade al menos dos líneas.",
-      "zero": "Introduce algún importe."
+      "zero": "Introduce algún importe.",
+      "no_rate": "Una línea en moneda extranjera no tiene tipo de cambio para esta fecha."
     },
     "errors": {
       "unbalanced": "El debe y el haber deben coincidir.",
@@ -1129,7 +1130,11 @@
       "tax_group_archived": "Una línea usa un grupo de impuestos archivado.",
       "tax_group_not_found": "Una línea usa un grupo de impuestos que ya no existe.",
       "tax_too_small": "Este importe es demasiado pequeño para llevar el impuesto.",
-      "closing_entry": "Este asiento cerró un ejercicio. Reabre el último mes del ejercicio, lo que lo revierte."
+      "closing_entry": "Este asiento cerró un ejercicio. Reabre el último mes del ejercicio, lo que lo revierte.",
+      "currency_required": "Esta cuenta está en moneda extranjera: introduce la línea en esa moneda.",
+      "currency_mismatch": "Solo las cuentas en moneda extranjera admiten importes extranjeros.",
+      "no_rate": "No hay tipo de cambio para esta fecha. Añádelo en Monedas o escribe el tipo en la línea.",
+      "amount_too_small": "Este importe es demasiado pequeño para mostrarse en la moneda base."
     },
     "tax": {
       "column": "Impuesto",
@@ -1139,6 +1144,14 @@
       "net": "Importe neto",
       "groupInclusive": "{{name}}, impuesto incluido",
       "lineFor": "{{name}} de la línea {{n}}"
+    },
+    "fx": {
+      "amountAt": "{{amount}} a {{rate}}",
+      "lineFor": "Diferencia de cambio de la línea {{n}}",
+      "lineRate": "Tipo de {{code}} de la línea {{n}}",
+      "noRate": "No hay tipo de {{code}} en o antes del {{date}}: añádelo en Monedas o escríbelo aquí.",
+      "typedRate": "Tipo escrito para esta línea",
+      "dayRate": "Tipo del día"
     }
   },
   "reports": {
@@ -1177,7 +1190,9 @@
       "byRate": "Por impuesto",
       "rate": "Impuesto",
       "net": "Neto"
-    }
+    },
+    "fxAmount": "Importe ({{code}})",
+    "fxBalance": "Saldo ({{code}})"
   },
   "taxes": {
     "title": "Impuestos",
@@ -1392,6 +1407,22 @@
       "source_unavailable": "No se pudo contactar con el servicio de tipos de cambio. Inténtalo más tarde o escribe los tipos.",
       "currency_not_enabled": "Activa primero esta moneda en Monedas.",
       "currency_type": "Solo las cuentas de activo y pasivo pueden estar en moneda extranjera."
+    },
+    "revalue": {
+      "open": "Revaluar saldos",
+      "title": "Revaluar saldos en moneda extranjera",
+      "body": "Cada cuenta en moneda extranjera pasa al tipo del día y la diferencia se registra en Diferencias de cambio no realizadas en un asiento. Hazlo el último día del mes, antes de cerrarlo.",
+      "date": "Revaluar a",
+      "dateHint": "El día debe estar en un mes abierto.",
+      "run": "Revaluar",
+      "done": "Hecho",
+      "posted": "Revaluado el {{date}} en",
+      "nothing": "Los saldos ya estaban a los tipos de ese día: nada que contabilizar.",
+      "balance": "Saldo extranjero",
+      "before": "Antes",
+      "after": "Después",
+      "difference": "Diferencia",
+      "missing": "Sin tipo para {{list}} ese día, así que esas cuentas no se tocaron."
     }
   }
 }

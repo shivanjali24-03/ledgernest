@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, fiscalYearOf, fiscalYearSpan, todayIn } from '@ledgernest/shared';
+import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, todayIn } from '@ledgernest/shared';
 import { AlertTriangle, Building2, CheckCircle2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -86,6 +86,8 @@ export default function Reports() {
     );
   }
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
+  const fx = ledger.data?.foreign;
+  const inForeign = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: currencyDigits(fx!.currency), maximumFractionDigits: currencyDigits(fx!.currency) }).format(minor / 10 ** currencyDigits(fx!.currency));
   const amount = (n: number) => (n ? money.plain(n) : '');
 
   return (
@@ -253,6 +255,16 @@ export default function Reports() {
                       <th scope="col" className={`${th} text-end`}>
                         {t('reports.balance')}
                       </th>
+                      {fx && (
+                        <>
+                          <th scope="col" className={`${th} text-end`}>
+                            {t('reports.fxAmount', { code: fx.currency })}
+                          </th>
+                          <th scope="col" className={`${th} text-end`}>
+                            {t('reports.fxBalance', { code: fx.currency })}
+                          </th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
@@ -263,10 +275,18 @@ export default function Reports() {
                       <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
                         {money.plain(ledger.data.openingBalance)}
                       </td>
+                      {fx && (
+                        <>
+                          <td />
+                          <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                            {inForeign(fx.openingBalance)}
+                          </td>
+                        </>
+                      )}
                     </tr>
                     {ledger.data.rows.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-ink-500">
+                        <td colSpan={fx ? 8 : 6} className="px-4 py-6 text-center text-ink-500">
                           {t('reports.noLines')}
                         </td>
                       </tr>
@@ -292,6 +312,16 @@ export default function Reports() {
                         <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
                           {money.plain(r.balance)}
                         </td>
+                        {fx && (
+                          <>
+                            <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                              {r.foreignDebit || r.foreignCredit ? `${inForeign((r.foreignDebit ?? 0) - (r.foreignCredit ?? 0))}${r.rate ? ` @ ${r.rate}` : ''}` : ''}
+                            </td>
+                            <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                              {inForeign(r.foreignBalance ?? 0)}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -309,6 +339,14 @@ export default function Reports() {
                       <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
                         {money.format(ledger.data.closingBalance)}
                       </td>
+                      {fx && (
+                        <>
+                          <td />
+                          <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                            {fx.currency} {inForeign(fx.closingBalance)}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   </tfoot>
                 </table>

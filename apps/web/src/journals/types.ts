@@ -4,7 +4,7 @@ export interface JournalLine {
   id: string;
   lineNo: number;
   accountId: string;
-  account: { code: string; name: string; type: string };
+  account: { code: string; name: string; type: string; currency?: string | null };
   description: string | null;
   debit: number;
   credit: number;
@@ -15,6 +15,13 @@ export interface JournalLine {
   taxRate: { id: string; name: string; kind: string; ratePpm: number } | null;
   /** The line a generated tax line was charged on */
   taxSourceLine: number | null;
+  /** A line on a foreign-currency account: the amount in that currency and the rate it was converted at */
+  currency: string | null;
+  foreignDebit: number;
+  foreignCredit: number;
+  rate: string | null;
+  /** Set on an exchange-difference line generated on posting: the line it settles */
+  fxSourceLine: number | null;
 }
 
 export interface JournalRef {

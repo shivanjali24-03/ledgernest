@@ -1,4 +1,4 @@
-import { accountCreateSchema, accountUpdateSchema, MAX_ACCOUNT_DEPTH, namedTemplate, NORMAL_SIDE, subtypeBelongsTo, type AccountSubtype, type AccountType } from '@ledgernest/shared';
+import { accountCreateSchema, accountUpdateSchema, MAX_ACCOUNT_DEPTH, namedTemplate, NORMAL_SIDE, subtypeBelongsTo, type AccountSubtype, type AccountType, FX_ACCOUNT_NAMES, FX_ACCOUNTS, type FxAccountKey } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoEnabledCurrencies } from '../currencies/demoCurrenciesApi';
 import { heightOf, levelOf, subtreeIds } from './tree';
@@ -94,6 +94,18 @@ function save(rows: Stored[]) {
 
 /** The demo company's accounts, for other demo features (taxes check account types against them). */
 export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'archivedAt' | 'currency'>[] => load();
+
+/** The demo's exchange gain/loss account, added the first time it's needed (as the API does). */
+export function demoEnsureFxAccount(key: FxAccountKey): string {
+  const rows = load();
+  const found = rows.find((r) => r.systemKey === key);
+  if (found) return found.id;
+  const def = FX_ACCOUNTS[key];
+  const row: Stored = { id: sampleId(def.code), code: def.code, name: FX_ACCOUNT_NAMES[key].en, type: def.type, subtype: def.subtype, description: null, parentId: null, systemKey: key, archivedAt: null, currency: null };
+  rows.push(row);
+  save(rows);
+  return row.id;
+}
 
 /** Test helper */
 export const resetDemoAccounts = () => {

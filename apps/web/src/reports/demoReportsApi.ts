@@ -39,11 +39,15 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     const mine = (await postedLines()).filter((l) => l.accountId === accountId).sort((x, y) => x.date.localeCompare(y.date) || (x.number ?? '').localeCompare(y.number ?? ''));
     let balance = mine.filter((l) => l.date < from).reduce((s, l) => s + sign(l.debit, l.credit), 0);
     const openingBalance = balance;
+    let foreignBalance = mine.filter((l) => l.date < from).reduce((s, l) => s + sign(l.foreignDebit, l.foreignCredit), 0);
+    const openingForeign = foreignBalance;
     const rows = mine
       .filter((l) => l.date >= from && l.date <= to)
       .map((l) => {
         balance += sign(l.debit, l.credit);
-        return { lineId: l.id, entryId: l.entryId, number: l.number, date: l.date, memo: l.memo, reference: l.reference, description: l.description, debit: l.debit, credit: l.credit, balance };
+        foreignBalance += sign(l.foreignDebit, l.foreignCredit);
+        const row = { lineId: l.id, entryId: l.entryId, number: l.number, date: l.date, memo: l.memo, reference: l.reference, description: l.description, debit: l.debit, credit: l.credit, balance };
+        return a.currency ? { ...row, foreignDebit: l.foreignDebit, foreignCredit: l.foreignCredit, rate: l.rate, foreignBalance } : row;
       });
     return {
       account: { id: a.id, code: a.code, name: a.name, type: a.type, normalSide: NORMAL_SIDE[a.type] },
@@ -53,6 +57,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       rows,
       totals: { debit: rows.reduce((s, r) => s + r.debit, 0), credit: rows.reduce((s, r) => s + r.credit, 0) },
       closingBalance: balance,
+      ...(a.currency && { foreign: { currency: a.currency, openingBalance: openingForeign, closingBalance: foreignBalance } }),
     };
   };
 

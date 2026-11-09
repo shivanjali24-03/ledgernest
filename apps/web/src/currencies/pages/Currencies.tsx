@@ -1,7 +1,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, ChevronDown, Coins, Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { Building2, ChevronDown, Coins, Plus, RefreshCw, Scale, Trash2, X } from 'lucide-react';
+import RevalueDialog from '../RevalueDialog';
 import clsx from 'clsx';
 import { KNOWN_CURRENCIES, normaliseRate } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +46,7 @@ export default function Currencies() {
   const key = ['currencies', session.organizationId, session.role ?? session.customRoleName] as const;
   const query = useQuery({ queryKey: key, queryFn: () => api!.list(), enabled: !!api });
   const [adding, setAdding] = useState(false);
+  const [revaluing, setRevaluing] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['currencies', session.organizationId] });
@@ -92,6 +94,11 @@ export default function Currencies() {
             canManage && data ? (
               <>
                 {data.currencies.length > 0 && (
+                  <Button variant="ghost" icon={<Scale className="size-4" />} onClick={() => setRevaluing(true)}>
+                    {t('currencies.revalue.open')}
+                  </Button>
+                )}
+                {data.currencies.length > 0 && (
                   <Button variant="ghost" icon={<RefreshCw className="size-4" />} loading={fetchRates.isPending} onClick={() => fetchRates.mutate()}>
                     {t('currencies.fetch')}
                   </Button>
@@ -122,6 +129,7 @@ export default function Currencies() {
         </Card>
       </motion.div>
       {data && <p className="text-sm text-ink-500">{t('currencies.sourceNote')}</p>}
+      {revaluing && data && <RevalueDialog api={api} today={data.today} onClose={() => setRevaluing(false)} />}
       {adding && data && <AddCurrencyDialog api={api} base={data.base} enabled={data.currencies.map((c) => c.code)} nameOf={nameOf} onClose={() => setAdding(false)} onDone={(code) => (setAdding(false), setOpen(code), refresh())} />}
       <ConfirmDialog
         open={!!removing}
