@@ -17,6 +17,7 @@ export * from './invoices/index.js';
 export * from './payments/index.js';
 export * from './bills/index.js';
 export * from './aging/index.js';
+export * from './aging/statement.js';
 export * from './credit-notes/index.js';
 export * from './recurring/index.js';
 export * from './banking/index.js';

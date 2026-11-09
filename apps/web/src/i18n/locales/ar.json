@@ -1497,7 +1497,35 @@
     "print": "طباعة أو PDF",
     "excel": "Excel",
     "printAsOf": "في {{date}}",
-    "printRange": "من {{from}} إلى {{to}}"
+    "printRange": "من {{from}} إلى {{to}}",
+    "statement": {
+      "title": "كشوف الحساب",
+      "customers": "العملاء",
+      "vendors": "الموردون",
+      "contact": "جهة الاتصال",
+      "pickContact": "اختر جهة اتصال",
+      "hint": "كل فاتورة وإشعار دائن وفاتورة مورد ودفعة في هذه التواريخ، مع الرصيد المرحّل من قبل والرصيد المرحّل إلى ما بعد. أرسله إلى عميل، أو طابقه مع كشف مورد.",
+      "pdf": "تنزيل PDF",
+      "empty": "لا شيء في هذه التواريخ، ولا رصيد مرحّل",
+      "inCurrency": "بعملة {{currency}}",
+      "broughtForward": "الرصيد المرحّل في {{date}}",
+      "carriedDown": "الرصيد الختامي في {{date}}",
+      "voided": "{{kind}} ملغاة",
+      "kinds": {
+        "invoice": "فاتورة",
+        "credit_note": "إشعار دائن",
+        "receipt": "مقبوضات",
+        "bill": "فاتورة مورد",
+        "payment": "دفعة"
+      },
+      "columns": {
+        "date": "التاريخ",
+        "type": "النوع",
+        "number": "الرقم",
+        "debit": "مدين",
+        "credit": "دائن"
+      }
+    }
   },
   "taxes": {
     "title": "الضرائب",

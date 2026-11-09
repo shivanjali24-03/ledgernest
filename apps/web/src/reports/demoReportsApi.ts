@@ -1,4 +1,4 @@
-import { B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { buildStatement, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -106,6 +106,31 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
         net: rates.reduce((s, r) => s + r.net, 0),
       },
     };
+  };
+
+  /** A contact's statement of account, from the demo's invoices, credit notes, bills and payments; voids dated by their reversing entries */
+  const statement = async (contactId: string, side: AgingSide, from: string, to: string) => {
+    const { createDemoContactsApi } = await import('../contacts/demoContactsApi');
+    const contact = await createDemoContactsApi(() => true).get(contactId);
+    const { demoJournalDates } = await import('../journals/demoJournalsApi');
+    const dates = demoJournalDates();
+    const events: AccountStatementEvent[] = [];
+    const add = (d: { id: string; currency: string | null; voidEntry: { id: string } | null }, kind: Exclude<AccountStatementEvent['kind'], 'void'>, date: string, number: string, reference: string | null, amount: number) => {
+      const base = { documentId: d.id, number, reference, currency: d.currency ?? DEMO_BASE_CURRENCY };
+      events.push({ ...base, kind, date, amount });
+      const voided = d.voidEntry && dates.get(d.voidEntry.id);
+      if (voided) events.push({ ...base, kind: 'void', voided: kind, date: voided, amount: -amount });
+    };
+    if (side === 'receivables') {
+      for (const i of (await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews()).filter((x) => x.contact.id === contactId && x.number && x.status !== 'draft')) add(i, 'invoice', i.issueDate, i.number!, i.reference, i.total);
+      for (const n of (await import('../credit-notes/demoCreditNotesApi')).demoCreditNoteRows().filter((x) => x.contact.id === contactId)) add(n, 'credit_note', n.date, n.number, n.reason, -n.total);
+    } else {
+      for (const b of (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((x) => x.contact.id === contactId && x.number && x.status !== 'draft')) add(b, 'bill', b.billDate, b.number!, b.vendorReference, b.total);
+    }
+    const kind = side === 'receivables' ? 'receipt' : 'payment';
+    const { createDemoPaymentsApi } = await import('../payments/demoPaymentsApi');
+    for (const p of (await createDemoPaymentsApi(() => true).list({ kind, page: 1, pageSize: 1000 })).items.filter((x) => x.contact.id === contactId)) add(p, kind, p.date, p.number, p.reference, -p.amount);
+    return { contact: { id: contact.id, name: contact.name, email: contact.email }, side, from, to, baseCurrency: DEMO_BASE_CURRENCY, sections: buildStatement(events, from, to, DEMO_BASE_CURRENCY) };
   };
 
   /** Open invoices or bills on a day, less what was paid by then (loaded on demand: they need contacts and journals too) */
@@ -448,6 +473,16 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       }
       rows.push(['', '', 'Total assets', ...b.totalAssets.map(money)], ['', '', 'Total liabilities and equity', ...b.columns.map((_c, k) => money(b.totalLiabilities[k]! + b.totalEquity[k]!))]);
       return { filename: `balance-sheet-${asOf}.csv`, blob: csv(rows) };
+    },
+    statement,
+    async exportStatement(contactId, side, from, to, format) {
+      guard();
+      const s = await statement(contactId, side, from, to);
+      const slug = s.contact.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'contact';
+      const filename = `statement-${slug}-${from}-${to}.${format}`;
+      if (format === 'csv') return { filename, blob: csv(accountStatementRows(s)) };
+      const org = 'Nest Demo Pvt. Ltd.';
+      return { filename, blob: new Blob([pdfTableBytes({ title: `${statementTitle(side)}: ${s.contact.name}`, subtitle: `${org} · ${from} to ${to}`, footer: `${org} · LedgerNest`, rows: accountStatementRows(s) }).buffer as ArrayBuffer], { type: PDF_TYPE }) };
     },
     aging,
     async exportAging(side, asOf) {

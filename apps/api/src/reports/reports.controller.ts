@@ -4,6 +4,7 @@ import {
   Header,
   Query,
   Res,
+  StreamableFile,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -15,6 +16,12 @@ import {
 } from '@nestjs/swagger';
 import {
   agingQuerySchema,
+  PDF_TYPE,
+  pdfTableBytes,
+  statementExportSchema,
+  statementQuerySchema,
+  statementRows,
+  statementTitle,
   balanceSheetQuerySchema,
   pnlQuerySchema,
   type PnlCompare,
@@ -36,6 +43,7 @@ import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
 import { ReportsService } from './reports.service.js';
+import { StatementsService } from './statements.service.js';
 
 const tbQuery = new ZodValidationPipe(
   z.object({ asOf: isoDaySchema.optional() }),
@@ -76,6 +84,7 @@ export class ReportsController {
     private readonly prisma: PrismaService,
     private readonly dashboards: DashboardService,
     private readonly gst: GstReturnsService,
+    private readonly statements: StatementsService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -241,6 +250,77 @@ export class ReportsController {
       `attachment; filename="${q.side}-aging-${asOf}.csv"`,
     );
     return this.reports.agingCsv(a);
+  }
+
+  @Get('statement')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'A contact’s statement of account: balance brought forward, every invoice, credit note, bill, payment and void between from and to with a running balance, and the balance carried down, per currency',
+  })
+  statement(
+    @Query(new ZodValidationPipe(statementQuerySchema))
+    q: { contactId: string; side: AgingSide; from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.statements.statement(
+      tenant.organizationId,
+      q.contactId,
+      q.side,
+      q.from,
+      q.to,
+    );
+  }
+
+  @Get('statement/export')
+  @RequirePermission('reports.export')
+  @ApiProduces('text/csv', 'application/pdf')
+  async statementFile(
+    @Query(new ZodValidationPipe(statementExportSchema))
+    q: {
+      contactId: string;
+      side: AgingSide;
+      from: string;
+      to: string;
+      format: 'csv' | 'pdf';
+    },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const s = await this.statements.statement(
+      tenant.organizationId,
+      q.contactId,
+      q.side,
+      q.from,
+      q.to,
+    );
+    const { name } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: tenant.organizationId },
+      select: { name: true },
+    });
+    const slug =
+      s.contact.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'contact';
+    const fileName = `statement-${slug}-${q.from}-${q.to}.${q.format}`;
+    const data =
+      q.format === 'pdf'
+        ? Buffer.from(
+            pdfTableBytes({
+              title: `${statementTitle(q.side)}: ${s.contact.name}`,
+              subtitle: `${name} · ${q.from} to ${q.to}`,
+              footer: `${name} · LedgerNest`,
+              rows: statementRows(s),
+            }),
+          )
+        : Buffer.from(this.statements.csv(s), 'utf8');
+    res.setHeader('Cache-Control', 'no-store');
+    return new StreamableFile(data, {
+      type: q.format === 'pdf' ? PDF_TYPE : 'text/csv; charset=utf-8',
+      disposition: `attachment; filename="${fileName}"`,
+      length: data.length,
+    });
   }
 
   @Get('profit-and-loss')

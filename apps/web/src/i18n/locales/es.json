@@ -1497,7 +1497,35 @@
     "print": "Imprimir o PDF",
     "excel": "Excel",
     "printAsOf": "A {{date}}",
-    "printRange": "Del {{from}} al {{to}}"
+    "printRange": "Del {{from}} al {{to}}",
+    "statement": {
+      "title": "Estados de cuenta",
+      "customers": "Clientes",
+      "vendors": "Proveedores",
+      "contact": "Contacto",
+      "pickContact": "Elige un contacto",
+      "hint": "Cada factura, nota de crédito, factura de proveedor y pago en estas fechas, con el saldo anterior y el saldo final. Envíalo a un cliente o compáralo con el de un proveedor.",
+      "pdf": "Descargar PDF",
+      "empty": "Nada en estas fechas y sin saldo anterior",
+      "inCurrency": "En {{currency}}",
+      "broughtForward": "Saldo anterior al {{date}}",
+      "carriedDown": "Saldo final al {{date}}",
+      "voided": "{{kind}} anulada",
+      "kinds": {
+        "invoice": "Factura",
+        "credit_note": "Nota de crédito",
+        "receipt": "Cobro",
+        "bill": "Factura de proveedor",
+        "payment": "Pago"
+      },
+      "columns": {
+        "date": "Fecha",
+        "type": "Tipo",
+        "number": "Número",
+        "debit": "Debe",
+        "credit": "Haber"
+      }
+    }
   },
   "taxes": {
     "title": "Impuestos",

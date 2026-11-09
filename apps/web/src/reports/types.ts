@@ -1,4 +1,4 @@
-import type { AccountType, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
+import type { AccountStatement, AccountType, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
   accountId: string;
@@ -198,6 +198,9 @@ export interface ReportsApi {
   exportTaxSummary(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   aging(side: AgingSide, asOf: string): Promise<Aging>;
   exportAging(side: AgingSide, asOf: string): Promise<{ blob: Blob; filename: string }>;
+  /** A contact's statement of account over some days */
+  statement(contactId: string, side: AgingSide, from: string, to: string): Promise<AccountStatement & { baseCurrency: string }>;
+  exportStatement(contactId: string, side: AgingSide, from: string, to: string, format: 'csv' | 'pdf'): Promise<{ blob: Blob; filename: string }>;
   /** costCentreId: one cost centre, or "none" for the untagged lines */
   profitAndLoss(from: string, to: string, compare: PnlCompare, costCentreId?: string): Promise<ProfitAndLoss>;
   exportProfitAndLoss(from: string, to: string, compare: PnlCompare, costCentreId?: string): Promise<{ blob: Blob; filename: string }>;
