@@ -14,7 +14,7 @@ import { fadeUp, stagger } from '../../motion/tokens';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import Button from '../../ui/Button';
 import { TextField } from '../../ui/Field';
-import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
+import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import AdjustStockDialog from '../AdjustStockDialog';
 import { inventoryErrorMessage } from '../errors';
@@ -112,9 +112,15 @@ export default function Inventory() {
                         <button type="button" onClick={() => setSelected(selected === r.itemId ? null : r.itemId)} aria-expanded={selected === r.itemId} className="text-start font-medium hover:underline" dir="auto">
                           {r.name}
                         </button>
+                        {r.low && (
+                          <span className="ms-2 inline-block">
+                            <Pill>{t('inventory.lowPill')}</Pill>
+                          </span>
+                        )}
                         {r.account && (
                           <span className="block text-xs text-ink-500">
                             {r.account.code} · {r.account.name}
+                            {r.reorderLevel && ` · ${t('inventory.reorderAt', { quantity: r.reorderLevel })}`}
                           </span>
                         )}
                       </th>

@@ -35,6 +35,7 @@ type Values = {
   trackStock: boolean;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
+  reorderLevel: string | null;
 };
 const EDITABLE = [
   'name',
@@ -51,6 +52,7 @@ const EDITABLE = [
   'trackStock',
   'inventoryAccountId',
   'cogsAccountId',
+  'reorderLevel',
 ] as const;
 
 const refuse = (
@@ -76,6 +78,7 @@ const select = {
   trackStock: true,
   inventoryAccountId: true,
   cogsAccountId: true,
+  reorderLevel: true,
   archivedAt: true,
   taxGroup: {
     select: {
@@ -104,9 +107,12 @@ export class ItemsService {
   }
 
   private view(i: Row, stock?: { quantity: bigint; value: bigint }) {
-    const { taxGroup, archivedAt, ...rest } = i;
+    const { taxGroup, archivedAt, reorderLevel, ...rest } = i;
+    const level =
+      reorderLevel === null ? null : parseQuantity(reorderLevel.toFixed(4));
     return {
       ...rest,
+      reorderLevel: level === null ? null : formatQuantity(level),
       /** For tracked goods: what's on hand and what it cost */
       stock: i.trackStock
         ? {
@@ -118,6 +124,8 @@ export class ItemsService {
               stock?.quantity ?? 0n,
               stock?.value ?? 0n,
             ),
+            /** At or below its reorder level */
+            low: level !== null && (stock?.quantity ?? 0n) <= level,
           }
         : null,
       kind: i.kind as ItemKind,

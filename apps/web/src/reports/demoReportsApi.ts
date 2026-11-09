@@ -265,6 +265,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
     const waiting = demoPendingApprovals();
     if (waiting) alerts.push({ kind: 'approvals_waiting', count: waiting });
+    const low = (await import('../items/demoItemsApi')).demoItemRows().filter((i) => i.stock?.low && !i.archived).length;
+    if (low) alerts.push({ kind: 'low_stock', count: low });
     return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
   };
 

@@ -20,7 +20,7 @@ export interface StockMovement {
 }
 export interface StockValuation {
   asOf: string;
-  rows: { itemId: string; name: string; sku: string | null; unit: string | null; archived: boolean; account: { id: string; code: string; name: string } | null; quantity: string; averageCost: number | null; value: number }[];
+  rows: { itemId: string; name: string; sku: string | null; unit: string | null; archived: boolean; account: { id: string; code: string; name: string } | null; quantity: string; reorderLevel: string | null; low: boolean; averageCost: number | null; value: number }[];
   total: number;
   /** Each inventory account: the stock in it beside what the books say */
   accounts: { id: string; code: string; name: string; stock: number; ledger: number }[];

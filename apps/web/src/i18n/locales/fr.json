@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} factures récurrentes à émettre",
       "open_periods": "{{count}} mois passés encore ouverts",
       "draft_entries": "{{count}} écritures en brouillon non comptabilisées",
-      "approvals_waiting": "{{count}} en attente de votre approbation"
+      "approvals_waiting": "{{count}} en attente de votre approbation",
+      "low_stock": "{{count}} articles en stock bas"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "Quantité",
       "unitCost": "Coût d’une unité ({{currency}})",
       "account": "Autre compte",
-      "reason": "Motif"
+      "reason": "Motif",
+      "reorderLevel": "Seuil de réapprovisionnement"
     },
     "chooseAccount": "Choisissez un compte",
     "adjustTitle": "Ajuster le stock",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "Le stock se trouve dans un compte d’actif.",
       "cogs_account_type": "Le coût du stock vendu va dans un compte de charges.",
       "in_use": "Des factures, factures fournisseurs ou mouvements de stock utilisent cet article. Archivez-le plutôt."
-    }
+    },
+    "reorderHint": "Signalé bas quand le stock descend à ce niveau ou en dessous. Laissez vide pour aucun.",
+    "lowPill": "Bas",
+    "reorderAt": "réappro. à {{quantity}}"
   },
   "approvals": {
     "title": "Approbations",

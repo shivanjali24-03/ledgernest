@@ -758,6 +758,7 @@ export class InventoryService {
         sku: true,
         unit: true,
         archivedAt: true,
+        reorderLevel: true,
         inventoryAccount: { select: { id: true, code: true, name: true } },
       },
     });
@@ -778,6 +779,13 @@ export class InventoryService {
           archived: !!i.archivedAt,
           account: i.inventoryAccount,
           quantity: qtyText(s.quantity),
+          reorderLevel:
+            i.reorderLevel === null
+              ? null
+              : qtyText(tenThousandths(i.reorderLevel)),
+          low:
+            i.reorderLevel !== null &&
+            s.quantity <= tenThousandths(i.reorderLevel),
           averageCost: averageUnitCost(s.quantity, s.value),
           value: Number(s.value),
         };

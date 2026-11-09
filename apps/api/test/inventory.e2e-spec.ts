@@ -51,8 +51,15 @@ describe('Inventory (e2e)', () => {
       delete: (p: string) => auth(http().delete(`/api/v1${p}`)),
     };
   };
-  const stock = async () =>
-    ((await as().get(`/items/${chair}`).expect(200)).body as Item).stock!;
+  const stock = async () => {
+    // What's on hand; whether it's low is checked on its own
+    const { low: _low, ...rest } = (
+      (await as().get(`/items/${chair}`).expect(200)).body as Item & {
+        stock: { low: boolean };
+      }
+    ).stock;
+    return rest;
+  };
   const entry = async (id: string) =>
     ((await as().get(`/journals/${id}`).expect(200)).body as Entry).lines.map(
       (l) => [l.account.code, l.debit, l.credit],
@@ -195,7 +202,7 @@ describe('Inventory (e2e)', () => {
         .expect(201)
     ).body as Item;
     chair = i.id;
-    expect(i.stock).toEqual({ onHand: '0', value: 0, averageCost: null });
+    expect(i.stock).toEqual({ onHand: '0', value: 0, averageCost: null, low: false });
   });
 
   it('counts opening stock in against equity', async () => {
@@ -551,5 +558,35 @@ describe('Inventory (e2e)', () => {
       value: 60_000,
       averageCost: 10_000,
     });
+  });
+
+  it('flags goods at or below their reorder level, on the item, the valuation and the dashboard', async () => {
+    const low = async () =>
+      (
+        (await as().get('/reports/dashboard').expect(200)).body as {
+          alerts: { kind: string; count: number }[];
+        }
+      ).alerts.find((a) => a.kind === 'low_stock');
+    expect(await low()).toBeUndefined();
+    await as().patch(`/items/${chair}`, { reorderLevel: '6' }).expect(200);
+    expect(
+      (await as().get(`/items/${chair}`).expect(200)).body as {
+        reorderLevel: string;
+        stock: { low: boolean };
+      },
+    ).toMatchObject({ reorderLevel: '6', stock: { low: true } });
+    expect(
+      (
+        (await as().get('/inventory/valuation').expect(200)).body as {
+          rows: { reorderLevel: string; low: boolean }[];
+        }
+      ).rows[0],
+    ).toMatchObject({ reorderLevel: '6', low: true });
+    expect(await low()).toEqual({ kind: 'low_stock', count: 1 });
+    await as().patch(`/items/${chair}`, { reorderLevel: '5' }).expect(200);
+    expect(await low()).toBeUndefined();
+    await as()
+      .patch(`/items/${chair}`, { reorderLevel: '5.12345' })
+      .expect(400);
   });
 });

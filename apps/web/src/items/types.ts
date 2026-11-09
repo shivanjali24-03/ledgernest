@@ -24,7 +24,9 @@ export interface Item {
   inventoryAccount: { id: string; code: string; name: string } | null;
   cogsAccount: { id: string; code: string; name: string } | null;
   /** For tracked goods: what's on hand, its value and average unit cost */
-  stock: { onHand: string; value: number; averageCost: number | null } | null;
+  stock: { onHand: string; value: number; averageCost: number | null; low: boolean } | null;
+  /** Stock at or below this is low */
+  reorderLevel: string | null;
   archived: boolean;
 }
 

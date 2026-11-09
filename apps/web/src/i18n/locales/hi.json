@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} आवर्ती इनवॉइस देय",
       "open_periods": "{{count}} पिछले महीने अभी खुले",
       "draft_entries": "{{count}} ड्राफ़्ट प्रविष्टियाँ पोस्ट नहीं",
-      "approvals_waiting": "{{count}} आपके अनुमोदन की प्रतीक्षा में"
+      "approvals_waiting": "{{count}} आपके अनुमोदन की प्रतीक्षा में",
+      "low_stock": "{{count}} वस्तुओं का स्टॉक कम"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "मात्रा",
       "unitCost": "एक की लागत ({{currency}})",
       "account": "दूसरा खाता",
-      "reason": "कारण"
+      "reason": "कारण",
+      "reorderLevel": "पुनः ऑर्डर स्तर"
     },
     "chooseAccount": "खाता चुनें",
     "adjustTitle": "स्टॉक समायोजित करें",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "स्टॉक एक परिसंपत्ति खाते में रहता है।",
       "cogs_account_type": "बिके स्टॉक की लागत व्यय खाते में जाती है।",
       "in_use": "इनवॉइस, बिल या स्टॉक आवाजाही इस वस्तु का उपयोग करते हैं। इसके बजाय इसे संग्रहीत करें।"
-    }
+    },
+    "reorderHint": "स्टॉक इतना या कम होने पर कम दिखाया जाता है। न चाहें तो खाली छोड़ें।",
+    "lowPill": "कम",
+    "reorderAt": "{{quantity}} पर फिर ऑर्डर"
   },
   "approvals": {
     "title": "अनुमोदन",

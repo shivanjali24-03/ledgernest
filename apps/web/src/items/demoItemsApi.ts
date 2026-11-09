@@ -1,4 +1,4 @@
-import { averageUnitCost, formatQuantity, formatRate, itemCreateSchema, itemUpdateSchema, type ItemKind } from '@ledgernest/shared';
+import { averageUnitCost, formatQuantity, formatRate, parseQuantity, itemCreateSchema, itemUpdateSchema, type ItemKind } from '@ledgernest/shared';
 import { demoItemHasMovements, demoStockOf } from '../inventory/demoInventoryApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
@@ -12,7 +12,7 @@ const id = (n: number) => `17e00000-0000-4000-8000-${String(n).padStart(12, '0')
 
 function seed(): Stored[] {
   const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')?.id ?? null;
-  const i = (n: number, v: Partial<Stored> & Pick<Stored, 'name' | 'kind'>): Stored => ({ id: id(n), sku: null, description: null, unit: null, salePrice: null, purchasePrice: null, taxGroupId: gst18, hsnSac: null, incomeAccountId: null, expenseAccountId: null, trackStock: false, inventoryAccountId: null, cogsAccountId: null, archived: false, ...v });
+  const i = (n: number, v: Partial<Stored> & Pick<Stored, 'name' | 'kind'>): Stored => ({ id: id(n), sku: null, description: null, unit: null, salePrice: null, purchasePrice: null, taxGroupId: gst18, hsnSac: null, incomeAccountId: null, expenseAccountId: null, trackStock: false, inventoryAccountId: null, cogsAccountId: null, reorderLevel: null, archived: false, ...v });
   return [
     i(1, { name: 'Software development', kind: 'service', sku: 'DEV-HR', unit: 'hrs', salePrice: 250_000, hsnSac: '998314', incomeAccountId: sampleId('4100.01'), description: 'Design, build and test, billed by the hour.' }),
     i(2, { name: 'Annual maintenance contract', kind: 'service', sku: 'AMC-12', unit: 'year', salePrice: 12_000_000, hsnSac: '998313', incomeAccountId: sampleId('4200') }),
@@ -27,7 +27,7 @@ function load(): Stored[] {
   try {
     const raw = localStorage.getItem(KEY);
     // Items stored before stock tracking existed don't track it
-    if (raw) return (JSON.parse(raw) as Partial<Stored>[]).map((i) => ({ trackStock: false, inventoryAccountId: null, cogsAccountId: null, ...i }) as Stored);
+    if (raw) return (JSON.parse(raw) as Partial<Stored>[]).map((i) => ({ trackStock: false, inventoryAccountId: null, cogsAccountId: null, reorderLevel: null, ...i }) as Stored);
   } catch {
     /* fall through */
   }
@@ -67,7 +67,7 @@ function view(i: Stored): Item {
     cogsAccount: ref(i.cogsAccountId),
     stock: i.trackStock ? (() => {
       const s = demoStockOf(i.id);
-      return { onHand: formatQuantity(s.quantity > 0n ? s.quantity : 0n), value: Number(s.value), averageCost: averageUnitCost(s.quantity, s.value) };
+      return { onHand: formatQuantity(s.quantity > 0n ? s.quantity : 0n), value: Number(s.value), averageCost: averageUnitCost(s.quantity, s.value), low: !!i.reorderLevel && s.quantity <= (parseQuantity(i.reorderLevel) ?? 0n) };
     })() : null,
   };
 }

@@ -102,7 +102,8 @@
       "recurring_due": "{{count}} recurring invoices due",
       "open_periods": "{{count}} past months still open",
       "draft_entries": "{{count}} draft entries not posted",
-      "approvals_waiting": "{{count}} waiting for your approval"
+      "approvals_waiting": "{{count}} waiting for your approval",
+      "low_stock": "{{count}} items low on stock"
     }
   },
   "comingSoon": {
@@ -2767,7 +2768,8 @@
       "quantity": "Quantity",
       "unitCost": "Cost of one ({{currency}})",
       "account": "Other account",
-      "reason": "Reason"
+      "reason": "Reason",
+      "reorderLevel": "Reorder level"
     },
     "chooseAccount": "Choose an account",
     "adjustTitle": "Adjust stock",
@@ -2804,7 +2806,10 @@
       "inventory_account_type": "Stock sits in an asset account.",
       "cogs_account_type": "The cost of stock sold goes to an expense account.",
       "in_use": "Invoices, bills or stock movements use this item. Archive it instead."
-    }
+    },
+    "reorderHint": "Marked low when stock falls to this or below. Leave empty for none.",
+    "lowPill": "Low",
+    "reorderAt": "reorder at {{quantity}}"
   },
   "approvals": {
     "title": "Approvals",
