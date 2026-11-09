@@ -119,7 +119,8 @@
       "network": "Server nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
       "server": "Bei uns ist etwas schiefgelaufen. Bitte versuche es erneut.",
       "expired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an."
-    }
+    },
+    "waking": "Der Server wird gestartet… Kostenloses Hosting pausiert ihn bei Nichtnutzung, das kann bis zu einer Minute dauern."
   },
   "common": {
     "all": "Alle",

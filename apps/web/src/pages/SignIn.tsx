@@ -11,6 +11,7 @@ import { DEMO_EMAIL, DEMO_PASSWORD, useAuth } from '../auth/context';
 import { safeNext } from '../auth/liveSession';
 import LanguageSwitcher from '../layout/LanguageSwitcher';
 import Logo from '../layout/Logo';
+import { useTakingLong } from '../lib/useTakingLong';
 import ThemeToggle from '../layout/ThemeToggle';
 import { fadeUp, spring, stagger } from '../motion/tokens';
 
@@ -50,6 +51,7 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const shake = useAnimationControls();
+  const waking = useTakingLong(submitting && !demo);
   const ids = { email: useId(), password: useId(), emailErr: useId(), passwordErr: useId(), caps: useId() };
 
   if (auth.state.status === 'signedIn') return <Navigate to={safeNext(params.get('next'))} replace />;
@@ -229,6 +231,11 @@ export default function SignIn() {
                   </>
                 )}
               </motion.button>
+              {waking && (
+                <p role="status" className="text-center text-xs text-ink-500">
+                  {t('auth.waking')}
+                </p>
+              )}
             </motion.form>
           </motion.div>
         </div>

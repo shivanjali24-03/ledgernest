@@ -119,7 +119,8 @@
       "network": "No se puede conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
       "server": "Algo ha fallado por nuestra parte. Inténtalo de nuevo.",
       "expired": "Tu sesión ha finalizado. Vuelve a iniciar sesión."
-    }
+    },
+    "waking": "Activando el servidor… El alojamiento gratuito lo pausa cuando nadie lo usa, así que puede tardar hasta un minuto."
   },
   "common": {
     "all": "Todas",

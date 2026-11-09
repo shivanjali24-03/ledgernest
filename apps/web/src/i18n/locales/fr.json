@@ -119,7 +119,8 @@
       "network": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.",
       "server": "Un problème est survenu de notre côté. Veuillez réessayer.",
       "expired": "Votre session a expiré. Veuillez vous reconnecter."
-    }
+    },
+    "waking": "Réveil du serveur… L'hébergement gratuit le met en pause quand personne ne l'utilise : cela peut prendre jusqu'à une minute."
   },
   "common": {
     "all": "Toutes",
