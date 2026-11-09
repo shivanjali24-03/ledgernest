@@ -564,7 +564,8 @@
       "banking": "Bank",
       "assets": "Anlagevermögen",
       "budgets": "Budgets",
-      "costCentres": "Kostenstellen"
+      "costCentres": "Kostenstellen",
+      "inventory": "Lager"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "Kostenstelle geändert",
       "org_cost_centre_archive": "Kostenstelle archiviert",
       "org_cost_centre_restore": "Kostenstelle wiederhergestellt",
-      "org_cost_centre_delete": "Kostenstelle gelöscht"
+      "org_cost_centre_delete": "Kostenstelle gelöscht",
+      "org_stock_adjust": "Bestand angepasst",
+      "org_stock_adjust_undo": "Bestandsanpassung rückgängig gemacht"
     },
     "entities": {
       "membership": "Mitglied",

@@ -564,7 +564,8 @@
       "banking": "बैंकिंग",
       "assets": "स्थायी परिसंपत्तियाँ",
       "budgets": "बजट",
-      "costCentres": "लागत केंद्र"
+      "costCentres": "लागत केंद्र",
+      "inventory": "इन्वेंटरी"
     },
     "actions": {
       "auth_login_success": "साइन इन किया",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "लागत केंद्र बदला गया",
       "org_cost_centre_archive": "लागत केंद्र संग्रहीत किया गया",
       "org_cost_centre_restore": "लागत केंद्र वापस लाया गया",
-      "org_cost_centre_delete": "लागत केंद्र हटाया गया"
+      "org_cost_centre_delete": "लागत केंद्र हटाया गया",
+      "org_stock_adjust": "स्टॉक समायोजित किया गया",
+      "org_stock_adjust_undo": "स्टॉक समायोजन वापस लिया गया"
     },
     "entities": {
       "membership": "सदस्य",

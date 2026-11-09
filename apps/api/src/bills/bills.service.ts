@@ -27,6 +27,7 @@ import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -171,6 +172,7 @@ export class BillsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
+    private readonly inventory: InventoryService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -472,7 +474,13 @@ export class BillsService {
       (
         await tx.item.findMany({
           where: { organizationId, id: { in: itemIds } },
-          select: { id: true, archivedAt: true, expenseAccountId: true },
+          select: {
+            id: true,
+            archivedAt: true,
+            expenseAccountId: true,
+            trackStock: true,
+            inventoryAccountId: true,
+          },
         })
       ).map((i) => [i.id, i]),
     );
@@ -532,7 +540,10 @@ export class BillsService {
           'item_archived',
           { line: n + 1 },
         );
-      const accountId = l.accountId ?? item?.expenseAccountId ?? null;
+      // Tracked goods are bought into their inventory account
+      const accountId = item?.trackStock
+        ? item.inventoryAccountId
+        : (l.accountId ?? item?.expenseAccountId ?? null);
       if (!accountId)
         throw refuse(
           BadRequestException,
@@ -953,6 +964,27 @@ export class BillsService {
         },
         ctx.actor.userId,
       );
+      // Tracked goods come into stock at what they cost, net of tax, in the base currency
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'bill',
+          sourceId: id,
+          date: billDate,
+          journalEntryId: entry.id,
+          actorId: ctx.actor.userId,
+        },
+        await this.inventory.receipts(
+          tx,
+          organizationId,
+          p.lines.map((l, n) => ({
+            itemId: l.itemId,
+            quantity: l.quantity,
+            value: base(p.amounts.lines[n]!.net),
+          })),
+        ),
+      );
       await tx.bill.update({
         where: { id },
         data: {
@@ -1017,6 +1049,15 @@ export class BillsService {
           date: input.date ?? today,
           memo: `Bill ${label} voided${input.reason ? `: ${input.reason}` : ''}`,
         },
+      );
+      await this.inventory.undoDocument(
+        tx,
+        organizationId,
+        'bill',
+        id,
+        input.date ?? today,
+        r.id,
+        ctx.actor.userId,
       );
       await tx.bill.update({
         where: { id },

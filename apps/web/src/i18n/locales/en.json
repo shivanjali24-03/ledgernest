@@ -564,7 +564,8 @@
       "banking": "Banking",
       "assets": "Fixed assets",
       "budgets": "Budgets",
-      "costCentres": "Cost centres"
+      "costCentres": "Cost centres",
+      "inventory": "Inventory"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "Cost centre changed",
       "org_cost_centre_archive": "Cost centre archived",
       "org_cost_centre_restore": "Cost centre restored",
-      "org_cost_centre_delete": "Cost centre deleted"
+      "org_cost_centre_delete": "Cost centre deleted",
+      "org_stock_adjust": "Stock adjusted",
+      "org_stock_adjust_undo": "Stock adjustment undone"
     },
     "entities": {
       "membership": "Member",

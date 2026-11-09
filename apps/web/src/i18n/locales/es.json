@@ -564,7 +564,8 @@
       "banking": "Banca",
       "assets": "Activos fijos",
       "budgets": "Presupuestos",
-      "costCentres": "Centros de coste"
+      "costCentres": "Centros de coste",
+      "inventory": "Inventario"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -692,7 +693,9 @@
       "org_cost_centre_update": "Centro de coste modificado",
       "org_cost_centre_archive": "Centro de coste archivado",
       "org_cost_centre_restore": "Centro de coste restaurado",
-      "org_cost_centre_delete": "Centro de coste eliminado"
+      "org_cost_centre_delete": "Centro de coste eliminado",
+      "org_stock_adjust": "Existencias ajustadas",
+      "org_stock_adjust_undo": "Ajuste de existencias deshecho"
     },
     "entities": {
       "membership": "Miembro",

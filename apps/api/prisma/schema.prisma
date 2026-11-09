@@ -109,6 +109,7 @@ model Organization {
   budgets            Budget[]
   budgetLines        BudgetLine[]
   costCentres        CostCentre[]
+  stockMovements     StockMovement[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -145,17 +146,19 @@ model Account {
   /// A foreign-currency account (assets and liabilities only); its lines are in this currency
   currency       String?   @db.Char(3)
 
-  organization  Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  orgCurrency   OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
-  currencyLines JournalLine[]         @relation("LineCurrency")
-  incomeItems   Item[]                @relation("ItemIncome")
-  expenseItems  Item[]                @relation("ItemExpense")
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgCurrency    OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
+  currencyLines  JournalLine[]         @relation("LineCurrency")
+  incomeItems    Item[]                @relation("ItemIncome")
+  expenseItems   Item[]                @relation("ItemExpense")
+  inventoryItems Item[]                @relation("ItemInventory")
+  cogsItems      Item[]                @relation("ItemCogs")
   /// Composite key: a parent always belongs to the same organisation, enforced by the database
-  parent        Account?              @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
-  children      Account[]             @relation("AccountTree")
-  taxOutputs    TaxRate[]             @relation("TaxOutputAccount")
-  taxInputs     TaxRate[]             @relation("TaxInputAccount")
-  lines         JournalLine[]
+  parent         Account?              @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
+  children       Account[]             @relation("AccountTree")
+  taxOutputs     TaxRate[]             @relation("TaxOutputAccount")
+  taxInputs      TaxRate[]             @relation("TaxInputAccount")
+  lines          JournalLine[]
 
   invoiceReceivables    Invoice[]             @relation("InvoiceReceivable")
   invoiceIncome         InvoiceLine[]         @relation("InvoiceLineAccount")
@@ -283,6 +286,7 @@ model JournalEntry {
   bankTransaction       BankTransaction?   @relation("BankTransactionEntry")
   voidedBankTransaction BankTransaction?   @relation("BankTransactionVoidEntry")
   depreciationRun       DepreciationRun?   @relation("DepreciationEntry")
+  stockMovements        StockMovement[]
   assetDisposal         FixedAsset?        @relation("AssetDisposalEntry")
 
   @@unique([organizationId, id])
@@ -625,29 +629,36 @@ model Contact {
 
 /// A product or service to put on invoices and bills.
 model Item {
-  id               String    @id @default(uuid()) @db.Uuid
-  organizationId   String    @map("organization_id") @db.Uuid
-  name             String
-  kind             String /// goods | service
-  sku              String?
-  description      String?
-  unit             String?
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  name               String
+  kind               String /// goods | service
+  sku                String?
+  description        String?
+  unit               String?
   /// In the base currency's smallest unit
-  salePrice        BigInt?   @map("sale_price")
-  purchasePrice    BigInt?   @map("purchase_price")
-  taxGroupId       String?   @map("tax_group_id") @db.Uuid
+  salePrice          BigInt?   @map("sale_price")
+  purchasePrice      BigInt?   @map("purchase_price")
+  taxGroupId         String?   @map("tax_group_id") @db.Uuid
   /// HSN (goods) or SAC (services), for Indian GST invoices
-  hsnSac           String?   @map("hsn_sac")
-  incomeAccountId  String?   @map("income_account_id") @db.Uuid
-  expenseAccountId String?   @map("expense_account_id") @db.Uuid
-  archivedAt       DateTime? @map("archived_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  hsnSac             String?   @map("hsn_sac")
+  incomeAccountId    String?   @map("income_account_id") @db.Uuid
+  expenseAccountId   String?   @map("expense_account_id") @db.Uuid
+  /// Goods whose quantity on hand is kept, at weighted average cost
+  trackStock         Boolean   @default(false) @map("track_stock")
+  inventoryAccountId String?   @map("inventory_account_id") @db.Uuid
+  cogsAccountId      String?   @map("cogs_account_id") @db.Uuid
+  archivedAt         DateTime? @map("archived_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  taxGroup       TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
-  incomeAccount  Account?     @relation("ItemIncome", fields: [organizationId, incomeAccountId], references: [organizationId, id], onDelete: NoAction)
-  expenseAccount Account?     @relation("ItemExpense", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
+  organization     Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  taxGroup         TaxGroup?       @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  incomeAccount    Account?        @relation("ItemIncome", fields: [organizationId, incomeAccountId], references: [organizationId, id], onDelete: NoAction)
+  expenseAccount   Account?        @relation("ItemExpense", fields: [organizationId, expenseAccountId], references: [organizationId, id], onDelete: NoAction)
+  inventoryAccount Account?        @relation("ItemInventory", fields: [organizationId, inventoryAccountId], references: [organizationId, id], onDelete: NoAction)
+  cogsAccount      Account?        @relation("ItemCogs", fields: [organizationId, cogsAccountId], references: [organizationId, id], onDelete: NoAction)
+  stockMovements   StockMovement[]
 
   invoiceLines InvoiceLine[]
 
@@ -1327,4 +1338,33 @@ model CostCentre {
   @@unique([organizationId, id])
   @@unique([organizationId, code])
   @@map("cost_centres")
+}
+
+/// Stock in or out of a tracked item: from a bill, an invoice, an adjustment, or undoing one of them. The quantity
+/// on hand is the sum of the quantities, and its value the sum of the values (both negative going out).
+model StockMovement {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  itemId         String   @map("item_id") @db.Uuid
+  date           DateTime @db.Date
+  /// bill | bill_void | invoice | invoice_void | adjustment | adjustment_undo
+  kind           String
+  /// The bill or invoice it came from; for an undo, the movement it undoes
+  sourceId       String?  @map("source_id") @db.Uuid
+  quantity       Decimal  @db.Decimal(13, 4)
+  /// In the base currency's smallest unit
+  value          BigInt
+  reason         String?
+  journalEntryId String?  @map("journal_entry_id") @db.Uuid
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item         Item          @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry JournalEntry? @relation(fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@index([organizationId, itemId, date])
+  @@index([organizationId, sourceId])
+  @@map("stock_movements")
 }
