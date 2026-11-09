@@ -25,6 +25,11 @@ import {
   bankVoidSchema,
   statementImportSchema,
   statementLinesQuerySchema,
+  bankMatchSchema,
+  bankIgnoreSchema,
+  bankCreateFromLineSchema,
+  reconcileSchema,
+  reconcileQuerySchema,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import { z } from 'zod';
@@ -36,6 +41,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { BankingService } from './banking.service.js';
+import { ReconcileService } from './reconcile.service.js';
 import { StatementsService } from './statements.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -53,6 +59,7 @@ export class BankingController {
   constructor(
     private readonly banking: BankingService,
     private readonly statements: StatementsService,
+    private readonly reconciling: ReconcileService,
   ) {}
 
   @Get('accounts')
@@ -208,5 +215,118 @@ export class BankingController {
     @Req() req: Request,
   ) {
     await this.statements.undo(importId, { actor, tenant, req });
+  }
+
+  @Get('reconcile/:accountId')
+  @RequirePermission('banking.view')
+  @ApiOkResponse({
+    description:
+      'Bank lines to deal with, book lines not yet matched, suggested matches, and where the account stands on the day',
+  })
+  reconcileWorkspace(
+    @Param('accountId', id) accountId: string,
+    @Query(new ZodValidationPipe(reconcileQuerySchema)) q: { date: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reconciling.workspace(tenant.organizationId, accountId, q.date);
+  }
+
+  @Post('reconcile/match')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('banking.reconcile')
+  async match(
+    @Body(new ZodValidationPipe(bankMatchSchema))
+    body: z.output<typeof bankMatchSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    await this.reconciling.match(body, { actor, tenant, req });
+  }
+
+  @Post('reconcile/unmatch/:statementLineId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('banking.reconcile')
+  async unmatch(
+    @Param('statementLineId', id) statementLineId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    await this.reconciling.unmatch(statementLineId, { actor, tenant, req });
+  }
+
+  @Post('reconcile/ignore')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('banking.reconcile')
+  async ignore(
+    @Body(new ZodValidationPipe(bankIgnoreSchema))
+    body: z.output<typeof bankIgnoreSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    await this.reconciling.ignore(body.statementLineId, body.ignored, {
+      actor,
+      tenant,
+      req,
+    });
+  }
+
+  @Post('reconcile/create')
+  @RequirePermission('banking.manage')
+  @ApiOkResponse({
+    description:
+      'The money in or out recorded from a bank line, already matched to it',
+  })
+  createFromLine(
+    @Body(new ZodValidationPipe(bankCreateFromLineSchema))
+    body: z.output<typeof bankCreateFromLineSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reconciling.create(body, { actor, tenant, req });
+  }
+
+  @Post('reconciliations')
+  @RequirePermission('banking.reconcile')
+  @ApiOkResponse({
+    description:
+      'The account agreed with the statement on the day; matches up to then are locked',
+  })
+  reconcile(
+    @Body(new ZodValidationPipe(reconcileSchema))
+    body: z.output<typeof reconcileSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reconciling.reconcile(body, { actor, tenant, req });
+  }
+
+  @Get('reconciliations')
+  @RequirePermission('banking.view')
+  reconciliations(
+    @Query(new ZodValidationPipe(z.object({ bankAccountId: z.uuid() })))
+    q: { bankAccountId: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reconciling.reconciliations(
+      tenant.organizationId,
+      q.bankAccountId,
+    );
+  }
+
+  @Delete('reconciliations/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('banking.reconcile')
+  async undoReconciliation(
+    @Param('id', id) reconciliationId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    await this.reconciling.undo(reconciliationId, { actor, tenant, req });
   }
 }

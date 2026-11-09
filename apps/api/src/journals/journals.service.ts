@@ -953,6 +953,17 @@ export class JournalsService {
   ) {
     await this.lock(tx, organizationId); // re-entrant: the same transaction may already hold it
     const e = await this.find(tx, organizationId, id);
+    // Matched to the bank's statement: the bank says it happened, so take the match off first
+    if (
+      await tx.bankMatch.count({
+        where: { organizationId, journalLine: { entryId: id } },
+      })
+    )
+      throw refuse(
+        ConflictException,
+        'This entry is matched to a bank statement line. Unmatch it under Banking first.',
+        'bank_matched',
+      );
     if (e.status !== 'posted')
       throw refuse(
         ConflictException,

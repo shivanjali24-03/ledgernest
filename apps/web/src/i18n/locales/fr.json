@@ -652,7 +652,13 @@
       "org_banking_void": "Opération bancaire annulée",
       "org_banking_transfer": "Virement entre comptes",
       "org_banking_import": "Relevé bancaire importé",
-      "org_banking_import_undo": "Import de relevé annulé"
+      "org_banking_import_undo": "Import de relevé annulé",
+      "org_banking_match": "Ligne bancaire rapprochée",
+      "org_banking_unmatch": "Rapprochement de ligne annulé",
+      "org_banking_ignore": "Ligne bancaire écartée",
+      "org_banking_unignore": "Ligne bancaire rétablie",
+      "org_banking_reconcile": "Compte rapproché",
+      "org_banking_reconcile_undo": "Rapprochement annulé"
     },
     "entities": {
       "membership": "Membre",

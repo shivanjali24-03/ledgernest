@@ -652,7 +652,13 @@
       "org_banking_void": "बँक व्यवहार रद्द केला",
       "org_banking_transfer": "खात्यांमध्ये पैसे हस्तांतरित",
       "org_banking_import": "बँक विवरण आयात केले",
-      "org_banking_import_undo": "बँक विवरण आयात मागे घेतले"
+      "org_banking_import_undo": "बँक विवरण आयात मागे घेतले",
+      "org_banking_match": "बँक ओळ जुळवली",
+      "org_banking_unmatch": "बँक ओळीची जुळवणी काढली",
+      "org_banking_ignore": "बँक ओळ बाजूला ठेवली",
+      "org_banking_unignore": "बँक ओळ परत आणली",
+      "org_banking_reconcile": "खाते जुळवले",
+      "org_banking_reconcile_undo": "जुळवणी मागे घेतली"
     },
     "entities": {
       "membership": "सदस्य",

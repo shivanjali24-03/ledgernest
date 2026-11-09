@@ -71,3 +71,10 @@ export const bankTransferSchema = z
   })
   .refine((t) => t.fromAccountId !== t.toAccountId, { path: ['toAccountId'], message: 'Choose two different accounts.' });
 export type BankTransferInput = z.input<typeof bankTransferSchema>;
+
+export const bankMatchSchema = z.object({ statementLineId: z.uuid(), journalLineIds: z.array(z.uuid()).min(1, 'Choose at least one book line.').max(50) });
+export const bankIgnoreSchema = z.object({ statementLineId: z.uuid(), ignored: z.boolean() });
+/** Records what the books are missing from a bank line: where it goes, with tax included in the bank's figure */
+export const bankCreateFromLineSchema = z.object({ statementLineId: z.uuid(), accountId: z.uuid(), taxGroupId: z.uuid().nullable().optional().default(null), description: text(500), contactId: z.uuid().nullable().optional().default(null) });
+export const reconcileSchema = z.object({ bankAccountId: z.uuid(), statementDate: isoDaySchema, statementBalance: z.number().int().min(-MAX_LINE_AMOUNT).max(MAX_LINE_AMOUNT) });
+export const reconcileQuerySchema = z.object({ date: isoDaySchema });
