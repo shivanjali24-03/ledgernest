@@ -10,6 +10,8 @@ export const budgetCreateSchema = z.object({
   budgetId: z.uuid().nullable().optional().default(null),
   /** Up or down on what it starts from, e.g. 10 or -5 */
   adjustPercent: z.number().min(-100).max(1000).optional().default(0),
+  /** A plan for one cost centre or project: its actuals are that cost centre's lines only */
+  costCentreId: z.uuid().nullable().optional().default(null),
 });
 export type BudgetCreateInput = z.input<typeof budgetCreateSchema>;
 

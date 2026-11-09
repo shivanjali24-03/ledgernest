@@ -4,6 +4,8 @@ export interface BudgetSummary {
   id: string;
   name: string;
   fiscalYear: { id: string; name: string };
+  /** A plan for one cost centre or project */
+  costCentre: { id: string; code: string; name: string } | null;
   updatedAt: string;
   income: number;
   expenses: number;
@@ -23,6 +25,7 @@ export interface BudgetGrid {
   id: string;
   name: string;
   fiscalYear: { id: string; name: string; startDate: string; endDate: string };
+  costCentre: { id: string; code: string; name: string } | null;
   /** "2026-04" … "2027-03" */
   months: string[];
   rows: BudgetRow[];

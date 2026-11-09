@@ -2646,7 +2646,8 @@
       "name": "Nombre",
       "startFrom": "Empezar con",
       "adjust": "Subir o bajar (%)",
-      "budget": "Presupuesto a copiar"
+      "budget": "Presupuesto a copiar",
+      "costCentre": "Para"
     },
     "adjustHint": "Por ejemplo 10 para un diez por ciento más, o -5 para menos.",
     "start": {
@@ -2666,7 +2667,9 @@
       "not_pnl_account": "Los presupuestos son para cuentas de ingresos y gastos.",
       "forbidden": "No tienes permiso para cambiar presupuestos.",
       "generic": "No se pudo guardar el presupuesto. Inténtalo de nuevo."
-    }
+    },
+    "costCentreHint": "Un plan para un centro de coste o proyecto se compara solo con sus líneas.",
+    "wholeOrganisation": "Toda la organización"
   },
   "costCentres": {
     "title": "Centros de coste y proyectos",

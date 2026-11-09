@@ -52,7 +52,11 @@ export class CostCentresService {
         where: { organizationId, costCentreId: id },
       }),
     ]);
-    return j + i + b;
+    // A budget for this cost centre keeps it in use too
+    const budgets = await this.prisma.budget.count({
+      where: { organizationId, costCentreId: id },
+    });
+    return j + i + b + budgets;
   }
 
   private view(

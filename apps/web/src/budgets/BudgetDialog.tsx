@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useCostCentres } from '../cost-centres/useCostCentresApi';
 import { useSession } from '../layout/session';
 import { usePeriodsApi } from '../periods/usePeriodsApi';
 import Button from '../ui/Button';
@@ -29,10 +30,12 @@ export function NewBudgetDialog({ api, budgets, onClose, onDone }: { api: Budget
   const [startFrom, setStart] = useState<Start>('actuals');
   const [budgetId, setBudget] = useState('');
   const [adjust, setAdjust] = useState('0');
+  const centres = (useCostCentres().data ?? []).filter((c) => !c.archived);
+  const [costCentreId, setCostCentre] = useState('');
   const pct = Number(adjust.replace(',', '.'));
   const problem = !year ? 'year' : startFrom === 'budget' && !(budgetId || budgets[0]?.id) ? 'budget' : !Number.isFinite(pct) || pct < -100 || pct > 1000 ? 'adjust' : null;
   const save = useMutation({
-    mutationFn: () => api.create({ name: name.trim() || t('budgets.defaultName', { year: yearName }), fiscalYearId: year, startFrom, budgetId: startFrom === 'budget' ? budgetId || budgets[0]!.id : null, adjustPercent: startFrom === 'empty' ? 0 : pct }),
+    mutationFn: () => api.create({ name: name.trim() || t('budgets.defaultName', { year: yearName }), fiscalYearId: year, startFrom, budgetId: startFrom === 'budget' ? budgetId || budgets[0]!.id : null, adjustPercent: startFrom === 'empty' ? 0 : pct, costCentreId: costCentreId || null }),
     onSuccess: (b) => {
       void qc.invalidateQueries({ queryKey: ['budgets'] });
       toast(t('budgets.created', { name: b.name }));
@@ -76,6 +79,11 @@ export function NewBudgetDialog({ api, budgets, onClose, onDone }: { api: Budget
           ]}
         />
         {startFrom !== 'empty' && <TextField label={t('budgets.fields.adjust')} hint={t('budgets.adjustHint')} value={adjust} onChange={(e) => setAdjust(e.target.value)} inputMode="decimal" dir="ltr" className="text-end font-mono" />}
+        {centres.length > 0 && (
+          <div className="sm:col-span-2">
+            <SelectField label={t('budgets.fields.costCentre')} hint={t('budgets.costCentreHint')} value={costCentreId} onChange={(e) => setCostCentre(e.target.value)} options={[{ value: '', label: t('budgets.wholeOrganisation') }, ...centres.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }))]} />
+          </div>
+        )}
         {startFrom === 'budget' && (
           <div className="sm:col-span-2">
             <SelectField label={t('budgets.fields.budget')} value={budgetId || budgets[0]?.id || ''} onChange={(e) => setBudget(e.target.value)} options={budgets.map((b) => ({ value: b.id, label: `${b.name} · ${b.fiscalYear.name}` }))} />

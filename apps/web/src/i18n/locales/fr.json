@@ -2646,7 +2646,8 @@
       "name": "Nom",
       "startFrom": "Partir de",
       "adjust": "Hausse ou baisse (%)",
-      "budget": "Budget à copier"
+      "budget": "Budget à copier",
+      "costCentre": "Pour"
     },
     "adjustHint": "Par exemple 10 pour dix pour cent de plus, ou -5 pour moins.",
     "start": {
@@ -2666,7 +2667,9 @@
       "not_pnl_account": "Les budgets concernent les comptes de produits et de charges.",
       "forbidden": "Vous n’avez pas le droit de modifier les budgets.",
       "generic": "Le budget n’a pas pu être enregistré. Réessayez."
-    }
+    },
+    "costCentreHint": "Un plan pour un centre de coûts ou un projet est comparé à ses seules lignes.",
+    "wholeOrganisation": "Toute l’organisation"
   },
   "costCentres": {
     "title": "Centres de coûts et projets",

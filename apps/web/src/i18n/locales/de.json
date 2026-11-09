@@ -2646,7 +2646,8 @@
       "name": "Name",
       "startFrom": "Ausgangspunkt",
       "adjust": "Erhöhen oder senken um (%)",
-      "budget": "Zu kopierendes Budget"
+      "budget": "Zu kopierendes Budget",
+      "costCentre": "Für"
     },
     "adjustHint": "Zum Beispiel 10 für zehn Prozent mehr oder -5 für weniger.",
     "start": {
@@ -2666,7 +2667,9 @@
       "not_pnl_account": "Budgets gelten für Ertrags- und Aufwandskonten.",
       "forbidden": "Sie dürfen Budgets nicht ändern.",
       "generic": "Das Budget konnte nicht gespeichert werden. Versuchen Sie es erneut."
-    }
+    },
+    "costCentreHint": "Ein Plan für eine Kostenstelle oder ein Projekt wird nur mit deren Zeilen verglichen.",
+    "wholeOrganisation": "Die ganze Organisation"
   },
   "costCentres": {
     "title": "Kostenstellen und Projekte",
