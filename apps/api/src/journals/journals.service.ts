@@ -24,6 +24,7 @@ import { checkCostCentres } from '../cost-centres/check.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
+import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { dayStatus } from '../periods/day-status.js';
@@ -125,6 +126,7 @@ export class JournalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly approvals: ApprovalGate,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -808,8 +810,21 @@ export class JournalsService {
     };
   }
 
-  async post(id: string, ctx: Ctx) {
+  /** Posts a draft. Entries an approval rule covers are held for an approver first (opts.approved: the approver posting it). */
+  async post(id: string, ctx: Ctx, opts: { approved?: boolean } = {}) {
     const organizationId = ctx.tenant.organizationId;
+    const draft = await this.get(organizationId, id);
+    if (draft.status === 'draft')
+      await this.approvals.check(
+        'journal',
+        {
+          documentId: id,
+          amount: draft.totals.debit,
+          summary: `Journal entry${draft.memo ? `: ${draft.memo}` : ''}`,
+        },
+        ctx,
+        opts,
+      );
     await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
       const r = await this.postInTx(tx, organizationId, id, ctx.actor.userId);

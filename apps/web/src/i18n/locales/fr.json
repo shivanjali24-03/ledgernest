@@ -472,7 +472,8 @@
       "payments": "Paiements",
       "banking": "Banque",
       "reports": "Rapports",
-      "audit": "Audit"
+      "audit": "Audit",
+      "approvals": "Approbations"
     },
     "org_settings_view": "Voir les paramètres",
     "org_settings_manage": "Modifier les paramètres",
@@ -505,7 +506,9 @@
     "banking_reconcile": "Rapprocher les relevés bancaires",
     "reports_view": "Voir les rapports",
     "reports_export": "Exporter les rapports",
-    "audit_view": "Voir le journal d'audit"
+    "audit_view": "Voir le journal d'audit",
+    "approvals_manage": "Définir les règles d’approbation",
+    "approvals_approve": "Approuver et renvoyer"
   },
   "audit": {
     "title": "Journal d'audit",
@@ -566,7 +569,8 @@
       "assets": "Immobilisations",
       "budgets": "Budgets",
       "costCentres": "Centres de coûts",
-      "inventory": "Stocks"
+      "inventory": "Stocks",
+      "approvals": "Approbations"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "Centre de coûts restauré",
       "org_cost_centre_delete": "Centre de coûts supprimé",
       "org_stock_adjust": "Stock ajusté",
-      "org_stock_adjust_undo": "Ajustement de stock annulé"
+      "org_stock_adjust_undo": "Ajustement de stock annulé",
+      "org_approval_rule": "Règle d’approbation modifiée",
+      "org_approval_request": "Envoyé pour approbation",
+      "org_approval_approve": "Approuvé",
+      "org_approval_reject": "Renvoyé",
+      "org_approval_cancel": "Demande d’approbation retirée"
     },
     "entities": {
       "membership": "Membre",

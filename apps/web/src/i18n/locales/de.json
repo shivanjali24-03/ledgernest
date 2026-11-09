@@ -472,7 +472,8 @@
       "payments": "Zahlungen",
       "banking": "Bank",
       "reports": "Berichte",
-      "audit": "Prüfung"
+      "audit": "Prüfung",
+      "approvals": "Freigaben"
     },
     "org_settings_view": "Einstellungen ansehen",
     "org_settings_manage": "Einstellungen ändern",
@@ -505,7 +506,9 @@
     "banking_reconcile": "Kontoauszüge abgleichen",
     "reports_view": "Berichte ansehen",
     "reports_export": "Berichte exportieren",
-    "audit_view": "Audit-Protokoll ansehen"
+    "audit_view": "Audit-Protokoll ansehen",
+    "approvals_manage": "Freigaberegeln festlegen",
+    "approvals_approve": "Freigeben und zurückschicken"
   },
   "audit": {
     "title": "Audit-Log",
@@ -566,7 +569,8 @@
       "assets": "Anlagevermögen",
       "budgets": "Budgets",
       "costCentres": "Kostenstellen",
-      "inventory": "Lager"
+      "inventory": "Lager",
+      "approvals": "Freigaben"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "Kostenstelle wiederhergestellt",
       "org_cost_centre_delete": "Kostenstelle gelöscht",
       "org_stock_adjust": "Bestand angepasst",
-      "org_stock_adjust_undo": "Bestandsanpassung rückgängig gemacht"
+      "org_stock_adjust_undo": "Bestandsanpassung rückgängig gemacht",
+      "org_approval_rule": "Freigaberegel geändert",
+      "org_approval_request": "Zur Freigabe gesendet",
+      "org_approval_approve": "Freigegeben",
+      "org_approval_reject": "Zurückgeschickt",
+      "org_approval_cancel": "Freigabeanfrage zurückgezogen"
     },
     "entities": {
       "membership": "Mitglied",

@@ -26,3 +26,4 @@ export * from './assets/index.js';
 export * from './budgets/index.js';
 export * from './cost-centres/index.js';
 export * from './inventory/index.js';
+export * from './approvals/index.js';

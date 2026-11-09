@@ -15,6 +15,7 @@ import {
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
+import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -96,6 +97,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
+    private readonly approvals: ApprovalGate,
   ) {}
 
   /** Documents first (payments change what they've had paid), then payments: always in this order */
@@ -294,12 +296,36 @@ export class PaymentsService {
     );
   }
 
-  pay(
+  /** Pays a vendor. Payments an approval rule covers are held for an approver first, as entered. */
+  async pay(
     input: Omit<SettleIn, 'allocations'> & {
       allocations: { billId: string; amount: number }[];
     },
     ctx: Ctx,
+    opts: { approved?: boolean } = {},
   ) {
+    const contact = await this.prisma.contact.findFirst({
+      where: { organizationId: ctx.tenant.organizationId, id: input.contactId },
+      select: { name: true, currency: true },
+    });
+    if (contact)
+      await this.approvals.check(
+        'payment',
+        {
+          documentId: null,
+          amount: await this.approvals.inBase(
+            ctx.tenant.organizationId,
+            input.amount,
+            contact.currency,
+            input.date,
+            input.rate,
+          ),
+          summary: `Payment to ${contact.name}${input.reference ? ` · ${input.reference}` : ''}`,
+          payload: input as unknown as Prisma.InputJsonValue,
+        },
+        ctx,
+        opts,
+      );
     return this.settle(
       'payment',
       {

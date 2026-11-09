@@ -472,7 +472,8 @@
       "payments": "देयके",
       "banking": "बँकिंग",
       "reports": "अहवाल",
-      "audit": "ऑडिट"
+      "audit": "ऑडिट",
+      "approvals": "मंजुरी"
     },
     "org_settings_view": "सेटिंग्ज पहा",
     "org_settings_manage": "सेटिंग्ज बदला",
@@ -505,7 +506,9 @@
     "banking_reconcile": "बँक स्टेटमेंट जुळवा",
     "reports_view": "अहवाल पहा",
     "reports_export": "अहवाल निर्यात करा",
-    "audit_view": "ऑडिट लॉग पहा"
+    "audit_view": "ऑडिट लॉग पहा",
+    "approvals_manage": "मंजुरीचे नियम ठरवा",
+    "approvals_approve": "मंजूर करा आणि परत पाठवा"
   },
   "audit": {
     "title": "ऑडिट लॉग",
@@ -566,7 +569,8 @@
       "assets": "स्थिर मालमत्ता",
       "budgets": "अंदाजपत्रके",
       "costCentres": "खर्च केंद्रे",
-      "inventory": "साठा"
+      "inventory": "साठा",
+      "approvals": "मंजुरी"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -696,7 +700,12 @@
       "org_cost_centre_restore": "खर्च केंद्र पुन्हा सुरू केले",
       "org_cost_centre_delete": "खर्च केंद्र हटवले",
       "org_stock_adjust": "साठा समायोजित केला",
-      "org_stock_adjust_undo": "साठा समायोजन रद्द केले"
+      "org_stock_adjust_undo": "साठा समायोजन रद्द केले",
+      "org_approval_rule": "मंजुरीचा नियम बदलला",
+      "org_approval_request": "मंजुरीसाठी पाठवले",
+      "org_approval_approve": "मंजूर",
+      "org_approval_reject": "परत पाठवले",
+      "org_approval_cancel": "मंजुरी विनंती मागे घेतली"
     },
     "entities": {
       "membership": "सदस्य",

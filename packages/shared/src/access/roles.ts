@@ -56,6 +56,7 @@ export const BUILT_IN_ROLES: Record<BuiltInRoleId, RoleDefinition> = {
       'invoices.manage',
       'bills.manage',
       'payments.manage',
+      'approvals.approve',
       'banking.manage',
       'banking.reconcile',
       'reports.export',
