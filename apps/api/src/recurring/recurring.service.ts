@@ -131,7 +131,8 @@ export class RecurringService
       reference: t.reference,
       notes: t.notes,
       placeOfSupply: t.placeOfSupply,
-      lines: t.lines,
+      // As a schedule takes them back: discount as a percentage
+      lines: t.lines.map((l) => ({ ...l, discount: l.discount / 10_000 })),
       lastRunAt: r.lastRunAt,
       lastError: r.lastError,
       invoices: r.invoices.map((i) => ({

@@ -357,6 +357,36 @@ describe('Recurring invoices (e2e)', () => {
       nextDate: day(5),
       status: 'active',
     });
+    // A template read back can be sent back as it is: a 12.5% discount stays 12.5%
+    const withDiscount = (
+      await as()
+        .post(
+          '/recurring-invoices',
+          schedule({
+            startDate: day(60),
+            lines: [
+              {
+                description: 'Retainer',
+                quantity: 1,
+                unitPrice: 1_000_000,
+                discount: '12.5',
+                accountId: acc.sales,
+              },
+            ],
+          }),
+        )
+        .expect(201)
+    ).body as Schedule & { lines: object[] };
+    expect(withDiscount.lines[0]).toMatchObject({ discount: 12.5 });
+    const again = (
+      await as()
+        .put(
+          `/recurring-invoices/${withDiscount.id}`,
+          schedule({ startDate: day(60), lines: withDiscount.lines }),
+        )
+        .expect(200)
+    ).body as Schedule & { lines: object[] };
+    expect(again.lines[0]).toMatchObject({ discount: 12.5 });
     expect(
       (
         await as()
