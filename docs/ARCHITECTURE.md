@@ -39,6 +39,9 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **Super Admins** see everything (`GET /api/v1/platform/audit`), including sign-ins, and can narrow it to one organisation.
 - Filters: kind of action, person, organisation and date range. Paging uses a cursor on (time, id), so it stays stable while new entries arrive.
 - **CSV export** of up to 10,000 entries. Cells that a spreadsheet would run as a formula are neutralised, and every export is itself recorded.
+- `GET …/audit/actors` lists the people who appear in a log, for the person filter.
+- **Screens:** *Audit log* (organisation) and *Platform audit log* (Super Admins). Entries are grouped by day in the reader's time zone, and each expands to show when, IP address, device and a field-by-field **before → after** comparison. Permission changes show exactly what was added and removed. Filters live in the address bar, so a filtered view can be shared as a link. Date filters turn the reader's local days into exact UTC instants before calling the API. On phones the comparison stacks instead of scrolling sideways.
+- The demo has its own realistic history, with the same actions and before/after shapes as the API, and checks the previewed role just like the real log.
 - Note for development: because the log is append-only, test runs leave audit entries in the test database. That's expected, and tests never depend on them.
 
 ## Team management
