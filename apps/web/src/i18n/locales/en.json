@@ -528,7 +528,8 @@
       "exports": "Exports",
       "settings": "Settings",
       "accounts": "Accounts",
-      "periods": "Financial years"
+      "periods": "Financial years",
+      "journals": "Journal entries"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "Template applied",
       "org_fiscal_year_create": "Financial year added",
       "org_period_close": "Month closed",
-      "org_period_reopen": "Month reopened"
+      "org_period_reopen": "Month reopened",
+      "org_journal_create": "Entry created",
+      "org_journal_update": "Draft edited",
+      "org_journal_delete": "Draft deleted",
+      "org_journal_post": "Entry posted",
+      "org_journal_reverse": "Entry reversed",
+      "org_journal_attach": "Document attached",
+      "org_journal_detach": "Document removed"
     },
     "entities": {
       "membership": "Member",
@@ -580,7 +588,8 @@
       "user": "Account",
       "account": "Account",
       "fiscal_year": "Financial year",
-      "period": "Month"
+      "period": "Month",
+      "journal": "Journal entry"
     },
     "fields": {
       "user": "Person",
@@ -627,7 +636,16 @@
       "accounts": "Accounts",
       "period": "Month",
       "startDate": "Starts",
-      "endDate": "Ends"
+      "endDate": "Ends",
+      "lines": "Lines",
+      "debit": "Debits",
+      "credit": "Credits",
+      "number": "Number",
+      "original": "Original entry",
+      "reversal": "Reversal",
+      "fileName": "File",
+      "date": "Date",
+      "memo": "Memo"
     },
     "details": {
       "when": "When",
@@ -936,6 +954,103 @@
       "already_open": "This month is already open.",
       "earlier_open": "Close earlier months first: months close in order.",
       "later_closed": "Reopen later months first: months reopen in reverse order."
+    }
+  },
+  "journals": {
+    "title": "Journal entries",
+    "description": "Every transaction as balanced debits and credits. Drafts can change; posted entries are final and corrected by reversal.",
+    "new": "New entry",
+    "search": "Search memo or reference",
+    "filter": "Status",
+    "noMatches": "No entries match",
+    "empty": "No journal entries yet",
+    "emptyBody": "Record your first transaction: what came in, what went out.",
+    "reverses": "Reverses {{number}}",
+    "reversedPill": "Reversed",
+    "attachmentCount": "{{count}} attachments",
+    "unbalancedBy": "Out by {{amount}}",
+    "postedBy": "Posted by",
+    "total": "Total",
+    "reversalOf": "This entry reverses",
+    "reversedBy": "Reversed by",
+    "reverse": "Reverse",
+    "reverseTitle": "Reverse {{number}}?",
+    "reverseBody": "A new entry with the exact opposite amounts will be posted and linked to this one. This entry stays as it is.",
+    "reverseDateHint": "Pick a day in an open month, e.g. today, to correct a closed month.",
+    "reverseMemo": "Reversal of {{number}}",
+    "reversed": "Reversed as {{number}}",
+    "pickAccount": "Choose an account",
+    "lineAccount": "Line {{n}} account",
+    "lineDescription": "Line {{n}} description",
+    "lineDebit": "Line {{n}} debit",
+    "lineCredit": "Line {{n}} credit",
+    "removeLine": "Remove line",
+    "removeLineN": "Remove line {{n}}",
+    "addLine": "Add line",
+    "outBy": "Out by {{amount}}",
+    "balanced": "Balanced",
+    "deleteDraft": "Delete draft",
+    "saveDraft": "Save draft",
+    "post": "Post",
+    "deleteTitle": "Delete this draft?",
+    "deleteBody": "It hasn't been posted, so it will be removed for good.",
+    "posted": "Posted as {{number}}",
+    "saved": "Draft saved",
+    "deleted": "Draft deleted",
+    "newTitle": "New journal entry",
+    "draftTitle": "Draft entry",
+    "postedHint": "Posted entries are final. To correct one, reverse it.",
+    "draftHint": "Drafts can be saved unbalanced; posting needs debits equal to credits.",
+    "status": {
+      "draft": "Draft",
+      "posted": "Posted"
+    },
+    "columns": {
+      "number": "Number",
+      "date": "Date",
+      "memo": "Memo",
+      "amount": "Amount ({{currency}})"
+    },
+    "attachments": {
+      "title": "Attachments",
+      "add": "Attach",
+      "hint": "PDF, PNG, JPEG or WebP up to 2 MB: receipts, invoices, statements.",
+      "added": "Attachment added",
+      "wrongType": "Attach a PDF, PNG, JPEG or WebP file.",
+      "tooLarge": "Attach a file under 2 MB.",
+      "download": "Download {{name}}",
+      "remove": "Remove {{name}}"
+    },
+    "fields": {
+      "date": "Date",
+      "reference": "Reference",
+      "memo": "Memo",
+      "account": "Account",
+      "description": "Description",
+      "debit": "Debit",
+      "credit": "Credit"
+    },
+    "problems": {
+      "invalid": "Some amounts aren't numbers.",
+      "too_few_lines": "Add at least two lines.",
+      "zero": "Enter some amounts."
+    },
+    "errors": {
+      "unbalanced": "Debits and credits must be equal.",
+      "too_few_lines": "An entry needs at least two lines.",
+      "zero": "The entry has no amounts.",
+      "period_closed": "This date is in a closed month. Reopen it, or use a date in an open month.",
+      "no_period": "There's no financial year for this date. Add it under Financial years.",
+      "account_archived": "A line uses an archived account.",
+      "account_not_found": "A line uses an account that no longer exists.",
+      "posted": "Posted entries can't be changed. Reverse it instead.",
+      "not_posted": "Only posted entries can be reversed.",
+      "already_reversed": "This entry has already been reversed.",
+      "is_reversal": "A reversal can't itself be reversed. Post a new entry instead.",
+      "type_mismatch": "That file isn't the type it claims to be.",
+      "too_large": "Attach a file under 2 MB.",
+      "invalid_amount": "Check the highlighted amounts.",
+      "missing_account": "Choose an account for every line."
     }
   }
 }

@@ -528,7 +528,8 @@
       "exports": "निर्यात",
       "settings": "सेटिंग्ज",
       "accounts": "खाती",
-      "periods": "आर्थिक वर्षे"
+      "periods": "आर्थिक वर्षे",
+      "journals": "जर्नल नोंदी"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "टेम्पलेट लागू केले",
       "org_fiscal_year_create": "आर्थिक वर्ष जोडले",
       "org_period_close": "महिना बंद केला",
-      "org_period_reopen": "महिना पुन्हा उघडला"
+      "org_period_reopen": "महिना पुन्हा उघडला",
+      "org_journal_create": "नोंद तयार केली",
+      "org_journal_update": "मसुदा संपादित",
+      "org_journal_delete": "मसुदा हटवला",
+      "org_journal_post": "नोंद पोस्ट केली",
+      "org_journal_reverse": "नोंद उलटवली",
+      "org_journal_attach": "दस्तऐवज जोडला",
+      "org_journal_detach": "दस्तऐवज काढला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -580,7 +588,8 @@
       "user": "खाते",
       "account": "खाते",
       "fiscal_year": "आर्थिक वर्ष",
-      "period": "महिना"
+      "period": "महिना",
+      "journal": "जर्नल नोंद"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -627,7 +636,16 @@
       "accounts": "खाती",
       "period": "महिना",
       "startDate": "सुरुवात",
-      "endDate": "शेवट"
+      "endDate": "शेवट",
+      "lines": "ओळी",
+      "debit": "डेबिट",
+      "credit": "क्रेडिट",
+      "number": "क्रमांक",
+      "original": "मूळ नोंद",
+      "reversal": "उलट नोंद",
+      "fileName": "फाइल",
+      "date": "तारीख",
+      "memo": "तपशील"
     },
     "details": {
       "when": "केव्हा",
@@ -936,6 +954,103 @@
       "already_open": "हा महिना आधीच खुला आहे.",
       "earlier_open": "आधी मागील महिने बंद करा: महिने क्रमाने बंद होतात.",
       "later_closed": "आधी पुढचे महिने उघडा: महिने उलट्या क्रमाने उघडतात."
+    }
+  },
+  "journals": {
+    "title": "जर्नल नोंदी",
+    "description": "प्रत्येक व्यवहार संतुलित डेबिट आणि क्रेडिट म्हणून. मसुदे बदलता येतात; पोस्ट केलेल्या नोंदी अंतिम असतात आणि उलट नोंदीने दुरुस्त होतात.",
+    "new": "नवीन नोंद",
+    "search": "तपशील किंवा संदर्भ शोधा",
+    "filter": "स्थिती",
+    "noMatches": "कोणतीही नोंद जुळत नाही",
+    "empty": "अजून कोणतीही जर्नल नोंद नाही",
+    "emptyBody": "तुमचा पहिला व्यवहार नोंदवा: काय आले, काय गेले.",
+    "reverses": "{{number}} उलटवते",
+    "reversedPill": "उलटवली",
+    "attachmentCount": "{{count}} जोडपत्रे",
+    "unbalancedBy": "{{amount}} फरक",
+    "postedBy": "पोस्ट केले",
+    "total": "एकूण",
+    "reversalOf": "ही नोंद उलटवते",
+    "reversedBy": "उलटवणारी नोंद",
+    "reverse": "उलटवा",
+    "reverseTitle": "{{number}} उलटवायची?",
+    "reverseBody": "अगदी उलट रकमांची नवीन नोंद पोस्ट होईल आणि हिच्याशी जोडली जाईल. ही नोंद जशी आहे तशीच राहील.",
+    "reverseDateHint": "खुल्या महिन्यातील दिवस निवडा, जसे आज, बंद महिना दुरुस्त करण्यासाठी.",
+    "reverseMemo": "{{number}} ची उलट नोंद",
+    "reversed": "{{number}} म्हणून उलटवली",
+    "pickAccount": "खाते निवडा",
+    "lineAccount": "ओळ {{n}} खाते",
+    "lineDescription": "ओळ {{n}} तपशील",
+    "lineDebit": "ओळ {{n}} डेबिट",
+    "lineCredit": "ओळ {{n}} क्रेडिट",
+    "removeLine": "ओळ काढा",
+    "removeLineN": "ओळ {{n}} काढा",
+    "addLine": "ओळ जोडा",
+    "outBy": "{{amount}} फरक",
+    "balanced": "संतुलित",
+    "deleteDraft": "मसुदा हटवा",
+    "saveDraft": "मसुदा जतन करा",
+    "post": "पोस्ट करा",
+    "deleteTitle": "हा मसुदा हटवायचा?",
+    "deleteBody": "तो पोस्ट झालेला नाही, त्यामुळे कायमचा काढला जाईल.",
+    "posted": "{{number}} म्हणून पोस्ट केली",
+    "saved": "मसुदा जतन झाला",
+    "deleted": "मसुदा हटवला",
+    "newTitle": "नवीन जर्नल नोंद",
+    "draftTitle": "मसुदा नोंद",
+    "postedHint": "पोस्ट केलेल्या नोंदी अंतिम आहेत. दुरुस्तीसाठी त्या उलटवा.",
+    "draftHint": "मसुदे असंतुलित जतन करता येतात; पोस्ट करण्यासाठी डेबिट आणि क्रेडिट समान हवेत.",
+    "status": {
+      "draft": "मसुदा",
+      "posted": "पोस्ट केली"
+    },
+    "columns": {
+      "number": "क्रमांक",
+      "date": "तारीख",
+      "memo": "तपशील",
+      "amount": "रक्कम ({{currency}})"
+    },
+    "attachments": {
+      "title": "जोडपत्रे",
+      "add": "जोडा",
+      "hint": "PDF, PNG, JPEG किंवा WebP, 2 MB पर्यंत: पावत्या, बिले, विवरणपत्रे.",
+      "added": "जोडपत्र जोडले",
+      "wrongType": "PDF, PNG, JPEG किंवा WebP फाइल जोडा.",
+      "tooLarge": "2 MB पेक्षा लहान फाइल जोडा.",
+      "download": "{{name}} डाउनलोड करा",
+      "remove": "{{name}} काढा"
+    },
+    "fields": {
+      "date": "तारीख",
+      "reference": "संदर्भ",
+      "memo": "तपशील",
+      "account": "खाते",
+      "description": "वर्णन",
+      "debit": "डेबिट",
+      "credit": "क्रेडिट"
+    },
+    "problems": {
+      "invalid": "काही रकमा संख्या नाहीत.",
+      "too_few_lines": "किमान दोन ओळी जोडा.",
+      "zero": "काही रकमा लिहा."
+    },
+    "errors": {
+      "unbalanced": "डेबिट आणि क्रेडिट समान हवेत.",
+      "too_few_lines": "नोंदीत किमान दोन ओळी हव्यात.",
+      "zero": "नोंदीत कोणतीही रक्कम नाही.",
+      "period_closed": "ही तारीख बंद महिन्यात आहे. तो पुन्हा उघडा, किंवा खुल्या महिन्यातील तारीख वापरा.",
+      "no_period": "या तारखेसाठी आर्थिक वर्ष नाही. ते आर्थिक वर्षांत जोडा.",
+      "account_archived": "एक ओळ संग्रहित खाते वापरते.",
+      "account_not_found": "एक ओळ अस्तित्वात नसलेले खाते वापरते.",
+      "posted": "पोस्ट केलेल्या नोंदी बदलता येत नाहीत. ती उलटवा.",
+      "not_posted": "फक्त पोस्ट केलेल्या नोंदी उलटवता येतात.",
+      "already_reversed": "ही नोंद आधीच उलटवली आहे.",
+      "is_reversal": "उलट नोंद पुन्हा उलटवता येत नाही. नवीन नोंद पोस्ट करा.",
+      "type_mismatch": "ही फाइल सांगितलेल्या प्रकारची नाही.",
+      "too_large": "2 MB पेक्षा लहान फाइल जोडा.",
+      "invalid_amount": "चिन्हांकित रकमा तपासा.",
+      "missing_account": "प्रत्येक ओळीसाठी खाते निवडा."
     }
   }
 }

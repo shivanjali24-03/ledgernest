@@ -528,7 +528,8 @@
       "exports": "Exporte",
       "settings": "Einstellungen",
       "accounts": "Konten",
-      "periods": "Geschäftsjahre"
+      "periods": "Geschäftsjahre",
+      "journals": "Buchungen"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "Vorlage angewendet",
       "org_fiscal_year_create": "Geschäftsjahr angelegt",
       "org_period_close": "Monat abgeschlossen",
-      "org_period_reopen": "Monat wieder geöffnet"
+      "org_period_reopen": "Monat wieder geöffnet",
+      "org_journal_create": "Buchung angelegt",
+      "org_journal_update": "Entwurf bearbeitet",
+      "org_journal_delete": "Entwurf gelöscht",
+      "org_journal_post": "Buchung gebucht",
+      "org_journal_reverse": "Buchung storniert",
+      "org_journal_attach": "Beleg angehängt",
+      "org_journal_detach": "Beleg entfernt"
     },
     "entities": {
       "membership": "Mitglied",
@@ -580,7 +588,8 @@
       "user": "Konto",
       "account": "Konto",
       "fiscal_year": "Geschäftsjahr",
-      "period": "Monat"
+      "period": "Monat",
+      "journal": "Buchung"
     },
     "fields": {
       "user": "Person",
@@ -627,7 +636,16 @@
       "accounts": "Konten",
       "period": "Monat",
       "startDate": "Beginn",
-      "endDate": "Ende"
+      "endDate": "Ende",
+      "lines": "Zeilen",
+      "debit": "Soll",
+      "credit": "Haben",
+      "number": "Nummer",
+      "original": "Ursprüngliche Buchung",
+      "reversal": "Storno",
+      "fileName": "Datei",
+      "date": "Datum",
+      "memo": "Buchungstext"
     },
     "details": {
       "when": "Wann",
@@ -936,6 +954,103 @@
       "already_open": "Dieser Monat ist bereits offen.",
       "earlier_open": "Schließen Sie zuerst frühere Monate ab: Monate werden der Reihe nach abgeschlossen.",
       "later_closed": "Öffnen Sie zuerst spätere Monate: Monate werden in umgekehrter Reihenfolge geöffnet."
+    }
+  },
+  "journals": {
+    "title": "Buchungen",
+    "description": "Jeder Geschäftsvorfall als ausgeglichene Soll- und Habenbuchung. Entwürfe sind änderbar; gebuchte Einträge sind endgültig und werden per Storno korrigiert.",
+    "new": "Neue Buchung",
+    "search": "Buchungstext oder Beleg suchen",
+    "filter": "Status",
+    "noMatches": "Keine passenden Buchungen",
+    "empty": "Noch keine Buchungen",
+    "emptyBody": "Erfassen Sie Ihren ersten Geschäftsvorfall: was hereinkam, was hinausging.",
+    "reverses": "Storniert {{number}}",
+    "reversedPill": "Storniert",
+    "attachmentCount": "{{count}} Anhänge",
+    "unbalancedBy": "Differenz {{amount}}",
+    "postedBy": "Gebucht von",
+    "total": "Summe",
+    "reversalOf": "Diese Buchung storniert",
+    "reversedBy": "Storniert durch",
+    "reverse": "Stornieren",
+    "reverseTitle": "{{number}} stornieren?",
+    "reverseBody": "Eine neue Buchung mit genau umgekehrten Beträgen wird gebucht und mit dieser verknüpft. Diese Buchung bleibt unverändert.",
+    "reverseDateHint": "Wählen Sie einen Tag in einem offenen Monat, z. B. heute, um einen abgeschlossenen Monat zu korrigieren.",
+    "reverseMemo": "Storno von {{number}}",
+    "reversed": "Storniert als {{number}}",
+    "pickAccount": "Konto wählen",
+    "lineAccount": "Konto Zeile {{n}}",
+    "lineDescription": "Beschreibung Zeile {{n}}",
+    "lineDebit": "Soll Zeile {{n}}",
+    "lineCredit": "Haben Zeile {{n}}",
+    "removeLine": "Zeile entfernen",
+    "removeLineN": "Zeile {{n}} entfernen",
+    "addLine": "Zeile hinzufügen",
+    "outBy": "Differenz {{amount}}",
+    "balanced": "Ausgeglichen",
+    "deleteDraft": "Entwurf löschen",
+    "saveDraft": "Entwurf speichern",
+    "post": "Buchen",
+    "deleteTitle": "Diesen Entwurf löschen?",
+    "deleteBody": "Er wurde nicht gebucht und wird endgültig entfernt.",
+    "posted": "Gebucht als {{number}}",
+    "saved": "Entwurf gespeichert",
+    "deleted": "Entwurf gelöscht",
+    "newTitle": "Neue Buchung",
+    "draftTitle": "Buchungsentwurf",
+    "postedHint": "Gebuchte Einträge sind endgültig. Zur Korrektur stornieren.",
+    "draftHint": "Entwürfe dürfen unausgeglichen sein; zum Buchen müssen Soll und Haben gleich sein.",
+    "status": {
+      "draft": "Entwurf",
+      "posted": "Gebucht"
+    },
+    "columns": {
+      "number": "Nummer",
+      "date": "Datum",
+      "memo": "Buchungstext",
+      "amount": "Betrag ({{currency}})"
+    },
+    "attachments": {
+      "title": "Anhänge",
+      "add": "Anhängen",
+      "hint": "PDF, PNG, JPEG oder WebP bis 2 MB: Quittungen, Rechnungen, Auszüge.",
+      "added": "Anhang hinzugefügt",
+      "wrongType": "Hängen Sie eine PDF-, PNG-, JPEG- oder WebP-Datei an.",
+      "tooLarge": "Hängen Sie eine Datei unter 2 MB an.",
+      "download": "{{name}} herunterladen",
+      "remove": "{{name}} entfernen"
+    },
+    "fields": {
+      "date": "Datum",
+      "reference": "Beleg",
+      "memo": "Buchungstext",
+      "account": "Konto",
+      "description": "Beschreibung",
+      "debit": "Soll",
+      "credit": "Haben"
+    },
+    "problems": {
+      "invalid": "Einige Beträge sind keine Zahlen.",
+      "too_few_lines": "Fügen Sie mindestens zwei Zeilen hinzu.",
+      "zero": "Geben Sie Beträge ein."
+    },
+    "errors": {
+      "unbalanced": "Soll und Haben müssen gleich sein.",
+      "too_few_lines": "Eine Buchung braucht mindestens zwei Zeilen.",
+      "zero": "Die Buchung hat keine Beträge.",
+      "period_closed": "Dieses Datum liegt in einem abgeschlossenen Monat. Öffnen Sie ihn wieder oder wählen Sie ein Datum in einem offenen Monat.",
+      "no_period": "Für dieses Datum gibt es kein Geschäftsjahr. Legen Sie es unter Geschäftsjahre an.",
+      "account_archived": "Eine Zeile verwendet ein archiviertes Konto.",
+      "account_not_found": "Eine Zeile verwendet ein Konto, das es nicht mehr gibt.",
+      "posted": "Gebuchte Einträge können nicht geändert werden. Stornieren Sie stattdessen.",
+      "not_posted": "Nur gebuchte Einträge können storniert werden.",
+      "already_reversed": "Diese Buchung wurde bereits storniert.",
+      "is_reversal": "Ein Storno kann nicht storniert werden. Buchen Sie stattdessen neu.",
+      "type_mismatch": "Diese Datei hat nicht den angegebenen Typ.",
+      "too_large": "Hängen Sie eine Datei unter 2 MB an.",
+      "invalid_amount": "Prüfen Sie die markierten Beträge.",
+      "missing_account": "Wählen Sie für jede Zeile ein Konto."
     }
   }
 }

@@ -528,7 +528,8 @@
       "exports": "Exportaciones",
       "settings": "Configuración",
       "accounts": "Cuentas",
-      "periods": "Ejercicios fiscales"
+      "periods": "Ejercicios fiscales",
+      "journals": "Asientos contables"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -570,7 +571,14 @@
       "org_account_template_apply": "Plantilla aplicada",
       "org_fiscal_year_create": "Ejercicio añadido",
       "org_period_close": "Mes cerrado",
-      "org_period_reopen": "Mes reabierto"
+      "org_period_reopen": "Mes reabierto",
+      "org_journal_create": "Asiento creado",
+      "org_journal_update": "Borrador editado",
+      "org_journal_delete": "Borrador eliminado",
+      "org_journal_post": "Asiento contabilizado",
+      "org_journal_reverse": "Asiento revertido",
+      "org_journal_attach": "Documento adjuntado",
+      "org_journal_detach": "Documento quitado"
     },
     "entities": {
       "membership": "Miembro",
@@ -580,7 +588,8 @@
       "user": "Cuenta",
       "account": "Cuenta",
       "fiscal_year": "Ejercicio fiscal",
-      "period": "Mes"
+      "period": "Mes",
+      "journal": "Asiento contable"
     },
     "fields": {
       "user": "Persona",
@@ -627,7 +636,16 @@
       "accounts": "Cuentas",
       "period": "Mes",
       "startDate": "Inicio",
-      "endDate": "Fin"
+      "endDate": "Fin",
+      "lines": "Líneas",
+      "debit": "Debe",
+      "credit": "Haber",
+      "number": "Número",
+      "original": "Asiento original",
+      "reversal": "Reversión",
+      "fileName": "Archivo",
+      "date": "Fecha",
+      "memo": "Concepto"
     },
     "details": {
       "when": "Cuándo",
@@ -936,6 +954,103 @@
       "already_open": "Este mes ya está abierto.",
       "earlier_open": "Cierra primero los meses anteriores: los meses se cierran en orden.",
       "later_closed": "Reabre primero los meses posteriores: los meses se reabren en orden inverso."
+    }
+  },
+  "journals": {
+    "title": "Asientos contables",
+    "description": "Cada operación como cargos y abonos cuadrados. Los borradores se pueden cambiar; los asientos contabilizados son definitivos y se corrigen con un contraasiento.",
+    "new": "Nuevo asiento",
+    "search": "Buscar concepto o referencia",
+    "filter": "Estado",
+    "noMatches": "Ningún asiento coincide",
+    "empty": "Aún no hay asientos",
+    "emptyBody": "Registra tu primera operación: lo que entró y lo que salió.",
+    "reverses": "Revierte {{number}}",
+    "reversedPill": "Revertido",
+    "attachmentCount": "{{count}} adjuntos",
+    "unbalancedBy": "Descuadre de {{amount}}",
+    "postedBy": "Contabilizado por",
+    "total": "Total",
+    "reversalOf": "Este asiento revierte",
+    "reversedBy": "Revertido por",
+    "reverse": "Revertir",
+    "reverseTitle": "¿Revertir {{number}}?",
+    "reverseBody": "Se contabilizará un nuevo asiento con los importes exactamente opuestos, vinculado a este. Este asiento no cambia.",
+    "reverseDateHint": "Elige un día de un mes abierto, por ejemplo hoy, para corregir un mes cerrado.",
+    "reverseMemo": "Reversión de {{number}}",
+    "reversed": "Revertido como {{number}}",
+    "pickAccount": "Elige una cuenta",
+    "lineAccount": "Cuenta de la línea {{n}}",
+    "lineDescription": "Descripción de la línea {{n}}",
+    "lineDebit": "Debe de la línea {{n}}",
+    "lineCredit": "Haber de la línea {{n}}",
+    "removeLine": "Quitar línea",
+    "removeLineN": "Quitar línea {{n}}",
+    "addLine": "Añadir línea",
+    "outBy": "Descuadre de {{amount}}",
+    "balanced": "Cuadrado",
+    "deleteDraft": "Eliminar borrador",
+    "saveDraft": "Guardar borrador",
+    "post": "Contabilizar",
+    "deleteTitle": "¿Eliminar este borrador?",
+    "deleteBody": "No se ha contabilizado, así que se eliminará definitivamente.",
+    "posted": "Contabilizado como {{number}}",
+    "saved": "Borrador guardado",
+    "deleted": "Borrador eliminado",
+    "newTitle": "Nuevo asiento",
+    "draftTitle": "Borrador de asiento",
+    "postedHint": "Los asientos contabilizados son definitivos. Para corregir uno, reviértelo.",
+    "draftHint": "Los borradores pueden guardarse descuadrados; para contabilizar, el debe y el haber deben coincidir.",
+    "status": {
+      "draft": "Borrador",
+      "posted": "Contabilizado"
+    },
+    "columns": {
+      "number": "Número",
+      "date": "Fecha",
+      "memo": "Concepto",
+      "amount": "Importe ({{currency}})"
+    },
+    "attachments": {
+      "title": "Adjuntos",
+      "add": "Adjuntar",
+      "hint": "PDF, PNG, JPEG o WebP de hasta 2 MB: recibos, facturas, extractos.",
+      "added": "Adjunto añadido",
+      "wrongType": "Adjunta un archivo PDF, PNG, JPEG o WebP.",
+      "tooLarge": "Adjunta un archivo de menos de 2 MB.",
+      "download": "Descargar {{name}}",
+      "remove": "Quitar {{name}}"
+    },
+    "fields": {
+      "date": "Fecha",
+      "reference": "Referencia",
+      "memo": "Concepto",
+      "account": "Cuenta",
+      "description": "Descripción",
+      "debit": "Debe",
+      "credit": "Haber"
+    },
+    "problems": {
+      "invalid": "Algunos importes no son números.",
+      "too_few_lines": "Añade al menos dos líneas.",
+      "zero": "Introduce algún importe."
+    },
+    "errors": {
+      "unbalanced": "El debe y el haber deben coincidir.",
+      "too_few_lines": "Un asiento necesita al menos dos líneas.",
+      "zero": "El asiento no tiene importes.",
+      "period_closed": "Esta fecha está en un mes cerrado. Reábrelo o usa una fecha de un mes abierto.",
+      "no_period": "No hay ejercicio fiscal para esta fecha. Añádelo en Ejercicios fiscales.",
+      "account_archived": "Una línea usa una cuenta archivada.",
+      "account_not_found": "Una línea usa una cuenta que ya no existe.",
+      "posted": "Los asientos contabilizados no se pueden cambiar. Reviértelo.",
+      "not_posted": "Solo se pueden revertir asientos contabilizados.",
+      "already_reversed": "Este asiento ya se ha revertido.",
+      "is_reversal": "Una reversión no se puede revertir. Contabiliza un asiento nuevo.",
+      "type_mismatch": "Ese archivo no es del tipo que indica.",
+      "too_large": "Adjunta un archivo de menos de 2 MB.",
+      "invalid_amount": "Revisa los importes marcados.",
+      "missing_account": "Elige una cuenta para cada línea."
     }
   }
 }
