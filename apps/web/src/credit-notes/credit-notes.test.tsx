@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -11,6 +11,7 @@ import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPayments } from '../payments/demoPaymentsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
+import { openDialog } from '../test/openDialog';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoCreditNotes } from './demoCreditNotesApi';
 
@@ -35,14 +36,7 @@ describe('credit notes', () => {
     renderApp('/invoices');
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
-    await waitFor(
-      () => {
-        if (!screen.queryByText(/^Credit note for INV\//)) fireEvent.click(screen.getByRole('button', { name: 'Credit note' }));
-        expect(screen.getByText(/^Credit note for INV\//)).toBeInTheDocument();
-      },
-      { timeout: 4000 },
-    );
-    const dialog = screen.getByText(/^Credit note for INV\//).closest('[role="dialog"]') as HTMLElement;
+    const dialog = await openDialog('Credit note', /^Credit note for INV\//);
     const qty = within(dialog).getByLabelText('Quantity to credit for Software development, sprint 14');
     await waitFor(() => expect(qty).toBeEnabled(), { timeout: 4000 });
     await userEvent.type(qty, '4');
@@ -78,14 +72,7 @@ describe('credit notes', () => {
     renderApp('/invoices');
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
-    await waitFor(
-      () => {
-        if (!screen.queryByText(/^Credit note for INV\//)) fireEvent.click(screen.getByRole('button', { name: 'Credit note' }));
-        expect(screen.getByText(/^Credit note for INV\//)).toBeInTheDocument();
-      },
-      { timeout: 4000 },
-    );
-    const dialog = screen.getByText(/^Credit note for INV\//).closest('[role="dialog"]') as HTMLElement;
+    const dialog = await openDialog('Credit note', /^Credit note for INV\//);
     const qty = within(dialog).getByLabelText('Quantity to credit for Software development, sprint 14');
     await waitFor(() => expect(qty).toBeEnabled(), { timeout: 4000 });
     await userEvent.type(qty, '41');

@@ -41,6 +41,8 @@ export interface Invoice {
   payments: { id: string; number: string; date: string; amount: number }[];
   /** Credit that came off it, from its own credit notes or others */
   credits: { id: string; number: string; date: string; amount: number }[];
+  /** The schedule that raised it */
+  recurring?: { id: string; name: string } | null;
   /** Credit notes raised against it */
   creditNotes: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
   lines: InvoiceLine[];

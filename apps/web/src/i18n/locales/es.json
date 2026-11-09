@@ -29,7 +29,8 @@
       "currencies": "Monedas",
       "contacts": "Clientes y proveedores",
       "items": "Productos y servicios",
-      "creditNotes": "Notas de crédito"
+      "creditNotes": "Notas de crédito",
+      "recurring": "Facturas recurrentes"
     },
     "soon": "Pronto"
   },
@@ -638,7 +639,13 @@
       "org_credit_note_issue": "Nota de crédito emitida",
       "org_credit_note_apply": "Crédito aplicado a una factura",
       "org_credit_note_refund": "Crédito reembolsado",
-      "org_credit_note_void": "Nota de crédito anulada"
+      "org_credit_note_void": "Nota de crédito anulada",
+      "org_recurring_create": "Programación recurrente creada",
+      "org_recurring_update": "Programación recurrente modificada",
+      "org_recurring_pause": "Programación recurrente pausada",
+      "org_recurring_resume": "Programación recurrente reanudada",
+      "org_recurring_delete": "Programación recurrente eliminada",
+      "org_recurring_raise": "Factura generada por una programación"
     },
     "entities": {
       "membership": "Miembro",
@@ -1950,6 +1957,100 @@
       "over_applied": "Supera el crédito que queda en esta nota.",
       "has_refunds": "Parte de este crédito se reembolsó, así que no se puede anular.",
       "before_credit_note": "Un reembolso no puede ser anterior a su nota de crédito."
+    }
+  },
+  "recurring": {
+    "title": "Facturas recurrentes",
+    "description": "Facturas que se repiten según una programación, a partir de una plantilla.",
+    "new": "Nueva programación",
+    "runNow": "Ejecutar ahora",
+    "makeRecurring": "Hacer recurrente",
+    "raisedBy": "Generada por",
+    "empty": "Aún no hay programaciones",
+    "emptyBody": "Abre una factura y elige Hacer recurrente, o crea aquí una programación desde cualquier factura.",
+    "newTitle": "Nueva programación recurrente",
+    "editTitle": "Editar programación",
+    "pickTemplate": "Elige la factura a repetir: su cliente, líneas y notas forman la plantilla.",
+    "templateFrom": "Cada factura va a {{name}}, con las líneas de la plantilla.",
+    "chooseInvoice": "Elige una factura",
+    "create": "Crear programación",
+    "created": "{{name}} programada",
+    "saved": "{{name}} guardada",
+    "fields": {
+      "template": "Factura plantilla",
+      "name": "Nombre",
+      "frequency": "Se repite",
+      "interval": "Cada",
+      "startDate": "Primera factura el",
+      "ends": "Termina",
+      "endDate": "Última fecha",
+      "maxCount": "Número de facturas",
+      "autoIssue": "Emitir cada factura al generarse"
+    },
+    "autoIssueHint": "Si no, cada una queda como borrador para revisarla y emitirla.",
+    "frequencies": {
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "quarterly": "Trimestral",
+      "yearly": "Anual"
+    },
+    "every": {
+      "weekly": "Cada {{n}} semanas",
+      "monthly": "Cada {{n}} meses",
+      "quarterly": "Cada {{n}} trimestres",
+      "yearly": "Cada {{n}} años"
+    },
+    "intervalHint": {
+      "weekly": "1 = cada semana, 2 = semana sí, semana no",
+      "monthly": "1 = cada mes, 3 = cada tres meses",
+      "quarterly": "1 = cada trimestre, 2 = dos veces al año",
+      "yearly": "1 = cada año"
+    },
+    "ends": {
+      "never": "Nunca",
+      "date": "En una fecha",
+      "count": "Tras un número de facturas"
+    },
+    "statuses": {
+      "active": "Activa",
+      "paused": "Pausada",
+      "ended": "Terminada"
+    },
+    "issuesItself": "Se emite sola",
+    "nextOn": "próxima el {{date}}",
+    "noMore": "no quedan más",
+    "countOf": "{{count}} de {{max}} generadas",
+    "countSoFar": "{{count}} generadas",
+    "lastError": "El último intento falló: {{reason}}",
+    "raised": "Generadas",
+    "actionsFor": "Acciones para {{name}}",
+    "edit": "Editar",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar {{name}}?",
+    "deleteBody": "Aún no ha generado nada, así que nada más cambia.",
+    "deleted": "{{name}} eliminada",
+    "paused": "{{name}} pausada",
+    "resumed": "{{name}} reanudada",
+    "ran": "Ejecución completa: {{raised}} generadas",
+    "ranWithFailures": "{{raised}} generadas, {{failed}} no se pudieron: revisa las programaciones",
+    "upcoming": "Próximas",
+    "upcomingHint": "Los próximos 30 días.",
+    "dueNow": "{{count}} pendientes de generar; la próxima ejecución las genera.",
+    "nothingComing": "Nada en los próximos 30 días.",
+    "problems": {
+      "template": "Elige la factura a repetir.",
+      "name": "Ponle nombre a la programación.",
+      "interval": "Repite cada 1 a 12 periodos.",
+      "endDate": "Elige una última fecha igual o posterior a la primera.",
+      "count": "Indica cuántas facturas generar."
+    },
+    "errors": {
+      "has_invoices": "Esta programación ya generó facturas. Páusala, o mantén su fecha de inicio.",
+      "ended": "Esta programación ha terminado.",
+      "not_customer": "Solo se generan facturas a clientes.",
+      "contact_archived": "Este cliente está archivado."
     }
   }
 }

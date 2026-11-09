@@ -29,7 +29,8 @@
       "currencies": "العملات",
       "contacts": "العملاء والموردون",
       "items": "المنتجات والخدمات",
-      "creditNotes": "الإشعارات الدائنة"
+      "creditNotes": "الإشعارات الدائنة",
+      "recurring": "الفواتير المتكررة"
     },
     "soon": "قريبًا"
   },
@@ -638,7 +639,13 @@
       "org_credit_note_issue": "أُصدر إشعار دائن",
       "org_credit_note_apply": "طُبّق رصيد دائن على فاتورة",
       "org_credit_note_refund": "رُدّ رصيد دائن",
-      "org_credit_note_void": "أُلغي إشعار دائن"
+      "org_credit_note_void": "أُلغي إشعار دائن",
+      "org_recurring_create": "أُنشئ جدول تكرار",
+      "org_recurring_update": "عُدّل جدول تكرار",
+      "org_recurring_pause": "أُوقف جدول تكرار مؤقتًا",
+      "org_recurring_resume": "استُؤنف جدول تكرار",
+      "org_recurring_delete": "حُذف جدول تكرار",
+      "org_recurring_raise": "أُنشئت فاتورة من جدول"
     },
     "entities": {
       "membership": "عضو",
@@ -1950,6 +1957,100 @@
       "over_applied": "هذا أكثر من الرصيد المتبقي في هذا الإشعار.",
       "has_refunds": "رُدّ جزء من هذا الرصيد، لذا لا يمكن إلغاؤه.",
       "before_credit_note": "لا يمكن أن يسبق تاريخ الرد تاريخ الإشعار الدائن."
+    }
+  },
+  "recurring": {
+    "title": "الفواتير المتكررة",
+    "description": "فواتير تتكرر وفق جدول، تُنشأ من قالب.",
+    "new": "جدول جديد",
+    "runNow": "التشغيل الآن",
+    "makeRecurring": "جعلها متكررة",
+    "raisedBy": "أُنشئت بواسطة",
+    "empty": "لا توجد جداول بعد",
+    "emptyBody": "افتح فاتورة واختر جعلها متكررة، أو ابدأ جدولًا هنا من أي فاتورة.",
+    "newTitle": "جدول تكرار جديد",
+    "editTitle": "تعديل الجدول",
+    "pickTemplate": "اختر الفاتورة المراد تكرارها: عميلها وأسطرها وملاحظاتها تصبح القالب.",
+    "templateFrom": "تذهب كل فاتورة إلى {{name}} بأسطر القالب.",
+    "chooseInvoice": "اختر فاتورة",
+    "create": "إنشاء الجدول",
+    "created": "جُدولت {{name}}",
+    "saved": "حُفظت {{name}}",
+    "fields": {
+      "template": "فاتورة القالب",
+      "name": "الاسم",
+      "frequency": "التكرار",
+      "interval": "كل",
+      "startDate": "أول فاتورة في",
+      "ends": "الانتهاء",
+      "endDate": "آخر تاريخ",
+      "maxCount": "عدد الفواتير",
+      "autoIssue": "إصدار كل فاتورة فور إنشائها"
+    },
+    "autoIssueHint": "وإلا تنتظر كل واحدة كمسودة لتراجعها وتصدرها.",
+    "frequencies": {
+      "weekly": "أسبوعيًا",
+      "monthly": "شهريًا",
+      "quarterly": "ربع سنوي",
+      "yearly": "سنويًا"
+    },
+    "every": {
+      "weekly": "كل {{n}} أسابيع",
+      "monthly": "كل {{n}} أشهر",
+      "quarterly": "كل {{n}} أرباع",
+      "yearly": "كل {{n}} سنوات"
+    },
+    "intervalHint": {
+      "weekly": "1 = كل أسبوع، 2 = أسبوع بعد أسبوع",
+      "monthly": "1 = كل شهر، 3 = كل ثلاثة أشهر",
+      "quarterly": "1 = كل ربع، 2 = مرتين في السنة",
+      "yearly": "1 = كل سنة"
+    },
+    "ends": {
+      "never": "أبدًا",
+      "date": "في تاريخ",
+      "count": "بعد عدد من الفواتير"
+    },
+    "statuses": {
+      "active": "نشط",
+      "paused": "موقوف مؤقتًا",
+      "ended": "منتهٍ"
+    },
+    "issuesItself": "يُصدر تلقائيًا",
+    "nextOn": "التالية في {{date}}",
+    "noMore": "لا مزيد",
+    "countOf": "أُنشئت {{count}} من {{max}}",
+    "countSoFar": "أُنشئت {{count}} حتى الآن",
+    "lastError": "لم تنجح المحاولة الأخيرة: {{reason}}",
+    "raised": "أُنشئت",
+    "actionsFor": "إجراءات {{name}}",
+    "edit": "تعديل",
+    "pause": "إيقاف مؤقت",
+    "resume": "استئناف",
+    "delete": "حذف",
+    "deleteTitle": "حذف {{name}}؟",
+    "deleteBody": "لم يُنشئ شيئًا بعد، فلن يتغير شيء آخر.",
+    "deleted": "حُذف {{name}}",
+    "paused": "أُوقف {{name}} مؤقتًا",
+    "resumed": "استُؤنف {{name}}",
+    "ran": "اكتمل التشغيل: أُنشئت {{raised}}",
+    "ranWithFailures": "أُنشئت {{raised}}، وتعذّر {{failed}}: راجع الجداول",
+    "upcoming": "القادم",
+    "upcomingHint": "الأيام الثلاثون القادمة.",
+    "dueNow": "{{count}} مستحقة الإنشاء الآن؛ ينشئها التشغيل القادم.",
+    "nothingComing": "لا شيء في الأيام الثلاثين القادمة.",
+    "problems": {
+      "template": "اختر الفاتورة المراد تكرارها.",
+      "name": "سمِّ الجدول.",
+      "interval": "كرّر كل 1 إلى 12 فترة.",
+      "endDate": "اختر آخر تاريخ في أول تاريخ أو بعده.",
+      "count": "أدخل عدد الفواتير المطلوب إنشاؤها."
+    },
+    "errors": {
+      "has_invoices": "أُنشئت فواتير من هذا الجدول. أوقفه مؤقتًا، أو أبقِ تاريخ بدايته.",
+      "ended": "انتهى هذا الجدول.",
+      "not_customer": "لا تُنشأ الفواتير إلا للعملاء.",
+      "contact_archived": "هذا العميل مؤرشف."
     }
   }
 }

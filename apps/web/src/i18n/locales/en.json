@@ -29,7 +29,8 @@
       "currencies": "Currencies",
       "contacts": "Customers & vendors",
       "items": "Products & services",
-      "creditNotes": "Credit notes"
+      "creditNotes": "Credit notes",
+      "recurring": "Recurring invoices"
     },
     "soon": "Soon"
   },
@@ -638,7 +639,13 @@
       "org_credit_note_issue": "Credit note issued",
       "org_credit_note_apply": "Credit applied to an invoice",
       "org_credit_note_refund": "Credit refunded",
-      "org_credit_note_void": "Credit note voided"
+      "org_credit_note_void": "Credit note voided",
+      "org_recurring_create": "Recurring schedule created",
+      "org_recurring_update": "Recurring schedule changed",
+      "org_recurring_pause": "Recurring schedule paused",
+      "org_recurring_resume": "Recurring schedule resumed",
+      "org_recurring_delete": "Recurring schedule deleted",
+      "org_recurring_raise": "Invoice raised by a schedule"
     },
     "entities": {
       "membership": "Member",
@@ -1950,6 +1957,100 @@
       "over_applied": "That’s more credit than is left on this note.",
       "has_refunds": "Some of this credit was refunded, so it can’t be voided.",
       "before_credit_note": "A refund can’t be dated before its credit note."
+    }
+  },
+  "recurring": {
+    "title": "Recurring invoices",
+    "description": "Invoices that repeat on a schedule, raised from a template.",
+    "new": "New schedule",
+    "runNow": "Run now",
+    "makeRecurring": "Make recurring",
+    "raisedBy": "Raised by",
+    "empty": "No schedules yet",
+    "emptyBody": "Open an invoice and choose Make recurring, or start a schedule here from any invoice.",
+    "newTitle": "New recurring schedule",
+    "editTitle": "Edit schedule",
+    "pickTemplate": "Choose the invoice to repeat: its customer, lines and notes become the template.",
+    "templateFrom": "Each invoice goes to {{name}}, with the template’s lines.",
+    "chooseInvoice": "Choose an invoice",
+    "create": "Create schedule",
+    "created": "{{name}} scheduled",
+    "saved": "{{name}} saved",
+    "fields": {
+      "template": "Template invoice",
+      "name": "Name",
+      "frequency": "Repeats",
+      "interval": "Every",
+      "startDate": "First invoice on",
+      "ends": "Ends",
+      "endDate": "Last date",
+      "maxCount": "Number of invoices",
+      "autoIssue": "Issue each invoice as it’s raised"
+    },
+    "autoIssueHint": "Otherwise each one waits as a draft for you to check and issue.",
+    "frequencies": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly"
+    },
+    "every": {
+      "weekly": "Every {{n}} weeks",
+      "monthly": "Every {{n}} months",
+      "quarterly": "Every {{n}} quarters",
+      "yearly": "Every {{n}} years"
+    },
+    "intervalHint": {
+      "weekly": "1 = every week, 2 = every other week",
+      "monthly": "1 = every month, 3 = every third month",
+      "quarterly": "1 = every quarter, 2 = twice a year",
+      "yearly": "1 = every year"
+    },
+    "ends": {
+      "never": "Never",
+      "date": "On a date",
+      "count": "After a number of invoices"
+    },
+    "statuses": {
+      "active": "Active",
+      "paused": "Paused",
+      "ended": "Ended"
+    },
+    "issuesItself": "Issues itself",
+    "nextOn": "next on {{date}}",
+    "noMore": "no more to raise",
+    "countOf": "{{count}} of {{max}} raised",
+    "countSoFar": "{{count}} raised so far",
+    "lastError": "Last try didn’t work: {{reason}}",
+    "raised": "Raised",
+    "actionsFor": "Actions for {{name}}",
+    "edit": "Edit",
+    "pause": "Pause",
+    "resume": "Resume",
+    "delete": "Delete",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody": "It hasn’t raised anything yet, so nothing else changes.",
+    "deleted": "{{name}} deleted",
+    "paused": "{{name}} paused",
+    "resumed": "{{name}} resumed",
+    "ran": "Run complete: {{raised}} raised",
+    "ranWithFailures": "{{raised}} raised, {{failed}} couldn’t be: see the schedules",
+    "upcoming": "Coming up",
+    "upcomingHint": "The next 30 days.",
+    "dueNow": "{{count}} due to raise now; the next run raises them.",
+    "nothingComing": "Nothing in the next 30 days.",
+    "problems": {
+      "template": "Choose the invoice to repeat.",
+      "name": "Name the schedule.",
+      "interval": "Repeat every 1 to 12 periods.",
+      "endDate": "Choose a last date on or after the first.",
+      "count": "Enter how many invoices to raise."
+    },
+    "errors": {
+      "has_invoices": "Invoices have been raised from this schedule. Pause it instead, or keep its start date.",
+      "ended": "This schedule has ended.",
+      "not_customer": "Invoices are only raised to customers.",
+      "contact_archived": "This customer is archived."
     }
   }
 }

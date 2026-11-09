@@ -29,7 +29,8 @@
       "currencies": "Währungen",
       "contacts": "Kunden & Lieferanten",
       "items": "Produkte & Leistungen",
-      "creditNotes": "Gutschriften"
+      "creditNotes": "Gutschriften",
+      "recurring": "Wiederkehrende Rechnungen"
     },
     "soon": "Bald"
   },
@@ -638,7 +639,13 @@
       "org_credit_note_issue": "Gutschrift erstellt",
       "org_credit_note_apply": "Gutschrift auf Rechnung verrechnet",
       "org_credit_note_refund": "Gutschrift erstattet",
-      "org_credit_note_void": "Gutschrift storniert"
+      "org_credit_note_void": "Gutschrift storniert",
+      "org_recurring_create": "Serienrechnung angelegt",
+      "org_recurring_update": "Serienrechnung geändert",
+      "org_recurring_pause": "Serienrechnung pausiert",
+      "org_recurring_resume": "Serienrechnung fortgesetzt",
+      "org_recurring_delete": "Serienrechnung gelöscht",
+      "org_recurring_raise": "Rechnung aus Serie erstellt"
     },
     "entities": {
       "membership": "Mitglied",
@@ -1950,6 +1957,100 @@
       "over_applied": "Das ist mehr als das übrige Guthaben dieser Gutschrift.",
       "has_refunds": "Ein Teil wurde erstattet, daher kann sie nicht storniert werden.",
       "before_credit_note": "Eine Erstattung kann nicht vor ihrer Gutschrift datiert sein."
+    }
+  },
+  "recurring": {
+    "title": "Wiederkehrende Rechnungen",
+    "description": "Rechnungen, die sich nach Plan wiederholen, aus einer Vorlage.",
+    "new": "Neue Serie",
+    "runNow": "Jetzt ausführen",
+    "makeRecurring": "Wiederkehrend machen",
+    "raisedBy": "Erstellt durch",
+    "empty": "Noch keine Serien",
+    "emptyBody": "Öffnen Sie eine Rechnung und wählen Sie Wiederkehrend machen, oder legen Sie hier aus einer beliebigen Rechnung eine Serie an.",
+    "newTitle": "Neue Serienrechnung",
+    "editTitle": "Serie bearbeiten",
+    "pickTemplate": "Wählen Sie die zu wiederholende Rechnung: Kunde, Zeilen und Notizen werden zur Vorlage.",
+    "templateFrom": "Jede Rechnung geht an {{name}}, mit den Zeilen der Vorlage.",
+    "chooseInvoice": "Rechnung wählen",
+    "create": "Serie anlegen",
+    "created": "{{name}} geplant",
+    "saved": "{{name}} gespeichert",
+    "fields": {
+      "template": "Vorlagenrechnung",
+      "name": "Name",
+      "frequency": "Wiederholung",
+      "interval": "Alle",
+      "startDate": "Erste Rechnung am",
+      "ends": "Endet",
+      "endDate": "Letztes Datum",
+      "maxCount": "Anzahl Rechnungen",
+      "autoIssue": "Jede Rechnung sofort ausstellen"
+    },
+    "autoIssueHint": "Sonst wartet jede als Entwurf auf Prüfung und Ausstellung.",
+    "frequencies": {
+      "weekly": "Wöchentlich",
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "yearly": "Jährlich"
+    },
+    "every": {
+      "weekly": "Alle {{n}} Wochen",
+      "monthly": "Alle {{n}} Monate",
+      "quarterly": "Alle {{n}} Quartale",
+      "yearly": "Alle {{n}} Jahre"
+    },
+    "intervalHint": {
+      "weekly": "1 = jede Woche, 2 = jede zweite Woche",
+      "monthly": "1 = jeden Monat, 3 = jeden dritten Monat",
+      "quarterly": "1 = jedes Quartal, 2 = halbjährlich",
+      "yearly": "1 = jedes Jahr"
+    },
+    "ends": {
+      "never": "Nie",
+      "date": "An einem Datum",
+      "count": "Nach einer Anzahl Rechnungen"
+    },
+    "statuses": {
+      "active": "Aktiv",
+      "paused": "Pausiert",
+      "ended": "Beendet"
+    },
+    "issuesItself": "Stellt selbst aus",
+    "nextOn": "nächste am {{date}}",
+    "noMore": "keine weiteren",
+    "countOf": "{{count}} von {{max}} erstellt",
+    "countSoFar": "{{count}} erstellt",
+    "lastError": "Letzter Versuch fehlgeschlagen: {{reason}}",
+    "raised": "Erstellt",
+    "actionsFor": "Aktionen für {{name}}",
+    "edit": "Bearbeiten",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "delete": "Löschen",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteBody": "Sie hat noch nichts erstellt, sonst ändert sich nichts.",
+    "deleted": "{{name}} gelöscht",
+    "paused": "{{name}} pausiert",
+    "resumed": "{{name}} fortgesetzt",
+    "ran": "Fertig: {{raised}} erstellt",
+    "ranWithFailures": "{{raised}} erstellt, {{failed}} nicht möglich: siehe Serien",
+    "upcoming": "Demnächst",
+    "upcomingHint": "Die nächsten 30 Tage.",
+    "dueNow": "{{count}} jetzt fällig; der nächste Lauf erstellt sie.",
+    "nothingComing": "Nichts in den nächsten 30 Tagen.",
+    "problems": {
+      "template": "Wählen Sie die zu wiederholende Rechnung.",
+      "name": "Benennen Sie die Serie.",
+      "interval": "Alle 1 bis 12 Zeiträume wiederholen.",
+      "endDate": "Wählen Sie ein letztes Datum am oder nach dem ersten.",
+      "count": "Geben Sie an, wie viele Rechnungen erstellt werden."
+    },
+    "errors": {
+      "has_invoices": "Aus dieser Serie wurden schon Rechnungen erstellt. Pausieren Sie sie oder behalten Sie das Startdatum.",
+      "ended": "Diese Serie ist beendet.",
+      "not_customer": "Rechnungen gehen nur an Kunden.",
+      "contact_archived": "Dieser Kunde ist archiviert."
     }
   }
 }
