@@ -392,3 +392,40 @@ export function enteredLines<
       return l.currency ? { ...entered, currency: l.currency, foreignDebit: l.foreignDebit ?? 0, foreignCredit: l.foreignCredit ?? 0, rate: l.rate ?? null } : entered;
     });
 }
+
+// ---------- GST returns ----------
+
+export type GstHeads = { igst: number; cgst: number; sgst: number; cess: number };
+export const zeroHeads = (): GstHeads => ({ igst: 0, cgst: 0, sgst: 0, cess: 0 });
+/** Inter-state invoices to unregistered buyers above this (in paise) are listed one by one in GSTR-1 (B2CL) */
+export const B2CL_THRESHOLD = 10_000_000;
+
+/**
+ * Sets input tax credit off against output tax the way GST does: IGST credit against IGST, then CGST, then
+ * SGST; CGST credit against CGST, then IGST; SGST (or UTGST) credit against SGST, then IGST; never CGST against
+ * SGST or the other way round; cess only against cess. What's left of the tax is paid in cash; what's left of
+ * the credit is carried forward.
+ */
+export function gstSetOff(output: GstHeads, credit: GstHeads) {
+  const due = { ...output };
+  const left = { ...credit };
+  const used = { igst: zeroHeads(), cgst: zeroHeads(), sgst: zeroHeads(), cess: zeroHeads() };
+  const apply = (from: keyof GstHeads, to: keyof GstHeads) => {
+    const n = Math.min(left[from], due[to]);
+    if (n <= 0) return;
+    left[from] -= n;
+    due[to] -= n;
+    used[from][to] += n;
+  };
+  apply('igst', 'igst');
+  apply('igst', 'cgst');
+  apply('igst', 'sgst');
+  apply('cgst', 'cgst');
+  apply('cgst', 'igst');
+  apply('sgst', 'sgst');
+  apply('sgst', 'igst');
+  apply('cess', 'cess');
+  return { cash: due, carriedForward: left, used };
+}
+
+export const gstReturnQuerySchema = z.object({ from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' });
