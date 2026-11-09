@@ -17,6 +17,16 @@ import {
   type AgingBucket,
   type AgingSide,
   type TaxKind,
+  BS_SECTIONS,
+  bsSectionOf,
+  fiscalYearOf,
+  fiscalYearSpan,
+  PNL_SECTIONS,
+  pnlColumns,
+  pnlSectionOf,
+  type BsSection,
+  type PnlCompare,
+  type PnlSection,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -804,6 +814,335 @@ export class ReportsService {
       ...AGING_BUCKETS.map((b) => fmt(a.totals.buckets[b], a.baseCurrency)),
       fmt(a.totals.advance, a.baseCurrency),
       fmt(a.totals.net, a.baseCurrency),
+    ]);
+    return `\uFEFF${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
+  }
+
+  /** Each account's debits and credits over some days (from = null: since the beginning), leaving out year-end closings if asked */
+  private async sums(
+    organizationId: string,
+    from: string | null,
+    to: string,
+    withoutClosings: boolean,
+  ) {
+    const rows = await this.prisma.$queryRaw<
+      { account_id: string; debit: bigint; credit: bigint }[]
+    >`
+      SELECT l.account_id, sum(l.debit)::bigint AS debit, sum(l.credit)::bigint AS credit
+      FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+      WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted'
+        AND e.date <= ${asDate(to)}::date AND (${from}::date IS NULL OR e.date >= ${from}::date)
+        AND (NOT ${withoutClosings} OR e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL))
+      GROUP BY l.account_id`;
+    return new Map(
+      rows.map((r) => [r.account_id, Number(r.debit) - Number(r.credit)]),
+    );
+  }
+
+  /** Accounts with their parents, ordered by code, each with how deep it sits */
+  private async tree(organizationId: string) {
+    const accounts = await this.prisma.account.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        type: true,
+        subtype: true,
+        parentId: true,
+        archivedAt: true,
+      },
+    });
+    const byId = new Map(accounts.map((a) => [a.id, a]));
+    const ancestors = (id: string) => {
+      const out: string[] = [];
+      for (let p = byId.get(id)?.parentId; p; p = byId.get(p)?.parentId)
+        out.push(p);
+      return out;
+    };
+    return {
+      accounts: accounts.sort((x, y) => compareCodes(x.code, y.code)),
+      ancestors,
+    };
+  }
+
+  /**
+   * Rows for a statement: every account with something in any column, parents carrying their sub-accounts'
+   * totals. `sign` turns debit-minus-credit into the way the section reads (income and liabilities positive).
+   */
+  private rows<S extends string>(
+    tree: Awaited<ReturnType<ReportsService['tree']>>,
+    columns: Map<string, number>[],
+    sectionOf: (type: string, subtype: string) => S | null,
+    sign: (type: string) => 1 | -1,
+  ) {
+    const amounts = new Map<string, number[]>();
+    const add = (id: string, k: number, v: number) => {
+      const a = amounts.get(id) ?? columns.map(() => 0);
+      a[k]! += v;
+      amounts.set(id, a);
+    };
+    for (const a of tree.accounts) {
+      if (!sectionOf(a.type, a.subtype)) continue;
+      columns.forEach((col, k) => {
+        const v = (col.get(a.id) ?? 0) * sign(a.type);
+        if (!v) return;
+        add(a.id, k, v);
+        for (const p of tree.ancestors(a.id)) add(p, k, v);
+      });
+    }
+    const parents = new Set(
+      tree.accounts.map((a) => a.parentId).filter(Boolean),
+    );
+    return tree.accounts
+      .filter(
+        (a) =>
+          sectionOf(a.type, a.subtype) &&
+          amounts.get(a.id)?.some((v) => v !== 0),
+      )
+      .map((a) => ({
+        section: sectionOf(a.type, a.subtype)!,
+        accountId: a.id,
+        code: a.code,
+        name: a.name,
+        depth: tree.ancestors(a.id).length,
+        parentId: a.parentId,
+        hasChildren: parents.has(a.id),
+        amounts: amounts.get(a.id)!,
+      }));
+  }
+
+  /**
+   * The profit and loss for a period: revenue less cost of sales is gross profit, less operating expenses is
+   * operating profit, then other income and expenses give the net profit. Year-end closings are left out (they
+   * only move the profit to retained earnings). Optionally beside the previous period, last year, or by month.
+   */
+  async profitAndLoss(
+    organizationId: string,
+    from: string,
+    to: string,
+    compare: PnlCompare,
+  ) {
+    const columns = pnlColumns(from, to, compare);
+    const [tree, ...sums] = await Promise.all([
+      this.tree(organizationId),
+      ...columns.map((c) => this.sums(organizationId, c.from, c.to, true)),
+    ]);
+    const rows = this.rows<PnlSection>(tree, sums, pnlSectionOf, (type) =>
+      type === 'income' ? -1 : 1,
+    );
+    const total = (section: PnlSection) =>
+      columns.map((_c, k) =>
+        rows
+          .filter((r) => r.section === section && r.depth === 0)
+          .reduce((s, r) => s + r.amounts[k]!, 0),
+      );
+    const t = Object.fromEntries(
+      PNL_SECTIONS.map((sec) => [sec, total(sec)]),
+    ) as Record<PnlSection, number[]>;
+    const gross = columns.map((_c, k) => t.revenue[k]! - t.costOfSales[k]!);
+    const operating = columns.map(
+      (_c, k) => gross[k]! - t.operatingExpenses[k]!,
+    );
+    const net = columns.map(
+      (_c, k) => operating[k]! + t.otherIncome[k]! - t.otherExpenses[k]!,
+    );
+    return {
+      from,
+      to,
+      compare,
+      columns,
+      sections: PNL_SECTIONS.map((sec) => ({
+        section: sec,
+        rows: rows.filter((r) => r.section === sec),
+        total: t[sec],
+      })),
+      grossProfit: gross,
+      operatingProfit: operating,
+      netProfit: net,
+    };
+  }
+
+  /**
+   * The balance sheet on a day: assets against liabilities and equity. Profit not yet closed to retained
+   * earnings shows in equity (this year's and any earlier year's), so the two sides always agree.
+   */
+  async balanceSheet(
+    organizationId: string,
+    asOf: string,
+    compareAsOf?: string,
+  ) {
+    const dates = compareAsOf ? [asOf, compareAsOf] : [asOf];
+    const { fiscalYearStartMonth } =
+      await this.prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { fiscalYearStartMonth: true },
+      });
+    const [tree, ...sums] = await Promise.all([
+      this.tree(organizationId),
+      ...dates.map((d) => this.sums(organizationId, null, d, false)),
+    ]);
+    const rows = this.rows<BsSection>(tree, sums, bsSectionOf, (type) =>
+      type === 'asset' ? 1 : -1,
+    );
+    const total = (section: BsSection) =>
+      dates.map((_d, k) =>
+        rows
+          .filter((r) => r.section === section && r.depth === 0)
+          .reduce((s, r) => s + r.amounts[k]!, 0),
+      );
+    // Income less expenses still in the income and expense accounts: this financial year's, and earlier years' not yet closed
+    const unclosed = await Promise.all(
+      dates.map(async (d) => {
+        const yearStart = fiscalYearSpan(
+          fiscalYearOf(d, fiscalYearStartMonth),
+          fiscalYearStartMonth,
+        ).startDate;
+        const before = new Date(
+          Date.parse(`${yearStart}T00:00:00Z`) - 86_400_000,
+        )
+          .toISOString()
+          .slice(0, 10);
+        const [all, earlier] = await Promise.all([
+          this.sums(organizationId, null, d, false),
+          this.sums(organizationId, null, before, false),
+        ]);
+        const profit = (m: Map<string, number>) =>
+          -tree.accounts
+            .filter((a) => a.type === 'income' || a.type === 'expense')
+            .reduce((s, a) => s + (m.get(a.id) ?? 0), 0);
+        return {
+          thisYear: profit(all) - profit(earlier),
+          earlierYears: profit(earlier),
+          yearStart,
+        };
+      }),
+    );
+    const t = Object.fromEntries(
+      BS_SECTIONS.map((sec) => [sec, total(sec)]),
+    ) as Record<BsSection, number[]>;
+    const assets = dates.map(
+      (_d, k) => t.currentAssets[k]! + t.nonCurrentAssets[k]!,
+    );
+    const liabilities = dates.map(
+      (_d, k) => t.currentLiabilities[k]! + t.nonCurrentLiabilities[k]!,
+    );
+    const equity = dates.map(
+      (_d, k) =>
+        t.equity[k]! + unclosed[k]!.thisYear + unclosed[k]!.earlierYears,
+    );
+    return {
+      asOf,
+      compareAsOf: compareAsOf ?? null,
+      columns: dates,
+      sections: BS_SECTIONS.map((sec) => ({
+        section: sec,
+        rows: rows.filter((r) => r.section === sec),
+        total: t[sec],
+      })),
+      profitThisYear: unclosed.map((u) => u.thisYear),
+      profitEarlierYears: unclosed.map((u) => u.earlierYears),
+      yearStart: unclosed.map((u) => u.yearStart),
+      totalAssets: assets,
+      totalLiabilities: liabilities,
+      totalEquity: equity,
+      balanced: dates.map(
+        (_d, k) => assets[k] === liabilities[k]! + equity[k]!,
+      ),
+    };
+  }
+
+  /** A statement as CSV: each account under its section, totals between, amounts in the base currency */
+  pnlCsv(
+    p: Awaited<ReturnType<ReportsService['profitAndLoss']>>,
+    minor: (n: number) => string,
+  ) {
+    const head = [
+      'section',
+      'code',
+      'account',
+      ...p.columns.map((c) => `${c.from}..${c.to}`),
+    ];
+    const rows: (string | number)[][] = [head];
+    const totals: Partial<Record<PnlSection, [string, number[]]>> = {
+      costOfSales: ['Gross profit', p.grossProfit],
+      operatingExpenses: ['Operating profit', p.operatingProfit],
+    };
+    for (const sec of p.sections) {
+      for (const r of sec.rows)
+        rows.push([
+          sec.section,
+          r.code,
+          `${'  '.repeat(r.depth)}${r.name}`,
+          ...r.amounts.map(minor),
+        ]);
+      rows.push([
+        sec.section,
+        '',
+        `Total ${sec.section}`,
+        ...sec.total.map(minor),
+      ]);
+      const after = totals[sec.section];
+      if (after) rows.push(['', '', after[0], ...after[1].map(minor)]);
+    }
+    rows.push(['', '', 'Net profit', ...p.netProfit.map(minor)]);
+    return `\uFEFF${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
+  }
+
+  bsCsv(
+    b: Awaited<ReturnType<ReportsService['balanceSheet']>>,
+    minor: (n: number) => string,
+  ) {
+    const rows: (string | number)[][] = [
+      ['section', 'code', 'account', ...b.columns],
+    ];
+    for (const sec of b.sections) {
+      for (const r of sec.rows)
+        rows.push([
+          sec.section,
+          r.code,
+          `${'  '.repeat(r.depth)}${r.name}`,
+          ...r.amounts.map(minor),
+        ]);
+      if (sec.section === 'equity') {
+        rows.push([
+          'equity',
+          '',
+          'Profit for the year to date',
+          ...b.profitThisYear.map(minor),
+        ]);
+        if (b.profitEarlierYears.some((v) => v))
+          rows.push([
+            'equity',
+            '',
+            'Earlier years not yet closed',
+            ...b.profitEarlierYears.map(minor),
+          ]);
+        rows.push(['equity', '', 'Total equity', ...b.totalEquity.map(minor)]);
+      } else
+        rows.push([
+          sec.section,
+          '',
+          `Total ${sec.section}`,
+          ...sec.total.map(minor),
+        ]);
+      if (sec.section === 'nonCurrentAssets')
+        rows.push(['', '', 'Total assets', ...b.totalAssets.map(minor)]);
+      if (sec.section === 'nonCurrentLiabilities')
+        rows.push([
+          '',
+          '',
+          'Total liabilities',
+          ...b.totalLiabilities.map(minor),
+        ]);
+    }
+    rows.push([
+      '',
+      '',
+      'Total liabilities and equity',
+      ...b.columns.map((_c, k) =>
+        minor(b.totalLiabilities[k]! + b.totalEquity[k]!),
+      ),
     ]);
     return `\uFEFF${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`;
   }
