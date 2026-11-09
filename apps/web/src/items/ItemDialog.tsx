@@ -36,6 +36,9 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [hsnSac, setHsnSac] = useState(item?.hsnSac ?? '');
   const [incomeAccountId, setIncome] = useState(item?.incomeAccountId ?? '');
   const [expenseAccountId, setExpense] = useState(item?.expenseAccountId ?? '');
+  const [trackStock, setTrackStock] = useState(item?.trackStock ?? false);
+  const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
+  const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const active = (accounts.data ?? []).filter((a) => !a.archived);
@@ -51,6 +54,9 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     hsnSac: hsnSac.trim() || null,
     incomeAccountId: incomeAccountId || null,
     expenseAccountId: expenseAccountId || null,
+    trackStock: kind === 'goods' && trackStock,
+    inventoryAccountId: kind === 'goods' && trackStock ? inventoryAccountId || null : null,
+    cogsAccountId: kind === 'goods' && trackStock ? cogsAccountId || null : null,
   });
   const save = useMutation({
     mutationFn: () => {
@@ -77,6 +83,8 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     if (v.salePrice === null && salePrice.trim()) next.salePrice = t('items.validation.price');
     if (v.purchasePrice === null && purchasePrice.trim()) next.purchasePrice = t('items.validation.price');
     if (v.hsnSac && !HSN_SAC_PATTERN.test(v.hsnSac)) next.hsnSac = t('items.validation.hsnSac');
+    if (v.trackStock && !v.inventoryAccountId) next.inventoryAccountId = t('inventory.errors.inventory_account_required');
+    if (v.trackStock && !v.cogsAccountId) next.cogsAccountId = t('inventory.errors.cogs_account_required');
     setErrors(next);
     if (!Object.keys(next).length) save.mutate();
   };
@@ -132,6 +140,35 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
           error={errors.expenseAccountId}
           options={[{ value: '', label: t('items.chooseLater') }, ...active.filter((a) => a.type === 'expense' || a.type === 'asset').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
         />
+        {kind === 'goods' && (
+          <fieldset className="space-y-3 rounded-xl border border-ink-100 p-3 sm:col-span-2 dark:border-ink-800">
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={trackStock} onChange={(e) => setTrackStock(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+              <span>
+                <span className="font-medium">{t('inventory.track')}</span>
+                <span className="block text-xs text-ink-500">{t('inventory.trackHint')}</span>
+              </span>
+            </label>
+            {trackStock && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SelectField
+                  label={t('inventory.fields.inventoryAccount')}
+                  value={inventoryAccountId}
+                  onChange={(e) => setInventory(e.target.value)}
+                  error={errors.inventoryAccountId}
+                  options={[{ value: '', label: t('inventory.chooseAccount') }, ...active.filter((a) => a.type === 'asset' && a.subtype === 'inventory').concat(active.filter((a) => a.type === 'asset' && a.subtype !== 'inventory')).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
+                />
+                <SelectField
+                  label={t('inventory.fields.cogsAccount')}
+                  value={cogsAccountId}
+                  onChange={(e) => setCogs(e.target.value)}
+                  error={errors.cogsAccountId}
+                  options={[{ value: '', label: t('inventory.chooseAccount') }, ...active.filter((a) => a.type === 'expense' && a.subtype === 'cost_of_sales').concat(active.filter((a) => a.type === 'expense' && a.subtype !== 'cost_of_sales')).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
+                />
+              </div>
+            )}
+          </fieldset>
+        )}
       </form>
     </Modal>
   );

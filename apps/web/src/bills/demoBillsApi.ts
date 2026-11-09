@@ -1,5 +1,6 @@
 import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoCheckUndo, demoInventoryAccountOf, demoSaveMovements, demoStockReceipts, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -330,7 +331,8 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
     const lines = d.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
       if (l.itemId && !item) throw refuse(400, 'item_not_found');
-      const accountId = l.accountId ?? item?.expenseAccountId ?? null;
+      // Tracked goods are bought into their inventory account
+      const accountId = demoInventoryAccountOf(l.itemId) ?? l.accountId ?? item?.expenseAccountId ?? null;
       if (!accountId) throw refuse(400, 'account_required', { line: n + 1 });
       if (!['expense', 'asset'].includes(accounts.find((a) => a.id === accountId)?.type ?? '')) throw refuse(400, 'not_expense', { line: n + 1 });
       let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
@@ -489,6 +491,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
           await journals.remove(draft.id);
           throw e;
         });
+        demoSaveMovements('bill', i.id, i.billDate, posted.id, demoStockReceipts(v.lines.map((l) => ({ itemId: l.item?.id ?? null, quantity: l.quantity, value: toInr(l.amount) }))));
         Object.assign(i, {
           status: 'open',
           number,
@@ -507,10 +510,12 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
         const i = find(rows, iid);
         if (i.status !== 'open') throw refuse(409, 'not_open');
         if (i.amountPaid > 0) throw refuse(409, 'has_payments');
+        demoCheckUndo('bill', i.id);
         const r = await createDemoJournalsApi(() => true).reverse(i.journalEntryId!, {
           date: input.date ?? today(),
           memo: `Bill voided${input.reason ? `: ${input.reason}` : ''}`,
         });
+        demoUndoDocument('bill', i.id, input.date ?? today(), r.id);
         Object.assign(i, {
           status: 'void',
           voidEntryId: r.id,

@@ -7,5 +7,6 @@ const REASONS = ['not_customer', 'contact_archived', 'account_required', 'not_in
 /** A translated explanation for an invoice refusal (journal ones, like a closed month, included). */
 export function invoiceErrorMessage(e: unknown, t: TFunction): string {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
+  if (reason === 'insufficient_stock' || reason === 'stock_used') return t(`inventory.errors.${reason}`, { onHand: e instanceof ApiError ? e.details?.onHand : undefined });
   return typeof reason === 'string' && REASONS.includes(reason) ? t(`invoices.errors.${reason}`) : journalErrorMessage(e, t);
 }

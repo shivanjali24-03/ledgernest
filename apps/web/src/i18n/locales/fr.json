@@ -33,7 +33,8 @@
       "recurring": "Factures récurrentes",
       "fixedAssets": "Immobilisations",
       "budgets": "Budgets",
-      "costCentres": "Centres de coûts"
+      "costCentres": "Centres de coûts",
+      "inventory": "Stocks"
     },
     "soon": "Bientôt"
   },
@@ -2674,5 +2675,90 @@
     },
     "none": "Aucun centre de coûts",
     "lineLabel": "Centre de coûts, ligne {{n}}"
+  },
+  "inventory": {
+    "title": "Stocks",
+    "description": "Ce qui est en stock et ce que cela vaut au coût moyen, les mouvements de chaque article, et les ajustements.",
+    "adjust": "Ajuster le stock",
+    "asOf": "Au",
+    "empty": "Aucun stock suivi pour l’instant",
+    "emptyBody": "Activez le suivi du stock sur un article de type bien pour voir ici sa quantité disponible.",
+    "goToItems": "Aller aux articles",
+    "valuation": "Valorisation du stock",
+    "columns": {
+      "item": "Article",
+      "onHand": "En stock",
+      "averageCost": "Coût moyen",
+      "value": "Valeur",
+      "date": "Date",
+      "movement": "Mouvement",
+      "quantity": "Quantité"
+    },
+    "total": "Valeur totale du stock",
+    "agrees": "{{account}} : stock {{stock}}, conforme à la comptabilité",
+    "differs": "{{account}} : stock {{stock}}, mais la comptabilité indique {{ledger}}",
+    "movementsOf": "Mouvements de {{name}}",
+    "noMovements": "Aucun mouvement pour l’instant.",
+    "undo": "Annuler",
+    "undoAdjustment": "Annuler l’ajustement du {{date}}",
+    "undoneToast": "Ajustement annulé",
+    "kinds": {
+      "bill": "Facture fournisseur",
+      "bill_void": "Facture fournisseur annulée",
+      "invoice": "Facture",
+      "invoice_void": "Facture annulée",
+      "adjustment": "Ajustement",
+      "adjustment_undo": "Ajustement annulé"
+    },
+    "onHandPill": "En stock : {{quantity}} {{unit}}",
+    "track": "Suivre le stock",
+    "trackHint": "Tenir la quantité en stock : les factures fournisseurs l’augmentent, les factures la diminuent au coût moyen vers le coût des ventes.",
+    "fields": {
+      "inventoryAccount": "Compte de stock",
+      "cogsAccount": "Compte de coût des ventes",
+      "item": "Article",
+      "direction": "Sens",
+      "date": "Date",
+      "quantity": "Quantité",
+      "unitCost": "Coût d’une unité ({{currency}})",
+      "account": "Autre compte",
+      "reason": "Motif"
+    },
+    "chooseAccount": "Choisissez un compte",
+    "adjustTitle": "Ajuster le stock",
+    "adjustBody": "Comptez du stock en entrée (stock initial, retrouvé) ou en sortie (abîmé, perdu, usage interne). La valeur va au compte choisi.",
+    "noTracked": "Aucun article ne suit de stock",
+    "onHandHint": "En stock : {{quantity}}, valant {{value}}",
+    "directions": {
+      "in": "Entrée",
+      "out": "Sortie"
+    },
+    "unitCostHint": "Laissez vide pour utiliser le coût moyen actuel.",
+    "reasonInExample": "ex. Stock initial",
+    "reasonOutExample": "ex. Abîmé à l’entrepôt",
+    "addedToast": "{{quantity}} de {{item}} ajoutés",
+    "writtenOffToast": "{{quantity}} de {{item}} sortis du stock",
+    "problems": {
+      "item": "Choisissez un article.",
+      "quantity": "Saisissez une quantité supérieure à zéro, avec 4 décimales au plus.",
+      "unitCost": "Saisissez le coût d’une unité.",
+      "account": "Choisissez l’autre compte.",
+      "reason": "Dites pourquoi le stock a changé."
+    },
+    "errors": {
+      "insufficient_stock": "Stock insuffisant : seulement {{onHand}} en stock.",
+      "stock_used": "Une partie de ce stock a été vendue ou sortie depuis, il ne peut donc pas revenir.",
+      "not_tracked": "Le stock de cet article n’est pas suivi.",
+      "account_invalid": "Choisissez un autre compte pour la contrepartie.",
+      "unit_cost_required": "Rien en stock d’où prendre le coût. Saisissez le coût d’une unité.",
+      "already_undone": "Cet ajustement a déjà été annulé.",
+      "stock_moved": "Cet article a des mouvements de stock : son suivi et son compte de stock ne peuvent plus changer.",
+      "not_goods": "Seuls les biens ont un stock.",
+      "inventory_account_required": "Choisissez le compte de stock où il se trouve.",
+      "cogs_account_required": "Choisissez le compte de coût des ventes où il va une fois vendu.",
+      "inventory_account_type": "Le stock se trouve dans un compte d’actif.",
+      "cogs_account_type": "Le coût du stock vendu va dans un compte de charges.",
+      "in_use": "Des factures, factures fournisseurs ou mouvements de stock utilisent cet article. Archivez-le plutôt."
+    }
   }
 }

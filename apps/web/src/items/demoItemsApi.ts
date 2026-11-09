@@ -1,4 +1,5 @@
-import { formatRate, itemCreateSchema, itemUpdateSchema, type ItemKind } from '@ledgernest/shared';
+import { averageUnitCost, formatQuantity, formatRate, itemCreateSchema, itemUpdateSchema, type ItemKind } from '@ledgernest/shared';
+import { demoItemHasMovements, demoStockOf } from '../inventory/demoInventoryApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
@@ -6,24 +7,27 @@ import type { Item, ItemsApi } from './types';
 
 /** The sample software firm's products and services. */
 const KEY = 'ledgernest.demo.items';
-type Stored = Omit<Item, 'taxGroup' | 'incomeAccount' | 'expenseAccount'>;
+type Stored = Omit<Item, 'taxGroup' | 'incomeAccount' | 'expenseAccount' | 'inventoryAccount' | 'cogsAccount' | 'stock'>;
 const id = (n: number) => `17e00000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 function seed(): Stored[] {
   const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')?.id ?? null;
-  const i = (n: number, v: Partial<Stored> & Pick<Stored, 'name' | 'kind'>): Stored => ({ id: id(n), sku: null, description: null, unit: null, salePrice: null, purchasePrice: null, taxGroupId: gst18, hsnSac: null, incomeAccountId: null, expenseAccountId: null, archived: false, ...v });
+  const i = (n: number, v: Partial<Stored> & Pick<Stored, 'name' | 'kind'>): Stored => ({ id: id(n), sku: null, description: null, unit: null, salePrice: null, purchasePrice: null, taxGroupId: gst18, hsnSac: null, incomeAccountId: null, expenseAccountId: null, trackStock: false, inventoryAccountId: null, cogsAccountId: null, archived: false, ...v });
   return [
     i(1, { name: 'Software development', kind: 'service', sku: 'DEV-HR', unit: 'hrs', salePrice: 250_000, hsnSac: '998314', incomeAccountId: sampleId('4100.01'), description: 'Design, build and test, billed by the hour.' }),
     i(2, { name: 'Annual maintenance contract', kind: 'service', sku: 'AMC-12', unit: 'year', salePrice: 12_000_000, hsnSac: '998313', incomeAccountId: sampleId('4200') }),
     i(3, { name: 'Managed cloud hosting', kind: 'service', sku: 'HOST-M', unit: 'month', salePrice: 1_500_000, purchasePrice: 900_000, hsnSac: '998315', incomeAccountId: sampleId('4100.01'), expenseAccountId: sampleId('5100') }),
     i(4, { name: 'Laptop – Dell Latitude 5440', kind: 'goods', sku: 'LAP-5440', unit: 'nos', salePrice: 8_500_000, purchasePrice: 7_200_000, hsnSac: '84713010', expenseAccountId: sampleId('1710') }),
     i(5, { name: 'Printer paper A4 (ream)', kind: 'goods', sku: 'PAP-A4', unit: 'ream', purchasePrice: 28_000, hsnSac: '4802', expenseAccountId: sampleId('5900') }),
+    // Resold to clients with their laptops: kept in stock
+    i(6, { name: 'Wireless keyboard and mouse set', kind: 'goods', sku: 'KB-MS-01', unit: 'nos', salePrice: 250_000, purchasePrice: 160_000, hsnSac: '847160', incomeAccountId: sampleId('4100.01'), trackStock: true, inventoryAccountId: sampleId('1600'), cogsAccountId: sampleId('5050') }),
   ];
 }
 function load(): Stored[] {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as Stored[];
+    // Items stored before stock tracking existed don't track it
+    if (raw) return (JSON.parse(raw) as Partial<Stored>[]).map((i) => ({ trackStock: false, inventoryAccountId: null, cogsAccountId: null, ...i }) as Stored);
   } catch {
     /* fall through */
   }
@@ -59,6 +63,12 @@ function view(i: Stored): Item {
     taxGroup: g ? { id: g.id, name: g.name, total: formatRate(g.rateIds.reduce((s, rid) => s + (tax.rates.find((r) => r.id === rid)?.ratePpm ?? 0), 0)) } : null,
     incomeAccount: ref(i.incomeAccountId),
     expenseAccount: ref(i.expenseAccountId),
+    inventoryAccount: ref(i.inventoryAccountId),
+    cogsAccount: ref(i.cogsAccountId),
+    stock: i.trackStock ? (() => {
+      const s = demoStockOf(i.id);
+      return { onHand: formatQuantity(s.quantity > 0n ? s.quantity : 0n), value: Number(s.value), averageCost: averageUnitCost(s.quantity, s.value) };
+    })() : null,
   };
 }
 
@@ -82,6 +92,13 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
     const type = (aid: string | null) => (aid ? accounts.find((a) => a.id === aid)?.type : undefined);
     if (v.incomeAccountId && type(v.incomeAccountId) !== 'income') throw refuse(400, 'income_account_type', { field: 'incomeAccountId' });
     if (v.expenseAccountId && !['expense', 'asset'].includes(type(v.expenseAccountId) ?? '')) throw refuse(400, 'expense_account_type', { field: 'expenseAccountId' });
+    if (v.trackStock) {
+      if (v.kind !== 'goods') throw refuse(400, 'not_goods', { field: 'trackStock' });
+      if (!v.inventoryAccountId) throw refuse(400, 'inventory_account_required', { field: 'inventoryAccountId' });
+      if (!v.cogsAccountId) throw refuse(400, 'cogs_account_required', { field: 'cogsAccountId' });
+    }
+    if (v.inventoryAccountId && type(v.inventoryAccountId) !== 'asset') throw refuse(400, 'inventory_account_type', { field: 'inventoryAccountId' });
+    if (v.cogsAccountId && type(v.cogsAccountId) !== 'expense') throw refuse(400, 'cogs_account_type', { field: 'cogsAccountId' });
   };
   return {
     list: (q) =>
@@ -114,6 +131,7 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
         const i = find(rows, iid);
         const next = { ...i, ...p.data };
         check(rows, next, iid);
+        if (i.trackStock && (next.trackStock !== i.trackStock || next.inventoryAccountId !== i.inventoryAccountId || next.kind !== i.kind) && demoItemHasMovements(iid)) throw refuse(409, 'stock_moved', { field: 'trackStock' });
         Object.assign(i, next);
         save(rows);
         return view(i);
@@ -133,6 +151,7 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
         guard();
         const rows = load();
         find(rows, iid);
+        if (demoItemHasMovements(iid)) throw refuse(409, 'in_use');
         save(rows.filter((r) => r.id !== iid));
       }),
   };

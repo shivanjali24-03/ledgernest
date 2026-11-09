@@ -25,6 +25,7 @@ import {
   type LucideIcon,
   Target,
   Network,
+  Boxes,
 } from 'lucide-react';
 import type { Permission } from '@ledgernest/shared';
 
@@ -72,6 +73,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: '/contacts', labelKey: 'nav.items.contacts', icon: Contact, permission: 'contacts.view', ready: true, keywords: 'customers vendors suppliers clients gstin parties' },
       { to: '/items', labelKey: 'nav.items.items', icon: Package, permission: 'invoices.view', ready: true, keywords: 'products services catalogue price list sku hsn sac' },
+      { to: '/inventory', labelKey: 'nav.items.inventory', icon: Boxes, permission: 'reports.view', ready: true, keywords: 'inventory stock on hand valuation average cost warehouse goods adjustment write off' },
       { to: '/invoices', labelKey: 'nav.items.invoices', icon: FileText, permission: 'invoices.view', ready: true, keywords: 'sales customers receivables bill gst tax invoice' },
       { to: '/recurring', labelKey: 'nav.items.recurring', icon: Repeat, permission: 'invoices.view', ready: true, keywords: 'recurring repeat subscription schedule retainer monthly' },
       { to: '/credit-notes', labelKey: 'nav.items.creditNotes', icon: FileMinus, permission: 'invoices.view', ready: true, keywords: 'credit note refund return correction cn' },
