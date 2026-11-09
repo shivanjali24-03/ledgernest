@@ -3054,7 +3054,9 @@
       "payment_made": "Proveedor pagado",
       "payment_voided": "Pago anulado",
       "bill_recorded": "Factura de proveedor registrada",
-      "bill_voided": "Factura de proveedor anulada"
+      "bill_voided": "Factura de proveedor anulada",
+      "credit_note_issued": "Nota de crédito emitida",
+      "credit_note_voided": "Nota de crédito anulada"
     },
     "deliveryStatuses": {
       "pending": "esperando reintento",

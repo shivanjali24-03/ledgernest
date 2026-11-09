@@ -3054,7 +3054,9 @@
       "payment_made": "الدفع لمورد",
       "payment_voided": "إلغاء دفعة",
       "bill_recorded": "تسجيل فاتورة مورد",
-      "bill_voided": "إلغاء فاتورة مورد"
+      "bill_voided": "إلغاء فاتورة مورد",
+      "credit_note_issued": "إصدار إشعار دائن",
+      "credit_note_voided": "إلغاء إشعار دائن"
     },
     "deliveryStatuses": {
       "pending": "بانتظار إعادة المحاولة",

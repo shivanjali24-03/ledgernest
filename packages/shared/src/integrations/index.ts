@@ -32,7 +32,7 @@ export const apiKeyCreateSchema = z.object({
 });
 export type ApiKeyCreateInput = z.input<typeof apiKeyCreateSchema>;
 
-export const WEBHOOK_EVENTS = ['invoice.issued', 'invoice.voided', 'payment.received', 'payment.made', 'payment.voided', 'bill.recorded', 'bill.voided'] as const;
+export const WEBHOOK_EVENTS = ['invoice.issued', 'invoice.voided', 'credit_note.issued', 'credit_note.voided', 'payment.received', 'payment.made', 'payment.voided', 'bill.recorded', 'bill.voided'] as const;
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 /** After a failed delivery, the next try waits this many minutes; then it's given up */
 export const WEBHOOK_RETRY_MINUTES = [1, 5, 30, 120, 720] as const;

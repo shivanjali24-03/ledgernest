@@ -3054,7 +3054,9 @@
       "payment_made": "Vendor paid",
       "payment_voided": "Payment voided",
       "bill_recorded": "Bill recorded",
-      "bill_voided": "Bill voided"
+      "bill_voided": "Bill voided",
+      "credit_note_issued": "Credit note issued",
+      "credit_note_voided": "Credit note voided"
     },
     "deliveryStatuses": {
       "pending": "waiting to retry",

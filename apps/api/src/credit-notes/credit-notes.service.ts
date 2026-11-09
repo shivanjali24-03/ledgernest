@@ -26,6 +26,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { InventoryService } from '../inventory/inventory.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -136,6 +137,7 @@ export class CreditNotesService {
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
     private readonly inventory: InventoryService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   /** Invoices first (credit changes what they have left to pay), then payments: the order everything takes them in */
@@ -649,7 +651,14 @@ export class CreditNotesService {
       );
       return note.id;
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'credit_note.issued',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 
   /** Puts remaining credit onto another open invoice of the same customer, in the same currency and receivable. */
@@ -990,6 +999,13 @@ export class CreditNotesService {
         ctx.actor.userId,
       );
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'credit_note.voided',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 }

@@ -302,6 +302,59 @@ describe('Webhooks (e2e)', () => {
     ).toMatchObject({ status: 'succeeded', attempts: 7 });
   });
 
+  it('tells the endpoint about credit notes too, when it asks for them', async () => {
+    await as()
+      .patch(`/webhooks/${hook}`, {
+        events: ['invoice.issued', 'credit_note.issued'],
+      })
+      .expect(200);
+    const inv = (
+      await as()
+        .post('/invoices', {
+          contactId: kumar,
+          issueDate: '2026-05-06',
+          lines: [
+            {
+              description: 'Freight',
+              quantity: 1,
+              unitPrice: 5_000_00,
+              accountId: acc.sales,
+            },
+          ],
+        })
+        .expect(201)
+    ).body.id as string;
+    await as().post(`/invoices/${inv}/issue`).expect(200);
+    const line = (
+      (await as().get(`/invoices/${inv}`).expect(200)).body as {
+        lines: { id: string }[];
+      }
+    ).lines[0]!.id;
+    const before = hits.length;
+    const note = (
+      await as()
+        .post('/credit-notes', {
+          invoiceId: inv,
+          date: '2026-05-07',
+          reason: 'Late delivery',
+          lines: [{ invoiceLineId: line, quantity: '1' }],
+        })
+        .expect(201)
+    ).body as { id: string };
+    await until(() =>
+      hits
+        .slice(before)
+        .some((h) => h.headers['x-ledgernest-event'] === 'credit_note.issued'),
+    );
+    const hit = hits
+      .slice(before)
+      .find((h) => h.headers['x-ledgernest-event'] === 'credit_note.issued')!;
+    expect(JSON.parse(hit.body)).toMatchObject({
+      event: 'credit_note.issued',
+      data: { id: note.id },
+    });
+  });
+
   it('can be switched off, rotated and removed, and is audited', async () => {
     const before = hits.length;
     await as().patch(`/webhooks/${hook}`, { active: false }).expect(200);

@@ -3054,7 +3054,9 @@
       "payment_made": "Fournisseur payé",
       "payment_voided": "Paiement annulé",
       "bill_recorded": "Facture fournisseur enregistrée",
-      "bill_voided": "Facture fournisseur annulée"
+      "bill_voided": "Facture fournisseur annulée",
+      "credit_note_issued": "Avoir émis",
+      "credit_note_voided": "Avoir annulé"
     },
     "deliveryStatuses": {
       "pending": "en attente de nouvel essai",

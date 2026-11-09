@@ -28,6 +28,8 @@ LedgerNest sends a JSON `POST` to your address when something happens:
 |---|---|
 | `invoice.issued` | An invoice is issued (numbered and posted) |
 | `invoice.voided` | An issued invoice is voided |
+| `credit_note.issued` | A credit note is issued against an invoice |
+| `credit_note.voided` | A credit note is voided |
 | `payment.received` | A receipt from a customer is recorded |
 | `payment.made` | A payment to a vendor is recorded |
 | `payment.voided` | A receipt or payment is voided |
