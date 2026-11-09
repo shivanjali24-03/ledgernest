@@ -33,6 +33,7 @@ import type { Invoice, InvoicesApi } from '../types';
 import { useInvoicesApi } from '../useInvoicesApi';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
+import DocumentAttachments from '../../attachments/DocumentAttachments';
 
 type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string };
 const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '' });
@@ -467,6 +468,7 @@ export default function InvoiceEditor() {
             </p>
           </>
         )}
+        {invoice && <DocumentAttachments documentType="invoice" documentId={invoice.id} />}
       </motion.div>
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       {crediting && invoice && creditNotesApi && (

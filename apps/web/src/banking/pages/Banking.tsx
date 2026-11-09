@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todayIn } from '@ledgernest/shared';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, FileUp, Landmark, Scale, Undo2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, FileUp, Landmark, Paperclip, Scale, Undo2, Wallet } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
@@ -24,6 +24,8 @@ import TransferDialog from '../TransferDialog';
 import { bankingErrorMessage } from '../errors';
 import type { BankTransaction, StatementImport } from '../types';
 import { useBankingApi } from '../useBankingApi';
+import DocumentAttachments from '../../attachments/DocumentAttachments';
+import Modal from '../../ui/Modal';
 
 const daysAgo = (today: string, n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
 
@@ -43,6 +45,7 @@ export default function Banking() {
   const [dialog, setDialog] = useState<'spend' | 'receive' | 'transfer' | 'import' | null>(null);
   const [undoing, setUndoing] = useState<StatementImport | null>(null);
   const [voiding, setVoiding] = useState<BankTransaction | null>(null);
+  const [files, setFiles] = useState<BankTransaction | null>(null);
   const key = ['banking', session.organizationId, session.role ?? session.customRoleName] as const;
   const accounts = useQuery({ queryKey: [...key, 'accounts'], queryFn: () => api!.accounts(), enabled: !!api });
   const usable = (accounts.data ?? []).filter((a) => !a.hasChildren);
@@ -295,7 +298,7 @@ export default function Banking() {
                         {incoming ? '+' : '−'}
                         {tx.kind === 'transfer' && incoming && tx.toCurrency !== tx.currency ? formatMoney(tx.toAmount ?? 0, tx.toCurrency ?? settings?.baseCurrency ?? 'INR', locale) : txAmount(tx)}
                       </span>
-                      {canManage && tx.status === 'posted' && <RowMenu label={t('banking.actionsFor', { what: txLabel(tx) })} items={[{ key: 'void', label: t('banking.void'), icon: Ban, danger: true, onSelect: () => setVoiding(tx) }]} />}
+                      <RowMenu label={t('banking.actionsFor', { what: txLabel(tx) })} items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(tx) }, ...(canManage && tx.status === 'posted' ? [{ key: 'void', label: t('banking.void'), icon: Ban, danger: true, onSelect: () => setVoiding(tx) }] : [])]} />
                     </li>
                   );
                 })}
@@ -380,6 +383,11 @@ export default function Banking() {
         onConfirm={(reason) => voiding && voidIt.mutate({ tx: voiding, reason })}
         onClose={() => setVoiding(null)}
       />
+      {files && (
+        <Modal open onClose={() => setFiles(null)} title={t('attachments.titleFor', { what: txLabel(files) })}>
+          <DocumentAttachments documentType="bank_transaction" documentId={files.id} bare />
+        </Modal>
+      )}
     </motion.div>
   );
 }

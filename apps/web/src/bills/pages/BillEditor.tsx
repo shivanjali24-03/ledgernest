@@ -30,6 +30,7 @@ import { useBillsApi } from '../useBillsApi';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 import { heldForApproval, heldMessage } from '../../approvals/errors';
+import DocumentAttachments from '../../attachments/DocumentAttachments';
 
 type Line = {
   key: string;
@@ -546,6 +547,7 @@ export default function BillEditor() {
             </p>
           </>
         )}
+        {bill && <DocumentAttachments documentType="bill" documentId={bill.id} />}
       </motion.div>
       {paying && bill && paymentsApi && (
         <ReceiptDialog
