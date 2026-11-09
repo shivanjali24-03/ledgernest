@@ -8,6 +8,9 @@ import {
 } from '@nestjs/swagger';
 import {
   agingQuerySchema,
+  balanceSheetQuerySchema,
+  pnlQuerySchema,
+  type PnlCompare,
   isoDaySchema,
   todayIn,
   type AgingSide,
@@ -221,5 +224,96 @@ export class ReportsController {
       `attachment; filename="${q.side}-aging-${asOf}.csv"`,
     );
     return this.reports.agingCsv(a);
+  }
+
+  @Get('profit-and-loss')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Revenue, costs and profit for a period by account, optionally beside the previous period, last year or each month',
+  })
+  profitAndLoss(
+    @Query(new ZodValidationPipe(pnlQuerySchema))
+    q: { from: string; to: string; compare: PnlCompare },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.profitAndLoss(
+      tenant.organizationId,
+      q.from,
+      q.to,
+      q.compare,
+    );
+  }
+
+  @Get('profit-and-loss/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async profitAndLossCsv(
+    @Query(new ZodValidationPipe(pnlQuerySchema))
+    q: { from: string; to: string; compare: PnlCompare },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const p = await this.reports.profitAndLoss(
+      tenant.organizationId,
+      q.from,
+      q.to,
+      q.compare,
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="profit-and-loss-${q.from}-${q.to}.csv"`,
+    );
+    return this.reports.pnlCsv(
+      p,
+      await this.reports.decimals(tenant.organizationId),
+    );
+  }
+
+  @Get('balance-sheet')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Assets, liabilities and equity on a day (default today), optionally beside another day',
+  })
+  async balanceSheet(
+    @Query(new ZodValidationPipe(balanceSheetQuerySchema))
+    q: { asOf?: string; compareAsOf?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.balanceSheet(
+      tenant.organizationId,
+      q.asOf ?? (await this.today(tenant.organizationId)),
+      q.compareAsOf,
+    );
+  }
+
+  @Get('balance-sheet/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async balanceSheetCsv(
+    @Query(new ZodValidationPipe(balanceSheetQuerySchema))
+    q: { asOf?: string; compareAsOf?: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const asOf = q.asOf ?? (await this.today(tenant.organizationId));
+    const b = await this.reports.balanceSheet(
+      tenant.organizationId,
+      asOf,
+      q.compareAsOf,
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="balance-sheet-${asOf}.csv"`,
+    );
+    return this.reports.bsCsv(
+      b,
+      await this.reports.decimals(tenant.organizationId),
+    );
   }
 }
