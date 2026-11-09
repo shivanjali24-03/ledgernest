@@ -22,6 +22,7 @@ import type { Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DashboardService } from './dashboard.service.js';
+import { GstReturnsService } from './gst-returns.service.js';
 import { ReportsService } from './reports.service.js';
 
 const tbQuery = new ZodValidationPipe(
@@ -61,6 +62,7 @@ export class ReportsController {
     private readonly reports: ReportsService,
     private readonly prisma: PrismaService,
     private readonly dashboards: DashboardService,
+    private readonly gst: GstReturnsService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -359,6 +361,68 @@ export class ReportsController {
     );
     return this.reports.cashFlowCsv(
       c,
+      await this.reports.decimals(tenant.organizationId),
+    );
+  }
+
+  @Get('gst/gstr-3b')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'GSTR-3B for a month or quarter: outward supplies and tax, input tax credit, set-off and tax payable in cash',
+  })
+  gstr3b(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.gst.gstr3b(tenant.organizationId, q.from, q.to);
+  }
+
+  @Get('gst/gstr-1')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'GSTR-1 for a month or quarter: B2B, B2C large and small, exports, credit notes, HSN summary and documents issued',
+  })
+  gstr1(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.gst.gstr1(tenant.organizationId, q.from, q.to);
+  }
+
+  @Get('gst/gstr-1/export')
+  @RequirePermission('reports.export')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv', 'application/json')
+  async gstr1Export(
+    @Query(
+      new ZodValidationPipe(
+        z.object({
+          from: isoDaySchema,
+          to: isoDaySchema,
+          format: z.enum(['csv', 'json']).default('csv'),
+        }),
+      ),
+    )
+    q: { from: string; to: string; format: 'csv' | 'json' },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const g = await this.gst.gstr1(tenant.organizationId, q.from, q.to);
+    res.setHeader(
+      'Content-Type',
+      q.format === 'json'
+        ? 'application/json; charset=utf-8'
+        : 'text/csv; charset=utf-8',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="gstr-1-${q.from}-${q.to}.${q.format}"`,
+    );
+    return this.gst.gstr1Export(
+      g,
+      q.format,
       await this.reports.decimals(tenant.organizationId),
     );
   }
