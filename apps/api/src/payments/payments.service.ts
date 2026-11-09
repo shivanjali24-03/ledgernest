@@ -21,6 +21,7 @@ import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -98,6 +99,7 @@ export class PaymentsService {
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
     private readonly approvals: ApprovalGate,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   /** Documents first (payments change what they've had paid), then payments: always in this order */
@@ -674,7 +676,14 @@ export class PaymentsService {
       );
       return p.id;
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      kind === 'receipt' ? 'payment.received' : 'payment.made',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 
   /** Voids a receipt or payment: its entry is reversed today and the documents it settled are open again. */
@@ -741,6 +750,13 @@ export class PaymentsService {
         tx,
       );
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'payment.voided',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 }

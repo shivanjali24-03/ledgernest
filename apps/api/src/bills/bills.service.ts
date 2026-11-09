@@ -30,6 +30,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -175,6 +176,7 @@ export class BillsService {
     private readonly journals: JournalsService,
     private readonly inventory: InventoryService,
     private readonly approvals: ApprovalGate,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -1039,7 +1041,14 @@ export class BillsService {
         tx,
       );
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'bill.recorded',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 
   /** Voids an unpaid bill: its entry is reversed (on the day given, default today) and it stays on record. */
@@ -1104,6 +1113,13 @@ export class BillsService {
         tx,
       );
     });
-    return this.get(organizationId, id);
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'bill.voided',
+      done,
+      ctx.actor.userId,
+    );
+    return done;
   }
 }

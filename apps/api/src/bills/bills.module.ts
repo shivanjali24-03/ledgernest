@@ -4,9 +4,15 @@ import { InventoryModule } from '../inventory/inventory.module.js';
 import { JournalsModule } from '../journals/journals.module.js';
 import { BillsController } from './bills.controller.js';
 import { BillsService } from './bills.service.js';
+import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
 
 @Module({
-  imports: [JournalsModule, InventoryModule, ApprovalGateModule],
+  imports: [
+    JournalsModule,
+    InventoryModule,
+    ApprovalGateModule,
+    WebhookEventsModule,
+  ],
   controllers: [BillsController],
   providers: [BillsService],
   exports: [BillsService],

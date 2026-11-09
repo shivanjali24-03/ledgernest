@@ -46,6 +46,8 @@ model User {
   approvalsRequested ApprovalRequest[] @relation("ApprovalRequester")
   approvalsDecided   ApprovalRequest[] @relation("ApprovalDecider")
   apiKeys            ApiKey[]
+  webhooksChanged    WebhookEndpoint[]
+  webhooksTriggered  WebhookDelivery[]
 
   @@map("users")
 }
@@ -119,6 +121,8 @@ model Organization {
   apiKeys             ApiKey[]
   billLines           BillLine[]
   exchangeRates       ExchangeRate[]
+  webhookEndpoints    WebhookEndpoint[]
+  webhookDeliveries   WebhookDelivery[]
 
   @@map("organizations")
 }
@@ -1465,4 +1469,56 @@ model ApiKey {
 
   @@index([organizationId])
   @@map("api_keys")
+}
+
+/// Where to tell another system that invoices, payments or bills changed. Each request is signed with the secret.
+model WebhookEndpoint {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  url            String
+  description    String?
+  events         String[]
+  /// Signs each delivery (HMAC-SHA256); shown when made or rotated
+  secret         String
+  active         Boolean  @default(true)
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries   WebhookDelivery[]
+  /// Who last changed it
+  updatedBy    User?             @relation(fields: [updatedById], references: [id])
+  updatedById  String?           @map("userId") @db.Uuid
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+  @@map("webhook_endpoints")
+}
+
+/// One event sent to one endpoint, with its attempts: retried with backoff until it succeeds or is given up.
+model WebhookDelivery {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  endpointId     String    @map("endpoint_id") @db.Uuid
+  event          String
+  payload        Json
+  /// pending | succeeded | failed
+  status         String    @default("pending")
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime? @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  lastStatus     Int?      @map("last_status")
+  lastError      String?   @map("last_error")
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  endpoint      WebhookEndpoint @relation(fields: [organizationId, endpointId], references: [organizationId, id], onDelete: Cascade)
+  /// Whose action sent it (an invoice issued, a test ping); none for retries
+  triggeredBy   User?           @relation(fields: [triggeredById], references: [id])
+  triggeredById String?         @map("userId") @db.Uuid
+
+  @@index([status, nextAttemptAt])
+  @@index([organizationId, endpointId, createdAt])
+  @@map("webhook_deliveries")
 }
