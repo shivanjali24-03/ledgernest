@@ -140,8 +140,8 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     return refreshing;
   }
 
-  /** An authenticated API call. Objects passed as `json` are sent as the JSON body. */
-  async function request<T>(path: string, { json, ...init }: RequestInit & { json?: unknown } = {}): Promise<T> {
+  /** Sends an authenticated call, refreshing the session once on 401. Throws ApiError unless the response is OK. */
+  async function authorized(path: string, { json, ...init }: RequestInit & { json?: unknown } = {}): Promise<Response> {
     if (json !== undefined) init.body = JSON.stringify(json);
     let res = await send(path, init);
     if (res.status === 401 && (await refresh())) res = await send(path, init);
@@ -151,7 +151,20 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
       throw new ApiError('session_expired', 401);
     }
     if (!res.ok) throw await toApiError(res, 'request');
+    return res;
+  }
+
+  /** An authenticated API call. Objects passed as `json` are sent as the JSON body. */
+  async function request<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
+    const res = await authorized(path, init);
     return (res.status === 204 ? undefined : await res.json()) as T;
+  }
+
+  /** An authenticated file download (e.g. a CSV export), with the server's suggested file name. */
+  async function download(path: string, init: RequestInit = {}): Promise<{ blob: Blob; filename: string | null; headers: Headers }> {
+    const res = await authorized(path, init);
+    const filename = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? null;
+    return { blob: await res.blob(), filename, headers: res.headers };
   }
 
   async function logout(): Promise<void> {
@@ -168,6 +181,7 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     refresh,
     logout,
     request,
+    download,
     me: () => request<MeResponse>('/auth/me'),
     /** Called when the session can't be renewed (expired, revoked, or the account was suspended). */
     onSessionLost(fn: () => void) {
