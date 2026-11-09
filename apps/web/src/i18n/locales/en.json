@@ -2113,7 +2113,8 @@
         "repeatEveryDays": "1 to 90 days.",
         "maxReminders": "1 to 10 reminders."
       }
-    }
+    },
+    "duplicate": "Duplicate"
   },
   "payments": {
     "title": "Payments",
@@ -3363,6 +3364,7 @@
       "send": "Send",
       "sent": "Quote sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
-    }
+    },
+    "duplicate": "Duplicate"
   }
 }

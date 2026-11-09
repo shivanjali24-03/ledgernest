@@ -2113,7 +2113,8 @@
         "repeatEveryDays": "1 bis 90 Tage.",
         "maxReminders": "1 bis 10 Erinnerungen."
       }
-    }
+    },
+    "duplicate": "Duplizieren"
   },
   "payments": {
     "title": "Zahlungen",
@@ -3363,6 +3364,7 @@
       "send": "Senden",
       "sent": "Angebot an {{email}} gesendet",
       "sentDemo": "In der Demo wird nichts wirklich gesendet; es ginge an {{email}}"
-    }
+    },
+    "duplicate": "Duplizieren"
   }
 }

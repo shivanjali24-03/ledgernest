@@ -100,6 +100,22 @@ describe('quotes', () => {
     expect(screen.getByRole('radio', { name: 'Accepted' })).toBeChecked();
   });
 
+  it('duplicates a quote into a new one', { timeout: 20_000 }, async () => {
+    const router = renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 4000 }));
+    await screen.findByRole('button', { name: 'Duplicate' }, { timeout: 4000 });
+    await waitFor(
+      () => {
+        if (!router.state.location.search.includes('copy=')) fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+        expect(router.state.location.search).toMatch(/^\?copy=/);
+      },
+      { timeout: 6000 },
+    );
+    await waitFor(() => expect(screen.getByLabelText('Description on line 1')).toHaveValue('Patient booking app: design and build'), { timeout: 4000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('QT-0002 saved', {}, { timeout: 4000 })).toBeInTheDocument();
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await previewAs('auditor');

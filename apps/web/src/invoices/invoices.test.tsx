@@ -123,6 +123,24 @@ describe('invoices', () => {
     await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Reminders sent: 1, last on/), { timeout: 8000 });
   });
 
+  it('duplicates an issued invoice into a new draft dated today', { timeout: 20_000 }, async () => {
+    const router = renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    await waitFor(
+      () => {
+        if (!router.state.location.search.includes('copy=')) fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+        expect(router.state.location.search).toMatch(/^\?copy=/);
+      },
+      { timeout: 6000 },
+    );
+    await waitFor(() => expect(screen.getByLabelText('Description on line 1')).toHaveValue('Software development, sprint 14'), { timeout: 4000 });
+    await waitFor(() => expect((screen.getByLabelText('Customer') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe('Kumar Logistics'), { timeout: 4000 });
+    expect(screen.getByLabelText('Reference')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }));
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/invoices\/[0-9a-f-]{36}$/), { timeout: 6000 });
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^INV\// }, { timeout: 4000 });
