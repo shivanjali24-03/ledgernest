@@ -41,6 +41,8 @@ model User {
   auditEntries  AuditLog[]
   refreshTokens RefreshToken[]
   periodsClosed Period[]       @relation("PeriodClosedBy")
+  journalsCreated JournalEntry[] @relation("JournalCreatedBy")
+  journalsPosted  JournalEntry[] @relation("JournalPostedBy")
 
   @@map("users")
 }
@@ -77,6 +79,9 @@ model Organization {
   accounts     Account[]
   fiscalYears  FiscalYear[]
   periods      Period[]
+  journals     JournalEntry[]
+  journalLines JournalLine[]
+  journalFiles JournalAttachment[]
 
   @@map("organizations")
 }
@@ -113,6 +118,7 @@ model Account {
   /// Composite key: a parent always belongs to the same organisation, enforced by the database
   parent       Account?     @relation("AccountTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: NoAction)
   children     Account[]    @relation("AccountTree")
+  lines        JournalLine[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, code])
@@ -132,6 +138,7 @@ model FiscalYear {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   periods      Period[]
+  journals     JournalEntry[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, startDate])
@@ -159,6 +166,83 @@ model Period {
   @@unique([fiscalYearId, number])
   @@index([organizationId, startDate])
   @@map("periods")
+}
+
+/// A double-entry journal entry. Drafts can change freely; posted entries never change (a reversal corrects them).
+model JournalEntry {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  /// Gap-free per financial year, assigned when posted
+  number         Int?
+  fiscalYearId   String?   @map("fiscal_year_id") @db.Uuid
+  date           DateTime  @db.Date
+  memo           String?
+  reference      String?
+  status         String    @default("draft") /// draft | posted
+  /// For a reversal: the entry it reverses
+  reversalOfId   String?   @map("reversal_of_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  postedById     String?   @map("posted_by_id") @db.Uuid
+  postedAt       DateTime? @map("posted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fiscalYear   FiscalYear?         @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  reversalOf   JournalEntry?       @relation("Reversal", fields: [organizationId, reversalOfId], references: [organizationId, id], onDelete: NoAction)
+  reversedBy   JournalEntry?       @relation("Reversal")
+  createdBy    User?               @relation("JournalCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  postedBy     User?               @relation("JournalPostedBy", fields: [postedById], references: [id], onDelete: SetNull)
+  lines        JournalLine[]
+  attachments  JournalAttachment[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, fiscalYearId, number])
+  /// An entry is reversed at most once
+  @@unique([organizationId, reversalOfId])
+  @@index([organizationId, date])
+  @@index([organizationId, status])
+  @@map("journal_entries")
+}
+
+/// One debit or credit. Amounts are integers in the smallest currency unit.
+model JournalLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  entryId        String  @map("entry_id") @db.Uuid
+  lineNo         Int     @map("line_no")
+  accountId      String  @map("account_id") @db.Uuid
+  description    String?
+  debit          BigInt  @default(0)
+  credit         BigInt  @default(0)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entry        JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
+  /// Composite key: a line can only use an account of its own organisation
+  account      Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([entryId, lineNo])
+  @@index([organizationId, accountId])
+  @@map("journal_lines")
+}
+
+/// A supporting document (receipt, invoice scan) attached to an entry.
+model JournalAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  entryId        String   @map("entry_id") @db.Uuid
+  fileName       String   @map("file_name")
+  contentType    String   @map("content_type")
+  size           Int
+  data           Bytes
+  uploadedById   String?  @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entry        JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@map("journal_attachments")
 }
 
 /// A custom role defined by an organisation. Built-in roles live in @ledgernest/shared, not here.

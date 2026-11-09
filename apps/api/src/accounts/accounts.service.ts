@@ -18,6 +18,7 @@ import { TenantPrisma } from '../access/tenant-prisma.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -93,12 +94,9 @@ export class AccountsService {
     return { industry, created: count };
   }
 
-  /**
-   * Whether any of these accounts has journal lines. Journal entries arrive with #42, which fills this in;
-   * until then no account has entries, so archiving is never forced and deleting unused accounts is allowed.
-   */
-  private async hasEntries(_tx: Tx, _accountIds: string[]): Promise<boolean> {
-    return false;
+  /** Whether any of these accounts is used by a journal line (drafts included). */
+  private hasEntries(tx: Tx, organizationId: string, accountIds: string[]): Promise<boolean> {
+    return JournalsService.accountsHaveLines(tx, organizationId, accountIds);
   }
 
   private lock(tx: Tx, organizationId: string) {
@@ -207,7 +205,7 @@ export class AccountsService {
       const subtype = wanted.subtype ?? current.subtype;
       if (changed.includes('type')) {
         if (childCount) throw refuse(ConflictException, 'An account with sub-accounts can’t change type.', 'has_children');
-        if (await this.hasEntries(tx, [id])) throw refuse(ConflictException, 'An account with entries can’t change type.', 'has_entries');
+        if (await this.hasEntries(tx, organizationId, [id])) throw refuse(ConflictException, 'An account with entries can’t change type.', 'has_entries');
       }
       if (!subtypeBelongsTo(type, subtype)) throw refuse(BadRequestException, 'Choose a sub-type that belongs to this type.', 'subtype');
 
@@ -279,7 +277,7 @@ export class AccountsService {
       const a = await this.find(tx, organizationId, id);
       if (a.systemKey) throw refuse(BadRequestException, 'System accounts can’t be deleted.', 'system');
       if (await tx.account.count({ where: { organizationId, parentId: id } })) throw refuse(ConflictException, 'Delete or move its sub-accounts first.', 'has_children');
-      if (await this.hasEntries(tx, [id])) throw refuse(ConflictException, 'This account has entries. Archive it instead.', 'has_entries');
+      if (await this.hasEntries(tx, organizationId, [id])) throw refuse(ConflictException, 'This account has entries. Archive it instead.', 'has_entries');
       await tx.account.delete({ where: { id } });
       await this.audit.record({ action: 'org.account.delete', actorId: ctx.actor.userId, organizationId, entityType: 'account', entityId: id, before: snapshot(a), req: ctx.req }, tx);
     });

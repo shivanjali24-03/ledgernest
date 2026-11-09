@@ -21,6 +21,11 @@ export function setupApp(app: INestApplication) {
   app.use('/api/v1/organization/logo', function logoBodyParser(req: Request, res: Response, next: NextFunction) {
     logoJson(req, res, next);
   });
+  // Journal attachments: up to 2 MB, about 2.8 MB as base64
+  const attachmentJson = json({ limit: '3mb' });
+  app.use(/^\/api\/v1\/journals\/[^/]+\/attachments$/, function attachmentBodyParser(req: Request, res: Response, next: NextFunction) {
+    attachmentJson(req, res, next);
+  });
   app.use(helmet());
   app.use(cookieParser());
   app.use(tenantContextMiddleware);
