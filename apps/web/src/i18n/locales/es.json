@@ -521,7 +521,8 @@
       "supportAccess": "Acceso de soporte",
       "organizations": "Organizaciones",
       "platformUsers": "Cuentas de la plataforma",
-      "exports": "Exportaciones"
+      "exports": "Exportaciones",
+      "settings": "Configuración"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -551,7 +552,10 @@
       "platform_user_reactivate": "Cuenta reactivada",
       "platform_superadmin_create": "Plataforma configurada",
       "org_audit_export": "Registro de auditoría exportado",
-      "platform_audit_export": "Registro de auditoría de la plataforma exportado"
+      "platform_audit_export": "Registro de auditoría de la plataforma exportado",
+      "org_settings_update": "Configuración cambiada",
+      "org_logo_update": "Logotipo cambiado",
+      "org_logo_remove": "Logotipo eliminado"
     },
     "entities": {
       "membership": "Miembro",
@@ -585,7 +589,18 @@
       "alreadyMember": "Ya era miembro",
       "invitationId": "Invitación anterior",
       "familyId": "Sesión",
-      "value": "Valor"
+      "value": "Valor",
+      "legalName": "Razón social",
+      "taxId": "Identificación fiscal",
+      "phone": "Teléfono",
+      "timeZone": "Zona horaria",
+      "addressLine1": "Dirección, línea 1",
+      "addressLine2": "Dirección, línea 2",
+      "city": "Ciudad",
+      "region": "Estado o región",
+      "postalCode": "Código postal",
+      "contentType": "Tipo de archivo",
+      "bytes": "Tamaño (bytes)"
     },
     "details": {
       "when": "Cuándo",

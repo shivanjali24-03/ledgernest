@@ -521,7 +521,8 @@
       "supportAccess": "Support access",
       "organizations": "Organisations",
       "platformUsers": "Platform accounts",
-      "exports": "Exports"
+      "exports": "Exports",
+      "settings": "Settings"
     },
     "actions": {
       "auth_login_success": "Signed in",
@@ -551,7 +552,10 @@
       "platform_user_reactivate": "Account reactivated",
       "platform_superadmin_create": "Platform set up",
       "org_audit_export": "Audit log exported",
-      "platform_audit_export": "Platform audit log exported"
+      "platform_audit_export": "Platform audit log exported",
+      "org_settings_update": "Settings changed",
+      "org_logo_update": "Logo changed",
+      "org_logo_remove": "Logo removed"
     },
     "entities": {
       "membership": "Member",
@@ -585,7 +589,18 @@
       "alreadyMember": "Already a member",
       "invitationId": "Previous invitation",
       "familyId": "Session",
-      "value": "Value"
+      "value": "Value",
+      "legalName": "Legal name",
+      "taxId": "Tax ID",
+      "phone": "Phone",
+      "timeZone": "Time zone",
+      "addressLine1": "Address line 1",
+      "addressLine2": "Address line 2",
+      "city": "City",
+      "region": "State or region",
+      "postalCode": "Postal code",
+      "contentType": "File type",
+      "bytes": "Size (bytes)"
     },
     "details": {
       "when": "When",
