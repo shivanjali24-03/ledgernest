@@ -1,9 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   billNumber,
   buildStatement,
   creditNoteNumber,
   csvCell,
+  currencyDigits,
+  pdfTableBytes,
+  PDF_TYPE,
+  statementTitle,
+  type statementEmailSchema,
   invoiceNumber,
   paymentNumber,
   statementRows,
@@ -11,6 +21,11 @@ import {
   type AccountStatementEvent,
   type AgingSide,
 } from '@ledgernest/shared';
+import type { Request } from 'express';
+import type { z } from 'zod';
+import type { Actor, Tenant } from '../access/types.js';
+import { AuditService } from '../audit/audit.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -18,7 +33,11 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 /** Statements of account: what changed a contact's balance with us, line by line */
 @Injectable()
 export class StatementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+    private readonly audit: AuditService,
+  ) {}
 
   async statement(
     organizationId: string,
@@ -172,6 +191,116 @@ export class StatementsService {
       baseCurrency,
       sections: buildStatement(events, from, to, baseCurrency),
     };
+  }
+
+  /** The statement as a PDF file, named for the contact and dates */
+  async file(
+    organizationId: string,
+    s: AccountStatement,
+    format: 'csv' | 'pdf',
+  ) {
+    const slug =
+      s.contact.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'contact';
+    const fileName = `statement-${slug}-${s.from}-${s.to}.${format}`;
+    if (format === 'csv')
+      return {
+        fileName,
+        contentType: 'text/csv; charset=utf-8',
+        data: Buffer.from(this.csv(s), 'utf8'),
+      };
+    const { name } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+    return {
+      fileName,
+      contentType: PDF_TYPE,
+      data: Buffer.from(
+        pdfTableBytes({
+          title: `${statementTitle(s.side)}: ${s.contact.name}`,
+          subtitle: `${name} · ${s.from} to ${s.to}`,
+          footer: `${name} · LedgerNest`,
+          rows: statementRows(s),
+        }),
+      ),
+    };
+  }
+
+  /** Emails the statement as a PDF to the contact (or the address given), and records that it went */
+  async email(
+    input: z.output<typeof statementEmailSchema>,
+    ctx: { actor: Actor; tenant: Tenant; req: Request },
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    if (!this.mail.configured)
+      throw new ConflictException({
+        message:
+          'Email isn’t set up on this server. Download the PDF and send it yourself.',
+        details: { reason: 'mail_off' },
+      });
+    const s = await this.statement(
+      organizationId,
+      input.contactId,
+      input.side,
+      input.from,
+      input.to,
+    );
+    const to = input.email ?? s.contact.email;
+    if (!to)
+      throw new BadRequestException({
+        message: 'This contact has no email address. Enter one to send it to.',
+        details: { reason: 'no_email' },
+      });
+    const { name } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+    const file = await this.file(organizationId, s, 'pdf');
+    const money = (minor: number, currency: string) =>
+      `${currency} ${(minor / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))}`;
+    const balances = s.sections.length
+      ? s.sections
+          .map(
+            (sec) => `Balance on ${s.to}: ${money(sec.closing, sec.currency)}`,
+          )
+          .join('\n')
+      : 'Nothing moved in these dates.';
+    const sent = await this.mail.send({
+      to: [to],
+      subject: `${statementTitle(s.side)} from ${name}, ${s.from} to ${s.to}`,
+      text: `Dear ${s.contact.name},\n\n${input.message ? `${input.message}\n\n` : ''}Your ${statementTitle(s.side).toLowerCase()} with ${name} for ${s.from} to ${s.to} is attached.\n\n${balances}\n\n${name}`,
+      attachments: [
+        {
+          filename: file.fileName,
+          content: file.data,
+          contentType: file.contentType,
+        },
+      ],
+    });
+    if (!sent)
+      throw new ConflictException({
+        message: 'The email couldn’t be sent. Try again later.',
+        details: { reason: 'mail_failed' },
+      });
+    await this.audit.record({
+      action: 'org.statement.email',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'contact',
+      entityId: s.contact.id,
+      after: {
+        contact: s.contact.name,
+        side: s.side,
+        from: s.from,
+        to: s.to,
+        email: to,
+      },
+      req: ctx.req,
+    });
+    return { sentTo: to };
   }
 
   csv(s: AccountStatement) {

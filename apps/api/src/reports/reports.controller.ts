@@ -1,7 +1,12 @@
 import {
+  Body,
   Controller,
   Get,
   Header,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
   Query,
   Res,
   StreamableFile,
@@ -16,12 +21,9 @@ import {
 } from '@nestjs/swagger';
 import {
   agingQuerySchema,
-  PDF_TYPE,
-  pdfTableBytes,
+  statementEmailSchema,
   statementExportSchema,
   statementQuerySchema,
-  statementRows,
-  statementTitle,
   balanceSheetQuerySchema,
   pnlQuerySchema,
   type PnlCompare,
@@ -29,7 +31,7 @@ import {
   todayIn,
   type AgingSide,
 } from '@ledgernest/shared';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   CurrentActor,
@@ -294,33 +296,30 @@ export class ReportsController {
       q.from,
       q.to,
     );
-    const { name } = await this.prisma.organization.findUniqueOrThrow({
-      where: { id: tenant.organizationId },
-      select: { name: true },
-    });
-    const slug =
-      s.contact.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') || 'contact';
-    const fileName = `statement-${slug}-${q.from}-${q.to}.${q.format}`;
-    const data =
-      q.format === 'pdf'
-        ? Buffer.from(
-            pdfTableBytes({
-              title: `${statementTitle(q.side)}: ${s.contact.name}`,
-              subtitle: `${name} · ${q.from} to ${q.to}`,
-              footer: `${name} · LedgerNest`,
-              rows: statementRows(s),
-            }),
-          )
-        : Buffer.from(this.statements.csv(s), 'utf8');
+    const f = await this.statements.file(tenant.organizationId, s, q.format);
     res.setHeader('Cache-Control', 'no-store');
-    return new StreamableFile(data, {
-      type: q.format === 'pdf' ? PDF_TYPE : 'text/csv; charset=utf-8',
-      disposition: `attachment; filename="${fileName}"`,
-      length: data.length,
+    return new StreamableFile(f.data, {
+      type: f.contentType,
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
     });
+  }
+
+  @Post('statement/email')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('reports.export')
+  @ApiOkResponse({
+    description:
+      'Emails the statement as a PDF to the contact, or to the address given; 409 when email isn’t set up',
+  })
+  emailStatement(
+    @Body(new ZodValidationPipe(statementEmailSchema))
+    body: z.output<typeof statementEmailSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.statements.email(body, { actor, tenant, req });
   }
 
   @Get('profit-and-loss')

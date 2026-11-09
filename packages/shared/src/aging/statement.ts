@@ -19,6 +19,19 @@ export const statementExportSchema = z
   .object({ contactId: z.uuid(), side: z.enum(AGING_SIDES), from: isoDaySchema, to: isoDaySchema, format: z.enum(['csv', 'pdf']).default('csv') })
   .refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' });
 
+/** Emailing a statement as a PDF: to the contact's own email unless another is given, with an optional note */
+export const statementEmailSchema = z
+  .object({
+    contactId: z.uuid(),
+    side: z.enum(AGING_SIDES),
+    from: isoDaySchema,
+    to: isoDaySchema,
+    email: z.email('Enter a valid email address.').optional(),
+    message: z.string().trim().max(2000).optional(),
+  })
+  .refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' });
+export type StatementEmailInput = z.input<typeof statementEmailSchema>;
+
 /** Something that moved the balance: positive adds to what's owed, negative takes off it */
 export interface AccountStatementEvent {
   date: string;

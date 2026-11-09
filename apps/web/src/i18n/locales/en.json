@@ -738,7 +738,8 @@
       "org_scheduled_report_update": "Scheduled report changed",
       "org_scheduled_report_delete": "Scheduled report removed",
       "org_backup_export": "Backup downloaded",
-      "org_backup_restore": "Restored from a backup"
+      "org_backup_restore": "Restored from a backup",
+      "org_statement_email": "Statement emailed"
     },
     "entities": {
       "membership": "Member",
@@ -1524,7 +1525,18 @@
         "number": "Number",
         "debit": "Debit",
         "credit": "Credit"
-      }
+      },
+      "email": "Email",
+      "emailTitle": "Email the statement to {{name}}",
+      "emailBody": "It goes as a PDF, with the closing balance in the message.",
+      "emailTo": "Send to",
+      "badEmail": "Enter a valid email address.",
+      "note": "Note",
+      "noteHint": "Optional: it goes at the top of the message.",
+      "send": "Send",
+      "sent": "Statement sent to {{email}}",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
+      "mailOff": "Email isn’t set up on this server. Download the PDF and send it yourself."
     }
   },
   "taxes": {

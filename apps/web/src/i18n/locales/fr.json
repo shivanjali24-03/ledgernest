@@ -738,7 +738,8 @@
       "org_scheduled_report_update": "Rapport planifié modifié",
       "org_scheduled_report_delete": "Rapport planifié supprimé",
       "org_backup_export": "Sauvegarde téléchargée",
-      "org_backup_restore": "Restauré depuis une sauvegarde"
+      "org_backup_restore": "Restauré depuis une sauvegarde",
+      "org_statement_email": "Relevé envoyé par e-mail"
     },
     "entities": {
       "membership": "Membre",
@@ -1524,7 +1525,18 @@
         "number": "Numéro",
         "debit": "Débit",
         "credit": "Crédit"
-      }
+      },
+      "email": "Envoyer par e-mail",
+      "emailTitle": "Envoyer le relevé à {{name}}",
+      "emailBody": "Il part en PDF, avec le solde final dans le message.",
+      "emailTo": "Envoyer à",
+      "badEmail": "Saisissez une adresse e-mail valide.",
+      "note": "Note",
+      "noteHint": "Facultatif : elle figure en haut du message.",
+      "send": "Envoyer",
+      "sent": "Relevé envoyé à {{email}}",
+      "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}",
+      "mailOff": "L’e-mail n’est pas configuré sur ce serveur. Téléchargez le PDF et envoyez-le vous-même."
     }
   },
   "taxes": {
