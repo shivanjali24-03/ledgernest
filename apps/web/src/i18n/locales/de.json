@@ -522,7 +522,8 @@
       "organizations": "Organisationen",
       "platformUsers": "Plattformkonten",
       "exports": "Exporte",
-      "settings": "Einstellungen"
+      "settings": "Einstellungen",
+      "accounts": "Konten"
     },
     "actions": {
       "auth_login_success": "Angemeldet",
@@ -555,14 +556,20 @@
       "platform_audit_export": "Plattform-Audit-Log exportiert",
       "org_settings_update": "Einstellungen geändert",
       "org_logo_update": "Logo geändert",
-      "org_logo_remove": "Logo entfernt"
+      "org_logo_remove": "Logo entfernt",
+      "org_account_create": "Konto angelegt",
+      "org_account_update": "Konto bearbeitet",
+      "org_account_archive": "Konto archiviert",
+      "org_account_restore": "Konto wiederhergestellt",
+      "org_account_delete": "Konto gelöscht"
     },
     "entities": {
       "membership": "Mitglied",
       "invitation": "Einladung",
       "role": "Rolle",
       "organization": "Organisation",
-      "user": "Konto"
+      "user": "Konto",
+      "account": "Konto"
     },
     "fields": {
       "user": "Person",
@@ -600,7 +607,11 @@
       "region": "Bundesland oder Region",
       "postalCode": "Postleitzahl",
       "contentType": "Dateityp",
-      "bytes": "Größe (Bytes)"
+      "bytes": "Größe (Bytes)",
+      "code": "Kontonummer",
+      "type": "Typ",
+      "subtype": "Untertyp",
+      "parentId": "Übergeordnetes Konto"
     },
     "details": {
       "when": "Wann",

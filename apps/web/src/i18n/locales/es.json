@@ -522,7 +522,8 @@
       "organizations": "Organizaciones",
       "platformUsers": "Cuentas de la plataforma",
       "exports": "Exportaciones",
-      "settings": "Configuración"
+      "settings": "Configuración",
+      "accounts": "Cuentas"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -555,14 +556,20 @@
       "platform_audit_export": "Registro de auditoría de la plataforma exportado",
       "org_settings_update": "Configuración cambiada",
       "org_logo_update": "Logotipo cambiado",
-      "org_logo_remove": "Logotipo eliminado"
+      "org_logo_remove": "Logotipo eliminado",
+      "org_account_create": "Cuenta creada",
+      "org_account_update": "Cuenta editada",
+      "org_account_archive": "Cuenta archivada",
+      "org_account_restore": "Cuenta restaurada",
+      "org_account_delete": "Cuenta eliminada"
     },
     "entities": {
       "membership": "Miembro",
       "invitation": "Invitación",
       "role": "Rol",
       "organization": "Organización",
-      "user": "Cuenta"
+      "user": "Cuenta",
+      "account": "Cuenta"
     },
     "fields": {
       "user": "Persona",
@@ -600,7 +607,11 @@
       "region": "Estado o región",
       "postalCode": "Código postal",
       "contentType": "Tipo de archivo",
-      "bytes": "Tamaño (bytes)"
+      "bytes": "Tamaño (bytes)",
+      "code": "Código",
+      "type": "Tipo",
+      "subtype": "Subtipo",
+      "parentId": "Cuenta principal"
     },
     "details": {
       "when": "Cuándo",
