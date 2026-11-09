@@ -9,8 +9,22 @@ const B = '00000000-0000-4000-8000-00000000000b';
 
 describe('scopeArgs', () => {
   it('adds the organisation to reads, updates and deletes', () => {
-    for (const op of ['findMany', 'findFirst', 'findUnique', 'count', 'updateMany', 'update', 'delete', 'deleteMany', 'aggregate', 'groupBy']) {
-      expect(scopeArgs(op, { where: { name: 'x' } }, A).where).toEqual({ name: 'x', organizationId: A });
+    for (const op of [
+      'findMany',
+      'findFirst',
+      'findUnique',
+      'count',
+      'updateMany',
+      'update',
+      'delete',
+      'deleteMany',
+      'aggregate',
+      'groupBy',
+    ]) {
+      expect(scopeArgs(op, { where: { name: 'x' } }, A).where).toEqual({
+        name: 'x',
+        organizationId: A,
+      });
     }
   });
 
@@ -19,12 +33,18 @@ describe('scopeArgs', () => {
   });
 
   it("can't be overridden by the caller asking for another organisation", () => {
-    expect(scopeArgs('findMany', { where: { organizationId: B } }, A).where).toEqual({ organizationId: A });
-    expect(scopeArgs('create', { data: { name: 'x', organizationId: B } }, A).data).toEqual({ name: 'x', organizationId: A });
+    expect(
+      scopeArgs('findMany', { where: { organizationId: B } }, A).where,
+    ).toEqual({ organizationId: A });
+    expect(
+      scopeArgs('create', { data: { name: 'x', organizationId: B } }, A).data,
+    ).toEqual({ name: 'x', organizationId: A });
   });
 
   it('stamps every created row', () => {
-    expect(scopeArgs('createMany', { data: [{ n: 1 }, { n: 2 }] }, A).data).toEqual([
+    expect(
+      scopeArgs('createMany', { data: [{ n: 1 }, { n: 2 }] }, A).data,
+    ).toEqual([
       { n: 1, organizationId: A },
       { n: 2, organizationId: A },
     ]);
@@ -50,27 +70,49 @@ describe('tenant context', () => {
 
 describe('every organisation-owned table is protected', () => {
   it('each model with an organizationId column is auto-scoped or explicitly exempt', () => {
-    const schema = readFileSync(new URL('../../prisma/schema.prisma', import.meta.url), 'utf8');
+    const schema = readFileSync(
+      new URL('../../prisma/schema.prisma', import.meta.url),
+      'utf8',
+    );
     const models = [...schema.matchAll(/^model (\w+) \{([\s\S]*?)^\}/gm)]
       .filter(([, , body]) => /^\s+organizationId\s/m.test(body!))
       .map(([, name]) => name!);
 
     expect(models.length).toBeGreaterThan(0);
     for (const m of models) {
-      expect(TENANT_MODELS.has(m) || m in TENANT_EXEMPT, `${m} has organizationId: add it to TENANT_MODELS (or TENANT_EXEMPT with a reason)`).toBe(true);
+      expect(
+        TENANT_MODELS.has(m) || m in TENANT_EXEMPT,
+        `${m} has organizationId: add it to TENANT_MODELS (or TENANT_EXEMPT with a reason)`,
+      ).toBe(true);
     }
   });
 });
 
 describe('membershipPermissions', () => {
   it('uses the built-in role', () => {
-    expect([...membershipPermissions({ builtInRole: 'viewer', customRole: null })]).toEqual(BUILT_IN_ROLES.viewer.permissions);
+    expect([
+      ...membershipPermissions({ builtInRole: 'viewer', customRole: null }),
+    ]).toEqual(BUILT_IN_ROLES.viewer.permissions);
   });
 
   it('never grants platform permissions through a membership', () => {
-    const fromCustom = membershipPermissions({ builtInRole: null, customRole: { permissions: ['users.view', 'platform.users.manage', 'not.a.permission'] } });
+    const fromCustom = membershipPermissions({
+      builtInRole: null,
+      customRole: {
+        permissions: [
+          'users.view',
+          'platform.users.manage',
+          'not.a.permission',
+        ],
+      },
+    });
     expect([...fromCustom]).toEqual(['users.view']);
-    const fromSuperAdminKey = membershipPermissions({ builtInRole: 'super_admin', customRole: null });
-    expect([...fromSuperAdminKey].some((p) => p.startsWith('platform.'))).toBe(false);
+    const fromSuperAdminKey = membershipPermissions({
+      builtInRole: 'super_admin',
+      customRole: null,
+    });
+    expect([...fromSuperAdminKey].some((p) => p.startsWith('platform.'))).toBe(
+      false,
+    );
   });
 });

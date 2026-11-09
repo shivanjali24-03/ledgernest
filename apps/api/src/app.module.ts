@@ -31,6 +31,7 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { ApprovalsModule } from './approvals/approvals.module.js';
 import { AttachmentsModule } from './attachments/attachments.module.js';
 import { ImportsModule } from './imports/imports.module.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -71,6 +72,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ApprovalsModule,
     AttachmentsModule,
     ImportsModule,
+    IntegrationsModule,
     PlatformModule,
   ],
   providers: [

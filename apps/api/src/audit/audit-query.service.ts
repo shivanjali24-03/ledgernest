@@ -1,5 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { AUDIT_ACTION_GROUPS, AUDIT_EXPORT_LIMIT, csvCell, type AuditActionGroup } from '@ledgernest/shared';
+import {
+  AUDIT_ACTION_GROUPS,
+  AUDIT_EXPORT_LIMIT,
+  csvCell,
+  type AuditActionGroup,
+} from '@ledgernest/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -31,15 +36,23 @@ const select = {
 type Row = Prisma.AuditLogGetPayload<{ select: typeof select }>;
 
 /** Cursor = the last row's (createdAt, id), so paging is stable while new entries arrive. */
-const encodeCursor = (r: { createdAt: Date; id: string }) => Buffer.from(JSON.stringify([r.createdAt.toISOString(), r.id])).toString('base64url');
+const encodeCursor = (r: { createdAt: Date; id: string }) =>
+  Buffer.from(JSON.stringify([r.createdAt.toISOString(), r.id])).toString(
+    'base64url',
+  );
 function decodeCursor(cursor: string): { createdAt: Date; id: string } {
   try {
-    const [at, id] = JSON.parse(Buffer.from(cursor, 'base64url').toString()) as [string, string];
+    const [at, id] = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString(),
+    ) as [string, string];
     const createdAt = new Date(at);
-    if (Number.isNaN(createdAt.getTime()) || typeof id !== 'string') throw new Error('bad');
+    if (Number.isNaN(createdAt.getTime()) || typeof id !== 'string')
+      throw new Error('bad');
     return { createdAt, id };
   } catch {
-    throw new BadRequestException('That page link is not valid. Start from the first page.');
+    throw new BadRequestException(
+      'That page link is not valid. Start from the first page.',
+    );
   }
 }
 
@@ -48,17 +61,30 @@ function decodeCursor(cursor: string): { createdAt: Date; id: string } {
 export class AuditQueryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private where(f: AuditFilter, scope: { organizationId?: string }): Prisma.AuditLogWhereInput {
+  private where(
+    f: AuditFilter,
+    scope: { organizationId?: string },
+  ): Prisma.AuditLogWhereInput {
     const and: Prisma.AuditLogWhereInput[] = [];
     const organizationId = scope.organizationId ?? f.organizationId;
     if (organizationId) and.push({ organizationId });
-    if (f.group) and.push({ OR: AUDIT_ACTION_GROUPS[f.group].map((p) => ({ action: { startsWith: p } })) });
+    if (f.group)
+      and.push({
+        OR: AUDIT_ACTION_GROUPS[f.group].map((p) => ({
+          action: { startsWith: p },
+        })),
+      });
     if (f.actorId) and.push({ actorId: f.actorId });
     if (f.from) and.push({ createdAt: { gte: new Date(f.from) } });
     if (f.to) and.push({ createdAt: { lte: new Date(f.to) } });
     if (f.cursor) {
       const c = decodeCursor(f.cursor);
-      and.push({ OR: [{ createdAt: { lt: c.createdAt } }, { createdAt: c.createdAt, id: { lt: c.id } }] });
+      and.push({
+        OR: [
+          { createdAt: { lt: c.createdAt } },
+          { createdAt: c.createdAt, id: { lt: c.id } },
+        ],
+      });
     }
     return { AND: and };
   }
@@ -69,7 +95,9 @@ export class AuditQueryService {
       action: r.action,
       createdAt: r.createdAt,
       // The live user if they still exist; otherwise the email captured when the entry was written
-      actor: r.actor ?? (r.actorEmail ? { id: null, name: null, email: r.actorEmail } : null),
+      actor:
+        r.actor ??
+        (r.actorEmail ? { id: null, name: null, email: r.actorEmail } : null),
       ...(includeOrganization && { organization: r.organization }),
       entityType: r.entityType,
       entityId: r.entityId,
@@ -90,7 +118,8 @@ export class AuditQueryService {
     const page = rows.slice(0, f.limit);
     return {
       items: page.map((r) => this.view(r, !scope.organizationId)),
-      nextCursor: rows.length > f.limit ? encodeCursor(page[page.length - 1]!) : null,
+      nextCursor:
+        rows.length > f.limit ? encodeCursor(page[page.length - 1]!) : null,
     };
   }
 
@@ -98,13 +127,19 @@ export class AuditQueryService {
   async actors(scope: { organizationId?: string }) {
     const groups = await this.prisma.auditLog.groupBy({
       by: ['actorId'],
-      where: { actorId: { not: null }, ...(scope.organizationId && { organizationId: scope.organizationId }) },
+      where: {
+        actorId: { not: null },
+        ...(scope.organizationId && { organizationId: scope.organizationId }),
+      },
       _max: { createdAt: true },
       orderBy: { _max: { createdAt: 'desc' } },
       take: 200,
     });
     const ids = groups.map((g) => g.actorId!);
-    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, email: true } });
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, email: true },
+    });
     const byId = new Map(users.map((u) => [u.id, u]));
     return ids.flatMap((id) => byId.get(id) ?? []);
   }
@@ -118,7 +153,17 @@ export class AuditQueryService {
       select,
     });
     const platform = !scope.organizationId;
-    const header = ['time', 'action', 'actor', ...(platform ? ['organization'] : []), 'entity_type', 'entity_id', 'ip', 'before', 'after'];
+    const header = [
+      'time',
+      'action',
+      'actor',
+      ...(platform ? ['organization'] : []),
+      'entity_type',
+      'entity_id',
+      'ip',
+      'before',
+      'after',
+    ];
     const lines = rows.map((r) =>
       [
         r.createdAt.toISOString(),
@@ -135,6 +180,10 @@ export class AuditQueryService {
         .join(','),
     );
     // A byte-order mark so Excel opens UTF-8 (Hindi, Arabic names) correctly
-    return { body: `\uFEFF${[header.map(csvCell).join(','), ...lines].join('\r\n')}\r\n`, count: rows.length, truncated: rows.length === AUDIT_EXPORT_LIMIT };
+    return {
+      body: `\uFEFF${[header.map(csvCell).join(','), ...lines].join('\r\n')}\r\n`,
+      count: rows.length,
+      truncated: rows.length === AUDIT_EXPORT_LIMIT,
+    };
   }
 }

@@ -45,6 +45,7 @@ model User {
   journalsPosted     JournalEntry[]    @relation("JournalPostedBy")
   approvalsRequested ApprovalRequest[] @relation("ApprovalRequester")
   approvalsDecided   ApprovalRequest[] @relation("ApprovalDecider")
+  apiKeys            ApiKey[]
 
   @@map("users")
 }
@@ -115,6 +116,7 @@ model Organization {
   approvalRules       ApprovalRule[]
   approvalRequests    ApprovalRequest[]
   documentAttachments DocumentAttachment[]
+  apiKeys             ApiKey[]
   billLines           BillLine[]
   exchangeRates       ExchangeRate[]
 
@@ -1439,4 +1441,28 @@ model DocumentAttachment {
 
   @@index([organizationId, documentType, documentId])
   @@map("document_attachments")
+}
+
+/// A key another system uses to call the API: it acts for the person who made it, within its scopes.
+/// Only a hash is kept; the key itself is shown once.
+model ApiKey {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  /// The first characters, to tell keys apart (e.g. lnk_3f9a1c)
+  prefix         String
+  /// SHA-256 of the whole key
+  hash           String    @unique
+  scopes         String[]
+  createdById    String    @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastUsedAt     DateTime? @map("last_used_at") @db.Timestamptz(3)
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(3)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("api_keys")
 }

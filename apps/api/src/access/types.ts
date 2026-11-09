@@ -6,13 +6,24 @@ export interface Actor {
   userId: string;
   email: string;
   isSuperAdmin: boolean;
+  /** Set when the call comes with an API key: it acts for the person who made it, in its organisation, within its scopes */
+  apiKey?: {
+    id: string;
+    name: string;
+    prefix: string;
+    organizationId: string;
+    scopes: ReadonlySet<OrganizationPermission>;
+  };
 }
 
 /** Where the request acts and what the caller may do there. */
 export interface Tenant {
   organizationId: string;
   organizationName: string;
-  role: { type: 'built_in'; key: BuiltInRoleId } | { type: 'custom'; id: string; name: string } | { type: 'support' };
+  role:
+    | { type: 'built_in'; key: BuiltInRoleId }
+    | { type: 'custom'; id: string; name: string }
+    | { type: 'support' };
   permissions: ReadonlySet<OrganizationPermission>;
   /** A Super Admin acting in an organisation they don't belong to. Always audited. */
   supportAccess: boolean;
