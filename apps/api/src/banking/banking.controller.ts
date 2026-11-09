@@ -20,6 +20,7 @@ import {
   bankActivityQuerySchema,
   bankMoneySchema,
   bankTransactionListQuerySchema,
+  bankTransferSchema,
   bankVoidSchema,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
@@ -107,6 +108,22 @@ export class BankingController {
     @Req() req: Request,
   ) {
     return this.banking.money(body, { actor, tenant, req });
+  }
+
+  @Post('transfers')
+  @RequirePermission('banking.manage')
+  @ApiOkResponse({
+    description:
+      'Money moved between two bank or cash accounts, across currencies too',
+  })
+  transfer(
+    @Body(new ZodValidationPipe(bankTransferSchema))
+    body: z.output<typeof bankTransferSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.banking.transfer(body, { actor, tenant, req });
   }
 
   @Post('transactions/:id/void')

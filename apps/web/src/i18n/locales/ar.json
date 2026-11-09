@@ -649,7 +649,8 @@
       "org_recurring_raise": "أُنشئت فاتورة من جدول",
       "org_banking_spend": "صُرف مبلغ",
       "org_banking_receive": "استُلم مبلغ",
-      "org_banking_void": "أُلغيت حركة مصرفية"
+      "org_banking_void": "أُلغيت حركة مصرفية",
+      "org_banking_transfer": "تحويل بين الحسابات"
     },
     "entities": {
       "membership": "عضو",

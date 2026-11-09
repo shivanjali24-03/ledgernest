@@ -649,7 +649,8 @@
       "org_recurring_raise": "अनुसूची से इनवॉइस बना",
       "org_banking_spend": "पैसा खर्च किया",
       "org_banking_receive": "पैसा प्राप्त हुआ",
-      "org_banking_void": "बैंक लेनदेन रद्द किया"
+      "org_banking_void": "बैंक लेनदेन रद्द किया",
+      "org_banking_transfer": "खातों के बीच पैसा स्थानांतरित"
     },
     "entities": {
       "membership": "सदस्य",

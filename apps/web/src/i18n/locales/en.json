@@ -649,7 +649,8 @@
       "org_recurring_raise": "Invoice raised by a schedule",
       "org_banking_spend": "Money spent",
       "org_banking_receive": "Money received",
-      "org_banking_void": "Bank transaction voided"
+      "org_banking_void": "Bank transaction voided",
+      "org_banking_transfer": "Money transferred between accounts"
     },
     "entities": {
       "membership": "Member",

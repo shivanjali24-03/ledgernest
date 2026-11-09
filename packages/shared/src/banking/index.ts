@@ -49,3 +49,25 @@ export const bankTransactionListQuerySchema = z.object({
 });
 
 export const bankActivityQuerySchema = z.object({ from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' });
+
+/**
+ * Money moved between two of the business's own bank or cash accounts. Between currencies, give what arrived
+ * too; each side is valued at its own rate and any difference is an exchange gain or loss.
+ */
+export const bankTransferSchema = z
+  .object({
+    fromAccountId: z.uuid(),
+    toAccountId: z.uuid(),
+    date: isoDaySchema,
+    /** What left, in the sending account's currency */
+    amount,
+    /** What arrived, in the receiving account's currency; needed when the currencies differ */
+    toAmount: amount.nullable().optional().default(null),
+    /** Each foreign side's rate to the base currency; omitted = that day's */
+    fromRate: rateSchema.nullable().optional().default(null),
+    toRate: rateSchema.nullable().optional().default(null),
+    reference: text(100),
+    description: text(500),
+  })
+  .refine((t) => t.fromAccountId !== t.toAccountId, { path: ['toAccountId'], message: 'Choose two different accounts.' });
+export type BankTransferInput = z.input<typeof bankTransferSchema>;

@@ -649,7 +649,8 @@
       "org_recurring_raise": "वेळापत्रकातून इनव्हॉइस तयार",
       "org_banking_spend": "पैसे खर्च केले",
       "org_banking_receive": "पैसे मिळाले",
-      "org_banking_void": "बँक व्यवहार रद्द केला"
+      "org_banking_void": "बँक व्यवहार रद्द केला",
+      "org_banking_transfer": "खात्यांमध्ये पैसे हस्तांतरित"
     },
     "entities": {
       "membership": "सदस्य",

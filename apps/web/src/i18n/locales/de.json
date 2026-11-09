@@ -649,7 +649,8 @@
       "org_recurring_raise": "Rechnung aus Serie erstellt",
       "org_banking_spend": "Ausgabe erfasst",
       "org_banking_receive": "Einnahme erfasst",
-      "org_banking_void": "Bankbuchung storniert"
+      "org_banking_void": "Bankbuchung storniert",
+      "org_banking_transfer": "Umbuchung zwischen Konten"
     },
     "entities": {
       "membership": "Mitglied",
