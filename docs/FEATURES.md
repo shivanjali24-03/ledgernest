@@ -49,13 +49,13 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 
 | Feature | What it means | Status |
 |---|---|---|
-| Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms and balances | 🚧 #64 |
+| Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms, and what each owes or is owed | ✅ #64 |
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
-| Quotes → invoices | Printable (PDF) GST invoices, numbering, due dates, place of supply, partial payments | ✅ #66 (payments #69) |
-| Recurring invoices | Weekly, monthly or yearly schedules | 📋 |
-| Credit notes and refunds | Linked to the original invoice | 📋 |
-| Bills and payments | Record vendor bills and payments made | 📋 |
-| Aging reports | Who owes what, and for how long (receivables and payables) | 📋 |
+| Invoices | Printable (PDF) GST invoices, numbering, due dates, place of supply; receipts against one or many invoices, with advances and realised exchange differences | ✅ #66, #69 |
+| Recurring invoices | Weekly, monthly, quarterly or yearly schedules from a template invoice, ending on a date or after a count, raised as drafts or issued, with what's coming next | ✅ #71 |
+| Credit notes and refunds | Against the original invoice (some or all of its lines, tax included); the credit comes off the invoice, then goes onto another invoice or is refunded | ✅ #67 |
+| Bills and payments | Vendor bills with input GST to expense or asset accounts, and payments against one or many bills | ✅ #68, #69 |
+| Aging reports | Who owes what, and for how long (receivables and payables), at any date, with each document and CSV export | ✅ #70 |
 
 ## Phase 4: Banking
 
