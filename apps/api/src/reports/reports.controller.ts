@@ -328,4 +328,38 @@ export class ReportsController {
   dashboard(@CurrentTenant() tenant: Tenant) {
     return this.dashboards.dashboard(tenant.organizationId, tenant.permissions);
   }
+
+  @Get('cash-flow')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Cash from operating, investing and financing activities for a period, by the indirect and the direct method',
+  })
+  cashFlow(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.reports.cashFlow(tenant.organizationId, q.from, q.to);
+  }
+
+  @Get('cash-flow/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async cashFlowCsv(
+    @Query(rangeQuery) q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const c = await this.reports.cashFlow(tenant.organizationId, q.from, q.to);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="cash-flow-${q.from}-${q.to}.csv"`,
+    );
+    return this.reports.cashFlowCsv(
+      c,
+      await this.reports.decimals(tenant.organizationId),
+    );
+  }
 }
