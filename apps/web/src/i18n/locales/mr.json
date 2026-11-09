@@ -1287,6 +1287,49 @@
       "totalIn": "{{currency}} मध्ये एकूण",
       "daysLate": "देय {{due}} · {{count}} दिवस उशीर",
       "due": "देय {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "नफा आणि तोटा",
+      "bsTitle": "ताळेबंद",
+      "account": "खाते",
+      "change": "बदल",
+      "totalOf": "एकूण {{section}}",
+      "empty": "या तारखांसाठी दाखवण्यासारखे काही नाही",
+      "emptyBody": "काही नोंदी पोस्ट करा, किंवा दुसऱ्या तारखा निवडा.",
+      "compare": "तुलना करा",
+      "compares": {
+        "none": "काही नाही",
+        "previous": "मागील कालावधी",
+        "year": "मागील वर्ष",
+        "months": "महिन्यानुसार"
+      },
+      "compareWith": "दुसऱ्या तारखेशी तुलना करा",
+      "compareDate": "तुलनेची तारीख",
+      "pnl": {
+        "revenue": "महसूल",
+        "costOfSales": "विक्रीचा खर्च",
+        "grossProfit": "एकूण नफा",
+        "operatingExpenses": "परिचालन खर्च",
+        "operatingProfit": "परिचालन नफा",
+        "otherIncome": "इतर उत्पन्न",
+        "otherExpenses": "इतर खर्च",
+        "netProfit": "निव्वळ नफा",
+        "netLoss": "निव्वळ तोटा"
+      },
+      "bs": {
+        "currentAssets": "चालू मालमत्ता",
+        "nonCurrentAssets": "दीर्घकालीन मालमत्ता",
+        "totalAssets": "एकूण मालमत्ता",
+        "currentLiabilities": "चालू देणी",
+        "nonCurrentLiabilities": "दीर्घकालीन देणी",
+        "totalLiabilities": "एकूण देणी",
+        "equity": "भांडवल",
+        "profitThisYear": "{{date}} पासूनचा नफा",
+        "profitEarlier": "मागील वर्षांचा नफा, अजून बंद नाही",
+        "totalLiabilitiesEquity": "एकूण देणी आणि भांडवल",
+        "balanced": "मालमत्ता देणी आणि भांडवलाएवढी आहे",
+        "notBalanced": "मालमत्ता देणी आणि भांडवलाएवढी नाही"
+      }
     }
   },
   "taxes": {

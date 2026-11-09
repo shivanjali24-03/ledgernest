@@ -1287,6 +1287,49 @@
       "totalIn": "Gesamt in {{currency}}",
       "daysLate": "Fällig {{due}} · {{count}} T. überfällig",
       "due": "Fällig {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "Gewinn- und Verlustrechnung",
+      "bsTitle": "Bilanz",
+      "account": "Konto",
+      "change": "Veränderung",
+      "totalOf": "Summe {{section}}",
+      "empty": "Für diesen Zeitraum gibt es nichts",
+      "emptyBody": "Buchen Sie Einträge oder wählen Sie andere Daten.",
+      "compare": "Vergleichen mit",
+      "compares": {
+        "none": "Nichts",
+        "previous": "Vorperiode",
+        "year": "Vorjahr",
+        "months": "Nach Monaten"
+      },
+      "compareWith": "Mit einem anderen Datum vergleichen",
+      "compareDate": "Verglichen mit",
+      "pnl": {
+        "revenue": "Umsatzerlöse",
+        "costOfSales": "Umsatzkosten",
+        "grossProfit": "Rohertrag",
+        "operatingExpenses": "Betriebliche Aufwendungen",
+        "operatingProfit": "Betriebsergebnis",
+        "otherIncome": "Sonstige Erträge",
+        "otherExpenses": "Sonstige Aufwendungen",
+        "netProfit": "Jahresüberschuss",
+        "netLoss": "Jahresfehlbetrag"
+      },
+      "bs": {
+        "currentAssets": "Umlaufvermögen",
+        "nonCurrentAssets": "Anlagevermögen",
+        "totalAssets": "Summe Aktiva",
+        "currentLiabilities": "Kurzfristige Verbindlichkeiten",
+        "nonCurrentLiabilities": "Langfristige Verbindlichkeiten",
+        "totalLiabilities": "Summe Verbindlichkeiten",
+        "equity": "Eigenkapital",
+        "profitThisYear": "Ergebnis seit {{date}}",
+        "profitEarlier": "Ergebnisse früherer Jahre, nicht abgeschlossen",
+        "totalLiabilitiesEquity": "Summe Passiva",
+        "balanced": "Aktiva und Passiva stimmen überein",
+        "notBalanced": "Aktiva und Passiva stimmen nicht überein"
+      }
     }
   },
   "taxes": {

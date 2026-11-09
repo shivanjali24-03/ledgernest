@@ -1,4 +1,4 @@
-import type { AccountType, AgingBucket, AgingSide } from '@ledgernest/shared';
+import type { AccountType, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
   accountId: string;
@@ -91,6 +91,40 @@ export interface Aging {
   totals: { buckets: Record<AgingBucket, number>; total: number; advance: number; net: number };
 }
 
+export interface StatementRow {
+  accountId: string;
+  code: string;
+  name: string;
+  depth: number;
+  parentId: string | null;
+  hasChildren: boolean;
+  /** One per column; a parent's include its sub-accounts' */
+  amounts: number[];
+}
+export interface ProfitAndLoss {
+  from: string;
+  to: string;
+  compare: PnlCompare;
+  columns: { from: string; to: string }[];
+  sections: { section: PnlSection; rows: StatementRow[]; total: number[] }[];
+  grossProfit: number[];
+  operatingProfit: number[];
+  netProfit: number[];
+}
+export interface BalanceSheet {
+  asOf: string;
+  compareAsOf: string | null;
+  columns: string[];
+  sections: { section: BsSection; rows: StatementRow[]; total: number[] }[];
+  profitThisYear: number[];
+  profitEarlierYears: number[];
+  yearStart: string[];
+  totalAssets: number[];
+  totalLiabilities: number[];
+  totalEquity: number[];
+  balanced: boolean[];
+}
+
 /** Reports. Live and demo both implement it. */
 export interface ReportsApi {
   trialBalance(asOf: string): Promise<TrialBalance>;
@@ -101,4 +135,8 @@ export interface ReportsApi {
   exportTaxSummary(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
   aging(side: AgingSide, asOf: string): Promise<Aging>;
   exportAging(side: AgingSide, asOf: string): Promise<{ blob: Blob; filename: string }>;
+  profitAndLoss(from: string, to: string, compare: PnlCompare): Promise<ProfitAndLoss>;
+  exportProfitAndLoss(from: string, to: string, compare: PnlCompare): Promise<{ blob: Blob; filename: string }>;
+  balanceSheet(asOf: string, compareAsOf: string | null): Promise<BalanceSheet>;
+  exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
 }

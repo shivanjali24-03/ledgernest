@@ -1287,6 +1287,49 @@
       "totalIn": "الإجمالي بـ{{currency}}",
       "daysLate": "مستحقة {{due}} · متأخرة {{count}} يوم",
       "due": "مستحقة {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "الأرباح والخسائر",
+      "bsTitle": "الميزانية العمومية",
+      "account": "الحساب",
+      "change": "التغيّر",
+      "totalOf": "إجمالي {{section}}",
+      "empty": "لا شيء لعرضه في هذه التواريخ",
+      "emptyBody": "رحّل بعض القيود أو اختر تواريخ أخرى.",
+      "compare": "مقارنة مع",
+      "compares": {
+        "none": "لا شيء",
+        "previous": "الفترة السابقة",
+        "year": "العام الماضي",
+        "months": "حسب الشهر"
+      },
+      "compareWith": "مقارنة مع تاريخ آخر",
+      "compareDate": "مقارنةً بـ",
+      "pnl": {
+        "revenue": "الإيرادات",
+        "costOfSales": "تكلفة المبيعات",
+        "grossProfit": "مجمل الربح",
+        "operatingExpenses": "المصروفات التشغيلية",
+        "operatingProfit": "الربح التشغيلي",
+        "otherIncome": "إيرادات أخرى",
+        "otherExpenses": "مصروفات أخرى",
+        "netProfit": "صافي الربح",
+        "netLoss": "صافي الخسارة"
+      },
+      "bs": {
+        "currentAssets": "الأصول المتداولة",
+        "nonCurrentAssets": "الأصول غير المتداولة",
+        "totalAssets": "إجمالي الأصول",
+        "currentLiabilities": "الخصوم المتداولة",
+        "nonCurrentLiabilities": "الخصوم غير المتداولة",
+        "totalLiabilities": "إجمالي الخصوم",
+        "equity": "حقوق الملكية",
+        "profitThisYear": "الربح منذ {{date}}",
+        "profitEarlier": "أرباح سنوات سابقة لم تُقفل بعد",
+        "totalLiabilitiesEquity": "إجمالي الخصوم وحقوق الملكية",
+        "balanced": "الأصول تساوي الخصوم وحقوق الملكية",
+        "notBalanced": "الأصول لا تساوي الخصوم وحقوق الملكية"
+      }
     }
   },
   "taxes": {

@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
-import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, todayIn, type AgingSide } from '@ledgernest/shared';
+import { ACCOUNT_TYPES, currencyDigits, fiscalYearOf, fiscalYearSpan, PNL_COMPARE, todayIn, type AgingSide, type PnlCompare } from '@ledgernest/shared';
 import { AlertTriangle, Building2, CheckCircle2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -18,10 +18,11 @@ import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } fro
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
 import AgingPanel from '../AgingPanel';
+import { BalanceSheetPanel, ProfitAndLossPanel } from '../StatementsPanels';
 import TaxSummaryPanel from '../TaxSummaryPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'ledger' | 'tax' | 'aging';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'ledger' | 'tax' | 'aging';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -69,11 +70,15 @@ export default function Reports() {
   const tb = useQuery({ queryKey: [...key, 'tb', asOf], queryFn: () => api!.trialBalance(asOf), enabled: !!api && tab === 'trial-balance', placeholderData: keepPreviousData });
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi && tab === 'ledger' });
   const ledger = useQuery({ queryKey: [...key, 'ledger', accountId, from, to], queryFn: () => api!.ledger(accountId, from, to), enabled: !!api && tab === 'ledger' && !!accountId && from <= to, placeholderData: keepPreviousData });
+  const compare = (params.get('compare') as PnlCompare | null) ?? 'none';
+  const compareAsOf = params.get('compareAsOf');
+  const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare], queryFn: () => api!.profitAndLoss(from, to, compare), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
+  const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const side = (params.get('side') as AgingSide | null) ?? 'receivables';
   const aging = useQuery({ queryKey: [...key, 'aging', side, asOf], queryFn: () => api!.aging(side, asOf), enabled: !!api && tab === 'aging', placeholderData: keepPreviousData });
   const tax = useQuery({ queryKey: [...key, 'tax', from, to], queryFn: () => api!.taxSummary(from, to), enabled: !!api && tab === 'tax' && from <= to, placeholderData: keepPreviousData });
   const exporting = useMutation({
-    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
+    mutationFn: () => (tab === 'trial-balance' ? api!.exportTrialBalance(asOf) : tab === 'pnl' ? api!.exportProfitAndLoss(from, to, compare) : tab === 'balance-sheet' ? api!.exportBalanceSheet(asOf, compareAsOf) : tab === 'aging' ? api!.exportAging(side, asOf) : tab === 'tax' ? api!.exportTaxSummary(from, to) : api!.exportLedger(accountId, from, to)),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -116,6 +121,8 @@ export default function Reports() {
           onChange={(v) => set({ tab: v === 'trial-balance' ? null : v })}
           tabs={[
             { value: 'trial-balance', label: t('reports.trialBalance') },
+            { value: 'pnl', label: t('reports.statements.pnlTitle') },
+            { value: 'balance-sheet', label: t('reports.statements.bsTitle') },
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
@@ -206,6 +213,37 @@ export default function Reports() {
               </div>
             )}
           </Card>
+        </motion.div>
+      ) : tab === 'pnl' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="w-44">
+              <TextField label={t('reports.from')} type="date" value={from} onChange={(e) => e.target.value && set({ from: e.target.value })} />
+            </div>
+            <div className="w-44">
+              <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
+            </div>
+            <Segmented<PnlCompare> label={t('reports.statements.compare')} value={compare} onChange={(v) => set({ compare: v === 'none' ? null : v })} options={PNL_COMPARE.map((c) => ({ value: c, label: t(`reports.statements.compares.${c}`) }))} />
+          </div>
+          <ProfitAndLossPanel data={pnl.data} isPending={pnl.isPending} isError={pnl.isError} onRetry={() => void pnl.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id })} />
+        </motion.div>
+      ) : tab === 'balance-sheet' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="w-44">
+              <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
+            </div>
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <input type="checkbox" checked={!!compareAsOf} onChange={(e) => set({ compareAsOf: e.target.checked ? `${Number(asOf.slice(0, 4)) - 1}${asOf.slice(4)}`.replace('-02-29', '-02-28') : null })} className="size-4 rounded accent-brand-600" />
+              {t('reports.statements.compareWith')}
+            </label>
+            {compareAsOf && (
+              <div className="w-44">
+                <TextField label={t('reports.statements.compareDate')} type="date" value={compareAsOf} onChange={(e) => e.target.value && set({ compareAsOf: e.target.value })} />
+              </div>
+            )}
+          </div>
+          <BalanceSheetPanel data={bs.data} isPending={bs.isPending} isError={bs.isError} onRetry={() => void bs.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id, from: year.startDate, to: asOf })} />
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

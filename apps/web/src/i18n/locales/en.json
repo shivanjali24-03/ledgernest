@@ -1287,6 +1287,49 @@
       "totalIn": "Total in {{currency}}",
       "daysLate": "Due {{due}} · {{count}} d overdue",
       "due": "Due {{due}}"
+    },
+    "statements": {
+      "pnlTitle": "Profit and loss",
+      "bsTitle": "Balance sheet",
+      "account": "Account",
+      "change": "Change",
+      "totalOf": "Total {{section}}",
+      "empty": "Nothing to show for these dates",
+      "emptyBody": "Post some entries, or choose other dates.",
+      "compare": "Compare with",
+      "compares": {
+        "none": "Nothing",
+        "previous": "Previous period",
+        "year": "Last year",
+        "months": "By month"
+      },
+      "compareWith": "Compare with another date",
+      "compareDate": "Compared with",
+      "pnl": {
+        "revenue": "Revenue",
+        "costOfSales": "Cost of sales",
+        "grossProfit": "Gross profit",
+        "operatingExpenses": "Operating expenses",
+        "operatingProfit": "Operating profit",
+        "otherIncome": "Other income",
+        "otherExpenses": "Other expenses",
+        "netProfit": "Net profit",
+        "netLoss": "Net loss"
+      },
+      "bs": {
+        "currentAssets": "Current assets",
+        "nonCurrentAssets": "Non-current assets",
+        "totalAssets": "Total assets",
+        "currentLiabilities": "Current liabilities",
+        "nonCurrentLiabilities": "Non-current liabilities",
+        "totalLiabilities": "Total liabilities",
+        "equity": "Equity",
+        "profitThisYear": "Profit since {{date}}",
+        "profitEarlier": "Earlier years' profit, not yet closed",
+        "totalLiabilitiesEquity": "Total liabilities and equity",
+        "balanced": "Assets equal liabilities and equity",
+        "notBalanced": "Assets don't equal liabilities and equity"
+      }
     }
   },
   "taxes": {

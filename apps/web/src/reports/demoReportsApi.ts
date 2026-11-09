@@ -1,10 +1,10 @@
-import { AGING_BUCKETS, agingBucket, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { Aging, AgingContact, Ledger, ReportsApi, TaxSummary, TrialBalance } from './types';
+import type { Aging, AgingContact, BalanceSheet, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
@@ -162,6 +162,69 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return { side, asOf, baseCurrency: DEMO_BASE_CURRENCY, buckets: AGING_BUCKETS, contacts, totals: { ...totals, net: totals.total - totals.advance } };
   };
 
+  /** Rows for a statement as the API builds them: parents carry their sub-accounts' totals */
+  const statementRows = async <S extends string>(columns: Map<string, number>[], sectionOf: (type: string, subtype: string) => S | null, sign: (type: string) => 1 | -1) => {
+    const accs = await accounts.list(true);
+    const byId = new Map(accs.map((a) => [a.id, a]));
+    const ancestors = (id: string) => {
+      const out: string[] = [];
+      for (let p = byId.get(id)?.parentId; p; p = byId.get(p)?.parentId) out.push(p);
+      return out;
+    };
+    const amounts = new Map<string, number[]>();
+    for (const a of accs) {
+      if (!sectionOf(a.type, a.subtype)) continue;
+      columns.forEach((col, k) => {
+        const v = (col.get(a.id) ?? 0) * sign(a.type);
+        if (!v) return;
+        for (const id of [a.id, ...ancestors(a.id)]) {
+          const arr = amounts.get(id) ?? columns.map(() => 0);
+          arr[k]! += v;
+          amounts.set(id, arr);
+        }
+      });
+    }
+    return accs
+      .filter((a) => sectionOf(a.type, a.subtype) && amounts.get(a.id)?.some((v) => v !== 0))
+      .sort((x, y) => compareCodes(x.code, y.code))
+      .map((a) => ({ section: sectionOf(a.type, a.subtype)!, accountId: a.id, code: a.code, name: a.name, depth: ancestors(a.id).length, parentId: a.parentId, hasChildren: a.childCount > 0, amounts: amounts.get(a.id)! }));
+  };
+  const sums = async (from: string | null, to: string) => {
+    const out = new Map<string, number>();
+    for (const l of await postedLines()) if (l.date <= to && (!from || l.date >= from)) out.set(l.accountId, (out.get(l.accountId) ?? 0) + l.debit - l.credit);
+    return out;
+  };
+  const profitAndLoss = async (from: string, to: string, compare: PnlCompare): Promise<ProfitAndLoss> => {
+    const columns = pnlColumns(from, to, compare);
+    const rows = await statementRows<PnlSection>(await Promise.all(columns.map((c) => sums(c.from, c.to))), pnlSectionOf, (type) => (type === 'income' ? -1 : 1));
+    const total = (sec: PnlSection) => columns.map((_c, k) => rows.filter((r) => r.section === sec && r.depth === 0).reduce((s, r) => s + r.amounts[k]!, 0));
+    const t = Object.fromEntries(PNL_SECTIONS.map((sec) => [sec, total(sec)])) as Record<PnlSection, number[]>;
+    const gross = columns.map((_c, k) => t.revenue[k]! - t.costOfSales[k]!);
+    const operating = columns.map((_c, k) => gross[k]! - t.operatingExpenses[k]!);
+    return { from, to, compare, columns, sections: PNL_SECTIONS.map((sec) => ({ section: sec, rows: rows.filter((r) => r.section === sec) as StatementRow[], total: t[sec] })), grossProfit: gross, operatingProfit: operating, netProfit: columns.map((_c, k) => operating[k]! + t.otherIncome[k]! - t.otherExpenses[k]!) };
+  };
+  const balanceSheet = async (asOf: string, compareAsOf: string | null): Promise<BalanceSheet> => {
+    const dates = compareAsOf ? [asOf, compareAsOf] : [asOf];
+    const cols = await Promise.all(dates.map((d) => sums(null, d)));
+    const rows = await statementRows<BsSection>(cols, bsSectionOf, (type) => (type === 'asset' ? 1 : -1));
+    const accs = await accounts.list(true);
+    const profitOf = (m: Map<string, number>) => -accs.filter((a) => a.type === 'income' || a.type === 'expense').reduce((s, a) => s + (m.get(a.id) ?? 0), 0);
+    const unclosed = await Promise.all(
+      dates.map(async (d, k) => {
+        const yearStart = fiscalYearSpan(fiscalYearOf(d, 4), 4).startDate;
+        const before = new Date(Date.parse(`${yearStart}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+        const earlier = profitOf(await sums(null, before));
+        return { thisYear: profitOf(cols[k]!) - earlier, earlier, yearStart };
+      }),
+    );
+    const total = (sec: BsSection) => dates.map((_d, k) => rows.filter((r) => r.section === sec && r.depth === 0).reduce((s, r) => s + r.amounts[k]!, 0));
+    const t = Object.fromEntries(BS_SECTIONS.map((sec) => [sec, total(sec)])) as Record<BsSection, number[]>;
+    const assets = dates.map((_d, k) => t.currentAssets[k]! + t.nonCurrentAssets[k]!);
+    const liabilities = dates.map((_d, k) => t.currentLiabilities[k]! + t.nonCurrentLiabilities[k]!);
+    const equity = dates.map((_d, k) => t.equity[k]! + unclosed[k]!.thisYear + unclosed[k]!.earlier);
+    return { asOf, compareAsOf, columns: dates, sections: BS_SECTIONS.map((sec) => ({ section: sec, rows: rows.filter((r) => r.section === sec) as StatementRow[], total: t[sec] })), profitThisYear: unclosed.map((u) => u.thisYear), profitEarlierYears: unclosed.map((u) => u.earlier), yearStart: unclosed.map((u) => u.yearStart), totalAssets: assets, totalLiabilities: liabilities, totalEquity: equity, balanced: dates.map((_d, k) => assets[k] === liabilities[k]! + equity[k]!) };
+  };
+
   const csv = (rows: unknown[][]) => new Blob([`﻿${rows.map((r) => r.map(csvCell).join(',')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
   const money = (n: number) => (n / 100).toFixed(2);
   const guard = () => {
@@ -171,6 +234,33 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     trialBalance,
     ledger,
     taxSummary,
+    profitAndLoss,
+    async exportProfitAndLoss(from, to, compare) {
+      guard();
+      const p = await profitAndLoss(from, to, compare);
+      const rows: unknown[][] = [['section', 'code', 'account', ...p.columns.map((c) => `${c.from}..${c.to}`)]];
+      for (const sec of p.sections) {
+        for (const r of sec.rows) rows.push([sec.section, r.code, `${'  '.repeat(r.depth)}${r.name}`, ...r.amounts.map(money)]);
+        rows.push([sec.section, '', `Total ${sec.section}`, ...sec.total.map(money)]);
+        if (sec.section === 'costOfSales') rows.push(['', '', 'Gross profit', ...p.grossProfit.map(money)]);
+        if (sec.section === 'operatingExpenses') rows.push(['', '', 'Operating profit', ...p.operatingProfit.map(money)]);
+      }
+      rows.push(['', '', 'Net profit', ...p.netProfit.map(money)]);
+      return { filename: `profit-and-loss-${from}-${to}.csv`, blob: csv(rows) };
+    },
+    balanceSheet,
+    async exportBalanceSheet(asOf, compareAsOf) {
+      guard();
+      const b = await balanceSheet(asOf, compareAsOf);
+      const rows: unknown[][] = [['section', 'code', 'account', ...b.columns]];
+      for (const sec of b.sections) {
+        for (const r of sec.rows) rows.push([sec.section, r.code, `${'  '.repeat(r.depth)}${r.name}`, ...r.amounts.map(money)]);
+        if (sec.section === 'equity') rows.push(['equity', '', 'Profit for the year to date', ...b.profitThisYear.map(money)], ['equity', '', 'Total equity', ...b.totalEquity.map(money)]);
+        else rows.push([sec.section, '', `Total ${sec.section}`, ...sec.total.map(money)]);
+      }
+      rows.push(['', '', 'Total assets', ...b.totalAssets.map(money)], ['', '', 'Total liabilities and equity', ...b.columns.map((_c, k) => money(b.totalLiabilities[k]! + b.totalEquity[k]!))]);
+      return { filename: `balance-sheet-${asOf}.csv`, blob: csv(rows) };
+    },
     aging,
     async exportAging(side, asOf) {
       guard();
