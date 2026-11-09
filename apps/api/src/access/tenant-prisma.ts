@@ -57,6 +57,8 @@ export const TENANT_MODELS = new Set<string>([
   'ScheduledReport',
   'ReportDelivery',
   'ReminderPolicy',
+  'Quote',
+  'QuoteLine',
 ]);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */

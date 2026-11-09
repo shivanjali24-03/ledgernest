@@ -44,7 +44,7 @@ type LineIn = {
   accountId: string | null;
   costCentreId?: string | null;
 };
-type DraftIn = {
+export type DraftIn = {
   contactId: string;
   issueDate: string;
   dueDate: string | null;
@@ -721,7 +721,22 @@ export class InvoicesService {
     });
   }
 
-  async createDraft(input: DraftIn, ctx: Ctx) {
+  /**
+   * Prices lines as an invoice would (accounts, GST switched by place of supply, amounts) without saving anything.
+   * Quotes use it, so they follow the same rules.
+   */
+  price(organizationId: string, input: DraftIn) {
+    return this.prisma.$transaction((tx) =>
+      this.prepare(tx, organizationId, input),
+    );
+  }
+
+  /** `then` runs in the same transaction once the draft exists (a quote marks itself invoiced) */
+  async createDraft(
+    input: DraftIn,
+    ctx: Ctx,
+    then?: (tx: Tx, invoiceId: string) => Promise<void>,
+  ) {
     const organizationId = ctx.tenant.organizationId;
     const id = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
@@ -765,6 +780,7 @@ export class InvoicesService {
         },
         tx,
       );
+      if (then) await then(tx, i.id);
       return i.id;
     });
     return this.get(organizationId, id);
@@ -830,6 +846,11 @@ export class InvoicesService {
         );
       await tx.documentAttachment.deleteMany({
         where: { organizationId, documentType: 'invoice', documentId: id },
+      });
+      // A quote it came from goes back to accepted, ready to invoice again
+      await tx.quote.updateMany({
+        where: { organizationId, invoiceId: id },
+        data: { invoiceId: null, status: 'accepted' },
       });
       await tx.invoice.delete({ where: { id } });
       await this.audit.record(
