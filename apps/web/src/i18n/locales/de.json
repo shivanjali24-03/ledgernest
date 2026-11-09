@@ -705,5 +705,131 @@
         "mismatch": "Diese Datei ist nicht der Bildtyp, den ihr Name angibt."
       }
     }
+  },
+  "accounts": {
+    "title": "Kontenplan",
+    "description": "Alle Konten Ihrer Buchhaltung, nach Typ gruppiert. Unterkonten fließen in ihr übergeordnetes Konto ein.",
+    "new": "Neues Konto",
+    "search": "Nach Nummer oder Name suchen",
+    "filter": "Kontotyp",
+    "showArchived": "Archivierte anzeigen",
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen",
+    "noMatches": "Keine Konten passen zu Ihrer Suche",
+    "empty": "Noch keine Konten",
+    "emptyBody": "Legen Sie Ihr erstes Konto an oder starten Sie mit einer Branchenvorlage.",
+    "expand": "{{name}} aufklappen",
+    "collapse": "{{name}} zuklappen",
+    "system": "System",
+    "systemHint": "LedgerNest benötigt dieses Konto. Sie können es umbenennen, aber nicht entfernen.",
+    "archived": "Archiviert",
+    "actionsFor": "Aktionen für {{name}}",
+    "topLevel": "Keins (oberste Ebene)",
+    "saved": "{{name}} gespeichert",
+    "created": "{{name}} angelegt",
+    "types": {
+      "asset": "Aktiva",
+      "liability": "Passiva",
+      "equity": "Eigenkapital",
+      "income": "Ertrag",
+      "expense": "Aufwand"
+    },
+    "typesPlural": {
+      "asset": "Aktiva",
+      "liability": "Passiva",
+      "equity": "Eigenkapital",
+      "income": "Erträge",
+      "expense": "Aufwendungen"
+    },
+    "subtypes": {
+      "bank": "Bank",
+      "cash": "Kasse",
+      "accounts_receivable": "Forderungen",
+      "inventory": "Vorräte",
+      "current_asset": "Sonstiges Umlaufvermögen",
+      "fixed_asset": "Anlagevermögen",
+      "other_asset": "Sonstige Aktiva",
+      "accounts_payable": "Verbindlichkeiten aus L. u. L.",
+      "credit_card": "Kreditkarte",
+      "tax_payable": "Steuerverbindlichkeiten",
+      "current_liability": "Sonstige kurzfristige Verbindlichkeiten",
+      "long_term_liability": "Langfristige Verbindlichkeiten",
+      "other_liability": "Sonstige Passiva",
+      "owner_equity": "Eigenkapital des Inhabers",
+      "retained_earnings": "Gewinnvortrag",
+      "other_equity": "Sonstiges Eigenkapital",
+      "operating_income": "Betriebliche Erträge",
+      "other_income": "Sonstige Erträge",
+      "cost_of_sales": "Wareneinsatz",
+      "operating_expense": "Betriebliche Aufwendungen",
+      "payroll": "Personalaufwand",
+      "depreciation": "Abschreibungen",
+      "other_expense": "Sonstige Aufwendungen"
+    },
+    "hints": {
+      "normal": {
+        "debit": "Nimmt im Soll zu",
+        "credit": "Nimmt im Haben zu"
+      },
+      "systemType": "Der Typ eines Systemkontos kann nicht geändert werden.",
+      "typeLocked": "Konten mit Unterkonten behalten ihren Typ.",
+      "parent": "Unterkonten fließen in ihr übergeordnetes Konto ein und haben denselben Typ.",
+      "code": "Buchstaben, Ziffern, Punkte und Bindestriche, z. B. 1100.01."
+    },
+    "fields": {
+      "type": "Typ",
+      "subtype": "Untertyp",
+      "parent": "Übergeordnetes Konto",
+      "code": "Kontonummer",
+      "name": "Name",
+      "description": "Beschreibung"
+    },
+    "dialog": {
+      "newTitle": "Neues Konto",
+      "subTitle": "Neues Unterkonto von {{name}}",
+      "editTitle": "{{name}} bearbeiten",
+      "create": "Konto anlegen"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "addSub": "Unterkonto hinzufügen",
+      "archive": "Archivieren",
+      "restore": "Wiederherstellen",
+      "delete": "Löschen"
+    },
+    "done": {
+      "archive": "{{name}} archiviert",
+      "restore": "{{name}} wiederhergestellt",
+      "delete": "{{name}} gelöscht"
+    },
+    "confirm": {
+      "archiveTitle": "{{name}} archivieren?",
+      "archiveBody": "Es wird für neue Buchungen nicht mehr angeboten. Der Verlauf bleibt erhalten, und Sie können es jederzeit wiederherstellen.",
+      "deleteTitle": "{{name}} löschen?",
+      "deleteBody": "Es hat keine Buchungen und wird daher endgültig entfernt."
+    },
+    "errors": {
+      "code_taken": "Ein anderes Konto verwendet diese Nummer bereits.",
+      "name_taken": "Ein anderes Konto hat bereits diesen Namen.",
+      "parent_type": "Ein Unterkonto muss denselben Typ wie sein übergeordnetes Konto haben.",
+      "too_deep": "Unterkonten können höchstens {{max}} Ebenen tief sein.",
+      "cycle": "Ein Konto kann nicht unter sich selbst oder seinen Unterkonten liegen.",
+      "has_children": "Löschen oder verschieben Sie zuerst die Unterkonten.",
+      "has_active_children": "Archivieren Sie zuerst die Unterkonten.",
+      "has_entries": "Dieses Konto hat Buchungen. Archivieren Sie es stattdessen.",
+      "subtype": "Wählen Sie einen Untertyp, der zu diesem Typ gehört.",
+      "system": "Systemkonten können nur umbenannt werden.",
+      "parent_archived": "Dieses übergeordnete Konto ist archiviert. Stellen Sie es zuerst wieder her.",
+      "parent_not_found": "Dieses übergeordnete Konto existiert nicht mehr.",
+      "already_archived": "Dieses Konto ist bereits archiviert.",
+      "not_archived": "Dieses Konto ist nicht archiviert."
+    },
+    "validation": {
+      "code": "Bis zu 12 Buchstaben, Ziffern, Punkte oder Bindestriche, z. B. 1100.",
+      "name": "Geben Sie einen Namen mit bis zu 120 Zeichen ein.",
+      "subtype": "Wählen Sie einen Untertyp, der zu diesem Typ gehört.",
+      "parentId": "Wählen Sie ein übergeordnetes Konto aus der Liste.",
+      "description": "Bleiben Sie unter 500 Zeichen."
+    }
   }
 }

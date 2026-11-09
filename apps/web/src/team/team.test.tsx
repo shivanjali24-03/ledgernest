@@ -139,3 +139,13 @@ describe('roles', () => {
     expect(await screen.findByText('Role Tax consultant deleted')).toBeInTheDocument();
   });
 });
+
+describe('demo data', () => {
+  it('uses ids that pass the same validation as real ones, so custom roles can be invited', async () => {
+    const { createDemoTeamApi } = await import('./demoTeamApi');
+    const api = createDemoTeamApi(() => 'owner');
+    const roles = await api.listRoles();
+    const cashier = roles.custom.find((r) => r.name === 'Branch cashier')!;
+    await expect(api.invite('new.cashier@nestdemo.in', { customRoleId: cashier.id })).resolves.toMatchObject({ email: 'new.cashier@nestdemo.in' });
+  });
+});

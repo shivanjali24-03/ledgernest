@@ -42,6 +42,11 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
 - **System accounts** (retained earnings, opening balance equity) are created with every organisation, named in its language. They can be renamed but not re-typed, archived or deleted.
 - **Archive, don't delete:** archiving hides an account from new entries and keeps its history (sub-accounts first; restoring goes parent first). Deleting is only for unused accounts without sub-accounts. Journal entries (#42) will add "has entries" to these checks.
 - Writes take a per-organisation advisory lock, so two people creating the same code at once get one account and a clear `code_taken`, never a database error.
+- **Screen** (`/accounts`):
+  - Accounts are grouped by type as an expandable tree. Search matches codes and names and keeps each match under its parents.
+  - Filters for type and archived accounts live in the address bar.
+  - The add/edit dialog only offers parents of the same type with room beneath them, never the account itself or its sub-accounts, and suggests the next free code.
+  - Refusals from the API are shown next to the field they're about.
 
 ## Organisation settings
 

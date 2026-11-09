@@ -705,5 +705,131 @@
         "mismatch": "Ce fichier n'est pas le type d'image qu'indique son nom."
       }
     }
+  },
+  "accounts": {
+    "title": "Plan comptable",
+    "description": "Tous les comptes de vos livres, regroupés par type. Les sous-comptes se cumulent dans leur compte parent.",
+    "new": "Nouveau compte",
+    "search": "Rechercher par code ou nom",
+    "filter": "Type de compte",
+    "showArchived": "Afficher les archivés",
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier",
+    "noMatches": "Aucun compte ne correspond à votre recherche",
+    "empty": "Aucun compte pour l'instant",
+    "emptyBody": "Ajoutez votre premier compte ou partez d'un modèle sectoriel.",
+    "expand": "Déplier {{name}}",
+    "collapse": "Replier {{name}}",
+    "system": "Système",
+    "systemHint": "LedgerNest a besoin de ce compte. Vous pouvez le renommer, mais pas le supprimer.",
+    "archived": "Archivé",
+    "actionsFor": "Actions pour {{name}}",
+    "topLevel": "Aucun (niveau supérieur)",
+    "saved": "{{name}} enregistré",
+    "created": "{{name}} créé",
+    "types": {
+      "asset": "Actif",
+      "liability": "Passif",
+      "equity": "Capitaux propres",
+      "income": "Produit",
+      "expense": "Charge"
+    },
+    "typesPlural": {
+      "asset": "Actifs",
+      "liability": "Passifs",
+      "equity": "Capitaux propres",
+      "income": "Produits",
+      "expense": "Charges"
+    },
+    "subtypes": {
+      "bank": "Banque",
+      "cash": "Caisse",
+      "accounts_receivable": "Créances clients",
+      "inventory": "Stocks",
+      "current_asset": "Autre actif circulant",
+      "fixed_asset": "Immobilisation",
+      "other_asset": "Autre actif",
+      "accounts_payable": "Dettes fournisseurs",
+      "credit_card": "Carte de crédit",
+      "tax_payable": "Taxes à payer",
+      "current_liability": "Autre dette à court terme",
+      "long_term_liability": "Dette à long terme",
+      "other_liability": "Autre passif",
+      "owner_equity": "Capital de l'exploitant",
+      "retained_earnings": "Report à nouveau",
+      "other_equity": "Autres capitaux propres",
+      "operating_income": "Produits d'exploitation",
+      "other_income": "Autres produits",
+      "cost_of_sales": "Coût des ventes",
+      "operating_expense": "Charges d'exploitation",
+      "payroll": "Salaires",
+      "depreciation": "Amortissements",
+      "other_expense": "Autres charges"
+    },
+    "hints": {
+      "normal": {
+        "debit": "Augmente au débit",
+        "credit": "Augmente au crédit"
+      },
+      "systemType": "Le type d'un compte système ne peut pas changer.",
+      "typeLocked": "Les comptes avec des sous-comptes gardent leur type.",
+      "parent": "Les sous-comptes se cumulent dans leur parent et partagent son type.",
+      "code": "Lettres, chiffres, points et tirets, comme 1100.01."
+    },
+    "fields": {
+      "type": "Type",
+      "subtype": "Sous-type",
+      "parent": "Compte parent",
+      "code": "Code",
+      "name": "Nom",
+      "description": "Description"
+    },
+    "dialog": {
+      "newTitle": "Nouveau compte",
+      "subTitle": "Nouveau sous-compte de {{name}}",
+      "editTitle": "Modifier {{name}}",
+      "create": "Créer le compte"
+    },
+    "actions": {
+      "edit": "Modifier",
+      "addSub": "Ajouter un sous-compte",
+      "archive": "Archiver",
+      "restore": "Restaurer",
+      "delete": "Supprimer"
+    },
+    "done": {
+      "archive": "{{name}} archivé",
+      "restore": "{{name}} restauré",
+      "delete": "{{name}} supprimé"
+    },
+    "confirm": {
+      "archiveTitle": "Archiver {{name}} ?",
+      "archiveBody": "Il ne sera plus proposé pour les nouvelles écritures. Son historique est conservé et vous pouvez le restaurer à tout moment.",
+      "deleteTitle": "Supprimer {{name}} ?",
+      "deleteBody": "Il n'a aucune écriture : il sera supprimé définitivement."
+    },
+    "errors": {
+      "code_taken": "Un autre compte utilise déjà ce code.",
+      "name_taken": "Un autre compte porte déjà ce nom.",
+      "parent_type": "Un sous-compte doit avoir le même type que son parent.",
+      "too_deep": "Les sous-comptes peuvent avoir au plus {{max}} niveaux.",
+      "cycle": "Un compte ne peut pas se trouver sous lui-même ou sous ses sous-comptes.",
+      "has_children": "Supprimez ou déplacez d'abord ses sous-comptes.",
+      "has_active_children": "Archivez d'abord ses sous-comptes.",
+      "has_entries": "Ce compte a des écritures. Archivez-le plutôt.",
+      "subtype": "Choisissez un sous-type qui appartient à ce type.",
+      "system": "Les comptes système peuvent seulement être renommés.",
+      "parent_archived": "Ce compte parent est archivé. Restaurez-le d'abord.",
+      "parent_not_found": "Ce compte parent n'existe plus.",
+      "already_archived": "Ce compte est déjà archivé.",
+      "not_archived": "Ce compte n'est pas archivé."
+    },
+    "validation": {
+      "code": "Jusqu'à 12 lettres, chiffres, points ou tirets, comme 1100.",
+      "name": "Saisissez un nom de 120 caractères maximum.",
+      "subtype": "Choisissez un sous-type qui appartient à ce type.",
+      "parentId": "Choisissez un compte parent dans la liste.",
+      "description": "Restez sous 500 caractères."
+    }
   }
 }

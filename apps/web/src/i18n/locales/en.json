@@ -705,5 +705,131 @@
         "mismatch": "That file isn't the image type its name says."
       }
     }
+  },
+  "accounts": {
+    "title": "Chart of accounts",
+    "description": "Every account your books use, grouped by type. Sub-accounts roll up into their parent.",
+    "new": "New account",
+    "search": "Search by code or name",
+    "filter": "Account type",
+    "showArchived": "Show archived",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "noMatches": "No accounts match your search",
+    "empty": "No accounts yet",
+    "emptyBody": "Add your first account, or start from an industry template.",
+    "expand": "Expand {{name}}",
+    "collapse": "Collapse {{name}}",
+    "system": "System",
+    "systemHint": "LedgerNest relies on this account. You can rename it, but not remove it.",
+    "archived": "Archived",
+    "actionsFor": "Actions for {{name}}",
+    "topLevel": "None (top level)",
+    "saved": "{{name}} saved",
+    "created": "{{name}} created",
+    "types": {
+      "asset": "Asset",
+      "liability": "Liability",
+      "equity": "Equity",
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "typesPlural": {
+      "asset": "Assets",
+      "liability": "Liabilities",
+      "equity": "Equity",
+      "income": "Income",
+      "expense": "Expenses"
+    },
+    "subtypes": {
+      "bank": "Bank",
+      "cash": "Cash",
+      "accounts_receivable": "Accounts receivable",
+      "inventory": "Inventory",
+      "current_asset": "Other current asset",
+      "fixed_asset": "Fixed asset",
+      "other_asset": "Other asset",
+      "accounts_payable": "Accounts payable",
+      "credit_card": "Credit card",
+      "tax_payable": "Tax payable",
+      "current_liability": "Other current liability",
+      "long_term_liability": "Long-term liability",
+      "other_liability": "Other liability",
+      "owner_equity": "Owner's equity",
+      "retained_earnings": "Retained earnings",
+      "other_equity": "Other equity",
+      "operating_income": "Operating income",
+      "other_income": "Other income",
+      "cost_of_sales": "Cost of sales",
+      "operating_expense": "Operating expense",
+      "payroll": "Payroll",
+      "depreciation": "Depreciation",
+      "other_expense": "Other expense"
+    },
+    "hints": {
+      "normal": {
+        "debit": "Increases with debits",
+        "credit": "Increases with credits"
+      },
+      "systemType": "A system account's type can't change.",
+      "typeLocked": "Accounts with sub-accounts keep their type.",
+      "parent": "Sub-accounts roll up into their parent and share its type.",
+      "code": "Letters, digits, dots and dashes, like 1100.01."
+    },
+    "fields": {
+      "type": "Type",
+      "subtype": "Sub-type",
+      "parent": "Parent account",
+      "code": "Code",
+      "name": "Name",
+      "description": "Description"
+    },
+    "dialog": {
+      "newTitle": "New account",
+      "subTitle": "New sub-account of {{name}}",
+      "editTitle": "Edit {{name}}",
+      "create": "Create account"
+    },
+    "actions": {
+      "edit": "Edit",
+      "addSub": "Add sub-account",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete"
+    },
+    "done": {
+      "archive": "{{name}} archived",
+      "restore": "{{name}} restored",
+      "delete": "{{name}} deleted"
+    },
+    "confirm": {
+      "archiveTitle": "Archive {{name}}?",
+      "archiveBody": "It won't be offered for new entries. Its history stays, and you can restore it at any time.",
+      "deleteTitle": "Delete {{name}}?",
+      "deleteBody": "It has no entries, so it will be removed for good."
+    },
+    "errors": {
+      "code_taken": "Another account already uses this code.",
+      "name_taken": "Another account already has this name.",
+      "parent_type": "A sub-account must have the same type as its parent.",
+      "too_deep": "Sub-accounts can be at most {{max}} levels deep.",
+      "cycle": "An account can't sit under itself or its own sub-accounts.",
+      "has_children": "Delete or move its sub-accounts first.",
+      "has_active_children": "Archive its sub-accounts first.",
+      "has_entries": "This account has entries. Archive it instead.",
+      "subtype": "Choose a sub-type that belongs to this type.",
+      "system": "System accounts can only be renamed.",
+      "parent_archived": "That parent account is archived. Restore it first.",
+      "parent_not_found": "That parent account no longer exists.",
+      "already_archived": "This account is already archived.",
+      "not_archived": "This account isn't archived."
+    },
+    "validation": {
+      "code": "Use up to 12 letters, digits, dots or dashes, like 1100.",
+      "name": "Enter a name of up to 120 characters.",
+      "subtype": "Choose a sub-type that belongs to this type.",
+      "parentId": "Choose a parent account from the list.",
+      "description": "Keep it under 500 characters."
+    }
   }
 }
