@@ -13,7 +13,7 @@ import {
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
-import type { bankMoneySchema } from '@ledgernest/shared';
+import type { bankMoneySchema, bankTransferSchema } from '@ledgernest/shared';
 import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -26,6 +26,7 @@ import { ReportsService } from '../reports/reports.service.js';
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
 type MoneyIn = z.output<typeof bankMoneySchema>;
+type TransferIn = z.output<typeof bankTransferSchema>;
 
 const refuse = (
   Ex: typeof ConflictException | typeof BadRequestException,
@@ -496,6 +497,184 @@ export class BankingService {
             currency: bank.currency,
             entry: entry.number,
             description: input.description,
+          },
+          req: ctx.req,
+        },
+        tx,
+      );
+      return t.id;
+    });
+    return this.get(organizationId, id);
+  }
+
+  /**
+   * Moves money between two bank or cash accounts. In one currency it's the same amount out and in. Between
+   * currencies, each side is valued at its own rate to the base currency, and what's left over is an exchange
+   * difference: a loss when what arrived is worth less than what left.
+   */
+  async transfer(input: TransferIn, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const id = await this.prisma.$transaction(async (tx) => {
+      const from = await this.bankAccount(
+        tx,
+        organizationId,
+        input.fromAccountId,
+        'fromAccountId',
+      );
+      const to = await this.bankAccount(
+        tx,
+        organizationId,
+        input.toAccountId,
+        'toAccountId',
+      );
+      const same = from.currency === to.currency;
+      if (!same && !input.toAmount)
+        throw refuse(
+          BadRequestException,
+          `The accounts are in different currencies: enter what arrived in ${to.currency ?? 'the base currency'}.`,
+          'to_amount_required',
+          { field: 'toAmount' },
+        );
+      if (same && input.toAmount !== null && input.toAmount !== input.amount)
+        throw refuse(
+          BadRequestException,
+          'Both accounts are in the same currency, so the same amount arrives.',
+          'to_amount_differs',
+          { field: 'toAmount' },
+        );
+      const toAmount = same ? input.amount : input.toAmount!;
+      const { baseCurrency } = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { baseCurrency: true },
+      });
+      const rateFor = async (
+        currency: string | null,
+        given: string | null,
+        field: string,
+      ) => {
+        if (!currency) return null;
+        const r =
+          given ??
+          (await rateOn(tx, organizationId, currency, input.date))?.rate ??
+          null;
+        if (!r)
+          throw refuse(
+            BadRequestException,
+            `There is no ${currency} rate on or before ${input.date}. Add one under Currencies, or type the rate.`,
+            'no_rate',
+            { currency, date: input.date, field },
+          );
+        return r;
+      };
+      const fromRate = await rateFor(from.currency, input.fromRate, 'fromRate');
+      const toRate = same
+        ? fromRate
+        : await rateFor(to.currency, input.toRate, 'toRate');
+      const inBase = (
+        minor: number,
+        currency: string | null,
+        rate: string | null,
+      ) =>
+        currency
+          ? toBase(
+              minor,
+              rate!,
+              currencyDigits(currency),
+              currencyDigits(baseCurrency),
+            )
+          : minor;
+      const outBase = inBase(input.amount, from.currency, fromRate);
+      const inBaseValue = inBase(toAmount, to.currency, toRate);
+      const memo = input.description ?? `Transfer ${from.code} → ${to.code}`;
+      const leg = (
+        a: typeof from,
+        minor: number,
+        rate: string | null,
+        debit: boolean,
+      ) =>
+        a.currency
+          ? {
+              accountId: a.id,
+              description: memo,
+              debit: 0,
+              credit: 0,
+              currency: a.currency,
+              foreignDebit: debit ? minor : 0,
+              foreignCredit: debit ? 0 : minor,
+              rate,
+            }
+          : {
+              accountId: a.id,
+              description: memo,
+              debit: debit ? minor : 0,
+              credit: debit ? 0 : minor,
+            };
+      const lines: Record<string, unknown>[] = [
+        leg(to, toAmount, toRate, true),
+        leg(from, input.amount, fromRate, false),
+      ];
+      const diff = outBase - inBaseValue;
+      if (diff)
+        lines.push({
+          accountId: await ensureFxAccount(tx, organizationId, 'fx_realised'),
+          description: `${memo}: exchange difference`,
+          debit: diff > 0 ? diff : 0,
+          credit: diff < 0 ? -diff : 0,
+        });
+      const entry = await this.journals.postEntryInTx(
+        tx,
+        organizationId,
+        {
+          date: input.date,
+          memo,
+          reference: input.reference,
+          lines: lines as never,
+        },
+        ctx.actor.userId,
+      );
+      // The rate the bank applied, as 1 foreign unit in the other currency (base per foreign when one side is base)
+      const units = (minor: number, currency: string | null) =>
+        minor / 10 ** currencyDigits(currency ?? baseCurrency);
+      const sent = units(input.amount, from.currency);
+      const got = units(toAmount, to.currency);
+      const cross = same
+        ? null
+        : (!from.currency ? sent / got : got / sent).toFixed(6);
+      const t = await tx.bankTransaction.create({
+        data: {
+          organizationId,
+          kind: 'transfer',
+          bankAccountId: from.id,
+          toAccountId: to.id,
+          date: asDate(input.date),
+          reference: input.reference,
+          description: input.description,
+          currency: from.currency,
+          amount: BigInt(input.amount),
+          toCurrency: to.currency,
+          toAmount: BigInt(toAmount),
+          rate: cross,
+          journalEntryId: entry.id,
+          createdById: ctx.actor.userId,
+        },
+        select: { id: true },
+      });
+      await this.audit.record(
+        {
+          action: 'org.banking.transfer',
+          actorId: ctx.actor.userId,
+          organizationId,
+          entityType: 'bank_transaction',
+          entityId: t.id,
+          after: {
+            from: `${from.code} ${from.name}`,
+            to: `${to.code} ${to.name}`,
+            amount: input.amount,
+            currency: from.currency,
+            toAmount,
+            toCurrency: to.currency,
+            exchangeDifference: diff,
+            entry: entry.number,
           },
           req: ctx.req,
         },

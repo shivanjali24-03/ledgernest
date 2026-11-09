@@ -649,7 +649,8 @@
       "org_recurring_raise": "Facture émise par une récurrence",
       "org_banking_spend": "Dépense enregistrée",
       "org_banking_receive": "Recette enregistrée",
-      "org_banking_void": "Opération bancaire annulée"
+      "org_banking_void": "Opération bancaire annulée",
+      "org_banking_transfer": "Virement entre comptes"
     },
     "entities": {
       "membership": "Membre",
