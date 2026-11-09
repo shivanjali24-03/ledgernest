@@ -15,7 +15,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | ✅ #11 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | ✅ Done (#12) |
 | Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | ✅ (#5) |
-| Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | 🚧 API done (#38); screens next |
+| Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | ✅ #38 |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | 🚧 Numbers and money done (#5) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
 | Light and dark themes | System default, remembered per user | ✅ (#4) |

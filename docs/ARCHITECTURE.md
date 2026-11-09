@@ -43,6 +43,12 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
   - Stored in its own table, so organisation queries never load image bytes. A database check repeats the type and size rules.
   - Served with `nosniff` and a locked-down Content-Security-Policy.
   - Only the logo route accepts bodies over the usual 100 KB.
+- **Settings page** (`/settings`):
+  - One form in three sections. A save bar appears only with unsaved changes, and only changed fields are sent.
+  - The same shared rules as the API run before saving, so problems show next to the field.
+  - Leaving with unsaved changes asks first, both in the app and when closing the tab.
+  - Locked settings are shown disabled with the reason, and people with view-only access see a read-only page.
+  - The logo is checked in the browser with the same rules as the API, then fetched with the access token and shown from an object URL.
 
 ## Audit log
 
