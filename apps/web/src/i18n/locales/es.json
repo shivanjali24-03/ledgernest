@@ -652,7 +652,13 @@
       "org_banking_void": "Movimiento bancario anulado",
       "org_banking_transfer": "Transferencia entre cuentas",
       "org_banking_import": "Extracto bancario importado",
-      "org_banking_import_undo": "Importación de extracto deshecha"
+      "org_banking_import_undo": "Importación de extracto deshecha",
+      "org_banking_match": "Línea bancaria conciliada",
+      "org_banking_unmatch": "Conciliación de línea deshecha",
+      "org_banking_ignore": "Línea bancaria apartada",
+      "org_banking_unignore": "Línea bancaria recuperada",
+      "org_banking_reconcile": "Cuenta conciliada",
+      "org_banking_reconcile_undo": "Conciliación deshecha"
     },
     "entities": {
       "membership": "Miembro",

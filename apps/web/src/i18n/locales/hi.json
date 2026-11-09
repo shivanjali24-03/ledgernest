@@ -652,7 +652,13 @@
       "org_banking_void": "बैंक लेनदेन रद्द किया",
       "org_banking_transfer": "खातों के बीच पैसा स्थानांतरित",
       "org_banking_import": "बैंक विवरण आयात किया",
-      "org_banking_import_undo": "बैंक विवरण आयात वापस लिया"
+      "org_banking_import_undo": "बैंक विवरण आयात वापस लिया",
+      "org_banking_match": "बैंक पंक्ति का मिलान",
+      "org_banking_unmatch": "बैंक पंक्ति का मिलान हटाया",
+      "org_banking_ignore": "बैंक पंक्ति अलग रखी",
+      "org_banking_unignore": "बैंक पंक्ति वापस लाई",
+      "org_banking_reconcile": "खाते का मिलान पूरा",
+      "org_banking_reconcile_undo": "मिलान वापस लिया"
     },
     "entities": {
       "membership": "सदस्य",

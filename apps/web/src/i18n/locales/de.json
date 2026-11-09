@@ -652,7 +652,13 @@
       "org_banking_void": "Bankbuchung storniert",
       "org_banking_transfer": "Umbuchung zwischen Konten",
       "org_banking_import": "Kontoauszug importiert",
-      "org_banking_import_undo": "Kontoauszug-Import rückgängig gemacht"
+      "org_banking_import_undo": "Kontoauszug-Import rückgängig gemacht",
+      "org_banking_match": "Bankzeile zugeordnet",
+      "org_banking_unmatch": "Zuordnung aufgehoben",
+      "org_banking_ignore": "Bankzeile zurückgestellt",
+      "org_banking_unignore": "Bankzeile wiederhergestellt",
+      "org_banking_reconcile": "Konto abgeglichen",
+      "org_banking_reconcile_undo": "Abgleich rückgängig gemacht"
     },
     "entities": {
       "membership": "Mitglied",

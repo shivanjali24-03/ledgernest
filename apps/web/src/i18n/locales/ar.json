@@ -652,7 +652,13 @@
       "org_banking_void": "أُلغيت حركة مصرفية",
       "org_banking_transfer": "تحويل بين الحسابات",
       "org_banking_import": "استُورد كشف حساب بنكي",
-      "org_banking_import_undo": "أُلغي استيراد كشف حساب"
+      "org_banking_import_undo": "أُلغي استيراد كشف حساب",
+      "org_banking_match": "طوبق سطر بنكي",
+      "org_banking_unmatch": "أُلغيت مطابقة سطر بنكي",
+      "org_banking_ignore": "جُنّب سطر بنكي",
+      "org_banking_unignore": "أُعيد سطر بنكي",
+      "org_banking_reconcile": "سُوّي الحساب",
+      "org_banking_reconcile_undo": "أُلغيت التسوية"
     },
     "entities": {
       "membership": "عضو",

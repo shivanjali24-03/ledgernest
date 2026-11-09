@@ -101,6 +101,8 @@ model Organization {
   statementImports   BankStatementImport[]
   statementLines     BankStatementLine[]
   statementLayouts   BankStatementLayout[]
+  bankMatches        BankMatch[]
+  reconciliations    BankReconciliation[]
   billLines          BillLine[]
   exchangeRates      ExchangeRate[]
 
@@ -159,6 +161,7 @@ model Account {
   statementImports      BankStatementImport[]
   statementLines        BankStatementLine[]
   statementLayout       BankStatementLayout?
+  reconciliations       BankReconciliation[]
 
   paymentBanks Payment[] @relation("PaymentBank")
 
@@ -312,6 +315,9 @@ model JournalLine {
   /// Composite key: a line can only use an account of its own organisation
   account         Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
 
+  bankMatch BankMatch?
+
+  @@unique([organizationId, id])
   @@unique([entryId, lineNo])
   @@index([organizationId, accountId])
   @@map("journal_lines")
@@ -1088,6 +1094,8 @@ model BankStatementLine {
   bankAccount  Account             @relation(fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
   import       BankStatementImport @relation(fields: [organizationId, importId], references: [organizationId, id], onDelete: Cascade)
 
+  matches BankMatch[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, bankAccountId, fingerprint])
   @@index([organizationId, bankAccountId, status, date])
@@ -1106,4 +1114,51 @@ model BankStatementLayout {
 
   @@id([organizationId, bankAccountId])
   @@map("bank_statement_layouts")
+}
+
+/// A book line (on a bank or cash account) matched to a line of the bank's statement. A statement line can match
+/// several book lines (a deposit of two receipts); a book line matches once.
+model BankMatch {
+  id               String   @id @default(uuid()) @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  statementLineId  String   @map("statement_line_id") @db.Uuid
+  journalLineId    String   @map("journal_line_id") @db.Uuid
+  /// Set once reconciled: then it can't be undone without undoing the reconciliation
+  reconciliationId String?  @map("reconciliation_id") @db.Uuid
+  createdById      String?  @map("created_by_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  statementLine  BankStatementLine   @relation(fields: [organizationId, statementLineId], references: [organizationId, id], onDelete: Cascade)
+  journalLine    JournalLine         @relation(fields: [organizationId, journalLineId], references: [organizationId, id], onDelete: Cascade)
+  reconciliation BankReconciliation? @relation(fields: [organizationId, reconciliationId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, journalLineId])
+  @@index([organizationId, statementLineId])
+  @@index([organizationId, reconciliationId])
+  @@map("bank_matches")
+}
+
+/// An account agreed with the bank's statement on a day: its balance then, and the matches it locked.
+model BankReconciliation {
+  id               String   @id @default(uuid()) @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  bankAccountId    String   @map("bank_account_id") @db.Uuid
+  statementDate    DateTime @map("statement_date") @db.Date
+  /// In the account's currency
+  statementBalance BigInt   @map("statement_balance")
+  bookBalance      BigInt   @map("book_balance")
+  /// Book items not yet through the bank on the day: in (deposits in transit) and out (unpresented payments)
+  outstandingIn    BigInt   @map("outstanding_in")
+  outstandingOut   BigInt   @map("outstanding_out")
+  createdById      String?  @map("created_by_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bankAccount  Account      @relation(fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  matches      BankMatch[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, bankAccountId, statementDate])
+  @@map("bank_reconciliations")
 }

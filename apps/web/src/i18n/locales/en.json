@@ -652,7 +652,13 @@
       "org_banking_void": "Bank transaction voided",
       "org_banking_transfer": "Money transferred between accounts",
       "org_banking_import": "Bank statement imported",
-      "org_banking_import_undo": "Bank statement import undone"
+      "org_banking_import_undo": "Bank statement import undone",
+      "org_banking_match": "Bank line matched",
+      "org_banking_unmatch": "Bank line unmatched",
+      "org_banking_ignore": "Bank line set aside",
+      "org_banking_unignore": "Bank line brought back",
+      "org_banking_reconcile": "Account reconciled",
+      "org_banking_reconcile_undo": "Reconciliation undone"
     },
     "entities": {
       "membership": "Member",
