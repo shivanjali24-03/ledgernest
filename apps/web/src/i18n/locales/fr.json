@@ -1200,7 +1200,8 @@
       "currency_required": "Ce compte est tenu en devise : saisissez la ligne dans cette devise.",
       "currency_mismatch": "Seuls les comptes en devise acceptent des montants en devise.",
       "no_rate": "Il n’y a pas de taux de change pour cette date. Ajoutez-en un dans Devises, ou saisissez le taux sur la ligne.",
-      "amount_too_small": "Ce montant est trop faible pour apparaître dans la devise de base."
+      "amount_too_small": "Ce montant est trop faible pour apparaître dans la devise de base.",
+      "bank_matched": "C’est rapproché d’une ligne du relevé bancaire. Annulez le rapprochement dans Banque d’abord."
     },
     "tax": {
       "column": "Taxe",
@@ -2157,7 +2158,18 @@
       "no_fx_account": "Aucun compte de gains ou pertes de change pour la différence.",
       "layout_unknown": "Les colonnes n’ont pas pu être reconnues. Choisissez-les ci-dessous.",
       "nothing_to_import": "Aucune opération n’a pu être lue dans ce fichier.",
-      "has_reconciled": "Certaines de ces lignes sont rapprochées. Annulez cela d’abord."
+      "has_reconciled": "Certaines de ces lignes sont rapprochées. Annulez cela d’abord.",
+      "amounts_differ": "Les lignes comptables ne font pas le montant de la ligne bancaire.",
+      "line_not_unmatched": "Cette ligne bancaire est déjà traitée.",
+      "line_not_matched": "Cette ligne bancaire n’est pas rapprochée.",
+      "line_matched": "Cette ligne bancaire est rapprochée. Annulez d’abord.",
+      "reconciled": "C’est clôturé dans un rapprochement. Annulez le rapprochement d’abord.",
+      "unmatched_lines": "Des lignes bancaires jusqu’à ce jour restent à rapprocher, enregistrer ou écarter.",
+      "difference": "Les comptes ne concordent pas encore avec le solde du relevé.",
+      "before_last": "Le compte est déjà rapproché au-delà de ce jour.",
+      "not_latest": "Seul le dernier rapprochement peut être annulé.",
+      "book_line_matched": "Une de ces lignes comptables est déjà rapprochée.",
+      "book_line_not_found": "Une ligne comptable est introuvable."
     },
     "fromBank": "De la banque",
     "fromBankHint": "Importez le relevé de la banque pour voir ici son propre enregistrement, prêt à rapprocher.",
@@ -2217,6 +2229,55 @@
         "description": "Ligne {{row}} : pas de libellé",
         "columns": "Ligne {{row}} : les colonnes ne correspondent pas"
       }
+    },
+    "rec": {
+      "open": "Rapprocher",
+      "title": "Rapprochement de {{name}}",
+      "titlePlain": "Rapprochement",
+      "description": "Rapprochez les lignes de la banque des écritures, enregistrez ce qui manque, puis faites concorder le solde.",
+      "statementDate": "Date du relevé",
+      "statementBalance": "Solde du relevé ({{currency}})",
+      "fromStatement": "D’après la dernière ligne de la banque",
+      "lastDone": "Rapproché jusqu’au {{date}}",
+      "where": "Situation du compte",
+      "bookBalance": "Comptes au {{date}}",
+      "inTransit": "Moins les entrées pas encore en banque",
+      "unpresented": "Plus les sorties pas encore débitées",
+      "cleared": "La banque devrait afficher",
+      "difference": "Écart",
+      "stillToDo": "{{count}} lignes bancaires jusqu’à ce jour à traiter",
+      "agrees": "Les comptes concordent avec le relevé",
+      "reconcile": "Rapprocher",
+      "done": "Rapproché au {{date}}",
+      "bankSide": "De la banque ({{count}})",
+      "bankDone": "Toutes les lignes bancaires sont traitées",
+      "importFirst": "Importez d’abord le relevé de la banque.",
+      "chooseLine": "Choisir {{description}} pour rapprocher à la main",
+      "confidence": {
+        "high": "Correspondance probable",
+        "medium": "Correspondance possible"
+      },
+      "match": "Rapprocher",
+      "create": "L’enregistrer",
+      "createAccount": "Compte de la nouvelle écriture",
+      "createTax": "Taxe de la nouvelle écriture",
+      "createAndMatch": "Enregistrer et rapprocher",
+      "setAside": "Écarter",
+      "bookSide": "En comptabilité, non rapprochées ({{count}})",
+      "pickHint": "Pour rapprocher à la main, choisissez une ligne bancaire puis cochez les lignes comptables qui la composent.",
+      "pickBook": "Rapprocher {{what}}",
+      "matchPicked": "Rapprocher {{picked}} sur {{wanted}}",
+      "matched": "Rapprochées, non clôturées",
+      "noneMatched": "Rien de rapproché depuis le dernier rapprochement.",
+      "unmatch": "Annuler",
+      "setAsideList": "Écartées",
+      "bringBack": "Rétablir",
+      "history": "Rapprochements",
+      "noHistory": "Pas encore rapproché.",
+      "historyLine": "Solde {{balance}} · {{matches}} correspondances",
+      "undo": "Annuler",
+      "undoTitle": "Annuler le rapprochement au {{date}} ?",
+      "undoBody": "Ses correspondances sont déverrouillées pour pouvoir être modifiées."
     }
   }
 }

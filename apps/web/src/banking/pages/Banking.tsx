@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todayIn } from '@ledgernest/shared';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, FileUp, Landmark, Undo2, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, FileUp, Landmark, Scale, Undo2, Wallet } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
@@ -308,9 +308,16 @@ export default function Banking() {
       {selected && (
         <motion.div variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
           <Card className="overflow-hidden">
-            <div className="border-b border-ink-100 p-4 dark:border-ink-800">
-              <h2 className="font-semibold">{t('banking.fromBank')}</h2>
-              <p className="mt-0.5 text-sm text-ink-500">{bankLines.data?.total ? t('banking.fromBankCount', { count: bankLines.data.total }) : t('banking.fromBankHint')}</p>
+            <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 p-4 dark:border-ink-800">
+              <span className="flex-1">
+                <h2 className="font-semibold">{t('banking.fromBank')}</h2>
+                <p className="mt-0.5 text-sm text-ink-500">{bankLines.data?.total ? t('banking.fromBankCount', { count: bankLines.data.total }) : t('banking.fromBankHint')}</p>
+              </span>
+              {!!bankLines.data?.total && (
+                <Link to={`/banking/reconcile/${selected.id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                  <Scale className="size-4" aria-hidden /> {t('banking.rec.open')}
+                </Link>
+              )}
             </div>
             {bankLines.data && bankLines.data.items.length > 0 && (
               <table className="w-full text-sm">

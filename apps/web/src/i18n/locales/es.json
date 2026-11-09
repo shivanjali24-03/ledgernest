@@ -1200,7 +1200,8 @@
       "currency_required": "Esta cuenta está en moneda extranjera: introduce la línea en esa moneda.",
       "currency_mismatch": "Solo las cuentas en moneda extranjera admiten importes extranjeros.",
       "no_rate": "No hay tipo de cambio para esta fecha. Añádelo en Monedas o escribe el tipo en la línea.",
-      "amount_too_small": "Este importe es demasiado pequeño para mostrarse en la moneda base."
+      "amount_too_small": "Este importe es demasiado pequeño para mostrarse en la moneda base.",
+      "bank_matched": "Está conciliado con una línea del extracto bancario. Deshaz la conciliación en Bancos primero."
     },
     "tax": {
       "column": "Impuesto",
@@ -2157,7 +2158,18 @@
       "no_fx_account": "No hay cuenta de diferencias de cambio para la diferencia.",
       "layout_unknown": "No se pudieron identificar las columnas. Elígelas abajo.",
       "nothing_to_import": "No se pudo leer ningún movimiento de este archivo.",
-      "has_reconciled": "Algunas de estas líneas están conciliadas. Deshazlo primero."
+      "has_reconciled": "Algunas de estas líneas están conciliadas. Deshazlo primero.",
+      "amounts_differ": "Las líneas contables no suman lo mismo que la línea bancaria.",
+      "line_not_unmatched": "Esta línea bancaria ya está resuelta.",
+      "line_not_matched": "Esta línea bancaria no está conciliada.",
+      "line_matched": "Esta línea bancaria está conciliada. Deshazlo primero.",
+      "reconciled": "Está cerrado en una conciliación. Deshaz la conciliación primero.",
+      "unmatched_lines": "Aún quedan líneas bancarias hasta este día por conciliar, registrar o apartar.",
+      "difference": "Los libros aún no coinciden con el saldo del extracto.",
+      "before_last": "La cuenta ya está conciliada después de este día.",
+      "not_latest": "Solo se puede deshacer la última conciliación.",
+      "book_line_matched": "Una de estas líneas contables ya está conciliada.",
+      "book_line_not_found": "No se encontró una línea contable."
     },
     "fromBank": "Del banco",
     "fromBankHint": "Importa el extracto del banco para ver aquí su propio registro, listo para conciliar.",
@@ -2217,6 +2229,55 @@
         "description": "Fila {{row}}: sin concepto",
         "columns": "Fila {{row}}: las columnas no coinciden"
       }
+    },
+    "rec": {
+      "open": "Conciliar",
+      "title": "Conciliar {{name}}",
+      "titlePlain": "Conciliar",
+      "description": "Concilia las líneas del banco con los libros, registra lo que falta y cuadra el saldo con el extracto.",
+      "statementDate": "Fecha del extracto",
+      "statementBalance": "Saldo del extracto ({{currency}})",
+      "fromStatement": "De la última línea del banco",
+      "lastDone": "Conciliada hasta el {{date}}",
+      "where": "Situación de la cuenta",
+      "bookBalance": "Libros al {{date}}",
+      "inTransit": "Menos cobros aún no en el banco",
+      "unpresented": "Más pagos aún no cargados",
+      "cleared": "El banco debería mostrar",
+      "difference": "Diferencia",
+      "stillToDo": "Quedan {{count}} líneas bancarias hasta este día",
+      "agrees": "Los libros cuadran con el extracto",
+      "reconcile": "Conciliar",
+      "done": "Conciliada hasta el {{date}}",
+      "bankSide": "Del banco ({{count}})",
+      "bankDone": "Todas las líneas bancarias resueltas",
+      "importFirst": "Importa primero el extracto del banco.",
+      "chooseLine": "Elige {{description}} para conciliar a mano",
+      "confidence": {
+        "high": "Coincidencia probable",
+        "medium": "Posible coincidencia"
+      },
+      "match": "Conciliar",
+      "create": "Registrarlo",
+      "createAccount": "Cuenta del nuevo asiento",
+      "createTax": "Impuesto del nuevo asiento",
+      "createAndMatch": "Registrar y conciliar",
+      "setAside": "Apartar",
+      "bookSide": "En los libros, sin conciliar ({{count}})",
+      "pickHint": "Para conciliar a mano, elige una línea bancaria y marca las líneas contables que la forman.",
+      "pickBook": "Conciliar {{what}}",
+      "matchPicked": "Conciliar {{picked}} de {{wanted}}",
+      "matched": "Conciliadas, sin cerrar",
+      "noneMatched": "Nada conciliado desde la última conciliación.",
+      "unmatch": "Deshacer",
+      "setAsideList": "Apartadas",
+      "bringBack": "Recuperar",
+      "history": "Conciliaciones",
+      "noHistory": "Aún sin conciliar.",
+      "historyLine": "Saldo {{balance}} · {{matches}} coincidencias",
+      "undo": "Deshacer",
+      "undoTitle": "¿Deshacer la conciliación al {{date}}?",
+      "undoBody": "Sus coincidencias se desbloquean para poder cambiarlas."
     }
   }
 }

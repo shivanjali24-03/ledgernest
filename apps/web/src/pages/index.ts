@@ -29,5 +29,6 @@ export const Bills = lazy(() => import('../bills/pages/Bills'));
 export const CreditNotes = lazy(() => import('../credit-notes/pages/CreditNotes'));
 export const Recurring = lazy(() => import('../recurring/pages/Recurring'));
 export const Banking = lazy(() => import('../banking/pages/Banking'));
+export const Reconcile = lazy(() => import('../banking/pages/Reconcile'));
 export const BillEditor = lazy(() => import('../bills/pages/BillEditor'));
 export const ComingSoon = lazy(() => import('./ComingSoon'));

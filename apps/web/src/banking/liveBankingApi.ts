@@ -25,5 +25,13 @@ export function createLiveBankingApi(client: AuthClient, organizationId: string)
       return r(`/statements/lines?${p}`);
     },
     undoImport: (id) => r(`/statements/imports/${id}`, { method: 'DELETE' }),
+    reconcileWorkspace: (accountId, date) => r(`/reconcile/${accountId}?date=${date}`),
+    match: (statementLineId, journalLineIds) => r('/reconcile/match', { method: 'POST', json: { statementLineId, journalLineIds } }),
+    unmatch: (statementLineId) => r(`/reconcile/unmatch/${statementLineId}`, { method: 'POST' }),
+    ignore: (statementLineId, ignored) => r('/reconcile/ignore', { method: 'POST', json: { statementLineId, ignored } }),
+    createFromLine: (input) => r('/reconcile/create', { method: 'POST', json: input }),
+    reconcile: (input) => r('/reconciliations', { method: 'POST', json: input }),
+    reconciliations: (bankAccountId) => r(`/reconciliations?bankAccountId=${bankAccountId}`),
+    undoReconciliation: (id) => r(`/reconciliations/${id}`, { method: 'DELETE' }),
   };
 }
