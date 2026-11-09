@@ -94,6 +94,12 @@ describe('quotes', () => {
     await waitFor(() => expect(screen.getByText('In the demo nothing is really sent; it would go to finance@bluewave.health')).toBeInTheDocument(), { timeout: 4000 });
   });
 
+  it('opens with the filter from the address, as the dashboard links it', async () => {
+    renderApp('/quotes?state=accepted');
+    expect(await screen.findByText('No quotes match', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Accepted' })).toBeChecked();
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await previewAs('auditor');

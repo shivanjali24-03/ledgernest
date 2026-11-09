@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { todayIn } from '@ledgernest/shared';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -394,5 +395,39 @@ describe('Quotes (e2e)', () => {
     } finally {
       delete process.env.SMTP_URL;
     }
+  });
+
+  it('flags open quotes running out within the week on the dashboard', async () => {
+    const { timeZone } = await prisma.organization.findUniqueOrThrow({
+      where: { id: org },
+      select: { timeZone: true },
+    });
+    const today = todayIn(timeZone);
+    const inDays = (n: number) => {
+      const d = new Date(`${today}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
+    const alert = async () =>
+      (
+        (await as().get('/reports/dashboard').expect(200)).body as {
+          alerts: { kind: string; count: number }[];
+        }
+      ).alerts.find((a) => a.kind === 'quotes_expiring');
+    expect(await alert()).toBeUndefined();
+    const soon = (
+      await as()
+        .post('/quotes', draft({ quoteDate: today, expiryDate: inDays(3) }))
+        .expect(201)
+    ).body as Quote;
+    await as()
+      .post('/quotes', draft({ quoteDate: today, expiryDate: inDays(20) }))
+      .expect(201);
+    expect(await alert()).toEqual({ kind: 'quotes_expiring', count: 1 });
+    // Accepted ones aren't at risk any more
+    await as()
+      .post(`/quotes/${soon.id}/status`, { status: 'accepted' })
+      .expect(200);
+    expect(await alert()).toBeUndefined();
   });
 });
