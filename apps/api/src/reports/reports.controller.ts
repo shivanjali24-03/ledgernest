@@ -14,6 +14,8 @@ const ledgerQuery = new ZodValidationPipe(
   z.object({ accountId: z.uuid(), from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' }),
 );
 
+const rangeQuery = new ZodValidationPipe(z.object({ from: isoDaySchema, to: isoDaySchema }).refine((q) => q.from <= q.to, { path: ['to'], message: 'The end date is before the start date.' }));
+
 /** Reports over posted entries. Reading needs reports.view; downloading needs reports.export. */
 @ApiTags('reports')
 @ApiBearerAuth()
@@ -66,5 +68,23 @@ export class ReportsController {
     const l = await this.reports.ledger(tenant.organizationId, q.accountId, q.from, q.to);
     res.setHeader('Content-Disposition', `attachment; filename="ledger-${l.account.code}-${q.from}-${q.to}.csv"`);
     return this.reports.ledgerCsv(l, await this.reports.decimals(tenant.organizationId));
+  }
+
+  @Get('tax-summary')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({ description: 'Taxable values and tax per group, and output, input and net tax per rate, for a date range' })
+  taxSummary(@Query(rangeQuery) q: { from: string; to: string }, @CurrentTenant() tenant: Tenant) {
+    return this.reports.taxSummary(tenant.organizationId, q.from, q.to);
+  }
+
+  @Get('tax-summary/export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async taxSummaryCsv(@Query(rangeQuery) q: { from: string; to: string }, @CurrentTenant() tenant: Tenant, @Res({ passthrough: true }) res: Response) {
+    const t = await this.reports.taxSummary(tenant.organizationId, q.from, q.to);
+    res.setHeader('Content-Disposition', `attachment; filename="tax-summary-${q.from}-${q.to}.csv"`);
+    return this.reports.taxSummaryCsv(t, await this.reports.decimals(tenant.organizationId));
   }
 }

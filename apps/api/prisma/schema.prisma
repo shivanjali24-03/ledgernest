@@ -220,9 +220,18 @@ model JournalLine {
   description    String?
   debit          BigInt  @default(0)
   credit         BigInt  @default(0)
+  /// The tax group charged on this line (its amount is then the net value)
+  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  /// Whether the amount entered included the tax (kept so the draft can be edited as entered)
+  taxInclusive   Boolean @default(false) @map("tax_inclusive")
+  /// Set on a tax line the system generated: the rate it charges, and the line it was charged on
+  taxRateId      String? @map("tax_rate_id") @db.Uuid
+  taxSourceLine  Int?    @map("tax_source_line")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   entry        JournalEntry @relation(fields: [organizationId, entryId], references: [organizationId, id], onDelete: Cascade)
+  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  taxRate      TaxRate?     @relation(fields: [organizationId, taxRateId], references: [organizationId, id], onDelete: NoAction)
   /// Composite key: a line can only use an account of its own organisation
   account      Account      @relation(fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
 
@@ -390,6 +399,7 @@ model TaxRate {
   outputAccount Account        @relation("TaxOutputAccount", fields: [organizationId, outputAccountId], references: [organizationId, id], onDelete: NoAction)
   inputAccount  Account?       @relation("TaxInputAccount", fields: [organizationId, inputAccountId], references: [organizationId, id], onDelete: NoAction)
   groups        TaxGroupRate[]
+  lines         JournalLine[]
 
   @@unique([organizationId, id])
   @@map("tax_rates")
@@ -408,6 +418,7 @@ model TaxGroup {
   organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   gstSlab      GstSlab?       @relation(fields: [gstSlabId], references: [id], onDelete: Restrict)
   rates        TaxGroupRate[]
+  lines        JournalLine[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])

@@ -25,8 +25,13 @@ export const journalLineSchema = z
       .default(null),
     debit: amount.default(0),
     credit: amount.default(0),
+    /** Charge this tax group on the line; the system adds a line for each tax component */
+    taxGroupId: z.uuid().nullable().optional().default(null),
+    /** The amount already includes the tax (otherwise the tax is added on top) */
+    taxInclusive: z.boolean().optional().default(false),
   })
-  .refine((l) => (l.debit > 0) !== (l.credit > 0), { message: 'Each line is either a debit or a credit.', path: ['debit'] });
+  .refine((l) => (l.debit > 0) !== (l.credit > 0), { message: 'Each line is either a debit or a credit.', path: ['debit'] })
+  .refine((l) => l.taxGroupId !== null || !l.taxInclusive, { message: 'Choose a tax group for a tax-inclusive amount.', path: ['taxInclusive'] });
 export type JournalLineInput = z.input<typeof journalLineSchema>;
 
 const text = (max: number) =>
