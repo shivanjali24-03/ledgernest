@@ -22,7 +22,8 @@
       "organizations": "संस्था",
       "platformUsers": "प्लॅटफॉर्म वापरकर्ते",
       "platformOverview": "प्लॅटफॉर्म आढावा",
-      "platformAudit": "प्लॅटफॉर्म ऑडिट लॉग"
+      "platformAudit": "प्लॅटफॉर्म ऑडिट लॉग",
+      "periods": "आर्थिक वर्षे"
     },
     "soon": "लवकरच"
   },
@@ -526,7 +527,8 @@
       "platformUsers": "प्लॅटफॉर्म खाती",
       "exports": "निर्यात",
       "settings": "सेटिंग्ज",
-      "accounts": "खाती"
+      "accounts": "खाती",
+      "periods": "आर्थिक वर्षे"
     },
     "actions": {
       "auth_login_success": "साइन इन केले",
@@ -565,7 +567,10 @@
       "org_account_archive": "खाते संग्रहित केले",
       "org_account_restore": "खाते पुनर्संचयित केले",
       "org_account_delete": "खाते हटवले",
-      "org_account_template_apply": "टेम्पलेट लागू केले"
+      "org_account_template_apply": "टेम्पलेट लागू केले",
+      "org_fiscal_year_create": "आर्थिक वर्ष जोडले",
+      "org_period_close": "महिना बंद केला",
+      "org_period_reopen": "महिना पुन्हा उघडला"
     },
     "entities": {
       "membership": "सदस्य",
@@ -573,7 +578,9 @@
       "role": "भूमिका",
       "organization": "संस्था",
       "user": "खाते",
-      "account": "खाते"
+      "account": "खाते",
+      "fiscal_year": "आर्थिक वर्ष",
+      "period": "महिना"
     },
     "fields": {
       "user": "व्यक्ती",
@@ -617,7 +624,10 @@
       "subtype": "उप-प्रकार",
       "parentId": "मूळ खाते",
       "industry": "उद्योग",
-      "accounts": "खाती"
+      "accounts": "खाती",
+      "period": "महिना",
+      "startDate": "सुरुवात",
+      "endDate": "शेवट"
     },
     "details": {
       "when": "केव्हा",
@@ -891,6 +901,41 @@
         "name": "शेती",
         "description": "पिके, पशुधन, शेती उपकरणे, अनुदान"
       }
+    }
+  },
+  "periods": {
+    "title": "आर्थिक वर्षे",
+    "description": "तुमचा हिशेब महिन्यानुसार ठेवला जातो. महिन्याचा हिशेब अंतिम झाल्यावर तो बंद करा: मग त्या महिन्याच्या तारखेची कोणतीही नोंद पोस्ट किंवा बदलता येत नाही.",
+    "addFirst": "हे आर्थिक वर्ष जोडा",
+    "addNext": "पुढील आर्थिक वर्ष जोडा",
+    "addPrevious": "आधीचे वर्ष जोडा",
+    "yearCreated": "{{name}} जोडले",
+    "empty": "अजून कोणतेही आर्थिक वर्ष नाही",
+    "emptyBody": "नोंदी सुरू करण्यासाठी हे आर्थिक वर्ष जोडा.",
+    "current": "चालू",
+    "yearClosed": "बंद",
+    "closedBy": "{{name}} यांनी बंद केले",
+    "currentMonth": "हा महिना",
+    "open": "खुला",
+    "close": "महिना बंद करा",
+    "reopen": "पुन्हा उघडा",
+    "done": {
+      "close": "{{month}} बंद केला",
+      "reopen": "{{month}} पुन्हा उघडला"
+    },
+    "confirm": {
+      "closeTitle": "{{month}} बंद करायचा?",
+      "closeBody": "पुन्हा उघडेपर्यंत या महिन्याच्या तारखेची कोणतीही नोंद पोस्ट, बदल किंवा उलट करता येणार नाही.",
+      "reopenTitle": "{{month}} पुन्हा उघडायचा?",
+      "reopenBody": "त्याच्या नोंदी पुन्हा बदलता येतील. पुन्हा उघडणे तुमच्या कारणासह ऑडिट लॉगमध्ये नोंदवले जाते."
+    },
+    "errors": {
+      "exists": "ते आर्थिक वर्ष आधीच अस्तित्वात आहे.",
+      "not_contiguous": "आर्थिक वर्षे खंड न पडता एकामागून एक हवीत.",
+      "already_closed": "हा महिना आधीच बंद आहे.",
+      "already_open": "हा महिना आधीच खुला आहे.",
+      "earlier_open": "आधी मागील महिने बंद करा: महिने क्रमाने बंद होतात.",
+      "later_closed": "आधी पुढचे महिने उघडा: महिने उलट्या क्रमाने उघडतात."
     }
   }
 }

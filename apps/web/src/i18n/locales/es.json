@@ -22,7 +22,8 @@
       "organizations": "Organizaciones",
       "platformUsers": "Usuarios de la plataforma",
       "platformOverview": "Resumen de la plataforma",
-      "platformAudit": "Registro de auditoría de la plataforma"
+      "platformAudit": "Registro de auditoría de la plataforma",
+      "periods": "Ejercicios fiscales"
     },
     "soon": "Pronto"
   },
@@ -526,7 +527,8 @@
       "platformUsers": "Cuentas de la plataforma",
       "exports": "Exportaciones",
       "settings": "Configuración",
-      "accounts": "Cuentas"
+      "accounts": "Cuentas",
+      "periods": "Ejercicios fiscales"
     },
     "actions": {
       "auth_login_success": "Inicio de sesión",
@@ -565,7 +567,10 @@
       "org_account_archive": "Cuenta archivada",
       "org_account_restore": "Cuenta restaurada",
       "org_account_delete": "Cuenta eliminada",
-      "org_account_template_apply": "Plantilla aplicada"
+      "org_account_template_apply": "Plantilla aplicada",
+      "org_fiscal_year_create": "Ejercicio añadido",
+      "org_period_close": "Mes cerrado",
+      "org_period_reopen": "Mes reabierto"
     },
     "entities": {
       "membership": "Miembro",
@@ -573,7 +578,9 @@
       "role": "Rol",
       "organization": "Organización",
       "user": "Cuenta",
-      "account": "Cuenta"
+      "account": "Cuenta",
+      "fiscal_year": "Ejercicio fiscal",
+      "period": "Mes"
     },
     "fields": {
       "user": "Persona",
@@ -617,7 +624,10 @@
       "subtype": "Subtipo",
       "parentId": "Cuenta principal",
       "industry": "Sector",
-      "accounts": "Cuentas"
+      "accounts": "Cuentas",
+      "period": "Mes",
+      "startDate": "Inicio",
+      "endDate": "Fin"
     },
     "details": {
       "when": "Cuándo",
@@ -891,6 +901,41 @@
         "name": "Agricultura",
         "description": "Cultivos, ganado, maquinaria agrícola, subvenciones"
       }
+    }
+  },
+  "periods": {
+    "title": "Ejercicios fiscales",
+    "description": "Tus libros se llevan por meses. Cierra un mes cuando sus libros sean definitivos: después no se podrá contabilizar ni cambiar nada fechado en él.",
+    "addFirst": "Añadir este ejercicio",
+    "addNext": "Añadir el siguiente ejercicio",
+    "addPrevious": "Añadir un ejercicio anterior",
+    "yearCreated": "{{name}} añadido",
+    "empty": "Aún no hay ejercicios fiscales",
+    "emptyBody": "Añade este ejercicio para empezar a registrar asientos.",
+    "current": "Actual",
+    "yearClosed": "Cerrado",
+    "closedBy": "Cerrado por {{name}}",
+    "currentMonth": "Este mes",
+    "open": "Abierto",
+    "close": "Cerrar mes",
+    "reopen": "Reabrir",
+    "done": {
+      "close": "{{month}} cerrado",
+      "reopen": "{{month}} reabierto"
+    },
+    "confirm": {
+      "closeTitle": "¿Cerrar {{month}}?",
+      "closeBody": "No se podrá contabilizar, cambiar ni revertir nada fechado en este mes hasta que se reabra.",
+      "reopenTitle": "¿Reabrir {{month}}?",
+      "reopenBody": "Sus asientos podrán cambiarse de nuevo. La reapertura queda registrada en el registro de auditoría con tu motivo."
+    },
+    "errors": {
+      "exists": "Ese ejercicio fiscal ya existe.",
+      "not_contiguous": "Los ejercicios fiscales deben sucederse sin huecos.",
+      "already_closed": "Este mes ya está cerrado.",
+      "already_open": "Este mes ya está abierto.",
+      "earlier_open": "Cierra primero los meses anteriores: los meses se cierran en orden.",
+      "later_closed": "Reabre primero los meses posteriores: los meses se reabren en orden inverso."
     }
   }
 }

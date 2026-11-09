@@ -22,7 +22,8 @@
       "organizations": "Organisations",
       "platformUsers": "Utilisateurs de la plateforme",
       "platformOverview": "Vue d'ensemble de la plateforme",
-      "platformAudit": "Journal d'audit de la plateforme"
+      "platformAudit": "Journal d'audit de la plateforme",
+      "periods": "Exercices"
     },
     "soon": "Bientôt"
   },
@@ -526,7 +527,8 @@
       "platformUsers": "Comptes de la plateforme",
       "exports": "Exports",
       "settings": "Paramètres",
-      "accounts": "Comptes"
+      "accounts": "Comptes",
+      "periods": "Exercices"
     },
     "actions": {
       "auth_login_success": "Connexion",
@@ -565,7 +567,10 @@
       "org_account_archive": "Compte archivé",
       "org_account_restore": "Compte restauré",
       "org_account_delete": "Compte supprimé",
-      "org_account_template_apply": "Modèle appliqué"
+      "org_account_template_apply": "Modèle appliqué",
+      "org_fiscal_year_create": "Exercice ajouté",
+      "org_period_close": "Mois clôturé",
+      "org_period_reopen": "Mois rouvert"
     },
     "entities": {
       "membership": "Membre",
@@ -573,7 +578,9 @@
       "role": "Rôle",
       "organization": "Organisation",
       "user": "Compte",
-      "account": "Compte"
+      "account": "Compte",
+      "fiscal_year": "Exercice",
+      "period": "Mois"
     },
     "fields": {
       "user": "Personne",
@@ -617,7 +624,10 @@
       "subtype": "Sous-type",
       "parentId": "Compte parent",
       "industry": "Secteur",
-      "accounts": "Comptes"
+      "accounts": "Comptes",
+      "period": "Mois",
+      "startDate": "Début",
+      "endDate": "Fin"
     },
     "details": {
       "when": "Quand",
@@ -891,6 +901,41 @@
         "name": "Agriculture",
         "description": "Cultures, élevage, matériel agricole, subventions"
       }
+    }
+  },
+  "periods": {
+    "title": "Exercices",
+    "description": "Vos livres sont tenus par mois. Clôturez un mois quand ses comptes sont définitifs : plus rien de daté dans ce mois ne pourra être comptabilisé ni modifié.",
+    "addFirst": "Ajouter cet exercice",
+    "addNext": "Ajouter l'exercice suivant",
+    "addPrevious": "Ajouter un exercice antérieur",
+    "yearCreated": "{{name}} ajouté",
+    "empty": "Aucun exercice pour l'instant",
+    "emptyBody": "Ajoutez cet exercice pour commencer à saisir des écritures.",
+    "current": "En cours",
+    "yearClosed": "Clôturé",
+    "closedBy": "Clôturé par {{name}}",
+    "currentMonth": "Ce mois-ci",
+    "open": "Ouvert",
+    "close": "Clôturer le mois",
+    "reopen": "Rouvrir",
+    "done": {
+      "close": "{{month}} clôturé",
+      "reopen": "{{month}} rouvert"
+    },
+    "confirm": {
+      "closeTitle": "Clôturer {{month}} ?",
+      "closeBody": "Plus rien de daté dans ce mois ne pourra être comptabilisé, modifié ou contrepassé tant qu'il n'est pas rouvert.",
+      "reopenTitle": "Rouvrir {{month}} ?",
+      "reopenBody": "Ses écritures pourront de nouveau être modifiées. La réouverture est enregistrée dans le journal d'audit avec votre motif."
+    },
+    "errors": {
+      "exists": "Cet exercice existe déjà.",
+      "not_contiguous": "Les exercices doivent se suivre sans interruption.",
+      "already_closed": "Ce mois est déjà clôturé.",
+      "already_open": "Ce mois est déjà ouvert.",
+      "earlier_open": "Clôturez d'abord les mois précédents : les mois se clôturent dans l'ordre.",
+      "later_closed": "Rouvrez d'abord les mois suivants : les mois se rouvrent dans l'ordre inverse."
     }
   }
 }
