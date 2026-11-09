@@ -2824,7 +2824,8 @@
     "documents": {
       "journal": "Buchung",
       "bill": "Eingangsrechnung",
-      "payment": "Lieferantenzahlung"
+      "payment": "Lieferantenzahlung",
+      "bank_spend": "Ausgabe"
     },
     "statuses": {
       "pending": "Offen",
@@ -2858,7 +2859,8 @@
     "rules": {
       "journal": "Buchungen brauchen eine Freigabe",
       "bill": "Eingangsrechnungen brauchen eine Freigabe",
-      "payment": "Lieferantenzahlungen brauchen eine Freigabe"
+      "payment": "Lieferantenzahlungen brauchen eine Freigabe",
+      "bank_spend": "Ausgaben vom Bankkonto brauchen eine Freigabe"
     },
     "atOrAbove": "Ab ({{currency}})",
     "badAmount": "Geben Sie einen Betrag ein.",

@@ -64,6 +64,7 @@ export type DemoApprovalActions = {
   recordBill(id: string): Promise<unknown>;
   bill(id: string): Promise<{ status: string; total: number } | null>;
   pay(payload: unknown): Promise<{ id: string }>;
+  spend(payload: unknown): Promise<{ id: string }>;
 };
 
 export function createDemoApprovalsApi(can: { manage: () => boolean; approve: () => boolean }, role: () => string, actions: () => DemoApprovalActions): ApprovalsApi {
@@ -127,7 +128,8 @@ export function createDemoApprovalsApi(can: { manage: () => boolean; approve: ()
           if (!b || b.status !== 'draft') return (decide(id, 'cancelled', null), Promise.reject(conflict('document_gone')));
           if (b.total !== r.amount) throw conflict('document_changed');
           await a.recordBill(r.documentId!);
-        } else documentId = (await a.pay(r.payload)).id;
+        } else if (r.documentType === 'bank_spend') documentId = (await a.spend(r.payload)).id;
+        else documentId = (await a.pay(r.payload)).id;
         return decide(id, 'approved', note ?? null, documentId);
       }),
     reject: (id, note) =>

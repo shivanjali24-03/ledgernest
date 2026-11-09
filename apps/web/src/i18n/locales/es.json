@@ -2824,7 +2824,8 @@
     "documents": {
       "journal": "Asiento",
       "bill": "Factura de proveedor",
-      "payment": "Pago a proveedor"
+      "payment": "Pago a proveedor",
+      "bank_spend": "Dinero gastado"
     },
     "statuses": {
       "pending": "Pendiente",
@@ -2858,7 +2859,8 @@
     "rules": {
       "journal": "Los asientos necesitan aprobación",
       "bill": "Las facturas de proveedor necesitan aprobación",
-      "payment": "Los pagos a proveedores necesitan aprobación"
+      "payment": "Los pagos a proveedores necesitan aprobación",
+      "bank_spend": "El dinero gastado desde el banco necesita aprobación"
     },
     "atOrAbove": "A partir de ({{currency}})",
     "badAmount": "Introduce un importe.",

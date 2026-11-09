@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BookOpen, Building2, Check, HandCoins, Receipt, Undo2, UserCheck, X } from 'lucide-react';
+import { BookOpen, Building2, Check, HandCoins, Landmark, Receipt, Undo2, UserCheck, X } from 'lucide-react';
 import clsx from 'clsx';
 import { APPROVAL_DOCUMENTS, toMinor, type ApprovalDocument } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +21,7 @@ import type { ApprovalRequest, ApprovalRule, ApprovalsApi } from '../types';
 import { useApprovalsApi } from '../useApprovalsApi';
 
 type View = 'pending' | 'history';
-const ICON = { journal: BookOpen, bill: Receipt, payment: HandCoins } as const;
+const ICON = { journal: BookOpen, bill: Receipt, payment: HandCoins, bank_spend: Landmark } as const;
 
 /** Approvals: what's waiting for a yes, what was decided, and the rules that hold documents. */
 export default function Approvals() {
@@ -95,7 +95,7 @@ function RequestRow({ r, onDecide, api }: { r: ApprovalRequest; onDecide: (appro
   const qc = useQueryClient();
   const session = useSession();
   const Icon = ICON[r.documentType];
-  const link = r.documentId && r.documentType !== 'payment' ? `/${r.documentType === 'journal' ? 'journals' : 'bills'}/${r.documentId}` : r.documentType === 'payment' && r.documentId ? '/payments' : null;
+  const link = !r.documentId ? null : r.documentType === 'journal' ? `/journals/${r.documentId}` : r.documentType === 'bill' ? `/bills/${r.documentId}` : r.documentType === 'payment' ? '/payments' : '/banking';
   // In the demo there's one person, so the previewed role stands for who sent it
   const mine = session.email.endsWith('@ledgernest.demo') ? r.requestedBy.email === `${session.role ?? 'admin'}@ledgernest.demo` : r.requestedBy.email === session.email;
   const withdraw = useMutation({

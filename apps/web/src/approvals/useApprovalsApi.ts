@@ -1,5 +1,6 @@
 import { useContext, useMemo } from 'react';
 import { ApiClientContext } from '../auth/apiClientContext';
+import { createDemoBankingApi } from '../banking/demoBankingApi';
 import { createDemoBillsApi } from '../bills/demoBillsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { createDemoPaymentsApi } from '../payments/demoPaymentsApi';
@@ -29,6 +30,7 @@ export function useApprovalsApi(): ApprovalsApi | null {
           bill: (id) => bills.get(id).catch(() => null),
           recordBill: (id) => bills.record(id),
           pay: (payload) => createDemoPaymentsApi(() => true).pay(payload as Parameters<ReturnType<typeof createDemoPaymentsApi>['pay']>[0]),
+          spend: (payload) => createDemoBankingApi(() => true).money(payload as Parameters<ReturnType<typeof createDemoBankingApi>['money']>[0]),
         };
       },
     );

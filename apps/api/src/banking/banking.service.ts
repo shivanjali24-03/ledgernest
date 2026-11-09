@@ -16,6 +16,7 @@ import type { z } from 'zod';
 import type { bankMoneySchema, bankTransferSchema } from '@ledgernest/shared';
 import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -81,6 +82,7 @@ export class BankingService {
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
     private readonly reports: ReportsService,
+    private readonly approvals: ApprovalGate,
   ) {}
 
   private view(t: Row) {
@@ -281,9 +283,41 @@ export class BankingService {
   }
 
   /** Spends or receives money: the bank against each line's account, with its tax worked out like any journal line. */
-  async money(input: MoneyIn, ctx: Ctx) {
+  /**
+   * Money spent or received. Spending from the app is held for an approver when a rule covers it; recording
+   * what a bank statement shows (fromStatement) isn't, as the money has already gone.
+   */
+  async money(
+    input: MoneyIn,
+    ctx: Ctx,
+    opts: { approved?: boolean; fromStatement?: boolean } = {},
+  ) {
     const organizationId = ctx.tenant.organizationId;
     const spend = input.kind === 'spend';
+    if (spend && !opts.fromStatement) {
+      const bank = await this.prisma.account.findFirst({
+        where: { organizationId, id: input.bankAccountId },
+        select: { name: true, currency: true },
+      });
+      if (bank)
+        await this.approvals.check(
+          'bank_spend',
+          {
+            documentId: null,
+            amount: await this.approvals.inBase(
+              organizationId,
+              input.lines.reduce((s, l) => s + l.amount, 0),
+              bank.currency,
+              input.date,
+              input.rate,
+            ),
+            summary: `Money spent from ${bank.name}${input.description ? `: ${input.description}` : ''}`,
+            payload: input as unknown as Prisma.InputJsonValue,
+          },
+          ctx,
+          opts,
+        );
+    }
     const id = await this.prisma.$transaction(async (tx) => {
       const bank = await this.bankAccount(
         tx,

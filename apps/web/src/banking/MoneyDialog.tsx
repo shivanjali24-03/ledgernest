@@ -15,6 +15,7 @@ import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
 import { bankingErrorMessage } from './errors';
 import type { BankAccount, BankingApi } from './types';
+import { heldForApproval, heldMessage } from '../approvals/errors';
 import CostCentreSelect from '../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../cost-centres/useCostCentresApi';
 
@@ -69,7 +70,12 @@ export default function MoneyDialog({ api, kind, banks, bankAccountId: initial, 
       toast(t(kind === 'spend' ? 'banking.spent' : 'banking.received', { amount: `${code} ${plain(total)}` }));
       onClose();
     },
-    onError: (e) => toast(bankingErrorMessage(e, t), 'error'),
+    onError: (e) => {
+      if (!heldForApproval(e)) return toast(bankingErrorMessage(e, t), 'error');
+      void queryClient.invalidateQueries({ queryKey: ['approvals'] });
+      toast(heldMessage(e, t));
+      onClose();
+    },
   });
   const submit = (e: FormEvent) => {
     e.preventDefault();

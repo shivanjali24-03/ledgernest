@@ -6,7 +6,7 @@ import { MAX_LINE_AMOUNT } from '../journals/index.js';
  * payments at or above an amount (in the base currency) need an approver's yes. Posting one holds it as a
  * pending request instead; approving posts it, sending it back leaves it as it was, with a note.
  */
-export const APPROVAL_DOCUMENTS = ['journal', 'bill', 'payment'] as const;
+export const APPROVAL_DOCUMENTS = ['journal', 'bill', 'payment', 'bank_spend'] as const;
 export type ApprovalDocument = (typeof APPROVAL_DOCUMENTS)[number];
 export const APPROVAL_STATUSES = ['pending', 'approved', 'rejected', 'cancelled'] as const;
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
