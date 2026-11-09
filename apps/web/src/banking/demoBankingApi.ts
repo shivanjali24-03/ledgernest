@@ -226,7 +226,7 @@ export function createDemoBankingApi(canManage: () => boolean): BankingApi {
         const rate = rateFor(bank.currency, d.rate, d.date);
         const memo = d.description ?? (spend ? 'Money spent' : 'Money received');
         const side = (minor: number, debit: boolean) => (debit ? { debit: minor } : { credit: minor });
-        const lines = d.lines.map((l) => ({ accountId: l.accountId, description: l.description ?? memo, ...side(inBase(l.amount, bank.currency, rate), spend), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxGroupId && d.taxInclusive }));
+        const lines = d.lines.map((l) => ({ accountId: l.accountId, description: l.description ?? memo, ...side(inBase(l.amount, bank.currency, rate), spend), taxGroupId: l.taxGroupId, taxInclusive: !!l.taxGroupId && d.taxInclusive, costCentreId: l.costCentreId ?? null }));
         const bankLine = bank.currency ? { accountId: bank.id, description: memo, currency: bank.currency, rate: rate!, ...(spend ? { foreignCredit: total } : { foreignDebit: total }) } : { accountId: bank.id, description: memo, ...side(total, !spend) };
         const entry = await post({ date: d.date, memo, reference: d.reference, lines: spend ? [...lines, bankLine] : [bankLine, ...lines] });
         const contact = d.contactId ? demoContactRows().find((c) => c.id === d.contactId) : undefined;

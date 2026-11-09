@@ -15,9 +15,11 @@ import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
 import { bankingErrorMessage } from './errors';
 import type { BankAccount, BankingApi } from './types';
+import CostCentreSelect from '../cost-centres/CostCentreSelect';
+import { useCostCentres } from '../cost-centres/useCostCentresApi';
 
-type Line = { key: string; accountId: string; amount: string; taxGroupId: string; description: string };
-const blank = (): Line => ({ key: crypto.randomUUID(), accountId: '', amount: '', taxGroupId: '', description: '' });
+type Line = { key: string; accountId: string; amount: string; taxGroupId: string; description: string; costCentreId: string };
+const blank = (): Line => ({ key: crypto.randomUUID(), accountId: '', amount: '', taxGroupId: '', description: '', costCentreId: '' });
 
 /** Spend or receive money that isn't an invoice or bill: what it was for, its tax, and from or into which account. */
 export default function MoneyDialog({ api, kind, banks, bankAccountId: initial, onClose }: { api: BankingApi; kind: 'spend' | 'receive'; banks: BankAccount[]; bankAccountId?: string; onClose: () => void }) {
@@ -30,6 +32,7 @@ export default function MoneyDialog({ api, kind, banks, bankAccountId: initial, 
   const role = session.role ?? session.customRoleName;
   const accountsApi = useAccountsApi();
   const taxesApi = useTaxesApi();
+  const centres = useCostCentres(true).data ?? [];
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, role, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi });
   const taxes = useQuery({ queryKey: ['taxes', session.organizationId, role], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
   const usable = banks.filter((b) => !b.archived && !b.hasChildren);
@@ -60,7 +63,7 @@ export default function MoneyDialog({ api, kind, banks, bankAccountId: initial, 
   const problem = !bank ? 'bank' : !filled.length ? 'lines' : filled.some((l) => !l.accountId) ? 'account' : filled.some((l) => !l.minor) ? 'amount' : null;
 
   const save = useMutation({
-    mutationFn: () => api.money({ kind, bankAccountId, date, description: description || null, reference: reference || null, taxInclusive, lines: filled.map((l) => ({ accountId: l.accountId, amount: l.minor!, taxGroupId: l.taxGroupId || null, description: l.description || null })) }),
+    mutationFn: () => api.money({ kind, bankAccountId, date, description: description || null, reference: reference || null, taxInclusive, lines: filled.map((l) => ({ accountId: l.accountId, amount: l.minor!, taxGroupId: l.taxGroupId || null, description: l.description || null, costCentreId: l.costCentreId || null })) }),
     onSuccess: () => {
       for (const k of ['banking', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
       toast(t(kind === 'spend' ? 'banking.spent' : 'banking.received', { amount: `${code} ${plain(total)}` }));
@@ -129,6 +132,7 @@ export default function MoneyDialog({ api, kind, banks, bankAccountId: initial, 
                       </option>
                     ))}
                   </select>
+                  <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} />
                 </td>
                 <td className="py-1 pe-2">
                   <select aria-label={t('banking.lineTax', { n: n + 1 })} value={l.taxGroupId} onChange={(e) => set(l.key, { taxGroupId: e.target.value })} disabled={!!bankCurrency} className={cell}>

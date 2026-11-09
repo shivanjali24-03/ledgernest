@@ -2668,6 +2668,8 @@
       "cost_centre_archived": "Ese centro de coste está archivado. Elige otro o restáuralo.",
       "forbidden": "No tienes permiso para cambiar centros de coste.",
       "generic": "No se pudo guardar el centro de coste. Inténtalo de nuevo."
-    }
+    },
+    "none": "Sin centro de coste",
+    "lineLabel": "Centro de coste, línea {{n}}"
   }
 }

@@ -1,5 +1,6 @@
 import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoRateOn } from '../currencies/demoCurrenciesApi';
@@ -24,6 +25,7 @@ type StoredLine = {
   discountPpm: number;
   taxGroupId: string | null;
   accountId: string;
+  costCentreId?: string | null;
 };
 type Stored = {
   id: string;
@@ -267,6 +269,7 @@ function view(i: Stored): Bill {
         discount: l.discountPpm / 10_000,
         amount: a.lines[n]!.net,
         taxAmount: a.lines[n]!.tax,
+        costCentre: demoCostCentreRef(l.costCentreId),
         item: item
           ? {
               id: item.id,
@@ -341,6 +344,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
         discountPpm: l.discount,
         taxGroupId: group?.id ?? null,
         accountId,
+        costCentreId: l.costCentreId ?? null,
       };
     });
     return {
@@ -463,6 +467,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false): B
               description: l.description,
               debit: toInr(l.amount),
               taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null),
+              costCentreId: l.costCentre?.id ?? null,
             })),
           i.currency
             ? {

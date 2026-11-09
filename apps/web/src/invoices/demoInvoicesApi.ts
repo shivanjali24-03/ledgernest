@@ -1,5 +1,6 @@
 import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoRateOn } from '../currencies/demoCurrenciesApi';
@@ -16,7 +17,7 @@ import type { Invoice, InvoicesApi } from './types';
  */
 const KEY = 'ledgernest.demo.invoices';
 const ORG_STATE = '27';
-type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string };
+type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string; costCentreId?: string | null };
 type Stored = {
   id: string;
   number: number | null;
@@ -208,6 +209,7 @@ function view(i: Stored): Invoice {
         amount: a.lines[n]!.net,
         taxAmount: a.lines[n]!.tax,
         item: item ? { id: item.id, name: item.name, hsnSac: item.hsnSac, unit: item.unit } : null,
+        costCentre: demoCostCentreRef(l.costCentreId),
         account: acc ? { id: acc.id, code: acc.code, name: acc.name } : null,
         taxGroup: g ? { id: g.id, name: g.name, supply: g.supply } : null,
       };
@@ -248,7 +250,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
       let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
       if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
       if (group) group = groupForSupply(group, supply, groups);
-      return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId };
+      return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
     });
     return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines };
   };
@@ -323,7 +325,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const toInr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor);
         const lines = [
           i.currency ? { accountId: receivable.id, description: label, currency: i.currency, foreignDebit: v.total, rate: rate! } : { accountId: receivable.id, description: label, debit: v.total },
-          ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null) })),
+          ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null), costCentreId: l.costCentre?.id ?? null })),
         ];
         const draft = await journals.create({ date: i.issueDate, memo: `Invoice ${label} · ${v.contact.name}`, reference: label, lines });
         const posted = await journals.post(draft.id).catch(async (e: unknown) => {

@@ -2668,6 +2668,8 @@
       "cost_centre_archived": "That cost centre is archived. Choose another, or restore it.",
       "forbidden": "You don’t have permission to change cost centres.",
       "generic": "The cost centre couldn’t be saved. Try again."
-    }
+    },
+    "none": "No cost centre",
+    "lineLabel": "Cost centre, line {{n}}"
   }
 }

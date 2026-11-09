@@ -31,9 +31,11 @@ import { groupForSupply, supplyFor } from '../gst';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
 import { useInvoicesApi } from '../useInvoicesApi';
+import CostCentreSelect from '../../cost-centres/CostCentreSelect';
+import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 
-type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '' });
+type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '' });
 
 /** A draft: choose the customer, add lines from items, see GST worked out as you type, save or issue. */
 function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi }) {
@@ -47,6 +49,7 @@ function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi
   const contactsApi = useContactsApi();
   const itemsApi = useItemsApi();
   const taxesApi = useTaxesApi();
+  const centres = useCostCentres(true).data ?? [];
   const role = session.role ?? session.customRoleName;
   const customers = useQuery({ queryKey: ['contacts', session.organizationId, role, 'customers'], queryFn: () => contactsApi!.list({ type: 'customer', page: 1, pageSize: 100 }), enabled: !!contactsApi });
   const items = useQuery({ queryKey: ['items', session.organizationId, role, 'active'], queryFn: () => itemsApi!.list({}), enabled: !!itemsApi });
@@ -65,7 +68,7 @@ function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
-      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '' }))
+      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '' }))
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
@@ -110,7 +113,7 @@ function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi
     reference,
     notes,
     placeOfSupply: placeOfSupply || null,
-    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null })),
+    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null })),
   });
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
@@ -217,6 +220,7 @@ function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
+                      <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />
