@@ -54,6 +54,17 @@ model Organization {
   locale               String             @default("en-IN")
   country              String?            @db.Char(2)
   fiscalYearStartMonth Int                @default(4) @map("fiscal_year_start_month") /// 1 = January … 4 = April (India)
+  /// IANA zone; decides which calendar day a moment belongs to (period boundaries, report dates)
+  timeZone             String             @default("Asia/Kolkata") @map("time_zone")
+  legalName            String?            @map("legal_name")
+  taxId                String?            @map("tax_id") /// GSTIN, VAT number…
+  email                String?
+  phone                String?
+  addressLine1         String?            @map("address_line1")
+  addressLine2         String?            @map("address_line2")
+  city                 String?
+  region               String? /// state, province or emirate
+  postalCode           String?            @map("postal_code")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
@@ -61,8 +72,21 @@ model Organization {
   roles        Role[]
   invitations  Invitation[]
   auditEntries AuditLog[]
+  logo         OrganizationLogo?
 
   @@map("organizations")
+}
+
+/// An organisation's logo, kept apart so organisation queries never load image bytes by accident.
+model OrganizationLogo {
+  organizationId String   @id @map("organization_id") @db.Uuid
+  contentType    String   @map("content_type") /// image/png | image/jpeg | image/webp, checked against the bytes
+  data           Bytes
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_logos")
 }
 
 /// A custom role defined by an organisation. Built-in roles live in @ledgernest/shared, not here.
