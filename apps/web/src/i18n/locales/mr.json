@@ -101,7 +101,8 @@
       "unreconciled": "जुळवण्यासाठी {{count}} बँक ओळी",
       "recurring_due": "{{count}} आवर्ती इनव्हॉइस देय",
       "open_periods": "{{count}} मागील महिने अजून उघडे",
-      "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत"
+      "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत",
+      "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत"
     }
   },
   "comingSoon": {

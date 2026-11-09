@@ -101,7 +101,8 @@
       "unreconciled": "{{count}} أسطر بنكية للتسوية",
       "recurring_due": "{{count}} فواتير متكررة مستحقة",
       "open_periods": "{{count}} أشهر سابقة ما زالت مفتوحة",
-      "draft_entries": "{{count}} قيود مسودة غير مرحّلة"
+      "draft_entries": "{{count}} قيود مسودة غير مرحّلة",
+      "approvals_waiting": "{{count}} بانتظار موافقتك"
     }
   },
   "comingSoon": {

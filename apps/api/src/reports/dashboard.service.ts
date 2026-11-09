@@ -33,6 +33,8 @@ export class DashboardService {
   async dashboard(
     organizationId: string,
     permissions: ReadonlySet<OrganizationPermission>,
+    /** Who's looking: what they sent for approval isn't theirs to approve */
+    actorId?: string,
   ) {
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
@@ -218,6 +220,16 @@ export class DashboardService {
         where: { organizationId, status: 'draft' },
       });
       if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
+    }
+    if (permissions.has('approvals.approve')) {
+      const waiting = await this.prisma.approvalRequest.count({
+        where: {
+          organizationId,
+          status: 'pending',
+          ...(actorId && { requestedById: { not: actorId } }),
+        },
+      });
+      if (waiting) alerts.push({ kind: 'approvals_waiting', count: waiting });
     }
 
     const [members, invitations, accountCount, years, banks] =

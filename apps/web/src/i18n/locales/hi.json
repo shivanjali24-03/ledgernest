@@ -101,7 +101,8 @@
       "unreconciled": "मिलान के लिए {{count}} बैंक पंक्तियाँ",
       "recurring_due": "{{count}} आवर्ती इनवॉइस देय",
       "open_periods": "{{count}} पिछले महीने अभी खुले",
-      "draft_entries": "{{count}} ड्राफ़्ट प्रविष्टियाँ पोस्ट नहीं"
+      "draft_entries": "{{count}} ड्राफ़्ट प्रविष्टियाँ पोस्ट नहीं",
+      "approvals_waiting": "{{count}} आपके अनुमोदन की प्रतीक्षा में"
     }
   },
   "comingSoon": {

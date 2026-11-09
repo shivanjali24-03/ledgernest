@@ -101,7 +101,8 @@
       "unreconciled": "{{count}} lignes bancaires à rapprocher",
       "recurring_due": "{{count}} factures récurrentes à émettre",
       "open_periods": "{{count}} mois passés encore ouverts",
-      "draft_entries": "{{count}} écritures en brouillon non comptabilisées"
+      "draft_entries": "{{count}} écritures en brouillon non comptabilisées",
+      "approvals_waiting": "{{count}} en attente de votre approbation"
     }
   },
   "comingSoon": {

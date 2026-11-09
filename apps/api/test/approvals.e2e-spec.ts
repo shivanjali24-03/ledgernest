@@ -206,6 +206,17 @@ describe('Approvals (e2e)', () => {
           .expect(409)
       ).body.details.reason,
     ).toBe('own_request');
+    // The checker's dashboard says something is waiting; the maker's doesn't (it's theirs)
+    const alerts = async (who: string) =>
+      (
+        (await as(who).get('/reports/dashboard').expect(200)).body as {
+          alerts: { kind: string; count: number }[];
+        }
+      ).alerts.filter((x) => x.kind === 'approvals_waiting');
+    expect(await alerts('checker')).toEqual([
+      { kind: 'approvals_waiting', count: 1 },
+    ]);
+    expect(await alerts('maker')).toEqual([]);
     const ok = (
       await as('checker')
         .post(`/approvals/${held.requestId}/approve`, {

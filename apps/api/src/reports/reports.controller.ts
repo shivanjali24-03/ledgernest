@@ -24,8 +24,12 @@ import {
 } from '@ledgernest/shared';
 import type { Response } from 'express';
 import { z } from 'zod';
-import { CurrentTenant, RequirePermission } from '../access/decorators.js';
-import type { Tenant } from '../access/types.js';
+import {
+  CurrentActor,
+  CurrentTenant,
+  RequirePermission,
+} from '../access/decorators.js';
+import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { DashboardService } from './dashboard.service.js';
@@ -348,8 +352,12 @@ export class ReportsController {
     description:
       'Cash, receivables, payables and profit with twelve months of trend, alerts the reader may see, and set-up progress',
   })
-  dashboard(@CurrentTenant() tenant: Tenant) {
-    return this.dashboards.dashboard(tenant.organizationId, tenant.permissions);
+  dashboard(@CurrentTenant() tenant: Tenant, @CurrentActor() actor: Actor) {
+    return this.dashboards.dashboard(
+      tenant.organizationId,
+      tenant.permissions,
+      actor.userId,
+    );
   }
 
   @Get('cash-flow')

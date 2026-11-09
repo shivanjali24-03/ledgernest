@@ -101,7 +101,8 @@
       "unreconciled": "{{count}} líneas bancarias por conciliar",
       "recurring_due": "{{count}} facturas recurrentes pendientes",
       "open_periods": "{{count}} meses pasados aún abiertos",
-      "draft_entries": "{{count}} asientos en borrador sin contabilizar"
+      "draft_entries": "{{count}} asientos en borrador sin contabilizar",
+      "approvals_waiting": "{{count}} esperando tu aprobación"
     }
   },
   "comingSoon": {
