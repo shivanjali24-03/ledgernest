@@ -53,6 +53,11 @@ function seed(yearName: string): Stored[] {
     attachments: [],
     ...extra,
   });
+  // Money the owners put in, so the bank starts in credit like a real company's
+  const capital = entry(thisMonth(1), 'Share capital introduced', 'BOARD-RES-07', [
+    ['1100.01', 250000000, 0],
+    ['3100', 0, 250000000],
+  ]);
   const sale = entry(thisMonth(2), 'Invoice INV-1042 · Kumar Logistics', 'INV-1042', [
     ['1300', 11800000, 0],
     ['4100.01', 0, 10000000, 'Software development, sprint 14'],
@@ -71,7 +76,7 @@ function seed(yearName: string): Stored[] {
     ['5100', 3650000, 0],
     ['2500', 0, 3650000],
   ]);
-  const fix = entry(thisMonth(7), `Reversal of ${journalNumber(yearName, 4)}`, 'AWS-8812', [
+  const fix = entry(thisMonth(7), `Reversal of ${journalNumber(yearName, 5)}`, 'AWS-8812', [
     ['5100', 0, 3650000],
     ['2500', 3650000, 0],
   ]);
@@ -81,7 +86,7 @@ function seed(yearName: string): Stored[] {
     ['2500', 0, 3820000],
   ]);
   const receipt = entry(dayOffset(0), 'Payment from Kumar Logistics', 'UTR 402918', [['1100.01', 11800000, 0], ['1300', 0, 11800000]], { status: 'draft', postedAt: null });
-  return [sale, rent, payroll, cloud, fix, cloudRight, receipt];
+  return [capital, sale, rent, payroll, cloud, fix, cloudRight, receipt];
 }
 
 const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });

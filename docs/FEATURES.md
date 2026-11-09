@@ -39,8 +39,8 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Chart of accounts | Assets, liabilities, equity, income and expenses, with sub-accounts and account codes | ✅ #39 |
 | Industry templates | Ready charts of accounts for retail, services, manufacturing, healthcare, education, non-profit, construction, restaurants, IT/software and agriculture | ✅ #40 |
 | Journal entries | Double-entry enforced (debits = credits), drafts, posting, reversal, attachments, memo | ✅ #42 |
-| General ledger | Every posted line per account with running balance and drill-down | 📋 |
-| Trial balance | Balances of all accounts at any date | 📋 |
+| General ledger | Every posted line per account with running balance and drill-down | ✅ #43 |
+| Trial balance | Balances of all accounts at any date | ✅ #43 |
 | Fiscal years and periods | Custom fiscal year start, monthly periods, **period lock** after close | ✅ #41 (year-end close with #42) |
 | Multi-currency | Transactions in any currency, exchange rates, realised and unrealised gain/loss | 📋 |
 | Taxes | Configurable GST / VAT / sales-tax rates and groups, tax on lines, tax summary | 📋 |

@@ -1052,5 +1052,24 @@
       "invalid_amount": "चिह्नित राशियाँ जाँचें।",
       "missing_account": "हर पंक्ति के लिए खाता चुनें।"
     }
+  },
+  "reports": {
+    "title": "रिपोर्ट",
+    "description": "केवल पोस्ट की गई प्रविष्टियों से, {{currency}} में।",
+    "export": "CSV निर्यात करें",
+    "trialBalance": "तलपट",
+    "ledger": "खाता बही",
+    "asOf": "इस तारीख तक",
+    "balanced": "डेबिट और क्रेडिट बराबर हैं",
+    "notBalanced": "डेबिट और क्रेडिट मेल नहीं खाते",
+    "tbCaption": "{{date}} तक का तलपट",
+    "from": "से",
+    "to": "तक",
+    "pickAccount": "बही देखने के लिए खाता चुनें",
+    "ledgerCaption": "{{account}} की खाता बही",
+    "balance": "शेष",
+    "opening": "{{date}} को प्रारंभिक शेष",
+    "noLines": "इन तारीखों में कोई पोस्ट की गई प्रविष्टि नहीं।",
+    "closing": "{{date}} को अंतिम शेष"
   }
 }

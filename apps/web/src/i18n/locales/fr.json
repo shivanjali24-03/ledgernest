@@ -1052,5 +1052,24 @@
       "invalid_amount": "Vérifiez les montants signalés.",
       "missing_account": "Choisissez un compte pour chaque ligne."
     }
+  },
+  "reports": {
+    "title": "Rapports",
+    "description": "Établis uniquement à partir des écritures validées, en {{currency}}.",
+    "export": "Exporter en CSV",
+    "trialBalance": "Balance générale",
+    "ledger": "Grand livre",
+    "asOf": "Au",
+    "balanced": "Les débits égalent les crédits",
+    "notBalanced": "Les débits et les crédits ne correspondent pas",
+    "tbCaption": "Balance générale au {{date}}",
+    "from": "Du",
+    "to": "Au",
+    "pickAccount": "Choisissez un compte pour voir son grand livre",
+    "ledgerCaption": "Grand livre de {{account}}",
+    "balance": "Solde",
+    "opening": "Solde d'ouverture au {{date}}",
+    "noLines": "Aucune écriture validée sur ces dates.",
+    "closing": "Solde de clôture au {{date}}"
   }
 }

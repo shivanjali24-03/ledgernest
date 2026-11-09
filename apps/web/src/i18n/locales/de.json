@@ -1052,5 +1052,24 @@
       "invalid_amount": "Prüfen Sie die markierten Beträge.",
       "missing_account": "Wählen Sie für jede Zeile ein Konto."
     }
+  },
+  "reports": {
+    "title": "Berichte",
+    "description": "Nur aus gebuchten Einträgen, in {{currency}}.",
+    "export": "CSV exportieren",
+    "trialBalance": "Summen- und Saldenliste",
+    "ledger": "Hauptbuch",
+    "asOf": "Stichtag",
+    "balanced": "Soll gleich Haben",
+    "notBalanced": "Soll und Haben stimmen nicht überein",
+    "tbCaption": "Summen- und Saldenliste zum {{date}}",
+    "from": "Von",
+    "to": "Bis",
+    "pickAccount": "Wählen Sie ein Konto für sein Hauptbuch",
+    "ledgerCaption": "Hauptbuch für {{account}}",
+    "balance": "Saldo",
+    "opening": "Anfangssaldo am {{date}}",
+    "noLines": "Keine gebuchten Einträge in diesem Zeitraum.",
+    "closing": "Endsaldo am {{date}}"
   }
 }
