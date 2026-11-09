@@ -16,5 +16,14 @@ export function createLiveBankingApi(client: AuthClient, organizationId: string)
     money: (input) => r('/money', { method: 'POST', json: input }),
     transfer: (input) => r('/transfers', { method: 'POST', json: input }),
     void: (id, reason) => r(`/transactions/${id}/void`, { method: 'POST', json: reason ? { reason } : {} }),
+    previewStatement: (input) => r('/statements/preview', { method: 'POST', json: input }),
+    importStatement: (input) => r('/statements/import', { method: 'POST', json: input }),
+    statementImports: (bankAccountId) => r(`/statements/imports?bankAccountId=${bankAccountId}`),
+    statementLines: (q) => {
+      const p = new URLSearchParams({ bankAccountId: q.bankAccountId, page: String(q.page), pageSize: String(q.pageSize) });
+      if (q.status) p.set('status', q.status);
+      return r(`/statements/lines?${p}`);
+    },
+    undoImport: (id) => r(`/statements/imports/${id}`, { method: 'DELETE' }),
   };
 }

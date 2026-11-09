@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todayIn } from '@ledgernest/shared';
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, Landmark, Wallet } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Ban, Banknote, Building2, FileUp, Landmark, Undo2, Wallet } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
@@ -18,10 +18,11 @@ import { TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import RowMenu from '../../ui/RowMenu';
 import { useToast } from '../../ui/toastContext';
+import ImportStatementDialog from '../ImportStatementDialog';
 import MoneyDialog from '../MoneyDialog';
 import TransferDialog from '../TransferDialog';
 import { bankingErrorMessage } from '../errors';
-import type { BankTransaction } from '../types';
+import type { BankTransaction, StatementImport } from '../types';
 import { useBankingApi } from '../useBankingApi';
 
 const daysAgo = (today: string, n: number) => new Date(Date.parse(`${today}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
@@ -39,7 +40,8 @@ export default function Banking() {
   const canManage = session.permissions.has('banking.manage');
   const today = todayIn(settings?.timeZone ?? 'Asia/Kolkata');
   const [params, setParams] = useSearchParams();
-  const [dialog, setDialog] = useState<'spend' | 'receive' | 'transfer' | null>(null);
+  const [dialog, setDialog] = useState<'spend' | 'receive' | 'transfer' | 'import' | null>(null);
+  const [undoing, setUndoing] = useState<StatementImport | null>(null);
   const [voiding, setVoiding] = useState<BankTransaction | null>(null);
   const key = ['banking', session.organizationId, session.role ?? session.customRoleName] as const;
   const accounts = useQuery({ queryKey: [...key, 'accounts'], queryFn: () => api!.accounts(), enabled: !!api });
@@ -60,6 +62,20 @@ export default function Banking() {
     );
   const activity = useQuery({ queryKey: [...key, 'activity', selectedId, from, to], queryFn: () => api!.activity(selectedId, from, to), enabled: !!api && !!selectedId && from <= to, placeholderData: keepPreviousData });
   const txs = useQuery({ queryKey: [...key, 'transactions', selectedId], queryFn: () => api!.transactions({ bankAccountId: selectedId, page: 1, pageSize: 20 }), enabled: !!api && !!selectedId });
+  const bankLines = useQuery({ queryKey: [...key, 'statement-lines', selectedId], queryFn: () => api!.statementLines({ bankAccountId: selectedId, page: 1, pageSize: 20 }), enabled: !!api && !!selectedId });
+  const imports = useQuery({ queryKey: [...key, 'imports', selectedId], queryFn: () => api!.statementImports(selectedId), enabled: !!api && !!selectedId });
+  const undo = useMutation({
+    mutationFn: (i: StatementImport) => api!.undoImport(i.id),
+    onSuccess: (_r, i) => {
+      setUndoing(null);
+      void queryClient.invalidateQueries({ queryKey: ['banking'] });
+      toast(t('banking.import.undone', { file: i.fileName }));
+    },
+    onError: (e) => {
+      setUndoing(null);
+      toast(bankingErrorMessage(e, t), 'error');
+    },
+  });
   const voidIt = useMutation({
     mutationFn: ({ tx, reason }: { tx: BankTransaction; reason?: string }) => api!.void(tx.id, reason),
     onSuccess: () => {
@@ -104,6 +120,11 @@ export default function Banking() {
                 <Button variant="secondary" icon={<ArrowDownLeft className="size-4" />} onClick={() => setDialog('receive')}>
                   {t('banking.receive')}
                 </Button>
+                {selected && (
+                  <Button variant="secondary" icon={<FileUp className="size-4" />} onClick={() => setDialog('import')}>
+                    {t('banking.import.button')}
+                  </Button>
+                )}
                 {usable.length > 1 && (
                   <Button icon={<ArrowLeftRight className="size-4" />} onClick={() => setDialog('transfer')}>
                     {t('banking.transfer')}
@@ -284,6 +305,61 @@ export default function Banking() {
         </motion.div>
       )}
 
+      {selected && (
+        <motion.div variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <Card className="overflow-hidden">
+            <div className="border-b border-ink-100 p-4 dark:border-ink-800">
+              <h2 className="font-semibold">{t('banking.fromBank')}</h2>
+              <p className="mt-0.5 text-sm text-ink-500">{bankLines.data?.total ? t('banking.fromBankCount', { count: bankLines.data.total }) : t('banking.fromBankHint')}</p>
+            </div>
+            {bankLines.data && bankLines.data.items.length > 0 && (
+              <table className="w-full text-sm">
+                <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+                  {bankLines.data.items.map((l) => (
+                    <tr key={l.id}>
+                      <td className="px-4 py-2 whitespace-nowrap text-ink-600 dark:text-ink-300">{day(l.date)}</td>
+                      <td className="px-4 py-2" dir="auto">
+                        {l.description}
+                        {l.reference && <span className="block text-xs text-ink-500">{l.reference}</span>}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Pill tone={l.status === 'unmatched' ? 'neutral' : 'brand'}>{t(`banking.lineStatus.${l.status}`)}</Pill>
+                      </td>
+                      <td className={clsx('px-4 py-2 text-end font-mono tabular-nums', l.amount > 0 && 'text-income')} dir="ltr">
+                        {selected.currency ? formatMoney(l.amount, selected.currency, locale) : money.format(l.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+          <Card className="self-start p-5">
+            <h2 className="font-semibold">{t('banking.import.history')}</h2>
+            {imports.data && !imports.data.length ? (
+              <p className="mt-2 text-sm text-ink-500">{t('banking.import.noneYet')}</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-ink-100 text-sm dark:divide-ink-800">
+                {(imports.data ?? []).map((i) => (
+                  <li key={i.id} className="flex items-start gap-3 py-2">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{i.fileName}</span>
+                      <span className="block text-xs text-ink-500">
+                        {t('banking.import.historyLine', { added: i.added, duplicates: i.duplicates })}
+                        {i.firstDate && i.lastDate && ` · ${day(i.firstDate)} – ${day(i.lastDate)}`}
+                      </span>
+                    </span>
+                    {canManage && !i.reconciled && <RowMenu label={t('banking.actionsFor', { what: i.fileName })} items={[{ key: 'undo', label: t('banking.import.undo'), icon: Undo2, danger: true, onSelect: () => setUndoing(i) }]} />}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </motion.div>
+      )}
+
+      {dialog === 'import' && selected && <ImportStatementDialog api={api} account={selected} onClose={() => setDialog(null)} />}
+      <ConfirmDialog open={!!undoing} title={undoing ? t('banking.import.undoTitle', { file: undoing.fileName }) : ''} body={t('banking.import.undoBody')} confirmLabel={t('banking.import.undo')} tone="danger" busy={undo.isPending} onConfirm={() => undoing && undo.mutate(undoing)} onClose={() => setUndoing(null)} />
       {dialog === 'transfer' && <TransferDialog api={api} banks={accounts.data ?? []} fromAccountId={selectedId} onClose={() => setDialog(null)} />}
       {(dialog === 'spend' || dialog === 'receive') && <MoneyDialog api={api} kind={dialog} banks={accounts.data ?? []} bankAccountId={selectedId} onClose={() => setDialog(null)} />}
       <ConfirmDialog
