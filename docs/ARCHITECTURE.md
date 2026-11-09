@@ -51,6 +51,14 @@ Platform endpoints live under `/api/v1/platform` and need a platform permission,
   - The add/edit dialog only offers parents of the same type with room beneath them, never the account itself or its sub-accounts, and suggests the next free code.
   - Refusals from the API are shown next to the field they're about.
 
+## Reports: trial balance and general ledger
+
+- `GET /api/v1/reports/trial-balance?asOf=` and `GET /reports/ledger?accountId=&from=&to=` (`reports.view`). Their `/export` CSV versions need `reports.export`, and amounts use the currency's own decimals.
+- Only posted entries count. Sums are computed in PostgreSQL. The ledger is a single SQL join, because loading entries per line through the ORM sends every line ID as a parameter and broke at 50,000 lines.
+- A test posts 100,000 lines: the trial balance answers well inside 2 seconds and the ledger inside 5.
+- Ledger balances are shown on the account's normal side (a bank's money in hand is positive, and so is an income account's earnings), with the balance carried in from before the range.
+- **Screen:** the trial balance is grouped by type with a "Debits equal credits" check, and each account opens its ledger. The ledger has a running balance and a link to every entry.
+
 ## Journal entries
 
 - `GET/POST /api/v1/journals`, `GET/PATCH/DELETE /journals/:id`, `POST /journals/:id/post`, `/reverse`, and `/attachments`.
