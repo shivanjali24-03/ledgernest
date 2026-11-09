@@ -26,7 +26,8 @@
       "periods": "Ejercicios fiscales",
       "taxes": "Impuestos",
       "gstSlabs": "Tramos de GST",
-      "currencies": "Monedas"
+      "currencies": "Monedas",
+      "contacts": "Clientes y proveedores"
     },
     "soon": "Pronto"
   },
@@ -1436,6 +1437,78 @@
       "after": "Después",
       "difference": "Diferencia",
       "missing": "Sin tipo para {{list}} ese día, así que esas cuentas no se tocaron."
+    }
+  },
+  "contacts": {
+    "title": "Clientes y proveedores",
+    "description": "A quién vendes y a quién compras, con identificaciones fiscales, direcciones y condiciones de pago.",
+    "add": "Añadir contacto",
+    "filter": "Mostrar",
+    "all": "Todos",
+    "customers": "Clientes",
+    "vendors": "Proveedores",
+    "search": "Busca nombre, correo o ID fiscal",
+    "showArchived": "Mostrar archivados",
+    "noMatches": "Ningún contacto coincide",
+    "empty": "Aún no hay clientes ni proveedores",
+    "emptyBody": "Añade las empresas a las que facturas y las que te facturan.",
+    "customer": "Cliente",
+    "vendor": "Proveedor",
+    "archivedPill": "Archivado",
+    "terms": "{{days}} días",
+    "onReceipt": "Al contado",
+    "actionsFor": "Acciones de {{name}}",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "delete": "Eliminar",
+    "archived": "{{name}} archivado",
+    "restored": "{{name}} restaurado",
+    "deleted": "{{name}} eliminado",
+    "deleteTitle": "¿Eliminar {{name}}?",
+    "deleteBody": "El contacto se elimina definitivamente. Cuando facturas o compras lo usen, archívalo en su lugar.",
+    "saved": "{{name}} guardado",
+    "created": "{{name}} añadido",
+    "sameShipping": "Enviar a la dirección de facturación",
+    "dialog": {
+      "newTitle": "Nuevo contacto",
+      "editTitle": "Editar {{name}}",
+      "create": "Añadir contacto"
+    },
+    "fields": {
+      "name": "Nombre",
+      "type": "Este contacto es",
+      "legalName": "Razón social",
+      "gstin": "GSTIN",
+      "taxId": "ID fiscal",
+      "currency": "Moneda",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "paymentTerms": "Plazo de pago (días)",
+      "notes": "Notas",
+      "billingAddress": "Dirección de facturación",
+      "shippingAddress": "Dirección de envío"
+    },
+    "hints": {
+      "gstin": "15 caracteres; el estado se rellena a partir de él.",
+      "paymentTerms": "0 = al contado"
+    },
+    "address": {
+      "line1": "Dirección",
+      "line2": "Dirección (línea 2)",
+      "city": "Ciudad",
+      "state": "Estado",
+      "chooseState": "Elige un estado",
+      "region": "Estado o región",
+      "postalCode": "Código postal",
+      "country": "País",
+      "noCountry": "Sin indicar"
+    },
+    "errors": {
+      "name_taken": "Ya existe otro contacto con este nombre.",
+      "currency_not_enabled": "Activa primero esta moneda en Monedas.",
+      "already_archived": "Este contacto ya está archivado.",
+      "not_archived": "Este contacto no está archivado."
     }
   }
 }
