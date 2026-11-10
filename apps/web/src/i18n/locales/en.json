@@ -3641,5 +3641,16 @@
     },
     "backToSignIn": "Back to sign in",
     "demo": "In the demo there are no real passwords, so nothing changed and no email was sent."
+  },
+  "errors": {
+    "page": {
+      "title": "Something went wrong on this page",
+      "body": "Your data is safe: nothing was saved halfway. Reload to try again, or go back to the dashboard.",
+      "newVersion": "A new version of LedgerNest came out while this tab was open. Reload to get it.",
+      "notFoundTitle": "This page doesn’t exist",
+      "notFoundBody": "The address may have a typo, or the page has moved. Everything is reachable from the menu.",
+      "reload": "Reload",
+      "home": "Go to the dashboard"
+    }
   }
 }

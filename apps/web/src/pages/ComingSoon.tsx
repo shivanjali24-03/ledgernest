@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import { useLocation } from 'react-router';
-import { Hammer } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
+import { Compass, Hammer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fadeUp, stagger } from '../motion/tokens';
 import { NAV } from '../layout/nav';
@@ -10,6 +10,28 @@ export default function ComingSoon() {
   const { pathname } = useLocation();
   const { t } = useTranslation();
   const item = NAV.flatMap((g) => g.items).find((i) => i.to === pathname);
+  // An address that isn't in the app at all (a typo, an old bookmark): say so, and offer the way home
+  if (!item)
+    return (
+      <motion.div variants={stagger(0.08)} initial="hidden" animate="show" className="grid min-h-[60vh] place-items-center text-center">
+        <div className="max-w-md">
+          <motion.span variants={fadeUp} className="mx-auto grid size-16 place-items-center rounded-2xl bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300">
+            <Compass className="size-8" aria-hidden />
+          </motion.span>
+          <motion.h1 variants={fadeUp} className="mt-5 text-2xl font-bold tracking-tight">
+            {t('errors.page.notFoundTitle')}
+          </motion.h1>
+          <motion.p variants={fadeUp} className="mt-2 text-ink-500">
+            {t('errors.page.notFoundBody')}
+          </motion.p>
+          <motion.div variants={fadeUp}>
+            <Link to="/" className="mt-6 inline-flex h-11 items-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-card hover:bg-brand-700">
+              {t('errors.page.home')}
+            </Link>
+          </motion.div>
+        </div>
+      </motion.div>
+    );
   return (
     <motion.div variants={stagger(0.08)} initial="hidden" animate="show" className="grid min-h-[60vh] place-items-center text-center">
       <div className="max-w-md">
