@@ -780,6 +780,7 @@ export class GstReturnsService {
         number: true,
         status: true,
         vendorReference: true,
+        vendorBillDate: true,
         billDate: true,
         currency: true,
         rate: true,
@@ -849,7 +850,8 @@ export class GstReturnsService {
             b.contact.taxId && isGstin(b.contact.taxId)
               ? b.contact.taxId.toUpperCase()
               : null,
-          date: iso(b.billDate),
+          // GSTR-2B carries the supplier's own date
+          date: iso(b.vendorBillDate ?? b.billDate),
           taxable,
           heads,
           total: inBase(Number(b.total), b.currency, b.rate),

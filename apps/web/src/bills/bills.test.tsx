@@ -91,6 +91,25 @@ describe('bills', () => {
     expect(demoStoredBillViews().filter((b) => b.vendorReference === 'sos 0887').map((b) => b.status)).toEqual(['open']);
   }, 30_000);
 
+  it('keeps the date on the vendor’s bill apart from the day it’s entered, with terms running from it', async () => {
+    renderApp('/bills/new');
+    await screen.findByRole('heading', { name: 'New bill' });
+    await choose('Vendor', 'Sharma Office Supplies');
+    fireEvent.change(screen.getByLabelText('Bill date'), { target: { value: '2026-10-24' } });
+    fireEvent.change(screen.getByLabelText('Vendor’s bill date'), { target: { value: '2026-10-21' } });
+    // Sharma gives 7 days, from their own date
+    expect(screen.getByLabelText('Due date')).toHaveValue('2026-10-28');
+    await userEvent.type(screen.getByLabelText('Vendor’s bill number'), 'SOS/950');
+    await userEvent.type(screen.getByLabelText('Description on line 1'), 'Toner');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
+    await choose('Account for line 1', '5300 · Office rent');
+    await userEvent.click(screen.getByRole('button', { name: 'Record bill' }));
+    const doc = await screen.findByRole('article', {}, { timeout: 6000 });
+    expect(within(doc).getByText('Vendor’s bill date')).toBeInTheDocument();
+    const { demoStoredBillViews } = await import('./demoBillsApi');
+    expect(demoStoredBillViews().find((b) => b.vendorReference === 'SOS/950')).toMatchObject({ vendorBillDate: '2026-10-21', billDate: '2026-10-24', dueDate: '2026-10-28' });
+  }, 30_000);
+
   it('voids an unpaid bill', { timeout: 20_000 }, async () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));

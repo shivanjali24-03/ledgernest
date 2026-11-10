@@ -949,6 +949,9 @@ model Bill {
   status           String    @default("draft") /// draft | open | void
   /// The vendor's own number for it
   vendorReference  String?   @map("vendor_reference")
+  /// The date on the vendor's bill (GSTR-2B shows it); null = the bill date
+  vendorBillDate   DateTime? @map("vendor_bill_date") @db.Date
+  /// When it's entered in the books
   billDate         DateTime  @map("bill_date") @db.Date
   dueDate          DateTime  @map("due_date") @db.Date
   currency         String?   @db.Char(3)

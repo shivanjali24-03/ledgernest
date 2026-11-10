@@ -42,6 +42,7 @@ type Stored = {
   rate: string | null;
   placeOfSupply: string | null;
   vendorReference: string | null;
+  vendorBillDate?: string | null;
   notes: string | null;
   amountPaid: number;
   journalEntryId: string | null;
@@ -256,6 +257,7 @@ function view(i: Stored): Bill {
     rate: i.rate,
     placeOfSupply: i.placeOfSupply,
     vendorReference: i.vendorReference,
+    vendorBillDate: i.vendorBillDate ?? null,
     notes: i.notes,
     contact: {
       id: contact.id,
@@ -378,11 +380,12 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
     return {
       contactId: contact.id,
       billDate: d.billDate,
-      dueDate: d.dueDate ?? dueDateFor(d.billDate, contact.paymentTermsDays),
+      dueDate: d.dueDate ?? dueDateFor(d.vendorBillDate ?? d.billDate, contact.paymentTermsDays),
       currency: contact.currency,
       rate: d.rate,
       placeOfSupply,
       vendorReference: d.vendorReference,
+      vendorBillDate: d.vendorBillDate,
       notes: d.notes,
       lines,
     };
@@ -390,7 +393,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
   const api: BillsApi = {
     exportList: async (q) => {
       const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
-      const rows = [['number', 'state', 'bill_date', 'due_date', 'vendor', 'vendor_reference', 'currency', 'total', 'paid', 'balance'], ...all.map((b) => { const cur = b.currency ?? 'INR'; return [b.number ?? 'Draft', b.state, b.billDate, b.dueDate, b.contact.name, b.vendorReference ?? '', cur, major(b.total, cur), b.status === 'open' ? major(b.amountPaid, cur) : '', b.status === 'open' ? major(b.balance, cur) : '']; })];
+      const rows = [['number', 'state', 'bill_date', 'due_date', 'vendor', 'vendor_reference', 'vendor_bill_date', 'currency', 'total', 'paid', 'balance'], ...all.map((b) => { const cur = b.currency ?? 'INR'; return [b.number ?? 'Draft', b.state, b.billDate, b.dueDate, b.contact.name, b.vendorReference ?? '', b.vendorBillDate ?? '', cur, major(b.total, cur), b.status === 'open' ? major(b.amountPaid, cur) : '', b.status === 'open' ? major(b.balance, cur) : '']; })];
       return { blob: csvBlob(rows), filename: 'bills.csv' };
     },
     list: (q) =>
@@ -424,6 +427,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
             amountPaid: i.amountPaid,
             balance: i.balance,
             vendorReference: i.vendorReference,
+            vendorBillDate: i.vendorBillDate,
           })),
         };
       }),

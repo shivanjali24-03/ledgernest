@@ -29,6 +29,9 @@ export const billDraftSchema = z
     contactId: z.uuid(),
     /** The vendor's own bill number, as printed on their bill */
     vendorReference: text(64),
+    /** The date printed on the vendor's bill (GSTR-2B shows it); omitted = the bill date */
+    vendorBillDate: isoDaySchema.nullable().optional().default(null),
+    /** When the bill is entered in the books */
     billDate: isoDaySchema,
     /** Omitted = the bill date plus the vendor's payment terms */
     dueDate: isoDaySchema.nullable().optional().default(null),
@@ -44,7 +47,8 @@ export const billDraftSchema = z
     rate: rateSchema.nullable().optional().default(null),
     lines: z.array(billLineSchema).min(1, 'Add at least one line.').max(MAX_INVOICE_LINES),
   })
-  .refine((v) => !v.dueDate || v.dueDate >= v.billDate, { path: ['dueDate'], message: 'The due date can’t be before the bill date.' });
+  .refine((v) => !v.dueDate || v.dueDate >= v.billDate, { path: ['dueDate'], message: 'The due date can’t be before the bill date.' })
+  .refine((v) => !v.vendorBillDate || v.vendorBillDate <= v.billDate, { path: ['vendorBillDate'], message: 'The vendor’s bill can’t be dated after it’s entered.' });
 export type BillDraftInput = z.input<typeof billDraftSchema>;
 
 export const billListQuerySchema = z.object({
