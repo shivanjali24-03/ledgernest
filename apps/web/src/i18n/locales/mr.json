@@ -38,7 +38,8 @@
       "approvals": "मंजुरी",
       "imports": "आयात",
       "integrations": "एकत्रीकरण",
-      "quotes": "कोटेशन"
+      "quotes": "कोटेशन",
+      "recurringBills": "आवर्ती बिले"
     },
     "soon": "लवकरच"
   },
@@ -760,7 +761,13 @@
       "org_quote_invoice": "कोटेशनचे बीजक केले",
       "org_quote_email": "कोटेशन ईमेल केले",
       "org_invoice_email": "बीजक ईमेल केले",
-      "org_payment_email": "पावती ईमेल केली"
+      "org_payment_email": "पावती ईमेल केली",
+      "org_recurring_bill_create": "आवर्ती बिल वेळापत्रक तयार केले",
+      "org_recurring_bill_update": "आवर्ती बिल वेळापत्रक बदलले",
+      "org_recurring_bill_delete": "आवर्ती बिल वेळापत्रक हटवले",
+      "org_recurring_bill_pause": "आवर्ती बिल वेळापत्रक थांबवले",
+      "org_recurring_bill_resume": "आवर्ती बिल वेळापत्रक पुन्हा सुरू",
+      "org_recurring_bill_raise": "आवर्ती बिल तयार झाले"
     },
     "entities": {
       "membership": "सदस्य",
@@ -3422,5 +3429,21 @@
     "badEmail": "वैध ईमेल पत्ता लिहा.",
     "note": "टीप",
     "noteHint": "ऐच्छिक: ती ईमेलच्या सुरुवातीला जाईल."
+  },
+  "recurringBills": {
+    "title": "आवर्ती बिले",
+    "description": "भाडे, सदस्यता आणि दर महिन्याला किंवा वर्षाला येणारी इतर बिले, देय झाल्यावर टेम्पलेटमधून तयार होतात.",
+    "empty": "अजून आवर्ती बिले नाहीत",
+    "emptyBody": "एखादे बिल उघडा आणि आवर्ती करा निवडा.",
+    "newTitle": "हे बिल आवर्ती करा",
+    "editTitle": "वेळापत्रक बदला",
+    "templateFrom": "{{name}} यांच्या बिलावरून: {{count}} ओळी",
+    "autoRecord": "प्रत्येक बिल तयार होताच नोंदवा",
+    "autoRecordHint": "नाहीतर प्रत्येक बिल तपासण्यासाठी मसुदा म्हणून थांबेल. मंजुरी नियम तरीही ते थांबवू शकतो.",
+    "recordsItself": "आपोआप नोंदते",
+    "made": "तयार:",
+    "ran": "{{made}} बिले तयार झाली",
+    "ranWithFailures": "{{made}} बिले तयार झाली; {{failed}} होऊ शकली नाहीत",
+    "deleteBody": "ते कायमचे जाईल. ज्या वेळापत्रकांतून बिले तयार झाली आहेत ती फक्त थांबवता येतात."
   }
 }

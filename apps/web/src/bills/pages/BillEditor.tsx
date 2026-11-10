@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, BookCheck, Plus, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, BookCheck, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
 import ReceiptDialog from '../../payments/ReceiptDialog';
 import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -31,6 +31,9 @@ import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 import { heldForApproval, heldMessage } from '../../approvals/errors';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
+import RecurringBillDialog from '../../recurring-bills/RecurringBillDialog';
+import { billTemplateOf } from '../../recurring-bills/types';
+import { useRecurringBillsApi } from '../../recurring-bills/useRecurringBillsApi';
 
 type Line = {
   key: string;
@@ -451,6 +454,8 @@ export default function BillEditor() {
   });
   const bill = query.data;
   const [voiding, setVoiding] = useState(false);
+  const [repeating, setRepeating] = useState(false);
+  const recurringApi = useRecurringBillsApi();
   const [paying, setPaying] = useState(false);
   const paymentsApi = usePaymentsApi();
   const canPay = session.permissions.has('payments.manage');
@@ -489,6 +494,11 @@ export default function BillEditor() {
                 {bill.status === 'open' && canPay && bill.balance > 0 && (
                   <Button icon={<Send className="size-4 rtl:-scale-x-100" />} onClick={() => setPaying(true)}>
                     {t('payments.payBill')}
+                  </Button>
+                )}
+                {bill.status !== 'void' && canManage && (
+                  <Button variant="ghost" icon={<Repeat className="size-4" />} onClick={() => setRepeating(true)}>
+                    {t('recurring.makeRecurring')}
                   </Button>
                 )}
                 {bill.status === 'open' && canManage && bill.amountPaid === 0 && (
@@ -562,6 +572,7 @@ export default function BillEditor() {
           }}
         />
       )}
+      {repeating && bill && recurringApi && <RecurringBillDialog api={recurringApi} template={billTemplateOf(bill)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       <ConfirmDialog open={voiding} title={bill ? t('bills.voidTitle', { number: bill.number }) : ''} body={t('bills.voidBody')} confirmLabel={t('bills.void')} tone="danger" askReason busy={voidIt.isPending} onConfirm={(reason) => voidIt.mutate(reason)} onClose={() => setVoiding(false)} />
     </motion.div>
   );

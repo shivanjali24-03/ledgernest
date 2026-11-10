@@ -38,7 +38,8 @@
       "approvals": "Approbations",
       "imports": "Importer",
       "integrations": "Intégrations",
-      "quotes": "Devis"
+      "quotes": "Devis",
+      "recurringBills": "Factures récurrentes"
     },
     "soon": "Bientôt"
   },
@@ -760,7 +761,13 @@
       "org_quote_invoice": "Devis facturé",
       "org_quote_email": "Devis envoyé par e-mail",
       "org_invoice_email": "Facture envoyée par e-mail",
-      "org_payment_email": "Reçu envoyé par e-mail"
+      "org_payment_email": "Reçu envoyé par e-mail",
+      "org_recurring_bill_create": "Planification de factures créée",
+      "org_recurring_bill_update": "Planification de factures modifiée",
+      "org_recurring_bill_delete": "Planification de factures supprimée",
+      "org_recurring_bill_pause": "Planification de factures suspendue",
+      "org_recurring_bill_resume": "Planification de factures reprise",
+      "org_recurring_bill_raise": "Facture récurrente créée"
     },
     "entities": {
       "membership": "Membre",
@@ -3422,5 +3429,21 @@
     "badEmail": "Saisissez une adresse e-mail valide.",
     "note": "Note",
     "noteHint": "Facultatif : elle figure en haut de l’e-mail."
+  },
+  "recurringBills": {
+    "title": "Factures fournisseurs récurrentes",
+    "description": "Loyer, abonnements et autres factures mensuelles ou annuelles, créées depuis un modèle à leur échéance.",
+    "empty": "Pas encore de factures récurrentes",
+    "emptyBody": "Ouvrez une facture fournisseur et choisissez Rendre récurrente.",
+    "newTitle": "Rendre cette facture récurrente",
+    "editTitle": "Modifier la planification",
+    "templateFrom": "D’après la facture de {{name}} : {{count}} lignes",
+    "autoRecord": "Enregistrer chaque facture dès sa création",
+    "autoRecordHint": "Sinon chacune attend en brouillon. Une règle d’approbation peut encore la retenir.",
+    "recordsItself": "S’enregistre seule",
+    "made": "Créées :",
+    "ran": "{{made}} factures créées",
+    "ranWithFailures": "{{made}} factures créées ; {{failed}} n’ont pas pu l’être",
+    "deleteBody": "Elle disparaît définitivement. Les planifications qui ont créé des factures peuvent seulement être suspendues."
   }
 }
