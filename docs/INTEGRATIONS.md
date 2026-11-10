@@ -35,6 +35,10 @@ LedgerNest sends a JSON `POST` to your address when something happens:
 | `payment.voided` | A receipt or payment is voided |
 | `bill.recorded` | A bill is recorded |
 | `bill.voided` | A recorded bill is voided |
+| `quote.sent` | A quote is marked sent, or emailed while a draft |
+| `quote.accepted` | A quote is marked accepted |
+| `quote.declined` | A quote is marked declined |
+| `quote.invoiced` | A quote becomes a draft invoice (`data.invoiceId` is the invoice) |
 
 The body is the event with the document as the API returns it:
 

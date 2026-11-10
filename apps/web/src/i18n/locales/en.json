@@ -3212,7 +3212,11 @@
       "bill_recorded": "Bill recorded",
       "bill_voided": "Bill voided",
       "credit_note_issued": "Credit note issued",
-      "credit_note_voided": "Credit note voided"
+      "credit_note_voided": "Credit note voided",
+      "quote_sent": "Quote sent",
+      "quote_accepted": "Quote accepted",
+      "quote_declined": "Quote declined",
+      "quote_invoiced": "Quote invoiced"
     },
     "deliveryStatuses": {
       "pending": "waiting to retry",

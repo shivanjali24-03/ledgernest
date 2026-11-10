@@ -3212,7 +3212,11 @@
       "bill_recorded": "Factura de proveedor registrada",
       "bill_voided": "Factura de proveedor anulada",
       "credit_note_issued": "Nota de crédito emitida",
-      "credit_note_voided": "Nota de crédito anulada"
+      "credit_note_voided": "Nota de crédito anulada",
+      "quote_sent": "Presupuesto enviado",
+      "quote_accepted": "Presupuesto aceptado",
+      "quote_declined": "Presupuesto rechazado",
+      "quote_invoiced": "Presupuesto facturado"
     },
     "deliveryStatuses": {
       "pending": "esperando reintento",

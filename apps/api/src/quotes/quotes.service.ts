@@ -25,6 +25,7 @@ import type { z } from 'zod';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { WebhooksService } from '../integrations/webhooks.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { InvoicesService, type DraftIn } from '../invoices/invoices.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -100,6 +101,7 @@ export class QuotesService {
     private readonly audit: AuditService,
     private readonly invoices: InvoicesService,
     private readonly mail: MailService,
+    private readonly webhooks: WebhooksService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -450,7 +452,15 @@ export class QuotesService {
         tx,
       );
     });
-    return this.get(organizationId, id);
+    const moved = await this.get(organizationId, id);
+    if (status !== 'draft')
+      void this.webhooks.emit(
+        organizationId,
+        `quote.${status}`,
+        moved,
+        ctx.actor.userId,
+      );
+    return moved;
   }
 
   /** A draft invoice with the quote's lines, dated today unless another day is given */
@@ -521,7 +531,14 @@ export class QuotesService {
         );
       },
     );
-    return { quote: await this.get(organizationId, id), invoiceId: invoice.id };
+    const done = await this.get(organizationId, id);
+    void this.webhooks.emit(
+      organizationId,
+      'quote.invoiced',
+      { ...done, invoiceId: invoice.id },
+      ctx.actor.userId,
+    );
+    return { quote: done, invoiceId: invoice.id };
   }
 
   /** The quote as a PDF to the customer (or the address given); a draft is marked sent */
@@ -604,6 +621,14 @@ export class QuotesService {
         tx,
       );
     });
-    return { sentTo: to, quote: await this.get(organizationId, id) };
+    const after = await this.get(organizationId, id);
+    if (q.status === 'draft')
+      void this.webhooks.emit(
+        organizationId,
+        'quote.sent',
+        after,
+        ctx.actor.userId,
+      );
+    return { sentTo: to, quote: after };
   }
 }

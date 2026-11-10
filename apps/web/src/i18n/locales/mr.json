@@ -3212,7 +3212,11 @@
       "bill_recorded": "बिल नोंदवले",
       "bill_voided": "बिल रद्द",
       "credit_note_issued": "क्रेडिट नोट जारी",
-      "credit_note_voided": "क्रेडिट नोट रद्द"
+      "credit_note_voided": "क्रेडिट नोट रद्द",
+      "quote_sent": "कोटेशन पाठवले",
+      "quote_accepted": "कोटेशन स्वीकारले",
+      "quote_declined": "कोटेशन नाकारले",
+      "quote_invoiced": "कोटेशनचे बीजक झाले"
     },
     "deliveryStatuses": {
       "pending": "पुन्हा प्रयत्नाची प्रतीक्षा",
