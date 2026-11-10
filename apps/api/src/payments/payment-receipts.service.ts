@@ -23,6 +23,74 @@ export class PaymentReceiptsService {
     private readonly payments: PaymentsService,
   ) {}
 
+  private pdf(
+    p: Awaited<ReturnType<PaymentsService['get']>>,
+    contact: { legalName: string | null; name: string },
+    org: {
+      name: string;
+      legalName: string | null;
+      taxId: string | null;
+      baseCurrency: string;
+    },
+  ) {
+    const currency = p.currency ?? org.baseCurrency;
+    const digits = currencyDigits(currency);
+    const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
+    const seller = org.legalName ?? org.name;
+    const rows = [
+      ['Applied to', `Amount (${currency})`],
+      ...p.allocations.map((a) => [
+        a.documentNumber ?? 'Invoice',
+        fmt(a.amount),
+      ]),
+      ...(p.unallocated ? [['Held as advance', fmt(p.unallocated)]] : []),
+      ['Total received', fmt(p.amount)],
+    ];
+    const pdf = Buffer.from(
+      pdfTableBytes({
+        title: `Payment receipt ${p.number}`,
+        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
+        info: [
+          `Received from: ${contact.legalName ?? contact.name}`,
+          `Date ${p.date} · ${currency} ${fmt(p.amount)}${p.reference ? ` · Ref ${p.reference}` : ''}`,
+        ],
+        footer: `${seller} · ${p.number}`,
+        rows,
+      }),
+    );
+    return { pdf, currency, fmt };
+  }
+
+  /** The PDF of a posted receipt, to download */
+  async download(organizationId: string, id: string) {
+    const p = await this.payments.get(organizationId, id);
+    if (p.kind !== 'receipt')
+      throw new ConflictException({
+        message: 'Only receipts from customers have a receipt to download.',
+        details: { reason: 'not_receipt' },
+      });
+    const [contact, org] = await Promise.all([
+      this.prisma.contact.findFirstOrThrow({
+        where: { id: p.contact.id, organizationId },
+        select: { legalName: true, name: true },
+      }),
+      this.prisma.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+          name: true,
+          legalName: true,
+          taxId: true,
+          baseCurrency: true,
+        },
+      }),
+    ]);
+    const { pdf } = this.pdf(p, contact, org);
+    return {
+      data: pdf,
+      fileName: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+    };
+  }
+
   async email(
     id: string,
     input: { email?: string; message?: string },
@@ -62,31 +130,7 @@ export class PaymentReceiptsService {
         message: 'This customer has no email address. Enter one to send it to.',
         details: { reason: 'no_email' },
       });
-    const currency = p.currency ?? org.baseCurrency;
-    const digits = currencyDigits(currency);
-    const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
-    const seller = org.legalName ?? org.name;
-    const rows = [
-      ['Applied to', `Amount (${currency})`],
-      ...p.allocations.map((a) => [
-        a.documentNumber ?? 'Invoice',
-        fmt(a.amount),
-      ]),
-      ...(p.unallocated ? [['Held as advance', fmt(p.unallocated)]] : []),
-      ['Total received', fmt(p.amount)],
-    ];
-    const pdf = Buffer.from(
-      pdfTableBytes({
-        title: `Payment receipt ${p.number}`,
-        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
-        info: [
-          `Received from: ${contact.legalName ?? contact.name}`,
-          `Date ${p.date} · ${currency} ${fmt(p.amount)}${p.reference ? ` · Ref ${p.reference}` : ''}`,
-        ],
-        footer: `${seller} · ${p.number}`,
-        rows,
-      }),
-    );
+    const { pdf, currency, fmt } = this.pdf(p, contact, org);
     const sent = await this.mail.send({
       to: [to],
       subject: `Payment receipt ${p.number} from ${org.name}`,

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor } from '@ledgernest/shared';
-import { ArrowLeft, BellRing, Ban, Copy, FileMinus, HandCoins, Mail, Printer, Repeat } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -24,6 +24,7 @@ import InvoiceDocument from '../InvoiceDocument';
 import { invoiceErrorMessage } from '../errors';
 import SalesDraftForm, { type SalesDraftPayload } from '../SalesDraftForm';
 import ReminderDialog from '../ReminderDialog';
+import { saveBlob } from '../../lib/saveBlob';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -82,6 +83,11 @@ export default function InvoiceEditor() {
   const [repeating, setRepeating] = useState(false);
   const [reminding, setReminding] = useState(false);
   const [emailing, setEmailing] = useState(false);
+  const download = useMutation({
+    mutationFn: () => api!.pdf(invoice!.id),
+    onSuccess: (f) => saveBlob(f),
+    onError: (e) => toast(invoiceErrorMessage(e, t), 'error'),
+  });
   const recurringApi = useRecurringApi();
   const creditNotesApi = useCreditNotesApi();
   const paymentsApi = usePaymentsApi();
@@ -125,6 +131,11 @@ export default function InvoiceEditor() {
                 {invoice.status !== 'draft' && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
+                  </Button>
+                )}
+                {invoice.status !== 'draft' && (
+                  <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate()}>
+                    {t('common.downloadPdf')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (

@@ -269,30 +269,11 @@ export class InvoiceRemindersService
   }
 
   /** An issued invoice as a PDF to the customer (or the address given), with an optional note */
-  async emailInvoice(
-    id: string,
-    input: z.output<typeof invoiceEmailSchema>,
-    ctx: Ctx,
+  /** An invoice as a PDF: seller and buyer with GSTINs, place of supply, lines, tax by rate, totals and terms */
+  async invoicePdf(
+    organizationId: string,
+    inv: Awaited<ReturnType<InvoicesService['get']>>,
   ) {
-    const organizationId = ctx.tenant.organizationId;
-    const inv = await this.invoices.get(organizationId, id);
-    if (inv.status !== 'issued')
-      throw new ConflictException({
-        message: 'Only issued invoices can be emailed.',
-        details: { reason: 'not_issued' },
-      });
-    if (!this.mail.configured)
-      throw new ConflictException({
-        message:
-          'Email isn’t set up on this server. Print the invoice and send it yourself.',
-        details: { reason: 'mail_off' },
-      });
-    const to = input.email ?? inv.contact.email;
-    if (!to)
-      throw new BadRequestException({
-        message: 'This customer has no email address. Enter one to send it to.',
-        details: { reason: 'no_email' },
-      });
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
       select: {
@@ -339,6 +320,55 @@ export class InvoiceRemindersService
         rows: invoiceRows({ ...inv, currency }, digits),
       }),
     );
+    return {
+      org,
+      pdf,
+      currency,
+      digits,
+      fileName: `invoice-${(inv.number ?? 'draft').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+    };
+  }
+
+  /** The PDF of an issued (or voided) invoice, to download */
+  async download(organizationId: string, id: string) {
+    const inv = await this.invoices.get(organizationId, id);
+    if (inv.status === 'draft')
+      throw new ConflictException({
+        message: 'Issue the invoice first: drafts have no number yet.',
+        details: { reason: 'not_issued' },
+      });
+    const { pdf, fileName } = await this.invoicePdf(organizationId, inv);
+    return { data: pdf, fileName };
+  }
+
+  async emailInvoice(
+    id: string,
+    input: z.output<typeof invoiceEmailSchema>,
+    ctx: Ctx,
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    const inv = await this.invoices.get(organizationId, id);
+    if (inv.status !== 'issued')
+      throw new ConflictException({
+        message: 'Only issued invoices can be emailed.',
+        details: { reason: 'not_issued' },
+      });
+    if (!this.mail.configured)
+      throw new ConflictException({
+        message:
+          'Email isn’t set up on this server. Print the invoice and send it yourself.',
+        details: { reason: 'mail_off' },
+      });
+    const to = input.email ?? inv.contact.email;
+    if (!to)
+      throw new BadRequestException({
+        message: 'This customer has no email address. Enter one to send it to.',
+        details: { reason: 'no_email' },
+      });
+    const { org, pdf, currency, digits, fileName } = await this.invoicePdf(
+      organizationId,
+      inv,
+    );
     const sent = await this.mail.send({
       to: [to],
       subject: `Invoice ${inv.number} from ${org.name}`,
@@ -355,7 +385,7 @@ export class InvoiceRemindersService
       ].join('\n\n'),
       attachments: [
         {
-          filename: `invoice-${inv.number!.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+          filename: fileName,
           content: pdf,
           contentType: 'application/pdf',
         },

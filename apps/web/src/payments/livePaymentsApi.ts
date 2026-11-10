@@ -5,6 +5,10 @@ import type { PaymentsApi } from './types';
 export function createLivePaymentsApi(client: AuthClient, organizationId: string): PaymentsApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/payments${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
+    pdf: async (id) => {
+      const { blob, filename } = await client.download(`/payments/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'receipt.pdf' };
+    },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
       if (q.kind) p.set('kind', q.kind);

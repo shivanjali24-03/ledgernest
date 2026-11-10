@@ -1,4 +1,4 @@
-import { invoiceAmounts, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_VALID_DAYS, todayIn, type QuoteStatus } from '@ledgernest/shared';
+import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_VALID_DAYS, todayIn, type QuoteStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -153,6 +153,13 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
     return { contactId: s.contactId, quoteDate: d.quoteDate, expiryDate: d.expiryDate, currency: s.currency, placeOfSupply: s.placeOfSupply, reference: d.reference, notes: d.notes, lines: s.lines };
   };
   return {
+    pdf: (id) =>
+      wait(async () => {
+        const q = await view(find(load(), id));
+        const cur = q.currency ?? 'INR';
+        const bytes = pdfTableBytes({ title: `Quote ${q.number}`, subtitle: `Nest Demo Pvt. Ltd. for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, footer: `Nest Demo Pvt. Ltd. · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `quote-${q.number.toLowerCase()}.pdf` };
+      }),
     list: (q) =>
       wait(async () => {
         const all = await Promise.all(load().map(view));

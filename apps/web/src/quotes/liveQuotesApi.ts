@@ -5,6 +5,10 @@ import type { QuotesApi } from './types';
 export function createLiveQuotesApi(client: AuthClient, organizationId: string): QuotesApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/quotes${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
+    pdf: async (id) => {
+      const { blob, filename } = await client.download(`/quotes/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'quote.pdf' };
+    },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
       if (q.state) p.set('state', q.state);

@@ -43,6 +43,8 @@ export interface PaymentsApi {
   receive(input: ReceiptInput): Promise<Payment>;
   pay(input: VendorPaymentInput): Promise<Payment>;
   void(id: string, reason?: string): Promise<Payment>;
+  /** A receipt as a PDF file */
+  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
   /** Emails a posted receipt to the customer as a PDF; the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
 }

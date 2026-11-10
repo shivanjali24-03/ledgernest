@@ -11,11 +11,14 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
   ApiOkResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -25,7 +28,7 @@ import {
   quoteListQuerySchema,
   quoteStatusSchema,
 } from '@ledgernest/shared';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import {
   CurrentActor,
@@ -62,6 +65,23 @@ export class QuotesController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.quotes.list(tenant.organizationId, q);
+  }
+
+  @Get(':id/pdf')
+  @RequirePermission('invoices.view')
+  @ApiProduces('application/pdf')
+  async pdf(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) quoteId: string,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.quotes.download(tenant.organizationId, quoteId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(f.data, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
+    });
   }
 
   @Get(':id')

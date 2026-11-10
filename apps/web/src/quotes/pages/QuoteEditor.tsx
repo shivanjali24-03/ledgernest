@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor as addDays, QUOTE_MOVES, QUOTE_VALID_DAYS, quoteEditable } from '@ledgernest/shared';
-import { ArrowLeft, Check, Copy, FileOutput, Mail, Printer, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, Copy, FileDown, FileOutput, Mail, Printer, Undo2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../auth/client';
 import { useIntlLocale } from '../../i18n';
@@ -18,6 +18,7 @@ import Button from '../../ui/Button';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import EmailQuoteDialog from '../EmailQuoteDialog';
+import { saveBlob } from '../../lib/saveBlob';
 import { quoteTone } from '../tone';
 import type { Quote, QuotesApi } from '../types';
 import { useQuotesApi } from '../useQuotesApi';
@@ -176,6 +177,11 @@ export default function QuoteEditor() {
   const copy = useQuery({ queryKey: ['quotes', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const canManage = session.permissions.has('invoices.manage');
   const [emailing, setEmailing] = useState(false);
+  const download = useMutation({
+    mutationFn: () => api!.pdf(quote!.id),
+    onSuccess: (f) => saveBlob(f),
+    onError: (e) => toast(quoteErrorMessage(e, t), 'error'),
+  });
   const move = useMutation({
     mutationFn: (status: 'draft' | 'sent' | 'accepted' | 'declined') => api!.move(quote!.id, status),
     onSuccess: (q) => {
@@ -222,6 +228,9 @@ export default function QuoteEditor() {
                     {t('invoices.print')}
                   </Button>
                 )}
+                <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate()}>
+                  {t('common.downloadPdf')}
+                </Button>
                 {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
                   <Button variant="secondary" icon={<Mail className="size-4" />} onClick={() => setEmailing(true)}>
                     {t('quotes.email.action')}

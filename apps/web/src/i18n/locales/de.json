@@ -184,7 +184,8 @@
     "status": {
       "ACTIVE": "Aktiv",
       "SUSPENDED": "Gesperrt"
-    }
+    },
+    "downloadPdf": "PDF herunterladen"
   },
   "platform": {
     "eyebrow": "Super-Admin",
@@ -2234,7 +2235,8 @@
       "sent": "Quittung an {{email}} gesendet",
       "sentDemo": "In der Demo wird nichts wirklich gesendet; sie ginge an {{email}}",
       "noEmail": "Dieser Kunde hat keine E-Mail-Adresse. Geben Sie eine ein, um sie zu senden."
-    }
+    },
+    "downloadReceipt": "Quittung herunterladen"
   },
   "bills": {
     "title": "Eingangsrechnungen",

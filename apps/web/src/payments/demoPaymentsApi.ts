@@ -1,4 +1,4 @@
-import { currencyDigits, paymentNumber, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind } from '@ledgernest/shared';
+import { currencyDigits, paymentNumber, pdfTableBytes, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
@@ -165,6 +165,16 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
         const vendor = demoContactRows().find((c) => c.id === p.data.contactId);
         if (opts.approvalsAs && vendor) demoApprovalCheck('payment', { documentId: null, amount: p.data.amount, summary: `Payment to ${vendor.name}${p.data.reference ? ` · ${p.data.reference}` : ''}`, payload: input }, opts.approvalsAs);
         return settle('payment', { ...p.data, allocations: p.data.allocations.map((x) => ({ documentId: x.billId, amount: x.amount })) });
+      }),
+    pdf: (id) =>
+      wait(() => {
+        const p = load().find((x) => x.id === id);
+        if (!p) throw new ApiError('not_found', 404);
+        if (p.kind !== 'receipt') throw refuse(409, 'not_receipt');
+        const cur = p.currency ?? 'INR';
+        const fmt = (minor: number) => (minor / 10 ** currencyDigits(cur)).toFixed(currencyDigits(cur));
+        const bytes = pdfTableBytes({ title: `Payment receipt ${p.number}`, subtitle: 'Nest Demo Private Limited', info: [`Received from: ${p.contact.name}`, `Date ${p.date} · ${cur} ${fmt(p.amount)}`], footer: `Nest Demo Private Limited · ${p.number}`, rows: [['Applied to', `Amount (${cur})`], ...p.allocations.map((a) => [a.documentNumber ?? 'Invoice', fmt(a.amount)]), ...(p.unallocated ? [['Held as advance', fmt(p.unallocated)]] : []), ['Total received', fmt(p.amount)]] });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
       }),
     email: (id, input) =>
       wait(() => {

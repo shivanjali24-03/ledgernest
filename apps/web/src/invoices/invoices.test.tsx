@@ -175,6 +175,24 @@ describe('invoices', () => {
     expect(text).toMatch(/"INV\/[^"]+\/0001","[a-z_]+","[\d-]+","[\d-]+","Kumar Logistics","PO-4471","INR","1180\d\d\.00"/);
   });
 
+  it('downloads an issued invoice as PDF', { timeout: 20_000 }, async () => {
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    await waitFor(
+      () => {
+        if (!saved) fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
+        expect(saved).toBeDefined();
+      },
+      { timeout: 8000 },
+    );
+    const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
+    expect(text.startsWith('%PDF-1.4')).toBe(true);
+    expect(text).toMatch(/\(Tax invoice INV\/[^)]+\/0001\) Tj/);
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^INV\// }, { timeout: 4000 });

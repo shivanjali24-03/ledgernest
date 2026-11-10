@@ -74,6 +74,8 @@ export type InvoiceFilter = InvoiceState | 'unpaid';
 export interface InvoicesApi {
   list(q: { state?: InvoiceFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; summary: { outstanding: number; overdue: number }; items: InvoiceSummary[] }>;
   get(id: string): Promise<Invoice>;
+  /** An issued invoice as a PDF file */
+  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
   /** The list as CSV, with the same filters (every page) */
   exportList(q: { state?: InvoiceFilter; contactId?: string; search?: string }): Promise<{ blob: Blob; filename: string }>;
   create(input: InvoiceDraftInput): Promise<Invoice>;
