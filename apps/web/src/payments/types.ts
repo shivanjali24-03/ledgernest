@@ -23,7 +23,8 @@ export interface Payment {
   journalEntry: { id: string; number: string | null };
   voidEntry: { id: string; number: string | null } | null;
   /** The invoices a receipt paid, or the bills a payment settled */
-  allocations: { kind: 'invoice' | 'bill'; documentId: string; documentNumber: string | null; amount: number }[];
+  /** vendorReference: the vendor's own number for a bill */
+  allocations: { kind: 'invoice' | 'bill'; documentId: string; documentNumber: string | null; vendorReference?: string | null; amount: number }[];
 }
 
 /** An invoice or bill with something left to pay */
