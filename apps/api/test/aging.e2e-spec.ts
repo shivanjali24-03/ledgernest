@@ -970,6 +970,61 @@ describe('Aging reports (e2e)', () => {
     await as('viewer').get(`/invoices/${inv.c}/pdf`).expect(403);
   });
 
+  it('puts a pay-by-UPI QR code on rupee invoices once the UPI ID is set', async () => {
+    const binary = (req: request.Test) =>
+      req.buffer(true).parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      });
+    const pdfText = async () =>
+      (
+        (await binary(as().get(`/invoices/${inv.c}/pdf`)).expect(200))
+          .body as Buffer
+      ).toString('latin1');
+    expect(await pdfText()).not.toContain('Scan to pay');
+    expect(
+      (await as().patch('/organization', { upiId: 'not a upi id' }).expect(400))
+        .body.message,
+    ).toBeTruthy();
+    expect(
+      (
+        await as()
+          .patch('/organization', { upiId: ' agingtraders@okhdfcbank ' })
+          .expect(200)
+      ).body.upiId,
+    ).toBe('agingtraders@okhdfcbank');
+    const { balance } = (await as().get(`/invoices/${inv.c}`).expect(200))
+      .body as { balance: number };
+    expect(balance).toBeGreaterThan(0);
+    const text = await pdfText();
+    expect(text).toContain('(Scan to pay with any UPI app) Tj');
+    expect(text).toContain(
+      `(Rs ${(balance / 100).toFixed(2)} to agingtraders@okhdfcbank) Tj`,
+    );
+    expect(text.match(/ re\n/g)!.length).toBeGreaterThan(100);
+    // The reminder carries the pay link too
+    process.env.SMTP_URL = 'json';
+    const mail = app.get(MailService);
+    const send = vi.spyOn(mail, 'send');
+    try {
+      await as()
+        .post(`/invoices/${inv.c}/remind`, { email: 'a@kumar.example' })
+        .expect(200);
+      expect(send.mock.calls.at(-1)![0].text).toContain(
+        `upi://pay?pa=agingtraders%40okhdfcbank&pn=Aging%20${run}&am=${(balance / 100).toFixed(2)}&cu=INR&tn=Invoice%20INV%2F2026-27%2F0004&tr=INV%2F2026-27%2F0004`,
+      );
+    } finally {
+      send.mockRestore();
+      delete process.env.SMTP_URL;
+    }
+    // Cleared, it goes away again
+    expect(
+      (await as().patch('/organization', { upiId: '' }).expect(200)).body.upiId,
+    ).toBeNull();
+    expect(await pdfText()).not.toContain('Scan to pay');
+  });
+
   it('flags bills falling due in the coming week, with what they come to', async () => {
     const { timeZone } = await prisma.organization.findUniqueOrThrow({
       where: { id: org },

@@ -18,6 +18,8 @@ export interface PdfTable {
   footer?: string;
   /** The first row is the header */
   rows: (string | number | null)[][];
+  /** A QR code at the top right of the first page (e.g. to pay by UPI), with a line or two of caption under it */
+  qr?: { modules: boolean[][]; caption?: string[] };
 }
 
 export const PDF_TYPE = 'application/pdf';
@@ -82,7 +84,13 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
 
   const top = ph - margin;
   const info = (table.info ?? []).slice(0, 12);
-  const firstY = top - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0);
+  // The QR code: 88pt square (quiet zone included), captions under it; the heading's text keeps clear of it
+  const qrSide = 88;
+  const qrCaption = (table.qr?.caption ?? []).slice(0, 3).map(encode);
+  const qrN = table.qr?.modules.length ?? 0;
+  const qrBottom = top - qrSide - qrCaption.length * 9;
+  const headWidth = pw - margin * 2 - (qrN ? qrSide + 12 : 0);
+  const firstY = Math.min(top - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0), qrN ? qrBottom - 8 : Infinity);
   const perFirst = Math.floor((firstY - margin - 24) / rowH) - 1;
   const perPage = Math.floor((top - margin - 24) / rowH) - 1;
   const pages: string[][][] = [];
@@ -133,11 +141,28 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     let s = '0 g\n';
     let y = top;
     if (p === 0) {
-      s += `BT /F2 14 Tf ${margin} ${num(y - 14)} Td ${literal(encode(table.title))} Tj ET\n`;
-      if (table.subtitle) s += `BT /F1 9 Tf ${margin} ${num(y - 30)} Td ${literal(encode(table.subtitle))} Tj ET\n`;
+      s += `BT /F2 14 Tf ${margin} ${num(y - 14)} Td ${literal(truncate(encode(table.title), headWidth, 14, true))} Tj ET\n`;
+      if (table.subtitle) s += `BT /F1 9 Tf ${margin} ${num(y - 30)} Td ${literal(truncate(encode(table.subtitle), headWidth, 9, false))} Tj ET\n`;
       info.forEach((l, k) => {
-        s += `BT /F1 8.5 Tf ${margin} ${num(y - (table.subtitle ? 44 : 30) - 4 - k * 11)} Td ${literal(truncate(encode(l), pw - margin * 2, 8.5, false))} Tj ET\n`;
+        s += `BT /F1 8.5 Tf ${margin} ${num(y - (table.subtitle ? 44 : 30) - 4 - k * 11)} Td ${literal(truncate(encode(l), headWidth, 8.5, false))} Tj ET\n`;
       });
+      if (qrN) {
+        // One filled square per dark module, inside a 4-module quiet zone
+        const cell = qrSide / (qrN + 8);
+        const x0 = pw - margin - qrSide + 4 * cell;
+        const y0 = top - 4 * cell;
+        s += '0 g\n';
+        table.qr!.modules.forEach((row, r) =>
+          row.forEach((dark, c) => {
+            if (dark) s += `${num(x0 + c * cell)} ${num(y0 - (r + 1) * cell)} ${num(cell)} ${num(cell)} re\n`;
+          }),
+        );
+        s += 'f\n';
+        qrCaption.forEach((l, k) => {
+          const t = truncate(l, qrSide + 40, 7, k === 0);
+          s += `BT /${k === 0 ? 'F2' : 'F1'} 7 Tf ${num(pw - margin - width(t, 7, k === 0))} ${num(top - qrSide - 6 - k * 9)} Td ${literal(t)} Tj ET\n`;
+        });
+      }
       y = firstY;
     }
     const last = p === pages.length - 1;

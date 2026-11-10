@@ -172,6 +172,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
             {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={v.invoiceTerms} onChange={set('invoiceTerms')} disabled={!canManage} maxLength={1000} rows={4} dir="auto" className={`${inputClass} h-auto border-ink-200 py-2 dark:border-ink-700`} />}
           </Field>
         </div>
+        {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
       </Section>
 
       <Section title={t('settings.email.title')} description={t('settings.email.description')}>

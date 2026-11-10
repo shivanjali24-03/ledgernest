@@ -1,12 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, upiPayUri } from '@ledgernest/shared';
+import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
 import { countryName, formatDate, formatMoney } from '../lib/format';
 import { useSession } from '../layout/session';
 import { useOrganizationSettings } from '../settings/useOrganizationSettings';
 import { useSettingsApi } from '../settings/useSettingsApi';
+import UpiQr from '../ui/UpiQr';
 import type { Invoice } from './types';
 
 const stateName = (code: string | null) => INDIAN_STATES.find((s) => s.code === code)?.name ?? null;
@@ -33,6 +35,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
   const address = (a: Record<string, string | null> | { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null; country?: string | null }) =>
     [a.line1, a.line2, [a.city, a.region, a.postalCode].filter(Boolean).join(', '), a.country && a.country !== org?.country ? countryName(a.country, locale) : null].filter(Boolean);
   const pos = stateName(i.placeOfSupply);
+  // Pay by UPI: rupee invoices with something still owed, once the organisation has its UPI ID
+  const upi =
+    org?.upiId && currency === 'INR' && i.status === 'issued' && i.balance > 0 && i.number
+      ? upiPayUri({ upiId: org.upiId, name: org.legalName ?? org.name, amount: i.balance, note: `Invoice ${i.number}`, reference: i.number })
+      : null;
 
   return (
     <article className="rounded-2xl border border-ink-200 bg-white p-6 text-sm text-ink-900 shadow-sm sm:p-10 print:border-0 print:p-0 print:shadow-none dark:border-ink-800 dark:bg-ink-900 dark:text-ink-50 print:dark:bg-white print:dark:text-ink-900" aria-label={t('invoices.document', { number: i.number ?? t('invoices.draft') })}>
@@ -148,8 +155,28 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
         </table>
       </div>
 
-      <section className="mt-4 flex justify-end">
-        <dl className="grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-6 gap-y-1">
+      <section className="mt-4 flex flex-wrap-reverse items-start justify-between gap-6">
+        {upi ? (
+          <div className="flex items-center gap-4 rounded-xl border border-ink-200 p-3 dark:border-ink-700 print:border-ink-300" data-testid="invoice-upi">
+            <UpiQr value={upi} label={t('invoices.upi.qrLabel', { amount: money(i.balance), upiId: org!.upiId })} size={112} />
+            <div className="space-y-1">
+              <p className="font-semibold">{t('invoices.upi.title')}</p>
+              <p className="text-xs text-ink-600 dark:text-ink-300">{t('invoices.upi.body')}</p>
+              <p className="text-base font-semibold tabular-nums" dir="ltr">
+                {money(i.balance)}
+              </p>
+              <p className="font-mono text-xs text-ink-600 dark:text-ink-300" dir="ltr">
+                {org!.upiId}
+              </p>
+              <a href={upi} className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline sm:hidden print:hidden dark:text-brand-300">
+                <Smartphone className="size-3.5" aria-hidden /> {t('invoices.upi.open')}
+              </a>
+            </div>
+          </div>
+        ) : (
+          <span />
+        )}
+        <dl className="ms-auto grid w-full max-w-xs grid-cols-[1fr_auto] gap-x-6 gap-y-1">
           <dt className="text-ink-600 dark:text-ink-300">{t('invoices.subtotal')}</dt>
           <dd className="text-end tabular-nums" dir="ltr">
             {plain(i.subtotal)}

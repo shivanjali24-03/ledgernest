@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { qrMatrix } from '../upi/index.js';
 import { pdfTableBytes } from './index.js';
 
 const text = (b: Uint8Array) => Array.from(b, (c) => String.fromCharCode(c)).join('');
@@ -64,5 +65,23 @@ describe('pdfTableBytes after-text', () => {
     const pdf = text(pdfTableBytes({ title: 'Long', rows, after: Array.from({ length: 10 }, (_, i) => `Line ${i}`) }));
     expect(pdf).toContain('(Page 2 of 2) Tj');
     expect(pdf).toContain('(Line 9) Tj');
+  });
+
+  it('draws a QR code top right, with its caption, and starts the table below it', () => {
+    const modules = qrMatrix('upi://pay?pa=shop%40ybl&pn=Shop&am=100.00&cu=INR');
+    const dark = modules.flat().filter(Boolean).length;
+    const pdf = text(pdfTableBytes({ title: 'Invoice INV-0001', rows: [['Item', 'Amount'], ['Tea', '100.00']], qr: { modules, caption: ['Scan to pay with any UPI app', 'Rs 100.00 to shop@ybl'] } }));
+    expect(pdf.match(/ re\n/g)).toHaveLength(dark);
+    expect(pdf).toContain('(Scan to pay with any UPI app) Tj');
+    expect(pdf).toContain('(Rs 100.00 to shop@ybl) Tj');
+    // Every square sits inside the top-right 88pt box
+    for (const m of pdf.matchAll(/^([\d.]+) ([\d.]+) ([\d.]+) [\d.]+ re$/gm)) {
+      expect(Number(m[1])).toBeGreaterThanOrEqual(595 - 40 - 88);
+      expect(Number(m[1]) + Number(m[3])).toBeLessThanOrEqual(595 - 40 + 0.01);
+      expect(Number(m[2])).toBeGreaterThanOrEqual(842 - 40 - 88);
+    }
+    // The table's header row is below the QR code and its caption
+    const headerY = Number(/BT \/F2 8 Tf [\d.]+ ([\d.]+) Td \(Item\) Tj/.exec(pdf)![1]);
+    expect(headerY).toBeLessThan(842 - 40 - 88 - 18);
   });
 });

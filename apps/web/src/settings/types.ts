@@ -16,6 +16,8 @@ export interface OrganizationSettings {
   phone: string | null;
   /** Printed at the foot of invoices and quotes: payment terms, bank details */
   invoiceTerms?: string | null;
+  /** UPI ID for the pay-by-UPI QR code on rupee invoices */
+  upiId?: string | null;
   /** Email Owners and Admins a summary every Monday morning */
   weeklySummary?: boolean;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
