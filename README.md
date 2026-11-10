@@ -41,7 +41,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 - **Share on WhatsApp:** send an invoice link the customer opens without an account, to see what's owed, download the PDF or pay by UPI, and see when they opened it.
 - **India GST:** CGST + SGST within a state, IGST between states, GST slabs managed by the platform, GSTR-1 and GSTR-3B, HSN/SAC on invoices, and **GSTR-2B reconciliation**: upload the portal's JSON to see which bills your suppliers haven't filed (input credit at risk) before you claim it.
 - **Sales:** quotes that become invoices, invoices and credit notes, receipts, recurring invoices, payment reminders (by hand or automatic), credit limits, statements of account.
-- **Purchases:** bills, recurring bills, vendor payments, approvals for spending above a limit.
+- **Purchases:** bills, recurring bills, vendor payments with TDS kept back (194C, 194J, 194I…) and a TDS report for Form 26Q, approvals for spending above a limit.
 - **Banking:** statement import, suggested matches and accounts learned from earlier lines, reconciliation.
 - **Stock and assets:** inventory at weighted average cost with reorder levels, fixed assets with depreciation.
 - **Cash forecast:** 13 weeks ahead, expecting each customer to pay as late as they usually do, with a warning before cash runs short.

@@ -1,3 +1,4 @@
+import { tdsSchema } from '../tds/index.js';
 import { z } from 'zod';
 import { rateSchema } from '../currencies/index.js';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
@@ -54,13 +55,16 @@ export const vendorPaymentSchema = z
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
     notes: text(500),
+    /** Tax deducted at source: kept back from the bank payment, owed to the government instead */
+    tds: tdsSchema,
     allocations: z
       .array(z.object({ billId: z.uuid(), amount }))
       .max(100)
       .default([])
       .refine((a) => new Set(a.map((x) => x.billId)).size === a.length, 'Each bill can appear once.'),
   })
-  .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was paid.' });
+  .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was paid.' })
+  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the payment.' });
 export type VendorPaymentInput = z.input<typeof vendorPaymentSchema>;
 
 export const paymentVoidSchema = z.object({ reason: z.string().trim().max(500).optional() });

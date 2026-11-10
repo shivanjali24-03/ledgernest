@@ -34,6 +34,14 @@ type SettleIn = {
   reference: string | null;
   notes: string | null;
   allocations: { documentId: string; amount: number }[];
+  /** Vendor payments only: tax deducted at source, kept back from the bank */
+  tds?: {
+    section: string;
+    ratePpm: number;
+    base: number;
+    amount: number;
+    accountId: string;
+  } | null;
 };
 
 const refuse = (
@@ -69,6 +77,11 @@ const select = {
   rate: true,
   amount: true,
   allocated: true,
+  tdsSection: true,
+  tdsRatePpm: true,
+  tdsBase: true,
+  tdsAmount: true,
+  tdsAccount: { select: { id: true, code: true, name: true } },
   reference: true,
   notes: true,
   createdAt: true,
@@ -123,6 +136,18 @@ export class PaymentsService {
       amount: Number(p.amount),
       allocated: Number(p.allocated),
       unallocated: Number(p.amount - p.allocated),
+      /** Tax deducted at source: kept back from the bank, owed to the government on its account */
+      tds: p.tdsSection
+        ? {
+            section: p.tdsSection,
+            ratePpm: p.tdsRatePpm!,
+            base: Number(p.tdsBase),
+            amount: Number(p.tdsAmount),
+            account: p.tdsAccount,
+          }
+        : null,
+      /** What actually left (or reached) the bank */
+      bankAmount: Number(p.amount - p.tdsAmount),
       reference: p.reference,
       notes: p.notes,
       journalEntry: {
@@ -261,6 +286,7 @@ export class PaymentsService {
         billDate: true,
         dueDate: true,
         currency: true,
+        subtotal: true,
         total: true,
         amountPaid: true,
         vendorReference: true,
@@ -268,6 +294,8 @@ export class PaymentsService {
       },
     });
     return rows.map((b) => ({
+      /** Before GST: what TDS is usually worked out on */
+      subtotal: Number(b.subtotal),
       id: b.id,
       number: billNumber(b.fiscalYear!.name, b.number!),
       vendorReference: b.vendorReference,
@@ -408,6 +436,41 @@ export class PaymentsService {
           'bank_currency',
           { field: 'bankAccountId' },
         );
+
+      // TDS: on vendor payments in rupees (the base currency), owed on a tax or current liability account
+      const tds = !receipt && input.tds ? input.tds : null;
+      if (tds) {
+        if (currency)
+          throw refuse(
+            BadRequestException,
+            'TDS is for payments in the base currency.',
+            'tds_currency',
+            { field: 'tds' },
+          );
+        if (tds.amount >= input.amount)
+          throw refuse(
+            BadRequestException,
+            'TDS has to be less than the payment.',
+            'tds_too_much',
+            { field: 'tds' },
+          );
+        const owed = await tx.account.findFirst({
+          where: { organizationId, id: tds.accountId },
+          select: { type: true, subtype: true, archivedAt: true },
+        });
+        if (
+          !owed ||
+          owed.type !== 'liability' ||
+          !['tax_payable', 'current_liability'].includes(owed.subtype) ||
+          owed.archivedAt
+        )
+          throw refuse(
+            BadRequestException,
+            'Choose an active tax liability account for the TDS, like TDS payable.',
+            'tds_account',
+            { field: 'tds' },
+          );
+      }
 
       // The documents it settles: this contact's, current, in their currency, and no more than each one's balance
       const ids = input.allocations.map((a) => a.documentId);
@@ -590,16 +653,31 @@ export class PaymentsService {
         line(accountId, docSide, minor, label, true),
       );
       // A bank in the base currency carries the rupees of the document side at the same rate
+      // With TDS the bank pays less, and the rest is owed to the government
+      const kept = tds?.amount ?? 0;
       const bankLine = bank.currency
         ? line(bank.id, bankSide, input.amount, label, true)
         : line(
             bank.id,
             bankSide,
-            [...byAccount.values()].reduce((s, m) => s + inBase(m), 0),
+            [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) - kept,
             label,
             false,
           );
-      const lines = receipt ? [bankLine, ...docLines] : [...docLines, bankLine];
+      const tdsLine = tds
+        ? [
+            line(
+              tds.accountId,
+              'credit',
+              kept,
+              `TDS ${tds.section} · ${label}`,
+              false,
+            ),
+          ]
+        : [];
+      const lines = receipt
+        ? [bankLine, ...docLines]
+        : [...docLines, bankLine, ...tdsLine];
 
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -625,6 +703,15 @@ export class PaymentsService {
           rate,
           amount: BigInt(input.amount),
           allocated: BigInt(allocated),
+          ...(tds
+            ? {
+                tdsSection: tds.section,
+                tdsRatePpm: tds.ratePpm,
+                tdsBase: BigInt(tds.base),
+                tdsAmount: BigInt(tds.amount),
+                tdsAccountId: tds.accountId,
+              }
+            : {}),
           reference: input.reference,
           notes: input.notes,
           journalEntryId: entry.id,
@@ -668,6 +755,9 @@ export class PaymentsService {
             amount: input.amount,
             currency,
             allocated,
+            ...(tds
+              ? { tds: { section: tds.section, amount: tds.amount } }
+              : {}),
             entry: entry.number,
           },
           req: ctx.req,

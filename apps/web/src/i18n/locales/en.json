@@ -128,7 +128,8 @@
         "gstr1": "GSTR-1 for {{period}}",
         "gstr3b": "GSTR-3B for {{period}}",
         "gstr9": "GSTR-9 annual return for {{period}}",
-        "advance_tax": "Advance tax: {{share}}% of the year’s tax ({{period}})"
+        "advance_tax": "Advance tax: {{share}}% of the year’s tax ({{period}})",
+        "tds": "TDS for {{period}} to the government"
       },
       "daysLeft_one": "1 day left",
       "daysLeft_other": "{{count}} days left",
@@ -136,7 +137,8 @@
       "overdue_one": "1 day late",
       "overdue_other": "{{count}} days late",
       "toPay": "about {{amount}} to pay in cash so far",
-      "nothingToPay": "nothing to pay in cash so far"
+      "nothingToPay": "nothing to pay in cash so far",
+      "tdsToPay": "{{amount}} kept back"
     }
   },
   "comingSoon": {
@@ -1716,6 +1718,28 @@
       "late_other": "usually {{count}} days late",
       "lateTitle": "Customers who pay late",
       "lateHint": "From their invoices paid in the last year. The forecast expects their money this much after the due date."
+    },
+    "tds": {
+      "title": "TDS",
+      "hint": "TDS kept back from vendor payments: by section for Form 26Q, by month with the day it’s due (challan 281).",
+      "emptyTitle": "No TDS in these dates",
+      "emptyBody": "When you pay a contractor, professional or landlord, tick Deduct TDS on the payment and it shows here.",
+      "missingPan": "No PAN on file for {{names}}. Form 26Q needs one; add their GSTIN on the contact (the PAN is inside it).",
+      "bySection": "By section",
+      "byMonth": "By month, with the day it’s due",
+      "payments": "Payments",
+      "total": "Total",
+      "csv": "Download CSV",
+      "noPan": "No PAN",
+      "cols": {
+        "section": "Section",
+        "on": "TDS on",
+        "tds": "TDS",
+        "month": "Month",
+        "due": "Pay by",
+        "payment": "Payment",
+        "deductee": "Deductee and PAN"
+      }
     }
   },
   "taxes": {
@@ -2395,7 +2419,8 @@
       "vendor": "Choose a vendor.",
       "amountPaid": "Enter the amount paid.",
       "allocationPaid": "Check the highlighted amounts: no more than each bill has left.",
-      "overPaid": "You can’t apply more than was paid."
+      "overPaid": "You can’t apply more than was paid.",
+      "tds": "Check the TDS: a rate, what it’s on, an amount less than the payment and an account."
     },
     "payVendor": "Pay a vendor",
     "payBill": "Pay bill",
@@ -2422,7 +2447,37 @@
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
       "noEmail": "This customer has no email address. Enter one to send it to."
     },
-    "downloadReceipt": "Download receipt"
+    "downloadReceipt": "Download receipt",
+    "tds": {
+      "deduct": "Deduct TDS",
+      "section": "TDS section",
+      "rate": "Rate (%)",
+      "base": "TDS on ({{currency}})",
+      "baseHint": "Usually the bills before GST.",
+      "amount": "TDS kept back ({{currency}})",
+      "account": "Owed on account",
+      "noAccount": "No tax liability account: add TDS payable",
+      "tooMuch": "TDS has to be less than the payment.",
+      "bankPays": "The bank pays {{bank}}; {{tds}} is owed to the government as TDS. The bills are settled in full.",
+      "line": "TDS {{section}}: {{amount}} kept back · bank paid {{bank}}",
+      "sections": {
+        "194C": "Contractors",
+        "194J": "Professional or technical fees",
+        "194I": "Rent",
+        "194H": "Commission or brokerage",
+        "194Q": "Purchase of goods",
+        "194A": "Interest"
+      },
+      "rates": {
+        "individual": "Individual or HUF",
+        "other": "Others",
+        "professional": "Professional",
+        "technical": "Technical services",
+        "building": "Land, building, furniture",
+        "machinery": "Plant or machinery",
+        "standard": "Usual rate"
+      }
+    }
   },
   "bills": {
     "title": "Bills",

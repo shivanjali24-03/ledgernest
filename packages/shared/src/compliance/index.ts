@@ -5,7 +5,7 @@
  * announced case by case; these are the regular ones.
  */
 
-export type ComplianceKind = 'gstr1' | 'gstr3b' | 'gstr9' | 'advance_tax';
+export type ComplianceKind = 'gstr1' | 'gstr3b' | 'gstr9' | 'advance_tax' | 'tds';
 
 export interface ComplianceItem {
   kind: ComplianceKind;
@@ -20,6 +20,14 @@ export interface ComplianceItem {
 const pad = (n: number) => String(n).padStart(2, '0');
 const monthEnd = (y: number, m: number) => `${y}-${pad(m)}-${pad(new Date(Date.UTC(y, m, 0)).getUTCDate())}`;
 const addDays = (day: string, n: number) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+/** TDS kept back in a month is paid to the government by the 7th of the next (30 April for March) */
+export function tdsDepositDue(month: string): string {
+  const [y, m] = month.split('-').map(Number) as [number, number];
+  if (m === 3) return `${y}-04-30`;
+  const next = new Date(Date.UTC(y, m, 1));
+  return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-07`;
+}
 
 /**
  * Due dates from a little before today (recently missed) to the horizon, soonest first. GST returns only for a

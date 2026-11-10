@@ -222,6 +222,8 @@ export interface ReportsApi {
   cashForecast(weeks: number): Promise<CashForecast>;
   /** Statutory due dates coming up (India) */
   compliance(): Promise<Compliance>;
+  /** TDS kept back from vendor payments in the dates */
+  tds(from: string, to: string): Promise<TdsReport>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
@@ -246,4 +248,15 @@ export type CashForecast = SharedCashForecast & { currency: string; lateCustomer
 export interface Compliance {
   today: string | null;
   items: (ComplianceItem & { daysLeft: number; amount?: number })[];
+}
+
+/** What GET /reports/tds returns */
+export interface TdsReport {
+  from: string;
+  to: string;
+  total: number;
+  sections: { section: string; count: number; base: number; tds: number }[];
+  months: { month: string; due: string; count: number; base: number; tds: number }[];
+  missingPan: string[];
+  payments: { id: string; number: string; date: string; vendor: { id: string; name: string; pan: string | null }; section: string; ratePpm: number; base: number; amount: number; tds: number }[];
 }

@@ -38,6 +38,8 @@ export const resetDemoPayments = () => {
     /* nothing stored */
   }
 };
+/** Posted vendor payments with TDS, for the TDS report */
+export const demoTdsPayments = () => load().filter((p) => p.kind === 'payment' && p.status === 'posted' && p.tds && p.tds.amount > 0);
 /** What's been received (or paid) and not allocated, per contact, for their balance */
 export const demoAdvances = (contactId: string, kind: PaymentKind = 'receipt') => load().filter((p) => p.contact.id === contactId && p.kind === kind && p.status === 'posted').reduce((s, p) => s + p.unallocated, 0);
 const adjust = (kind: 'invoice' | 'bill', id: string, delta: number, payment?: { id: string; number: string; date: string; amount: number }) => (kind === 'invoice' ? demoAdjustPaid(id, delta, payment) : demoAdjustBillPaid(id, delta, payment));
@@ -51,7 +53,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['payments.manage'] });
   };
   /** Receipts credit invoices' receivables; payments debit bills' payables. The rest is an advance. */
-  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; notes: string | null; allocations: { documentId: string; amount: number }[] }) => {
+  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; notes: string | null; allocations: { documentId: string; amount: number }[]; tds?: { section: string; ratePpm: number; base: number; amount: number; accountId: string } | null }) => {
     guard();
     const receipt = kind === 'receipt';
     const contact = demoContactRows().find((c) => c.id === d.contactId);
@@ -61,6 +63,14 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     const bank = demoAccountRows().find((a) => a.id === d.bankAccountId);
     if (!bank || bank.type !== 'asset' || bank.archivedAt) throw refuse(400, 'bank_invalid');
     if (bank.currency && bank.currency !== currency) throw refuse(400, 'bank_currency');
+    // TDS: vendor payments in rupees, owed on a tax or current liability account
+    const tds = !receipt && d.tds ? d.tds : null;
+    const tdsAccount = tds ? demoAccountRows().find((a) => a.id === tds.accountId) : undefined;
+    if (tds) {
+      if (currency) throw refuse(400, 'tds_currency');
+      if (tds.amount >= d.amount) throw refuse(400, 'tds_too_much');
+      if (!tdsAccount || tdsAccount.type !== 'liability' || !['tax_payable', 'current_liability'].includes(tdsAccount.subtype) || tdsAccount.archivedAt) throw refuse(400, 'tds_account');
+    }
     const docs = receipt
       ? (await demoInvoiceViews()).map((i) => ({ id: i.id, number: i.number, contactId: i.contact.id, open: i.status === 'issued', balance: i.balance, accountId: i.receivableAccount?.id }))
       : (await demoBillViews()).map((b) => ({ id: b.id, number: b.number, contactId: b.contact.id, open: b.status === 'open', balance: b.balance, accountId: b.payableAccount?.id }));
@@ -97,9 +107,10 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     const docLines = [...byAccount].map(([accountId, minor]) => (currency ? { accountId, description: label, currency, rate: rate!, ...(receipt ? { foreignCredit: minor } : { foreignDebit: minor }) } : { accountId, description: label, ...(receipt ? { credit: minor } : { debit: minor }) }));
     const bankLine = bank.currency
       ? { accountId: bank.id, description: label, currency: bank.currency, rate: rate!, ...(receipt ? { foreignDebit: d.amount } : { foreignCredit: d.amount }) }
-      : { accountId: bank.id, description: label, ...(receipt ? { debit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) } : { credit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) }) };
+      : { accountId: bank.id, description: label, ...(receipt ? { debit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) } : { credit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) - (tds?.amount ?? 0) }) };
+    const tdsLines = tds ? [{ accountId: tds.accountId, description: `TDS ${tds.section} · ${label}`, credit: tds.amount }] : [];
     const journals = createDemoJournalsApi(() => true);
-    const draft = await journals.create({ date: d.date, memo: `${receipt ? 'Receipt' : 'Payment'} ${label} · ${contact.name}`, reference: d.reference ?? label, lines: receipt ? [bankLine, ...docLines] : [...docLines, bankLine] });
+    const draft = await journals.create({ date: d.date, memo: `${receipt ? 'Receipt' : 'Payment'} ${label} · ${contact.name}`, reference: d.reference ?? label, lines: receipt ? [bankLine, ...docLines] : [...docLines, bankLine, ...tdsLines] });
     const posted = await journals.post(draft.id).catch(async (e: unknown) => {
       await journals.remove(draft.id);
       throw e;
@@ -117,6 +128,8 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
       amount: d.amount,
       allocated,
       unallocated: d.amount - allocated,
+      tds: tds && tdsAccount ? { section: tds.section, ratePpm: tds.ratePpm, base: tds.base, amount: tds.amount, account: { id: tdsAccount.id, code: tdsAccount.code, name: tdsAccount.name } } : null,
+      bankAmount: d.amount - (tds?.amount ?? 0),
       reference: d.reference,
       notes: d.notes,
       journalEntry: { id: posted.id, number: posted.number },
@@ -143,7 +156,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
         (await demoBillViews())
           .filter((b) => b.contact.id === contactId && b.status === 'open' && b.balance > 0)
           .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
-          .map((b) => ({ id: b.id, number: b.number!, vendorReference: b.vendorReference, issueDate: b.billDate, dueDate: b.dueDate, currency: b.currency, total: b.total, balance: b.balance })),
+          .map((b) => ({ id: b.id, number: b.number!, vendorReference: b.vendorReference, issueDate: b.billDate, dueDate: b.dueDate, currency: b.currency, subtotal: b.subtotal, total: b.total, balance: b.balance })),
       ),
     openInvoices: (contactId) =>
       wait(async () =>

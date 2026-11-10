@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { allocateOldestFirst, currencyDigits, toMinor, todayIn, type PaymentKind } from '@ledgernest/shared';
+import { allocateOldestFirst, currencyDigits, tdsOn, TDS_SECTIONS, toMinor, todayIn, type PaymentKind, type TdsSection } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../accounts/useAccountsApi';
 import { useContactsApi } from '../contacts/useContactsApi';
@@ -56,17 +56,36 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
     setAllocs(Object.fromEntries(start.map((i) => [i.id, plain(i.balance)])));
     if (total) setAmount(plain(total));
   }
+  // TDS on a vendor payment in rupees: kept back from the bank, owed to the government on a tax liability account
+  const canTds = !receipt && !!contactId && !currency;
+  const tdsAccounts = useMemo(() => (accounts.data ?? []).filter((a) => a.type === 'liability' && (a.subtype === 'tax_payable' || a.subtype === 'current_liability') && !a.archived).sort((a, b) => Number(/tds/i.test(b.name)) - Number(/tds/i.test(a.name))), [accounts.data]);
+  const [tdsWanted, setTdsWanted] = useState(false);
+  const [section, setSection] = useState<TdsSection>('194C');
+  const [ratePct, setRatePct] = useState('1');
+  const [tdsBase, setTdsBase] = useState('');
+  const [tdsAmount, setTdsAmount] = useState('');
+  const [tdsTouched, setTdsTouched] = useState(false);
+  const [tdsAccountId, setTdsAccountId] = useState('');
   const bank = bankAccountId || banks[0]?.id || '';
   const amt = toMinor(amount, digits);
   const parsedAllocs = (open.data ?? []).map((i) => ({ ...i, value: allocs[i.id]?.trim() ? toMinor(allocs[i.id]!, digits) : 0 }));
   const allocated = parsedAllocs.reduce((s, i) => s + (i.value ?? 0), 0);
-  const problem = !contactId ? (receipt ? 'customer' : 'vendor') : !bank ? 'bank' : !amt ? 'amount' : parsedAllocs.some((i) => i.value === null || (i.value ?? 0) > i.balance) ? 'allocation' : allocated > amt ? 'over' : null;
+  const tdsActive = canTds && tdsWanted;
+  const ratePpm = Math.round(Number(ratePct.replace(',', '.')) * 10_000);
+  // What TDS is on: the bills before GST, in proportion to what's paid of each; the payment itself when nothing's allocated
+  const suggestedBase = parsedAllocs.reduce((s, i) => s + (i.value && i.total ? Math.round(((i.subtotal ?? i.total) * i.value) / i.total) : 0), 0) || amt || 0;
+  const baseMinor = tdsBase.trim() ? toMinor(tdsBase, digits) : suggestedBase;
+  const tdsMinor = tdsTouched && tdsAmount.trim() ? toMinor(tdsAmount, digits) : baseMinor && ratePpm > 0 ? tdsOn(baseMinor, ratePpm) : 0;
+  const tdsAccount = tdsAccountId || tdsAccounts[0]?.id || '';
+  const tdsProblem = tdsActive && (!(ratePpm > 0 && ratePpm <= 300_000) || !baseMinor || !tdsMinor || !tdsAccount || (amt !== null && tdsMinor >= amt));
+  const problem = !contactId ? (receipt ? 'customer' : 'vendor') : !bank ? 'bank' : !amt ? 'amount' : parsedAllocs.some((i) => i.value === null || (i.value ?? 0) > i.balance) ? 'allocation' : allocated > amt ? 'over' : tdsProblem ? 'tds' : null;
 
   const save = useMutation({
     mutationFn: () => {
       const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null };
       const chosen = parsedAllocs.filter((i) => i.value);
-      return receipt ? api.receive({ ...base, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
+      const tds = tdsActive ? { section, ratePpm, base: baseMinor!, amount: tdsMinor!, accountId: tdsAccount } : null;
+      return receipt ? api.receive({ ...base, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, tds, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
     },
     onSuccess: (p) => {
       for (const k of ['payments', 'invoices', 'bills', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
@@ -124,6 +143,65 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
             <TextField label={t('payments.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="UTR 402918" dir="auto" />
           </div>
         </div>
+        {canTds && (
+          <fieldset className="space-y-3 rounded-xl border border-ink-200 p-3 dark:border-ink-700">
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" checked={tdsWanted} onChange={(e) => setTdsWanted(e.target.checked)} className="size-4 rounded accent-brand-600" />
+              {t('payments.tds.deduct')}
+            </label>
+            {tdsWanted && (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SelectField
+                    label={t('payments.tds.section')}
+                    value={section}
+                    onChange={(e) => {
+                      const next = e.target.value as TdsSection;
+                      setSection(next);
+                      setRatePct(String(TDS_SECTIONS.find((x) => x.code === next)!.rates[0].ppm / 10_000));
+                      setTdsTouched(false);
+                    }}
+                    options={TDS_SECTIONS.map((x) => ({ value: x.code, label: `${x.code} · ${t(`payments.tds.sections.${x.code}`)}` }))}
+                  />
+                  <TextField
+                    label={t('payments.tds.rate')}
+                    value={ratePct}
+                    onChange={(e) => {
+                      setRatePct(e.target.value);
+                      setTdsTouched(false);
+                    }}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="text-end font-mono"
+                    hint={TDS_SECTIONS.find((x) => x.code === section)!.rates.map((r) => `${t(`payments.tds.rates.${r.key}`)} ${r.ppm / 10_000}%`).join(' · ')}
+                  />
+                  <TextField
+                    label={t('payments.tds.base', { currency: code })}
+                    value={tdsBase}
+                    placeholder={plain(suggestedBase)}
+                    onChange={(e) => {
+                      setTdsBase(e.target.value);
+                      setTdsTouched(false);
+                    }}
+                    inputMode="decimal"
+                    dir="ltr"
+                    className="text-end font-mono"
+                    hint={t('payments.tds.baseHint')}
+                  />
+                  <TextField label={t('payments.tds.amount', { currency: code })} value={tdsTouched ? tdsAmount : tdsMinor ? plain(tdsMinor) : ''} onChange={(e) => { setTdsAmount(e.target.value); setTdsTouched(true); }} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+                  <div className="sm:col-span-2">
+                    <SelectField label={t('payments.tds.account')} value={tdsAccount} onChange={(e) => setTdsAccountId(e.target.value)} options={tdsAccounts.length ? tdsAccounts.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` })) : [{ value: '', label: t('payments.tds.noAccount') }]} />
+                  </div>
+                </div>
+                {amt && tdsMinor ? (
+                  <p role="status" className={`text-sm ${tdsMinor >= amt ? 'text-expense' : 'text-ink-600 dark:text-ink-300'}`}>
+                    {tdsMinor >= amt ? t('payments.tds.tooMuch') : t('payments.tds.bankPays', { bank: `${code} ${plain(amt - tdsMinor)}`, tds: `${code} ${plain(tdsMinor)}` })}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </fieldset>
+        )}
         {contactId && (
           <fieldset className="space-y-2">
             <div className="flex items-center gap-2">

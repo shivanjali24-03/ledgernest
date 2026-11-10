@@ -1,4 +1,4 @@
-import { complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Compliance, Gstr2bReport } from './types';
+import type { CashForecast, Compliance, Gstr2bReport, TdsReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -381,6 +381,34 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     ];
     return { ...buildCashForecast({ today: d.asOf, opening: d.kpis.cash.value, items, weeks }), currency: 'INR', lateCustomers: [] };
   };
+  /** TDS from the demo's vendor payments */
+  const tds = async (from: string, to: string): Promise<TdsReport> => {
+    const [{ demoTdsPayments }, { demoContactRows }] = await Promise.all([import('../payments/demoPaymentsApi'), import('../contacts/demoContactsApi')]);
+    const payments = demoTdsPayments()
+      .filter((p) => p.date >= from && p.date <= to)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((p) => {
+        const c = demoContactRows().find((x) => x.id === p.contact.id);
+        return { id: p.id, number: p.number, date: p.date, vendor: { id: p.contact.id, name: c?.legalName ?? p.contact.name, pan: panFromGstin(c?.taxId) }, section: p.tds!.section, ratePpm: p.tds!.ratePpm, base: p.tds!.base, amount: p.amount, tds: p.tds!.amount };
+      });
+    const group = (key: (p: (typeof payments)[number]) => string) => {
+      const m = new Map<string, { count: number; base: number; tds: number }>();
+      for (const p of payments) {
+        const g = m.get(key(p)) ?? { count: 0, base: 0, tds: 0 };
+        m.set(key(p), { count: g.count + 1, base: g.base + p.base, tds: g.tds + p.tds });
+      }
+      return [...m].sort(([a], [b]) => a.localeCompare(b));
+    };
+    return {
+      from,
+      to,
+      total: payments.reduce((s, p) => s + p.tds, 0),
+      sections: group((p) => p.section).map(([section, g]) => ({ section, ...g })),
+      months: group((p) => p.date.slice(0, 7)).map(([month, g]) => ({ month, due: tdsDepositDue(month), ...g })),
+      missingPan: [...new Set(payments.filter((p) => !p.vendor.pan).map((p) => p.vendor.name))],
+      payments,
+    };
+  };
   /** The demo organisation is GST-registered in Maharashtra */
   const compliance = async (): Promise<Compliance> => {
     const today = todayIn('Asia/Kolkata');
@@ -392,6 +420,17 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
         return { ...i, daysLeft, amount: r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess };
       }),
     );
+    // TDS kept back in the demo's payments, due by the 7th of the next month
+    const { demoTdsPayments } = await import('../payments/demoPaymentsApi');
+    const months = new Map<string, number>();
+    for (const p of demoTdsPayments()) months.set(p.date.slice(0, 7), (months.get(p.date.slice(0, 7)) ?? 0) + p.tds!.amount);
+    for (const [m, amount] of months) {
+      const due = tdsDepositDue(m);
+      const daysLeft = Math.round((Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+      const [y, mo] = m.split('-').map(Number) as [number, number];
+      if (daysLeft >= -10 && daysLeft <= 45) items.push({ kind: 'tds', from: `${m}-01`, to: new Date(Date.UTC(y, mo, 0)).toISOString().slice(0, 10), due, daysLeft, amount });
+    }
+    items.sort((a, b) => a.due.localeCompare(b.due) || a.kind.localeCompare(b.kind));
     return { today, items };
   };
   /** GSTR-2B against the demo's recorded bills, heads read from their tax lines' names */
@@ -504,6 +543,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     gstr2b,
     cashForecast,
     compliance,
+    tds,
     gstr1,
     async exportGstr1(from, to, format) {
       guard();

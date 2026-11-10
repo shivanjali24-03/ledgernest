@@ -43,3 +43,4 @@ export * from './forecast/index.js';
 export * from './invoices/words.js';
 export * from './einvoice/index.js';
 export * from './compliance/index.js';
+export * from './tds/index.js';

@@ -36,6 +36,7 @@ import {
   gstr2bRequestSchema,
   type Gstr2bRequest,
   cashForecastQuerySchema,
+  tdsReportQuerySchema,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -48,6 +49,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CashForecastService } from './cash-forecast.service.js';
+import { TdsReportService } from './tds-report.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
@@ -97,6 +99,7 @@ export class ReportsController {
     private readonly statements: StatementsService,
     private readonly sales: SalesReportService,
     private readonly forecast: CashForecastService,
+    private readonly tds: TdsReportService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -520,6 +523,20 @@ export class ReportsController {
       c,
       await this.reports.decimals(tenant.organizationId),
     );
+  }
+
+  @Get('tds')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'TDS kept back from vendor payments in the dates: by section (Form 26Q), by month with the day it is due (challan 281), and each payment with the vendor PAN',
+  })
+  tdsReport(
+    @Query(new ZodValidationPipe(tdsReportQuerySchema))
+    q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.tds.report(tenant.organizationId, q.from, q.to);
   }
 
   @Get('compliance')
