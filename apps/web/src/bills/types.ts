@@ -76,6 +76,19 @@ export interface BillsApi {
   create(input: BillDraftInput): Promise<Bill>;
   update(id: string, input: BillDraftInput): Promise<Bill>;
   remove(id: string): Promise<void>;
-  record(id: string): Promise<Bill>;
+  /** Refused with duplicate_bill when the vendor's bill number is recorded already, unless allowDuplicate */
+  record(id: string, opts?: { allowDuplicate?: boolean }): Promise<Bill>;
+  /** Other bills from the same vendor that may be this one entered twice */
+  duplicates(id: string): Promise<BillDuplicate[]>;
   void(id: string, input: { date?: string; reason?: string }): Promise<Bill>;
+}
+
+export interface BillDuplicate {
+  id: string;
+  number: string | null;
+  status: string;
+  vendorReference: string | null;
+  billDate: string;
+  total: number;
+  reason: 'reference' | 'amount';
 }

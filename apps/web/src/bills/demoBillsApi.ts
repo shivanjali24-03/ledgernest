@@ -1,4 +1,4 @@
-import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
+import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus, possibleDuplicateBills } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -465,13 +465,24 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
         if (find(rows, iid).status !== 'draft') throw refuse(409, 'not_draft');
         save(rows.filter((r) => r.id !== iid));
       }),
-    record: (iid) =>
+    duplicates: (iid) =>
+      wait(async () => {
+        const rows = await load();
+        const me = view(find(rows, iid));
+        const others = rows.map(view).filter((b) => b.contact.id === me.contact.id && b.status !== 'void');
+        return possibleDuplicateBills(me, others).map((b) => ({ id: b.id, number: b.number, status: b.status, vendorReference: b.vendorReference, billDate: b.billDate, total: b.total, reason: b.reason }));
+      }),
+    record: (iid, recordOpts) =>
       wait(async () => {
         guard();
         const rows = await load();
         const i = find(rows, iid);
         if (i.status !== 'draft') throw refuse(409, 'not_draft');
         const v = view(i);
+        if (!recordOpts?.allowDuplicate) {
+          const same = possibleDuplicateBills(v, rows.map(view).filter((b) => b.contact.id === v.contact.id && b.status === 'open')).filter((b) => b.reason === 'reference');
+          if (same.length) throw refuse(409, 'duplicate_bill', { duplicates: same.map((b) => ({ id: b.id, number: b.number, status: b.status, vendorReference: b.vendorReference, billDate: b.billDate, total: b.total, reason: b.reason })) });
+        }
         if (opts.approvalsAs) demoApprovalCheck('bill', { documentId: iid, amount: v.total, summary: `Bill from ${v.contact.name}${v.vendorReference ? ` · ${v.vendorReference}` : ''}` }, opts.approvalsAs);
         if (v.total <= 0) throw refuse(400, 'zero_total');
         const payable = v.payableAccount;
