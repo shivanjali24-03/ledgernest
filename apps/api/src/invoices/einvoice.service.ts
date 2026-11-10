@@ -42,6 +42,7 @@ const invoiceSelect = {
   placeOfSupply: true,
   shipTo: true,
   roundOff: true,
+  pricesIncludeTax: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -116,6 +117,7 @@ export class EinvoiceService {
       placeOfSupply: string | null;
       shipTo?: unknown;
       roundOff?: bigint;
+      pricesIncludeTax?: boolean;
       fullNumber: string | null;
       fiscalYear: { name: string } | null;
       contact: {
@@ -194,7 +196,13 @@ export class EinvoiceService {
           quantity: l.quantity.toFixed(3).replace(/\.?0+$/, ''),
           // The unit the line's quantity is in
           unit: (l.inAltUnit ? l.item?.altUnit : null) ?? l.item?.unit ?? null,
-          unitPrice: Number(l.unitPrice),
+          // Prices that include GST go to the portal without it
+          unitPrice: i.pricesIncludeTax
+            ? Math.round(
+                (Number(l.unitPrice) * 1_000_000) /
+                  (1_000_000 + rates.reduce((s, r) => s + r.rate.ratePpm, 0)),
+              )
+            : Number(l.unitPrice),
           amount: Number(l.amount),
           heads,
           gstRate:

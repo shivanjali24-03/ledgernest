@@ -12,6 +12,7 @@ import {
   INVOICE_COPIES,
   type InvoiceCopy,
   dispatchLines,
+  hsnSummary,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
   findIndianState,
@@ -44,6 +45,12 @@ type Sender = {
   organizationId: string;
   actorId: string | null;
   req?: Request;
+};
+
+/** A tax group's combined rate from its name ("GST 18%" → 18); null when it doesn't say */
+const taxRatePct = (name: string) => {
+  const m = /(\d+(?:\.\d+)?)\s*%/.exec(name);
+  return m ? Number(m[1]) : null;
 };
 
 /**
@@ -448,6 +455,35 @@ export class InvoiceRemindersService
         after: [
           ...(currency === 'INR'
             ? [`Amount in words: ${rupeesInWords(inv.total)}`, '']
+            : []),
+          // GST by HSN/SAC code and rate, as tax invoices show it
+          ...(() => {
+            const rows = hsnSummary(
+              inv.lines.map((l) => ({
+                ...l,
+                ratePct: l.taxGroup ? taxRatePct(l.taxGroup.name) : null,
+              })),
+            );
+            const m = (minor: number) =>
+              (minor / 10 ** currencyDigits(currency)).toFixed(
+                currencyDigits(currency),
+              );
+            return rows.length
+              ? [
+                  'HSN/SAC summary:',
+                  ...rows.map(
+                    (r) =>
+                      `${r.hsn}${r.rate != null ? ` @ ${r.rate}%` : ''}: taxable ${m(r.taxable)}, tax ${m(r.tax)}`,
+                  ),
+                  '',
+                ]
+              : [];
+          })(),
+          ...(inv.pricesIncludeTax ? ['Prices include GST.'] : []),
+          ...(inv.discountTotal
+            ? [
+                `Includes a discount of ${currency} ${(inv.discountTotal / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))} on the invoice, before tax.`,
+              ]
             : []),
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
           // The interest terms it was issued with

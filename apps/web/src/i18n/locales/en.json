@@ -2813,7 +2813,16 @@
       "original": "Original for recipient",
       "duplicate": "Duplicate for transporter",
       "triplicate": "Triplicate for supplier"
-    }
+    },
+    "pricesIncludeTax": "Prices include GST",
+    "pricesIncludeTaxNote": "Prices include GST.",
+    "discountKind": "Discount on the invoice",
+    "discountPercent": "Percent",
+    "discountAmount": "Amount ({{currency}})",
+    "discountValue": "Discount",
+    "discountIncluded": "Discount (in the taxable value)",
+    "hsnSummary": "HSN/SAC summary",
+    "taxColumn": "Tax"
   },
   "payments": {
     "title": "Payments",

@@ -2813,7 +2813,16 @@
       "original": "मूल प्रति: प्राप्तकर्ता के लिए",
       "duplicate": "द्वितीय प्रति: परिवहनकर्ता के लिए",
       "triplicate": "तृतीय प्रति: आपूर्तिकर्ता के लिए"
-    }
+    },
+    "pricesIncludeTax": "मूल्य में GST शामिल",
+    "pricesIncludeTaxNote": "मूल्यों में GST शामिल है।",
+    "discountKind": "इनवॉइस पर छूट",
+    "discountPercent": "प्रतिशत",
+    "discountAmount": "राशि ({{currency}})",
+    "discountValue": "छूट",
+    "discountIncluded": "छूट (कर योग्य मूल्य में)",
+    "hsnSummary": "HSN/SAC सारांश",
+    "taxColumn": "कर"
   },
   "payments": {
     "title": "भुगतान",

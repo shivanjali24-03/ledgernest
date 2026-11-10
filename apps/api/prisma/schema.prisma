@@ -836,6 +836,12 @@ model Invoice {
   taxTotal            BigInt    @default(0) @map("tax_total")
   /// The total rounded to the rupee: the difference (smallest unit)
   roundOff            BigInt    @default(0) @map("round_off")
+  /// Prices include GST, taken out of each line
+  pricesIncludeTax    Boolean   @default(false) @map("prices_include_tax")
+  /// A discount on the whole invoice: { kind: percent | amount, value } (ppm or smallest unit)
+  discount            Json?
+  /// What that discount came to, spread over the lines before tax
+  discountTotal       BigInt    @default(0) @map("discount_total")
   total               BigInt    @default(0)
   amountPaid          BigInt    @default(0) @map("amount_paid")
   journalEntryId      String?   @map("journal_entry_id") @db.Uuid

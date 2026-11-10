@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines, hsnSummary } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -213,6 +213,14 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
               </dd>
             </div>
           ))}
+          {!!i.discountTotal && (
+            <>
+              <dt className="text-ink-600 dark:text-ink-300">{t('invoices.discountIncluded')}</dt>
+              <dd className="text-end tabular-nums" dir="ltr">
+                −{plain(i.discountTotal)}
+              </dd>
+            </>
+          )}
           {!!i.roundOff && (
             <>
               <dt className="text-ink-600 dark:text-ink-300">{t('invoices.roundOff')}</dt>
@@ -254,6 +262,33 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           {org.invoiceTerms}
         </p>
       )}
+      {i.pricesIncludeTax && <p className="mt-2 text-xs text-ink-500">{t('invoices.pricesIncludeTaxNote')}</p>}
+      {(() => {
+        const rows = hsnSummary(i.lines.map((l) => ({ ...l, ratePct: l.taxGroup ? Number(/(\d+(?:\.\d+)?)\s*%/.exec(l.taxGroup.name)?.[1] ?? NaN) || null : null })));
+        return rows.length > 1 || (rows.length === 1 && i.lines.length > 1) ? (
+          <table className="mt-4 text-xs" data-testid="invoice-hsn-summary">
+            <caption className="pb-1 text-start font-semibold">{t('invoices.hsnSummary')}</caption>
+            <thead className="text-ink-500">
+              <tr>
+                <th scope="col" className="pe-4 text-start font-medium">HSN/SAC</th>
+                <th scope="col" className="pe-4 text-end font-medium">{t('reports.gst.rate')}</th>
+                <th scope="col" className="pe-4 text-end font-medium">{t('reports.gst.taxable')}</th>
+                <th scope="col" className="text-end font-medium">{t('invoices.taxColumn')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={`${r.hsn}-${r.rate}`}>
+                  <td className="pe-4 font-mono">{r.hsn}</td>
+                  <td className="pe-4 text-end tabular-nums">{r.rate != null ? `${r.rate}%` : ''}</td>
+                  <td className="pe-4 text-end tabular-nums" dir="ltr">{plain(r.taxable)}</td>
+                  <td className="text-end tabular-nums" dir="ltr">{plain(r.tax)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null;
+      })()}
       {i.dispatch && dispatchLines(i.dispatch).length > 0 && (
         <ul className="mt-4 grid gap-x-6 text-xs text-ink-600 sm:grid-cols-2 dark:text-ink-300" data-testid="invoice-dispatch">
           {dispatchLines(i.dispatch).map((l) => (
