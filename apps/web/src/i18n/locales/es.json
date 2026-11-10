@@ -38,7 +38,8 @@
       "approvals": "Aprobaciones",
       "imports": "Importar",
       "integrations": "Integraciones",
-      "quotes": "Presupuestos"
+      "quotes": "Presupuestos",
+      "recurringBills": "Facturas recurrentes"
     },
     "soon": "Pronto"
   },
@@ -760,7 +761,13 @@
       "org_quote_invoice": "Presupuesto facturado",
       "org_quote_email": "Presupuesto enviado por correo",
       "org_invoice_email": "Factura enviada por correo",
-      "org_payment_email": "Recibo enviado por correo"
+      "org_payment_email": "Recibo enviado por correo",
+      "org_recurring_bill_create": "Programación de facturas creada",
+      "org_recurring_bill_update": "Programación de facturas modificada",
+      "org_recurring_bill_delete": "Programación de facturas eliminada",
+      "org_recurring_bill_pause": "Programación de facturas pausada",
+      "org_recurring_bill_resume": "Programación de facturas reanudada",
+      "org_recurring_bill_raise": "Factura recurrente creada"
     },
     "entities": {
       "membership": "Miembro",
@@ -3422,5 +3429,21 @@
     "badEmail": "Introduce un correo electrónico válido.",
     "note": "Nota",
     "noteHint": "Opcional: va al principio del correo."
+  },
+  "recurringBills": {
+    "title": "Facturas de proveedor recurrentes",
+    "description": "Alquiler, suscripciones y otras facturas que llegan cada mes o año, creadas desde una plantilla cuando vencen.",
+    "empty": "Aún no hay facturas recurrentes",
+    "emptyBody": "Abre una factura de proveedor y elige Hacer recurrente.",
+    "newTitle": "Hacer recurrente esta factura",
+    "editTitle": "Cambiar la programación",
+    "templateFrom": "De la factura de {{name}}: {{count}} líneas",
+    "autoRecord": "Registrar cada factura al crearla",
+    "autoRecordHint": "Si no, cada una queda como borrador para revisar. Una regla de aprobación aún puede retenerla.",
+    "recordsItself": "Se registra sola",
+    "made": "Creadas:",
+    "ran": "Se crearon {{made}} facturas",
+    "ranWithFailures": "Se crearon {{made}} facturas; {{failed}} no se pudieron crear",
+    "deleteBody": "Se elimina para siempre. Las programaciones que ya crearon facturas solo se pueden pausar."
   }
 }

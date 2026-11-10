@@ -38,7 +38,8 @@
       "approvals": "अनुमोदन",
       "imports": "आयात",
       "integrations": "एकीकरण",
-      "quotes": "कोटेशन"
+      "quotes": "कोटेशन",
+      "recurringBills": "आवर्ती बिल"
     },
     "soon": "जल्द"
   },
@@ -760,7 +761,13 @@
       "org_quote_invoice": "कोटेशन से इनवॉइस बना",
       "org_quote_email": "कोटेशन ईमेल किया गया",
       "org_invoice_email": "इनवॉइस ईमेल किया गया",
-      "org_payment_email": "रसीद ईमेल की गई"
+      "org_payment_email": "रसीद ईमेल की गई",
+      "org_recurring_bill_create": "आवर्ती बिल अनुसूची बनाई",
+      "org_recurring_bill_update": "आवर्ती बिल अनुसूची बदली",
+      "org_recurring_bill_delete": "आवर्ती बिल अनुसूची हटाई",
+      "org_recurring_bill_pause": "आवर्ती बिल अनुसूची रोकी",
+      "org_recurring_bill_resume": "आवर्ती बिल अनुसूची फिर शुरू",
+      "org_recurring_bill_raise": "आवर्ती बिल बना"
     },
     "entities": {
       "membership": "सदस्य",
@@ -3422,5 +3429,21 @@
     "badEmail": "मान्य ईमेल पता दर्ज करें।",
     "note": "टिप्पणी",
     "noteHint": "वैकल्पिक: यह ईमेल में सबसे ऊपर जाएगी।"
+  },
+  "recurringBills": {
+    "title": "आवर्ती बिल",
+    "description": "किराया, सदस्यताएँ और अन्य बिल जो हर महीने या साल आते हैं, देय होने पर टेम्पलेट से बनते हैं।",
+    "empty": "अभी कोई आवर्ती बिल नहीं",
+    "emptyBody": "कोई बिल खोलें और आवर्ती बनाएँ चुनें।",
+    "newTitle": "इस बिल को आवर्ती बनाएँ",
+    "editTitle": "अनुसूची बदलें",
+    "templateFrom": "{{name}} के बिल से: {{count}} पंक्तियाँ",
+    "autoRecord": "हर बिल बनते ही दर्ज करें",
+    "autoRecordHint": "नहीं तो हर बिल जाँच के लिए ड्राफ़्ट रहेगा। अनुमोदन नियम फिर भी उसे रोक सकता है।",
+    "recordsItself": "अपने आप दर्ज",
+    "made": "बने:",
+    "ran": "{{made}} बिल बने",
+    "ranWithFailures": "{{made}} बिल बने; {{failed}} नहीं बन सके",
+    "deleteBody": "यह स्थायी रूप से हट जाएगी। जिन अनुसूचियों से बिल बने हैं उन्हें केवल रोका जा सकता है।"
   }
 }

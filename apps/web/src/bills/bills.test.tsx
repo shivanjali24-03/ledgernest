@@ -11,6 +11,7 @@ import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoBills } from './demoBillsApi';
+import { resetDemoRecurringBills } from '../recurring-bills/demoRecurringBillsApi';
 
 function renderApp(path = '/bills') {
   sessionStorage.setItem('ledgernest.demo', 'admin@ledgernest.demo');
@@ -31,7 +32,7 @@ const choose = async (label: string, text: string) => {
 };
 
 beforeEach(() => {
-  for (const reset of [resetDemoBills, resetDemoJournals, resetDemoAccounts, resetDemoPeriods, resetDemoTaxes, resetDemoContacts, resetDemoItems, resetDemoCurrencies]) reset();
+  for (const reset of [resetDemoRecurringBills, resetDemoBills, resetDemoJournals, resetDemoAccounts, resetDemoPeriods, resetDemoTaxes, resetDemoContacts, resetDemoItems, resetDemoCurrencies]) reset();
   sessionStorage.clear();
 });
 
@@ -82,6 +83,31 @@ describe('bills', () => {
       { timeout: 6000 },
     );
     await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Voided by JV\//), { timeout: 8000 });
+  });
+
+  it('makes the rent recurring, then makes the bills as they fall due', { timeout: 30_000 }, async () => {
+    const router = renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    // Open the dialog and create in one step, retried, as the header re-renders while the bill loads
+    let created = false;
+    await waitFor(
+      () => {
+        if (created) return;
+        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Make recurring' }));
+        const dialog = screen.getByRole('dialog', { name: 'Make this bill recurring' });
+        expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toMatch(/^Sharma Office Supplies · /);
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Create schedule' }));
+        created = true;
+      },
+      { timeout: 8000 },
+    );
+    expect(await screen.findByText(/ scheduled$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    await router.navigate('/recurring-bills');
+    expect(await screen.findByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' }, { timeout: 4000 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Run now' }));
+    // The schedule lists the bill it made (more lasting than the toast, which can come and go under load)
+    await waitFor(() => expect(screen.getByText('Made:')).toBeInTheDocument(), { timeout: 10_000 });
   });
 
   it('is read-only for Auditors', async () => {

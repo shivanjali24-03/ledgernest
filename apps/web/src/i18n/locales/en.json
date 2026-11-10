@@ -38,7 +38,8 @@
       "approvals": "Approvals",
       "imports": "Import",
       "integrations": "Integrations",
-      "quotes": "Quotes"
+      "quotes": "Quotes",
+      "recurringBills": "Recurring bills"
     },
     "soon": "Soon"
   },
@@ -760,7 +761,13 @@
       "org_quote_invoice": "Quote invoiced",
       "org_quote_email": "Quote emailed",
       "org_invoice_email": "Invoice emailed",
-      "org_payment_email": "Receipt emailed"
+      "org_payment_email": "Receipt emailed",
+      "org_recurring_bill_create": "Recurring bill schedule created",
+      "org_recurring_bill_update": "Recurring bill schedule changed",
+      "org_recurring_bill_delete": "Recurring bill schedule deleted",
+      "org_recurring_bill_pause": "Recurring bill schedule paused",
+      "org_recurring_bill_resume": "Recurring bill schedule resumed",
+      "org_recurring_bill_raise": "Recurring bill made"
     },
     "entities": {
       "membership": "Member",
@@ -3422,5 +3429,21 @@
     "badEmail": "Enter a valid email address.",
     "note": "Note",
     "noteHint": "Optional: it goes at the top of the email."
+  },
+  "recurringBills": {
+    "title": "Recurring bills",
+    "description": "Rent, subscriptions and other bills that come every month or year, made from a template as they fall due.",
+    "empty": "No recurring bills yet",
+    "emptyBody": "Open a bill and choose Make recurring.",
+    "newTitle": "Make this bill recurring",
+    "editTitle": "Change the schedule",
+    "templateFrom": "From {{name}}’s bill: {{count}} lines",
+    "autoRecord": "Record each bill as it’s made",
+    "autoRecordHint": "Otherwise each one waits as a draft to check. An approval rule may still hold it.",
+    "recordsItself": "Records itself",
+    "made": "Made:",
+    "ran": "Made {{made}} bills",
+    "ranWithFailures": "Made {{made}} bills; {{failed}} couldn’t be made",
+    "deleteBody": "It goes for good. Schedules that have made bills can only be paused."
   }
 }
