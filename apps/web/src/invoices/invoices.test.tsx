@@ -340,7 +340,8 @@ describe('invoices', () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 6000 }));
     await screen.findByRole('article', {}, { timeout: 6000 });
-    expect(await screen.findByText('Not registered on the e-invoice portal yet.', {}, { timeout: 12_000 })).toBeInTheDocument();
+    // Found is enough: the page can re-render right after, leaving a found element detached
+    await screen.findByText('Not registered on the e-invoice portal yet.', {}, { timeout: 12_000 });
     const irn = 'a5c12dca80e743321740b001fd70953e8738d109865d28ba4013750f2046f229';
     const response = JSON.stringify({ Status: 1, Data: { AckNo: 112610036563310, AckDt: '2026-11-10 11:05:00', Irn: irn, SignedQRCode: 'eyJhbGciOiJSUzI1NiJ9.eyJJcm4iOiJ4In0.c2ln', Status: 'ACT' } });
     // Open, paste and save in one retried step: under load the page can re-render and close the dialog
@@ -358,6 +359,6 @@ describe('invoices', () => {
       },
       { timeout: 10_000 },
     );
-    expect(await screen.findByText(`e-Invoice registered · IRN ${irn} · Ack 112610036563310`, {}, { timeout: 10_000 })).toBeInTheDocument();
+    await screen.findByText(`e-Invoice registered · IRN ${irn} · Ack 112610036563310`, {}, { timeout: 10_000 });
   });
 });
