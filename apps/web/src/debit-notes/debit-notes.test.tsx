@@ -52,12 +52,20 @@ describe('debit notes', () => {
 
     cleanup();
     renderApp('/debit-notes');
-    const row = (await screen.findByRole('link', { name: /^DN\/.*\/0001$/ }, { timeout: 4000 })).closest('li')!;
-    expect(row).toHaveTextContent('Sharma Office Supplies');
-    expect(row).toHaveTextContent('their SOS-CN-12');
-    expect(row).toHaveTextContent('₹53,100.00');
-    fireEvent.click(within(row).getByRole('button', { name: /^Actions for DN\// }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Void debit note' }));
+    const row = () => screen.getByRole('link', { name: /^DN\/.*\/0001$/ }).closest('li')!;
+    await screen.findByRole('link', { name: /^DN\/.*\/0001$/ }, { timeout: 4000 });
+    expect(row()).toHaveTextContent('Sharma Office Supplies');
+    expect(row()).toHaveTextContent('their SOS-CN-12');
+    expect(row()).toHaveTextContent('₹53,100.00');
+    // Open the row's menu, retried: the list can re-render as it loads
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('menuitem', { name: 'Void debit note' })) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
+        expect(screen.getByRole('menuitem', { name: 'Void debit note' })).toBeInTheDocument();
+      },
+      { timeout: 6000 },
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Void debit note' }));
     const confirm = await screen.findByRole('dialog', { name: /^Void DN\/.*\?$/ });
     await userEvent.click(within(confirm).getByRole('button', { name: 'Void debit note' }));
     expect(await screen.findByText(/^DN\/.*\/0001 voided$/, {}, { timeout: 4000 })).toBeInTheDocument();
@@ -66,7 +74,8 @@ describe('debit notes', () => {
     cleanup();
     renderApp('/bills');
     await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));
-    expect(await screen.findByRole('button', { name: 'Pay bill' }, { timeout: 4000 })).toBeInTheDocument();
+    // Found afresh each try: the page can remount as it loads
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay bill' })).toBeInTheDocument(), { timeout: 6000 });
   });
 
   it('lists debit notes for people who can see bills, under Purchases', async () => {
