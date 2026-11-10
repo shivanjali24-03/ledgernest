@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { dueDateFor, type EinvoiceProblem } from '@ledgernest/shared';
+import { dueDateFor, msmeCovered, msmeLateInterest, todayIn, type EinvoiceProblem } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson, Truck } from 'lucide-react';
@@ -15,7 +15,7 @@ import ReceiptDialog from '../../payments/ReceiptDialog';
 import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
-import { formatDate } from '../../lib/format';
+import { formatDate, formatMoney } from '../../lib/format';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
@@ -91,7 +91,13 @@ export default function InvoiceEditor() {
   const [sharing, setSharing] = useState(false);
   const [eway, setEway] = useState(false);
   const [einvoiceProblems, setEinvoiceProblems] = useState<EinvoiceProblem[] | null>(null);
-  const india = useOrganizationSettings().data?.country === 'IN';
+  const orgSettings = useOrganizationSettings().data;
+  const india = orgSettings?.country === 'IN';
+  // A micro or small business may charge interest on what's paid late (MSMED Act s.16)
+  const msmeInterest =
+    invoice && invoice.status === 'issued' && invoice.balance > 0 && !invoice.currency && msmeCovered(orgSettings?.msmeCategory) && orgSettings?.msmeBankRateBp
+      ? msmeLateInterest(invoice.balance, invoice.issueDate, invoice.dueDate, todayIn(orgSettings.timeZone ?? 'Asia/Kolkata'), orgSettings.msmeBankRateBp)
+      : 0;
   const einvoice = useMutation({
     mutationFn: () => api!.einvoice(invoice!.id),
     onSuccess: (f) => saveBlob(f),
@@ -227,6 +233,11 @@ export default function InvoiceEditor() {
           <DraftForm key={invoice!.id} invoice={invoice!} api={api} />
         ) : (
           <>
+            {msmeInterest > 0 && (
+              <p role="note" className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 print:hidden dark:bg-amber-950/40 dark:text-amber-200">
+                {t('invoices.msmeInterest', { amount: formatMoney(msmeInterest, 'INR', locale) })}
+              </p>
+            )}
             <InvoiceDocument invoice={invoice!} />
             <p className="text-sm text-ink-500 print:hidden">
               {invoice!.journalEntry && (

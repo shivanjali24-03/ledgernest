@@ -120,3 +120,16 @@ export function msmeReport(bills: MsmeBillInput[], asOf: string, fiscalYear: { f
     },
   };
 }
+
+/**
+ * Interest a buyer owes a micro or small supplier for paying late (MSMED Act section 16): compound interest with
+ * monthly rests at three times the RBI bank rate, from the day after the appointed day until it's paid. In paise;
+ * months are counted as twelfths of a year, so it reads as an estimate to the rupee.
+ */
+export function msmeLateInterest(balance: number, billDate: string, dueDate: string | null, asOf: string, bankRateBp: number): number {
+  if (balance <= 0 || bankRateBp <= 0) return 0;
+  const days = daysBetween(msmeDeadline(billDate, dueDate), asOf);
+  if (days <= 0) return 0;
+  const monthly = (3 * bankRateBp) / 10_000 / 12;
+  return Math.round(balance * ((1 + monthly) ** (days / (365 / 12)) - 1));
+}

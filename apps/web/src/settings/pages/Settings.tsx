@@ -178,6 +178,14 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
       </Section>
 
+      {v.country === 'IN' && (
+        <Section title={t('settings.msme.title')} description={t('settings.msme.description')}>
+          <SelectField label={t('settings.fields.msmeCategory')} value={v.msmeCategory} onChange={set('msmeCategory')} disabled={!canManage} options={[{ value: '', label: t('contacts.msme.none') }, ...(['micro', 'small', 'medium'] as const).map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
+          {text('udyamNumber', t('settings.fields.udyamNumber'), { dir: 'ltr', placeholder: 'UDYAM-MH-26-0012345', className: 'font-mono uppercase' })}
+          {(v.msmeCategory === 'micro' || v.msmeCategory === 'small') && text('msmeBankRate', t('settings.fields.msmeBankRate'), { dir: 'ltr', inputMode: 'decimal', placeholder: '5.50', hint: t('settings.hints.msmeBankRate') })}
+        </Section>
+      )}
+
       <Section title={t('settings.email.title')} description={t('settings.email.description')}>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <input type="checkbox" checked={v.weeklySummary === 'true'} disabled={!canManage} onChange={(e) => set('weeklySummary')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
