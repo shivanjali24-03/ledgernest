@@ -150,7 +150,7 @@ const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new Ap
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 
 /** A group with its rates, from the demo's taxes */
-function groupOf(id: string | null) {
+export function groupOf(id: string | null) {
   if (!id) return null;
   const tax = demoTaxState();
   const g = tax.groups.find((x) => x.id === id);
@@ -225,6 +225,34 @@ function view(i: Stored): Invoice {
   return { ...base, state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today()) };
 }
 
+/** The same checks and line rules as the API */
+export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 'yearName' | 'status' | 'amountPaid' | 'journalEntryId' | 'journalNumber' | 'voidEntryId' | 'voidNumber'> => {
+  const p = invoiceDraftSchema.safeParse(input);
+  if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+  const d = p.data;
+  const contact = demoContactRows().find((c) => c.id === d.contactId);
+  if (!contact) throw refuse(400, 'contact_not_found', { field: 'contactId' });
+  if (!contact.isCustomer) throw refuse(400, 'not_customer', { field: 'contactId' });
+  if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
+  const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
+  const supply = supplyFor(ORG_STATE, placeOfSupply);
+  const items = demoItemRows();
+  const accounts = demoAccountRows();
+  const groups = allGroups();
+  const lines = d.lines.map((l, n) => {
+    const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
+    if (l.itemId && !item) throw refuse(400, 'item_not_found');
+    const accountId = l.accountId ?? item?.incomeAccountId ?? null;
+    if (!accountId) throw refuse(400, 'account_required', { line: n + 1 });
+    if (accounts.find((a) => a.id === accountId)?.type !== 'income') throw refuse(400, 'not_income', { line: n + 1 });
+    let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
+    if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
+    if (group) group = groupForSupply(group, supply, groups);
+    return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
+  });
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines };
+};
+
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
   const guard = () => {
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['invoices.manage'] });
@@ -234,33 +262,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
     if (!i) throw new ApiError('not_found', 404);
     return i;
   };
-  /** The same checks and line rules as the API */
-  const prepare = (input: unknown): Omit<Stored, 'id' | 'number' | 'yearName' | 'status' | 'amountPaid' | 'journalEntryId' | 'journalNumber' | 'voidEntryId' | 'voidNumber'> => {
-    const p = invoiceDraftSchema.safeParse(input);
-    if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
-    const d = p.data;
-    const contact = demoContactRows().find((c) => c.id === d.contactId);
-    if (!contact) throw refuse(400, 'contact_not_found', { field: 'contactId' });
-    if (!contact.isCustomer) throw refuse(400, 'not_customer', { field: 'contactId' });
-    if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
-    const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
-    const supply = supplyFor(ORG_STATE, placeOfSupply);
-    const items = demoItemRows();
-    const accounts = demoAccountRows();
-    const groups = allGroups();
-    const lines = d.lines.map((l, n) => {
-      const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
-      if (l.itemId && !item) throw refuse(400, 'item_not_found');
-      const accountId = l.accountId ?? item?.incomeAccountId ?? null;
-      if (!accountId) throw refuse(400, 'account_required', { line: n + 1 });
-      if (accounts.find((a) => a.id === accountId)?.type !== 'income') throw refuse(400, 'not_income', { line: n + 1 });
-      let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
-      if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
-      if (group) group = groupForSupply(group, supply, groups);
-      return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
-    });
-    return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines };
-  };
+  const prepare = demoPrepareSale;
   return {
     list: (q) =>
       wait(async () => {

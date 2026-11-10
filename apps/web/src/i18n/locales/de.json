@@ -37,7 +37,8 @@
       "inventory": "Lager",
       "approvals": "Freigaben",
       "imports": "Import",
-      "integrations": "Integrationen"
+      "integrations": "Integrationen",
+      "quotes": "Angebote"
     },
     "soon": "Bald"
   },
@@ -741,7 +742,15 @@
       "org_backup_restore": "Aus einer Sicherung wiederhergestellt",
       "org_statement_email": "Kontoauszug per E-Mail gesendet",
       "org_invoice_remind": "Zahlungserinnerung gesendet",
-      "org_invoice_reminder_policy": "Einstellungen für Zahlungserinnerungen geändert"
+      "org_invoice_reminder_policy": "Einstellungen für Zahlungserinnerungen geändert",
+      "org_quote_create": "Angebot erstellt",
+      "org_quote_update": "Angebot geändert",
+      "org_quote_delete": "Angebot gelöscht",
+      "org_quote_send": "Angebot gesendet",
+      "org_quote_accept": "Angebot angenommen",
+      "org_quote_decline": "Angebot abgelehnt",
+      "org_quote_reopen": "Angebot wieder geöffnet",
+      "org_quote_invoice": "Angebot abgerechnet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -3242,5 +3251,71 @@
     "holds": "Enthält",
     "counts": "{{rows}} Zeilen in {{tables}} Tabellen",
     "newName": "Name der neuen Organisation"
+  },
+  "quotes": {
+    "title": "Angebote",
+    "description": "Angebote für Kunden, berechnet wie Rechnungen. Angenommene werden mit einem Klick zur Rechnung.",
+    "new": "Neues Angebot",
+    "filter": "Anzeigen",
+    "search": "Nach Nummer, Kunde oder Referenz suchen",
+    "noMatches": "Keine Angebote gefunden",
+    "empty": "Noch keine Angebote",
+    "emptyBody": "Schicken Sie einem Kunden einen Preis, bevor Sie abrechnen: gleiche Positionen, gleiche Steuer.",
+    "sent": "{{number}} gespeichert und als gesendet markiert",
+    "saved": "{{number}} gespeichert",
+    "expiryHint": "{{days}} Tage gültig, wenn Sie kein Datum wählen",
+    "save": "Speichern",
+    "saveSent": "Speichern",
+    "saveAndSend": "Speichern und als gesendet markieren",
+    "delete": "Angebot löschen",
+    "deleteTitle": "Diesen Angebotsentwurf löschen?",
+    "deleteBody": "Er ist dann endgültig weg. Gesendete Angebote bleiben; lehnen Sie sie stattdessen ab.",
+    "deleted": "Angebot gelöscht",
+    "tax": "Steuer",
+    "converted": "{{number}} ist jetzt ein Rechnungsentwurf",
+    "newTitle": "Neues Angebot",
+    "newHint": "Wählen Sie Kunde und Positionen; die Steuer wird wie bei Rechnungen berechnet.",
+    "convert": "In Rechnung umwandeln",
+    "accept": "Als angenommen markieren",
+    "decline": "Als abgelehnt markieren",
+    "reopen": "Wieder öffnen",
+    "becameInvoice": "Wurde zur Rechnung",
+    "draftInvoice": "Rechnungsentwurf",
+    "filters": {
+      "all": "Alle",
+      "open": "Offen",
+      "accepted": "Angenommen",
+      "expired": "Abgelaufen",
+      "invoiced": "Abgerechnet",
+      "declined": "Abgelehnt"
+    },
+    "states": {
+      "draft": "Entwurf",
+      "sent": "Gesendet",
+      "accepted": "Angenommen",
+      "declined": "Abgelehnt",
+      "invoiced": "Abgerechnet",
+      "expired": "Abgelaufen"
+    },
+    "errors": {
+      "not_editable": "Nur Entwürfe und gesendete Angebote können geändert werden.",
+      "not_draft": "Nur Entwürfe können gelöscht werden. Lehnen Sie es stattdessen ab.",
+      "bad_move": "Das Angebot kann nicht in diesen Status wechseln.",
+      "already_invoiced": "Dieses Angebot ist bereits eine Rechnung.",
+      "declined": "Ein abgelehntes Angebot kann nicht abgerechnet werden. Markieren Sie es zuerst als angenommen."
+    },
+    "moved": {
+      "draft": "{{number}} ist wieder ein Entwurf",
+      "sent": "{{number}} als gesendet markiert",
+      "accepted": "{{number}} als angenommen markiert",
+      "declined": "{{number}} als abgelehnt markiert"
+    },
+    "columns": {
+      "number": "Angebot"
+    },
+    "fields": {
+      "quoteDate": "Angebotsdatum",
+      "expiryDate": "Gültig bis"
+    }
   }
 }

@@ -37,7 +37,8 @@
       "inventory": "Inventario",
       "approvals": "Aprobaciones",
       "imports": "Importar",
-      "integrations": "Integraciones"
+      "integrations": "Integraciones",
+      "quotes": "Presupuestos"
     },
     "soon": "Pronto"
   },
@@ -741,7 +742,15 @@
       "org_backup_restore": "Restaurado desde una copia de seguridad",
       "org_statement_email": "Estado de cuenta enviado por correo",
       "org_invoice_remind": "Recordatorio de pago enviado",
-      "org_invoice_reminder_policy": "Ajustes de recordatorios de pago modificados"
+      "org_invoice_reminder_policy": "Ajustes de recordatorios de pago modificados",
+      "org_quote_create": "Presupuesto creado",
+      "org_quote_update": "Presupuesto modificado",
+      "org_quote_delete": "Presupuesto eliminado",
+      "org_quote_send": "Presupuesto enviado",
+      "org_quote_accept": "Presupuesto aceptado",
+      "org_quote_decline": "Presupuesto rechazado",
+      "org_quote_reopen": "Presupuesto reabierto",
+      "org_quote_invoice": "Presupuesto facturado"
     },
     "entities": {
       "membership": "Miembro",
@@ -3242,5 +3251,71 @@
     "holds": "Contiene",
     "counts": "{{rows}} filas en {{tables}} tablas",
     "newName": "Nombre de la nueva organización"
+  },
+  "quotes": {
+    "title": "Presupuestos",
+    "description": "Presupuestos para clientes, calculados como las facturas. Los aceptados se convierten en factura en un paso.",
+    "new": "Nuevo presupuesto",
+    "filter": "Mostrar",
+    "search": "Buscar por número, cliente o referencia",
+    "noMatches": "Ningún presupuesto coincide",
+    "empty": "Aún no hay presupuestos",
+    "emptyBody": "Envía un precio al cliente antes de facturar: mismas líneas, mismos impuestos.",
+    "sent": "{{number}} guardado y marcado como enviado",
+    "saved": "{{number}} guardado",
+    "expiryHint": "Válido {{days}} días salvo que elijas una fecha",
+    "save": "Guardar",
+    "saveSent": "Guardar",
+    "saveAndSend": "Guardar y marcar como enviado",
+    "delete": "Eliminar presupuesto",
+    "deleteTitle": "¿Eliminar este presupuesto en borrador?",
+    "deleteBody": "Se elimina para siempre. Los presupuestos enviados se quedan; recházalos.",
+    "deleted": "Presupuesto eliminado",
+    "tax": "Impuestos",
+    "converted": "{{number}} es ahora una factura en borrador",
+    "newTitle": "Nuevo presupuesto",
+    "newHint": "Elige el cliente y las líneas; los impuestos se calculan como en las facturas.",
+    "convert": "Convertir en factura",
+    "accept": "Marcar aceptado",
+    "decline": "Marcar rechazado",
+    "reopen": "Reabrir",
+    "becameInvoice": "Se convirtió en la factura",
+    "draftInvoice": "factura en borrador",
+    "filters": {
+      "all": "Todos",
+      "open": "Abiertos",
+      "accepted": "Aceptados",
+      "expired": "Vencidos",
+      "invoiced": "Facturados",
+      "declined": "Rechazados"
+    },
+    "states": {
+      "draft": "Borrador",
+      "sent": "Enviado",
+      "accepted": "Aceptado",
+      "declined": "Rechazado",
+      "invoiced": "Facturado",
+      "expired": "Vencido"
+    },
+    "errors": {
+      "not_editable": "Solo se pueden cambiar presupuestos en borrador o enviados.",
+      "not_draft": "Solo se pueden eliminar borradores. Recházalo en su lugar.",
+      "bad_move": "El presupuesto no puede pasar a ese estado.",
+      "already_invoiced": "Este presupuesto ya es una factura.",
+      "declined": "Un presupuesto rechazado no se puede facturar. Márcalo como aceptado primero."
+    },
+    "moved": {
+      "draft": "{{number}} vuelve a borrador",
+      "sent": "{{number}} marcado como enviado",
+      "accepted": "{{number}} marcado como aceptado",
+      "declined": "{{number}} marcado como rechazado"
+    },
+    "columns": {
+      "number": "Presupuesto"
+    },
+    "fields": {
+      "quoteDate": "Fecha del presupuesto",
+      "expiryDate": "Válido hasta"
+    }
   }
 }

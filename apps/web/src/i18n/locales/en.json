@@ -37,7 +37,8 @@
       "inventory": "Inventory",
       "approvals": "Approvals",
       "imports": "Import",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "quotes": "Quotes"
     },
     "soon": "Soon"
   },
@@ -741,7 +742,15 @@
       "org_backup_restore": "Restored from a backup",
       "org_statement_email": "Statement emailed",
       "org_invoice_remind": "Payment reminder sent",
-      "org_invoice_reminder_policy": "Payment reminder settings changed"
+      "org_invoice_reminder_policy": "Payment reminder settings changed",
+      "org_quote_create": "Quote created",
+      "org_quote_update": "Quote changed",
+      "org_quote_delete": "Quote deleted",
+      "org_quote_send": "Quote sent",
+      "org_quote_accept": "Quote accepted",
+      "org_quote_decline": "Quote declined",
+      "org_quote_reopen": "Quote reopened",
+      "org_quote_invoice": "Quote invoiced"
     },
     "entities": {
       "membership": "Member",
@@ -3242,5 +3251,71 @@
     "holds": "Holds",
     "counts": "{{rows}} rows in {{tables}} tables",
     "newName": "Name of the new organisation"
+  },
+  "quotes": {
+    "title": "Quotes",
+    "description": "Estimates for customers, priced like invoices. Accepted ones become invoices in one step.",
+    "new": "New quote",
+    "filter": "Show",
+    "search": "Search by number, customer or reference",
+    "noMatches": "No quotes match",
+    "empty": "No quotes yet",
+    "emptyBody": "Send a customer a price before you invoice: same lines, same GST.",
+    "sent": "{{number}} saved and marked sent",
+    "saved": "{{number}} saved",
+    "expiryHint": "Open for {{days}} days unless you choose a date",
+    "save": "Save",
+    "saveSent": "Save",
+    "saveAndSend": "Save and mark sent",
+    "delete": "Delete quote",
+    "deleteTitle": "Delete this draft quote?",
+    "deleteBody": "It goes for good. Quotes that have been sent stay; decline them instead.",
+    "deleted": "Quote deleted",
+    "tax": "Tax",
+    "converted": "{{number}} is now a draft invoice",
+    "newTitle": "New quote",
+    "newHint": "Choose the customer and lines; GST works out as it does on invoices.",
+    "convert": "Turn into invoice",
+    "accept": "Mark accepted",
+    "decline": "Mark declined",
+    "reopen": "Reopen",
+    "becameInvoice": "Became invoice",
+    "draftInvoice": "draft invoice",
+    "filters": {
+      "all": "All",
+      "open": "Open",
+      "accepted": "Accepted",
+      "expired": "Expired",
+      "invoiced": "Invoiced",
+      "declined": "Declined"
+    },
+    "states": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "invoiced": "Invoiced",
+      "expired": "Expired"
+    },
+    "errors": {
+      "not_editable": "Only draft and sent quotes can change.",
+      "not_draft": "Only draft quotes can be deleted. Decline it instead.",
+      "bad_move": "The quote can’t move that way.",
+      "already_invoiced": "This quote is already an invoice.",
+      "declined": "A declined quote can’t be invoiced. Mark it accepted first."
+    },
+    "moved": {
+      "draft": "{{number}} is back to draft",
+      "sent": "{{number}} marked sent",
+      "accepted": "{{number}} marked accepted",
+      "declined": "{{number}} marked declined"
+    },
+    "columns": {
+      "number": "Quote"
+    },
+    "fields": {
+      "quoteDate": "Quote date",
+      "expiryDate": "Valid until"
+    }
   }
 }
