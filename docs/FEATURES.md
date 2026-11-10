@@ -59,6 +59,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Bills and payments | Vendor bills with input GST to expense or asset accounts, and payments against one or many bills | ✅ #68, #69 |
 | Aging reports | Who owes what, and for how long (receivables and payables), at any date, with each document and CSV export | ✅ #70 |
 | Statements of account | A customer's or vendor's invoices, credit notes, bills, payments and voids over some dates, with the balance brought forward, a running balance and the balance carried down, per currency; CSV, Excel or PDF, or emailed to the contact as a PDF | ✅ |
+| Sales and purchases | Invoiced sales (less credit notes) and recorded purchases over some dates, by customer, vendor or item, with quantities, net, tax and total in the base currency; CSV or Excel | ✅ |
 
 ## Phase 4: Banking
 

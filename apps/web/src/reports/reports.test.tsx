@@ -104,6 +104,19 @@ describe('reports', () => {
     expect(within(screen.getByLabelText('Contact')).queryByRole('option', { name: 'Kumar Logistics' })).not.toBeInTheDocument();
   }, 20_000);
 
+  it('sums sales by customer and by item, and purchases by vendor', async () => {
+    renderApp('/reports?tab=sales&from=2020-01-01');
+    const table = await screen.findByRole('table', { name: 'Sales' }, { timeout: 4000 });
+    // Kumar's invoice: ₹1,00,000 plus 18% GST
+    const kumar = within(table).getByText('Kumar Logistics').closest('tr')!;
+    expect(kumar).toHaveTextContent('1,18,000.00');
+    await userEvent.click(screen.getByRole('radio', { name: 'Item' }));
+    await waitFor(() => expect(within(screen.getByRole('table', { name: 'Sales' })).getByText('Software development')).toBeInTheDocument(), { timeout: 4000 });
+    // The sample company's only bill is a draft: nothing recorded yet
+    await userEvent.click(screen.getByRole('radio', { name: 'Purchases' }));
+    expect(await screen.findByText('No purchases in these dates', {}, { timeout: 4000 })).toBeInTheDocument();
+  }, 20_000);
+
   it('shows the profit and loss with its sub-totals, and a balance sheet that balances', async () => {
     renderApp('/reports?tab=pnl');
     const table = await screen.findByRole('table', { name: 'Profit and loss' }, { timeout: 4000 });

@@ -1550,6 +1550,32 @@
       "sent": "Relevé envoyé à {{email}}",
       "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}",
       "mailOff": "L’e-mail n’est pas configuré sur ce serveur. Téléchargez le PDF et envoyez-le vous-même."
+    },
+    "sales": {
+      "title": "Ventes et achats",
+      "side": "Afficher",
+      "sales": "Ventes",
+      "purchases": "Achats",
+      "by": "Regrouper par",
+      "byCustomer": "Client",
+      "byVendor": "Fournisseur",
+      "byItem": "Article",
+      "customer": "Client",
+      "vendor": "Fournisseur",
+      "item": "Article",
+      "invoices": "Factures",
+      "bills": "Factures fournisseurs",
+      "quantity": "Quantité",
+      "net": "HT",
+      "tax": "Taxes",
+      "total": "Total",
+      "noItem": "Sans article",
+      "hintSales": "Factures émises moins les avoirs, en {{currency}}. Les annulées ne comptent pas.",
+      "hintPurchases": "Factures fournisseurs enregistrées, en {{currency}}. Les annulées ne comptent pas.",
+      "emptySales": "Aucune vente sur ces dates",
+      "emptyPurchases": "Aucun achat sur ces dates",
+      "captionSales": "Ventes",
+      "captionPurchases": "Achats"
     }
   },
   "taxes": {

@@ -1550,6 +1550,32 @@
       "sent": "Estado de cuenta enviado a {{email}}",
       "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
       "mailOff": "El correo no está configurado en este servidor. Descarga el PDF y envíalo tú."
+    },
+    "sales": {
+      "title": "Ventas y compras",
+      "side": "Mostrar",
+      "sales": "Ventas",
+      "purchases": "Compras",
+      "by": "Agrupar por",
+      "byCustomer": "Cliente",
+      "byVendor": "Proveedor",
+      "byItem": "Artículo",
+      "customer": "Cliente",
+      "vendor": "Proveedor",
+      "item": "Artículo",
+      "invoices": "Facturas",
+      "bills": "Facturas de proveedor",
+      "quantity": "Cantidad",
+      "net": "Neto",
+      "tax": "Impuestos",
+      "total": "Total",
+      "noItem": "Sin artículo",
+      "hintSales": "Facturas emitidas menos notas de crédito, en {{currency}}. Las anuladas no cuentan.",
+      "hintPurchases": "Facturas de proveedor registradas, en {{currency}}. Las anuladas no cuentan.",
+      "emptySales": "No hay ventas en estas fechas",
+      "emptyPurchases": "No hay compras en estas fechas",
+      "captionSales": "Ventas",
+      "captionPurchases": "Compras"
     }
   },
   "taxes": {

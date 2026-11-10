@@ -661,4 +661,83 @@ describe('Aging reports (e2e)', () => {
       delete process.env.SMTP_URL;
     }
   });
+
+  it('sums sales and purchases by customer, vendor or item, in the base currency', async () => {
+    type Sales = {
+      rows: {
+        id: string | null;
+        name: string | null;
+        documents: number;
+        quantity: string | null;
+        net: number;
+        tax: number;
+        total: number;
+      }[];
+      totals: { net: number; tax: number; total: number };
+    };
+    const sales = async (q: string, who = 'owner') =>
+      (await as(who).get(`/reports/sales?${q}`).expect(200)).body as Sales;
+    // Northwind's USD 500 at 90 first; Kumar's three issued invoices (the voided one left out)
+    const byCustomer = await sales(
+      'side=sales&by=contact&from=2026-04-01&to=2026-07-31',
+    );
+    expect(
+      byCustomer.rows.map((r) => [r.name, r.documents, r.net, r.total]),
+    ).toEqual([
+      ['Northwind Inc.', 1, 4_500_000, 4_500_000],
+      ['Kumar Logistics', 3, 180_000, 180_000],
+    ]);
+    expect(byCustomer.totals.total).toBe(4_680_000);
+    const byItem = await sales(
+      'side=sales&by=item&from=2026-04-01&to=2026-07-31',
+    );
+    expect(byItem.rows).toEqual([
+      {
+        id: null,
+        name: null,
+        documents: 4,
+        quantity: null,
+        net: 4_680_000,
+        tax: 0,
+        total: 4_680_000,
+      },
+    ]);
+    // Only what was invoiced in the dates
+    expect(
+      (
+        await sales('side=sales&by=contact&from=2026-06-01&to=2026-06-30')
+      ).rows.map((r) => [r.name, r.documents, r.total]),
+    ).toEqual([['Kumar Logistics', 2, 80_000]]);
+    expect(
+      (
+        await sales(
+          'side=purchases&by=contact&from=2026-04-01&to=2026-04-30',
+          'viewer',
+        )
+      ).rows.map((r) => [r.name, r.documents, r.total]),
+    ).toEqual([['Sharma Supplies', 1, 25_000]]);
+    const csv = await as()
+      .get(
+        '/reports/sales/export?side=sales&by=contact&from=2026-04-01&to=2026-07-31',
+      )
+      .expect(200);
+    expect(csv.headers['content-disposition']).toContain(
+      'sales-by-customer-2026-04-01-2026-07-31.csv',
+    );
+    const lines = csv.text
+      .replace(/^\uFEFF/, '')
+      .trim()
+      .split('\r\n')
+      .map((l) => l.replaceAll('"', ''));
+    expect(lines[0]).toBe('Customer,Documents,Net,Tax,Total');
+    expect(lines.at(-1)).toBe('Total,,46800.00,0.00,46800.00');
+    await as('viewer')
+      .get(
+        '/reports/sales/export?side=sales&by=contact&from=2026-04-01&to=2026-07-31',
+      )
+      .expect(403);
+    await as()
+      .get('/reports/sales?side=sideways&from=2026-04-01&to=2026-07-31')
+      .expect(400);
+  });
 });

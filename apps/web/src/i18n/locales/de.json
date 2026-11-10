@@ -1550,6 +1550,32 @@
       "sent": "Kontoauszug an {{email}} gesendet",
       "sentDemo": "In der Demo wird nichts wirklich gesendet; er ginge an {{email}}",
       "mailOff": "E-Mail ist auf diesem Server nicht eingerichtet. Laden Sie das PDF herunter und senden Sie es selbst."
+    },
+    "sales": {
+      "title": "Verkäufe und Einkäufe",
+      "side": "Anzeigen",
+      "sales": "Verkäufe",
+      "purchases": "Einkäufe",
+      "by": "Gruppieren nach",
+      "byCustomer": "Kunde",
+      "byVendor": "Lieferant",
+      "byItem": "Artikel",
+      "customer": "Kunde",
+      "vendor": "Lieferant",
+      "item": "Artikel",
+      "invoices": "Rechnungen",
+      "bills": "Eingangsrechnungen",
+      "quantity": "Menge",
+      "net": "Netto",
+      "tax": "Steuer",
+      "total": "Gesamt",
+      "noItem": "Ohne Artikel",
+      "hintSales": "Ausgestellte Rechnungen abzüglich Gutschriften, in {{currency}}. Stornierte zählen nicht.",
+      "hintPurchases": "Erfasste Eingangsrechnungen, in {{currency}}. Stornierte zählen nicht.",
+      "emptySales": "Keine Verkäufe in diesem Zeitraum",
+      "emptyPurchases": "Keine Einkäufe in diesem Zeitraum",
+      "captionSales": "Verkäufe",
+      "captionPurchases": "Einkäufe"
     }
   },
   "taxes": {

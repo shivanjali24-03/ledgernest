@@ -1,4 +1,4 @@
-import { buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -106,6 +106,31 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
         net: rates.reduce((s, r) => s + r.net, 0),
       },
     };
+  };
+
+  /** Sales (invoices less credit notes) or purchases (bills) by customer, vendor or item, from the demo's documents */
+  const sales = async (side: SalesReportSide, by: SalesReportBy, from: string, to: string) => {
+    const within = (d: string) => d >= from && d <= to;
+    const base = (currency: string | null, rate: string | null) => (minor: number) => (currency && rate ? toBase(minor, rate, currencyDigits(currency), currencyDigits(DEMO_BASE_CURRENCY)) : minor);
+    const lines: SalesReportLine[] = [];
+    if (side === 'sales') {
+      const invoices = await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews();
+      for (const i of invoices.filter((x) => x.status === 'issued' && within(x.issueDate))) {
+        const b = base(i.currency, i.rate);
+        for (const l of i.lines) lines.push({ documentId: i.id, contact: { id: i.contact.id, name: i.contact.name }, item: l.item && { id: l.item.id, name: l.item.name }, quantity: l.quantity, net: b(l.amount), tax: b(l.taxAmount), sign: 1 });
+      }
+      const itemOf = new Map(invoices.flatMap((i) => i.lines.map((l) => [l.id, l.item && { id: l.item.id, name: l.item.name }] as const)));
+      for (const n of (await import('../credit-notes/demoCreditNotesApi')).demoCreditNoteRows().filter((x) => x.status === 'issued' && within(x.date))) {
+        const b = base(n.currency, n.rate);
+        for (const l of n.lines) lines.push({ documentId: n.id, contact: n.contact, item: itemOf.get(l.invoiceLineId) ?? null, quantity: l.quantity, net: b(l.amount), tax: b(l.taxAmount), sign: -1 });
+      }
+    } else {
+      for (const x of (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((y) => y.status === 'open' && within(y.billDate))) {
+        const b = base(x.currency, x.rate);
+        for (const l of x.lines) lines.push({ documentId: x.id, contact: { id: x.contact.id, name: x.contact.name }, item: l.item && { id: l.item.id, name: l.item.name }, quantity: l.quantity, net: b(l.amount), tax: b(l.taxAmount), sign: 1 });
+      }
+    }
+    return { side, by, from, to, baseCurrency: DEMO_BASE_CURRENCY, ...buildSalesReport(lines, by) };
   };
 
   /** A contact's statement of account, from the demo's invoices, credit notes, bills and payments; voids dated by their reversing entries */
@@ -478,6 +503,12 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       }
       rows.push(['', '', 'Total assets', ...b.totalAssets.map(money)], ['', '', 'Total liabilities and equity', ...b.columns.map((_c, k) => money(b.totalLiabilities[k]! + b.totalEquity[k]!))]);
       return { filename: `balance-sheet-${asOf}.csv`, blob: csv(rows) };
+    },
+    sales,
+    async exportSales(side, by, from, to) {
+      guard();
+      const r = await sales(side, by, from, to);
+      return { filename: `${side}-by-${by === 'item' ? 'item' : side === 'sales' ? 'customer' : 'vendor'}-${from}-${to}.csv`, blob: csv(salesReportRows(r, currencyDigits(DEMO_BASE_CURRENCY))) };
     },
     statement,
     async emailStatement(input) {
