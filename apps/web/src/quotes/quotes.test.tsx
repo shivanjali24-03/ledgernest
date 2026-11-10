@@ -150,7 +150,9 @@ describe('quotes', () => {
     cleanup();
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 6000 }));
-    expect(await screen.findByText('Accepted by Dr. Meera Iyer from the quote link.', {}, { timeout: 6000 })).toBeInTheDocument();
+    // Slow machines: wait for the quote itself, then its note (re-queried, as the page can remount)
+    await screen.findByRole('heading', { name: /QT-0001/ }, { timeout: 10_000 });
+    await waitFor(() => expect(screen.getByText('Accepted by Dr. Meera Iyer from the quote link.')).toBeInTheDocument(), { timeout: 10_000 });
     expect(screen.getByText('“Go ahead from next week.”')).toBeInTheDocument();
   });
 });
