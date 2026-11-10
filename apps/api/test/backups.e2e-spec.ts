@@ -40,6 +40,8 @@ describe('Backups (e2e)', () => {
       get: (p: string) => auth(http().get(`/api/v1${p}`)),
       post: (p: string, body: object = {}) =>
         auth(http().post(`/api/v1${p}`)).send(body),
+      put: (p: string, body: object) =>
+        auth(http().put(`/api/v1${p}`)).send(body),
     };
   };
   const journal = async (date: string, lines: [string, number, number][]) => {
@@ -172,6 +174,36 @@ describe('Backups (e2e)', () => {
         .expect(201)
     ).body.id;
     await as().post(`/invoices/${inv}/issue`).expect(200);
+    // A quote that became that invoice, and the reminder policy
+    const quote = (
+      await as()
+        .post('/quotes', {
+          contactId: kumar,
+          quoteDate: '2026-05-01',
+          expiryDate: '2026-05-31',
+          lines: [
+            {
+              description: 'Freight',
+              quantity: 2,
+              unitPrice: 25_000_00,
+              accountId: acc.sales,
+            },
+          ],
+        })
+        .expect(201)
+    ).body.id;
+    await prisma.quote.update({
+      where: { id: quote },
+      data: { status: 'invoiced', invoiceId: inv },
+    });
+    await as()
+      .put('/reminder-policy', {
+        enabled: true,
+        firstAfterDays: 5,
+        repeatEveryDays: 10,
+        maxReminders: 2,
+      })
+      .expect(200);
     await as()
       .post(`/attachments/invoice/${inv}`, {
         fileName: 'po.pdf',
@@ -316,6 +348,19 @@ describe('Backups (e2e)', () => {
       select: { documentId: true, data: true },
     });
     expect(file.documentId).toBe(inv.id);
+    // The quote points at the new invoice; the reminder policy came too
+    const q = await prisma.quote.findFirstOrThrow({
+      where: { organizationId: restored },
+      select: { invoiceId: true, status: true, lines: true },
+    });
+    expect(q).toMatchObject({ invoiceId: inv.id, status: 'invoiced' });
+    expect(q.lines).toHaveLength(1);
+    expect(
+      await prisma.reminderPolicy.findUniqueOrThrow({
+        where: { organizationId: restored },
+        select: { enabled: true, firstAfterDays: true },
+      }),
+    ).toEqual({ enabled: true, firstAfterDays: 5 });
     expect(Buffer.from(file.data).toString('base64')).toBe(pdf);
     // The restorer owns it; nobody else came along
     expect(

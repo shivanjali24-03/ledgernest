@@ -35,3 +35,4 @@ export * from './xlsx/index.js';
 export * from './pdf/index.js';
 export * from './scheduled-reports/index.js';
 export * from './backups/index.js';
+export * from './quotes/index.js';

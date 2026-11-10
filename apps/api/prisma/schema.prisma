@@ -126,6 +126,8 @@ model Organization {
   scheduledReports    ScheduledReport[]
   reportDeliveries    ReportDelivery[]
   reminderPolicy      ReminderPolicy?
+  quotes              Quote[]
+  quoteLines          QuoteLine[]
 
   @@map("organizations")
 }
@@ -176,6 +178,7 @@ model Account {
 
   invoiceReceivables    Invoice[]             @relation("InvoiceReceivable")
   invoiceIncome         InvoiceLine[]         @relation("InvoiceLineAccount")
+  quoteIncome           QuoteLine[]           @relation("QuoteLineAccount")
   creditNoteReceivables CreditNote[]          @relation("CreditNoteReceivable")
   creditNoteIncome      CreditNoteLine[]      @relation("CreditNoteLineAccount")
   creditRefundBanks     CreditApplication[]   @relation("CreditRefundBank")
@@ -540,6 +543,7 @@ model TaxGroup {
   items        Item[]
 
   invoiceLines    InvoiceLine[]
+  quoteLines      QuoteLine[]
   creditNoteLines CreditNoteLine[]
 
   billLines BillLine[]
@@ -630,6 +634,7 @@ model Contact {
   invoices          Invoice[]
   creditNotes       CreditNote[]
   recurringInvoices RecurringInvoice[]
+  quotes            Quote[]
   bankTransactions  BankTransaction[]
 
   payments Payment[]
@@ -677,6 +682,7 @@ model Item {
   stockMovements   StockMovement[]
 
   invoiceLines InvoiceLine[]
+  quoteLines   QuoteLine[]
 
   billLines BillLine[]
 
@@ -734,6 +740,7 @@ model Invoice {
 
   allocations PaymentAllocation[]
   creditNotes CreditNote[]
+  quotes      Quote[]
   credits     CreditApplication[]
   recurring   RecurringInvoice?   @relation(fields: [organizationId, recurringInvoiceId], references: [organizationId, id], onDelete: NoAction)
 
@@ -1355,6 +1362,7 @@ model CostCentre {
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   journalLines JournalLine[]
   invoiceLines InvoiceLine[]
+  quoteLines   QuoteLine[]
   billLines    BillLine[]
   budgets      Budget[]
 
@@ -1602,4 +1610,68 @@ model ReminderPolicy {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("reminder_policies")
+}
+
+/// A quote (estimate) for a customer: priced like an invoice but posts nothing. It can be sent, accepted or
+/// declined, and turned into a draft invoice with the same lines.
+model Quote {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  number         Int
+  contactId      String    @map("contact_id") @db.Uuid
+  status         String    @default("draft") /// draft | sent | accepted | declined | invoiced
+  quoteDate      DateTime  @map("quote_date") @db.Date
+  expiryDate     DateTime  @map("expiry_date") @db.Date
+  currency       String?   @db.Char(3)
+  placeOfSupply  String?   @map("place_of_supply") @db.Char(2)
+  reference      String?
+  notes          String?
+  subtotal       BigInt    @default(0)
+  taxTotal       BigInt    @default(0) @map("tax_total")
+  total          BigInt    @default(0)
+  /// The invoice it became
+  invoiceId      String?   @map("invoice_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  sentAt         DateTime? @map("sent_at")
+  decidedAt      DateTime? @map("decided_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  invoice      Invoice?     @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
+  lines        QuoteLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  quoteId        String  @map("quote_id") @db.Uuid
+  lineNo         Int     @map("line_no")
+  itemId         String? @map("item_id") @db.Uuid
+  description    String
+  quantity       Decimal @db.Decimal(13, 4)
+  unitPrice      BigInt  @map("unit_price")
+  discountPpm    Int     @default(0) @map("discount_ppm")
+  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  accountId      String? @map("account_id") @db.Uuid
+  costCentreId   String? @map("cost_centre_id") @db.Uuid
+  amount         BigInt
+  taxAmount      BigInt  @default(0) @map("tax_amount")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  quote        Quote        @relation(fields: [organizationId, quoteId], references: [organizationId, id], onDelete: Cascade)
+  item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account      Account?     @relation("QuoteLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+  costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@unique([quoteId, lineNo])
+  @@map("quote_lines")
 }
