@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { contactCreateSchema, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
+import { contactCreateSchema, MSME_CATEGORIES, type MsmeCategory, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useCurrenciesApi } from '../currencies/useCurrenciesApi';
 import { useIntlLocale } from '../i18n';
@@ -72,6 +72,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [terms, setTerms] = useState(String(contact?.paymentTermsDays ?? 30));
   const limitDigits = currencyDigits(currency || currencies.data?.base || contact?.currency || 'INR');
   const [limit, setLimit] = useState(contact?.creditLimit != null ? String(contact.creditLimit / 10 ** currencyDigits(contact.currency ?? 'INR')) : '');
+  const [msme, setMsme] = useState<MsmeCategory | ''>(contact?.msmeCategory ?? '');
+  const [udyam, setUdyam] = useState(contact?.udyamNumber ?? '');
   const [notes, setNotes] = useState(contact?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -99,6 +101,9 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     paymentTermsDays: Number(terms),
     // Only customers have one; blank = no limit
     creditLimit: isCustomer && limit.trim() ? (toMinor(limit, limitDigits) ?? Number.NaN) : null,
+    // Only vendors are paid under the MSME rules
+    msmeCategory: isVendor && msme ? msme : null,
+    udyamNumber: isVendor ? udyam : '',
     notes,
   });
   const save = useMutation({
@@ -187,6 +192,12 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           <TextField label={t('contacts.fields.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} dir="ltr" />
           <TextField label={t('contacts.fields.paymentTerms')} type="number" min={0} max={365} value={terms} onChange={(e) => setTerms(e.target.value)} error={errors.paymentTermsDays} hint={t('contacts.hints.paymentTerms')} />
           {isCustomer && <TextField label={t('contacts.fields.creditLimit')} value={limit} onChange={(e) => setLimit(e.target.value)} inputMode="decimal" dir="ltr" error={errors.creditLimit ? t('contacts.hints.badLimit') : undefined} hint={t('contacts.hints.creditLimit', { currency: currency || currencies.data?.base || '' })} />}
+          {isVendor && billing.country === 'IN' && (
+            <>
+              <SelectField label={t('contacts.fields.msme')} value={msme} onChange={(e) => setMsme(e.target.value as MsmeCategory | '')} hint={t('contacts.hints.msme')} options={[{ value: '', label: t('contacts.msme.none') }, ...MSME_CATEGORIES.map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
+              <TextField label={t('contacts.fields.udyam')} value={udyam} onChange={(e) => setUdyam(e.target.value)} error={errors.udyamNumber} placeholder="UDYAM-MH-26-0012345" dir="ltr" className="font-mono uppercase" />
+            </>
+          )}
         </div>
         <AddressFields prefix="billing" value={billing} onChange={setBilling} errors={errors} />
         <div className="space-y-3">

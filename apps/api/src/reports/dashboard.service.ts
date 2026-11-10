@@ -7,6 +7,7 @@ import {
   toBase,
   type OrganizationPermission,
 } from '@ledgernest/shared';
+import { MsmeReportService } from './msme-report.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
@@ -28,7 +29,10 @@ const monthEnd = (month: string) => {
  */
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly msme: MsmeReportService,
+  ) {}
 
   async dashboard(
     organizationId: string,
@@ -232,6 +236,18 @@ export class DashboardService {
             (s, b) => s + inBase(b.total - b.amountPaid, b.currency, b.rate),
             0,
           ),
+        });
+    }
+    if (permissions.has('bills.view')) {
+      // Micro and small suppliers to pay before the 45-day deadline (or already past it)
+      const late = (await this.msme.report(organizationId, today)).bills.filter(
+        (b) => b.state === 'overdue' || b.state === 'due_soon',
+      );
+      if (late.length)
+        alerts.push({
+          kind: 'msme_due',
+          count: late.length,
+          amount: late.reduce((s, b) => s + b.balance, 0),
         });
     }
     if (permissions.has('banking.view')) {

@@ -42,6 +42,8 @@ const select = {
   currency: true,
   paymentTermsDays: true,
   creditLimit: true,
+  msmeCategory: true,
+  udyamNumber: true,
   notes: true,
   archivedAt: true,
   shareToken: true,
@@ -64,6 +66,8 @@ type Values = {
   currency: string | null;
   paymentTermsDays: number;
   creditLimit: number | null;
+  msmeCategory: 'micro' | 'small' | 'medium' | null;
+  udyamNumber: string | null;
   notes: string | null;
 };
 
@@ -80,6 +84,8 @@ const EDITABLE = [
   'currency',
   'paymentTermsDays',
   'creditLimit',
+  'msmeCategory',
+  'udyamNumber',
   'notes',
 ] as const;
 

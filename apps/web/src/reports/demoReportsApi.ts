@@ -1,4 +1,4 @@
-import { tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Compliance, GstHealth, Gstr2bReport, TdsReport } from './types';
+import type { CashForecast, Compliance, GstHealth, Gstr2bReport, MsmeReportView, TdsReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -321,6 +321,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     if (invoices.length) alerts.push({ kind: 'overdue_invoices', count: invoices.length, amount: invoices.reduce((s, i) => s + i.balance, 0) });
     const bills = (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((b) => b.status === 'open' && b.balance > 0 && b.dueDate < today);
     if (bills.length) alerts.push({ kind: 'overdue_bills', count: bills.length, amount: bills.reduce((s, b) => s + b.balance, 0) });
+    const msmeLate = (await msme(today)).bills.filter((b) => b.state === 'overdue' || b.state === 'due_soon');
+    if (msmeLate.length) alerts.push({ kind: 'msme_due', count: msmeLate.length, amount: msmeLate.reduce((s, b) => s + b.balance, 0) });
     const drafts = (await journals.list({ status: 'draft', page: 1, pageSize: 1 })).total;
     if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
     const waiting = demoPendingApprovals();
@@ -389,6 +391,24 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       ...demoStoredBillViews().filter((b) => b.status === 'open' && b.balance > 0 && !b.currency).map((b) => ({ kind: 'bill' as const, id: b.id, label: b.vendorReference ?? b.number ?? 'Bill', contact: { id: b.contact.id, name: b.contact.name }, dueDate: b.dueDate, amount: -b.balance })),
     ];
     return { ...buildCashForecast({ today: d.asOf, opening: d.kpis.cash.value, items, weeks }), currency: 'INR', lateCustomers: [] };
+  };
+  /** The demo's bills from micro and small vendors against the 45-day rule */
+  const msme = async (date?: string): Promise<MsmeReportView> => {
+    const [{ demoBillViews }, { demoContactRows }] = await Promise.all([import('../bills/demoBillsApi'), import('../contacts/demoContactsApi')]);
+    const asOf = date ?? todayIn('Asia/Kolkata');
+    const span = fiscalYearSpan(fiscalYearOf(asOf, 4), 4);
+    const contacts = demoContactRows();
+    const bills = (await demoBillViews()).filter((b) => b.status === 'open' && !b.currency && b.billDate <= asOf);
+    const r = msmeReport(
+      bills.flatMap((b) => {
+        const c = contacts.find((x) => x.id === b.contact.id);
+        if (!c?.msmeCategory) return [];
+        return [{ id: b.id, number: b.number ?? b.vendorReference ?? '', vendor: { id: c.id, name: c.name, category: c.msmeCategory, udyamNumber: c.udyamNumber ?? null }, billDate: b.billDate, dueDate: b.dueDate, total: b.total, subtotal: b.subtotal, settlements: [...b.payments, ...(b.credits ?? [])].map((p) => ({ date: p.date, amount: p.amount })) }];
+      }),
+      asOf,
+      { from: span.periods[0]!.startDate, to: span.periods[11]!.endDate },
+    );
+    return { ...r, bills: r.bills.map((b) => ({ ...b, vendorReference: bills.find((x) => x.id === b.id)?.vendorReference ?? null })) };
   };
   /** TDS from the demo's vendor payments */
   const tds = async (from: string, to: string, side: 'payable' | 'receivable' = 'payable'): Promise<TdsReport> => {
@@ -612,6 +632,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     compliance,
     gstHealth,
     tds,
+    msme,
     tally,
     gstr1,
     async exportGstr1(from, to, format) {

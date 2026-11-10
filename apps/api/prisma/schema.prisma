@@ -662,6 +662,9 @@ model Contact {
   paymentTermsDays Int       @default(30) @map("payment_terms_days")
   /// The most a customer may owe us, in their currency's smallest unit; null = no limit
   creditLimit      BigInt?   @map("credit_limit")
+  /// MSME category from the vendor's Udyam certificate (micro, small or medium); null = not an MSME
+  msmeCategory     String?   @map("msme_category")
+  udyamNumber      String?   @map("udyam_number")
   notes            String?
   /// A link the customer opens without signing in: what they owe across invoices, to pay by UPI (random, revocable)
   shareToken       String?   @unique @map("share_token")

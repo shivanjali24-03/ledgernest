@@ -117,7 +117,9 @@
       "low_stock": "{{count}} items low on stock",
       "quotes_expiring": "{{count}} quotes expiring this week",
       "recurring_bills_due": "{{count}} recurring bills due",
-      "bills_due_soon": "{{count}} bills due this week, {{amount}}"
+      "bills_due_soon": "{{count}} bills due this week, {{amount}}",
+      "msme_due_one": "1 bill from an MSME supplier to pay within the 45-day limit, {{amount}}",
+      "msme_due_other": "{{count}} bills from MSME suppliers to pay within the 45-day limit, {{amount}}"
     },
     "forecast": {
       "title": "Cash in 13 weeks",
@@ -1804,6 +1806,41 @@
           "why": "Without their GSTIN, their bills can’t be matched in GSTR-2B and the input credit is at risk."
         }
       }
+    },
+    "msme": {
+      "title": "MSME payments",
+      "hint": "Bills from micro and small suppliers must be paid by the agreed date, at most 45 days from the bill (15 days with no agreement).",
+      "emptyTitle": "No bills from MSME suppliers",
+      "emptyBody": "Mark vendors as micro or small enterprises (from their Udyam certificate) to track the 45-day rule here.",
+      "markVendors": "Open vendors",
+      "csv": "Download CSV",
+      "bills": "Bills from micro and small suppliers",
+      "totals": {
+        "overdue": "Overdue",
+        "dueSoon": "Due within 7 days",
+        "disallowed": "At risk under 43B(h)",
+        "paidLate": "Paid late this year"
+      },
+      "disallowedHint": "At risk: the taxable value of bills dated {{from}} to {{to}} still unpaid past their deadline. If still unpaid on {{to}}, it is not deductible this year, only in the year it is paid. Interest is also due to the supplier under section 16 of the MSMED Act.",
+      "cols": {
+        "bill": "Bill",
+        "vendor": "Vendor",
+        "deadline": "Pay by",
+        "owed": "Still owed",
+        "state": "State",
+        "disallowed": "At risk"
+      },
+      "states": {
+        "overdue": "Overdue",
+        "due_soon": "Due soon",
+        "open": "Within time",
+        "paid_late": "Paid late",
+        "paid_on_time": "Paid on time"
+      },
+      "daysLate_one": "1 day late",
+      "daysLate_other": "{{count}} days late",
+      "daysLeft_one": "1 day left",
+      "daysLeft_other": "{{count}} days left"
     }
   },
   "taxes": {
@@ -2086,13 +2123,16 @@
       "notes": "Notes",
       "billingAddress": "Billing address",
       "shippingAddress": "Shipping address",
-      "creditLimit": "Credit limit"
+      "creditLimit": "Credit limit",
+      "msme": "MSME (Udyam)",
+      "udyam": "Udyam registration number"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
       "paymentTerms": "0 = due on receipt",
       "creditLimit": "The most they may owe, in {{currency}}. Leave blank for no limit. Invoices over it show a warning.",
-      "badLimit": "Enter an amount, like 50000."
+      "badLimit": "Enter an amount, like 50000.",
+      "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h)."
     },
     "address": {
       "line1": "Address",
@@ -2147,6 +2187,12 @@
       "link": "Account link",
       "message": "Dear {{name}}, here is your account with {{organization}}: {{amount}} due. See each invoice, download the PDFs or pay it all by UPI here: {{link}}",
       "messageNothing": "Dear {{name}}, here is your account with {{organization}}, where you can see and download your invoices: {{link}}"
+    },
+    "msme": {
+      "none": "Not an MSME",
+      "micro": "Micro enterprise",
+      "small": "Small enterprise",
+      "medium": "Medium enterprise"
     }
   },
   "items": {
