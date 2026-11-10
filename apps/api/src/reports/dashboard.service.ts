@@ -181,6 +181,15 @@ export class DashboardService {
       if (recurring) alerts.push({ kind: 'recurring_due', count: recurring });
     }
     if (permissions.has('bills.view')) {
+      // Bill schedules with a date that should have been made by now (a run failed or hasn't happened)
+      const bills = await this.prisma.recurringBill.count({
+        where: {
+          organizationId,
+          status: 'active',
+          nextDate: { lte: asDate(today) },
+        },
+      });
+      if (bills) alerts.push({ kind: 'recurring_bills_due', count: bills });
       const overdue = (
         await this.prisma.bill.findMany({
           where: {

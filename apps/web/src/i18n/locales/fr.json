@@ -112,7 +112,8 @@
       "draft_entries": "{{count}} écritures en brouillon non comptabilisées",
       "approvals_waiting": "{{count}} en attente de votre approbation",
       "low_stock": "{{count}} articles en stock bas",
-      "quotes_expiring": "{{count}} devis expirent cette semaine"
+      "quotes_expiring": "{{count}} devis expirent cette semaine",
+      "recurring_bills_due": "{{count}} factures récurrentes à créer"
     }
   },
   "comingSoon": {

@@ -112,7 +112,8 @@
       "draft_entries": "{{count}} asientos en borrador sin contabilizar",
       "approvals_waiting": "{{count}} esperando tu aprobación",
       "low_stock": "{{count}} artículos con pocas existencias",
-      "quotes_expiring": "{{count}} presupuestos vencen esta semana"
+      "quotes_expiring": "{{count}} presupuestos vencen esta semana",
+      "recurring_bills_due": "{{count}} facturas recurrentes pendientes"
     }
   },
   "comingSoon": {
