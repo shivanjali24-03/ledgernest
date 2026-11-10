@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type { GstHeads } from '../taxes/index.js';
 
 /**
@@ -145,3 +146,34 @@ export function buildEinvoice(i: EinvoiceInput) {
   };
 }
 export type Einvoice = ReturnType<typeof buildEinvoice>;
+
+/** What the portal gives back for a registered e-invoice, to print on it */
+export const einvoiceIrnSchema = z.object({
+  irn: z
+    .string()
+    .trim()
+    .regex(/^[0-9a-f]{64}$/i, 'An IRN is 64 letters and digits.')
+    .transform((v) => v.toLowerCase()),
+  ackNo: z.string().trim().regex(/^\d{10,20}$/, 'The acknowledgement number is digits only.'),
+  ackDate: z.string().trim().min(8).max(32),
+  /** The signed QR code text (a signed token, three parts joined by dots) */
+  signedQrCode: z
+    .string()
+    .trim()
+    .max(4000)
+    .regex(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, 'That isn’t the signed QR code from the portal.'),
+});
+export type EinvoiceIrnInput = z.input<typeof einvoiceIrnSchema>;
+
+/** The IRN details from the portal's response (its JSON as downloaded or copied), or null if they aren't there */
+export function irnFromPortal(json: unknown): EinvoiceIrnInput | null {
+  const o = (Array.isArray(json) ? json[0] : json) as Record<string, unknown> | null;
+  if (!o || typeof o !== 'object') return null;
+  const data = (o.Data ?? o.data ?? o) as Record<string, unknown>;
+  const pick = (k: string) => (typeof data[k] === 'string' || typeof data[k] === 'number' ? String(data[k]) : null);
+  const irn = pick('Irn');
+  const ackNo = pick('AckNo');
+  const ackDate = pick('AckDt');
+  const signedQrCode = pick('SignedQRCode');
+  return irn && ackNo && ackDate && signedQrCode ? { irn, ackNo, ackDate, signedQrCode } : null;
+}

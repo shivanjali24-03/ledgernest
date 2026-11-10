@@ -65,3 +65,24 @@ describe('GST e-invoice JSON', () => {
     expect([null, 'hours', 'sprint'].map(uqcOf)).toEqual(['OTH', 'OTH', 'OTH']);
   });
 });
+
+describe('IRN from the portal', () => {
+  const IRN = 'a'.repeat(32) + 'B1c2'.repeat(8);
+  const QR = 'eyJhbGciOiJSUzI1NiJ9.eyJkYXRhIjoiLi4uIn0.c2lnbmF0dXJl';
+
+  it('reads the IRN, acknowledgement and signed QR from the portal’s response, however it’s wrapped', async () => {
+    const { irnFromPortal } = await import('./index.js');
+    const flat = { AckNo: 112010036563310, AckDt: '2026-10-06 11:05:00', Irn: IRN, SignedQRCode: QR, Status: 'ACT' };
+    expect(irnFromPortal(flat)).toEqual({ irn: IRN, ackNo: '112010036563310', ackDate: '2026-10-06 11:05:00', signedQrCode: QR });
+    expect(irnFromPortal({ Status: 1, Data: flat })).toEqual(irnFromPortal(flat));
+    expect(irnFromPortal([flat])).toEqual(irnFromPortal(flat));
+    expect(irnFromPortal({ Status: 0, ErrorDetails: [] })).toBeNull();
+    expect(irnFromPortal('nope')).toBeNull();
+  });
+
+  it('checks what’s typed in', async () => {
+    const { einvoiceIrnSchema } = await import('./index.js');
+    expect(einvoiceIrnSchema.parse({ irn: IRN, ackNo: '112010036563310', ackDate: '2026-10-06 11:05:00', signedQrCode: QR }).irn).toBe(IRN.toLowerCase());
+    expect(einvoiceIrnSchema.safeParse({ irn: 'short', ackNo: '1', ackDate: 'x', signedQrCode: 'y' }).success).toBe(false);
+  });
+});

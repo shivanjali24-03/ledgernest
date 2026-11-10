@@ -19,9 +19,18 @@ export interface PdfTable {
   /** The first row is the header */
   rows: (string | number | null)[][];
   /** A QR code at the top right of the first page (e.g. to pay by UPI), with a line or two of caption under it */
-  qr?: { modules: boolean[][]; caption?: string[] };
+  qr?: PdfQr;
+  /** A second QR code to the left of the first (e.g. an e-invoice's signed QR beside the UPI one) */
+  qr2?: PdfQr;
   /** The organisation's logo at the top left of the first page, the heading under it */
   logo?: PdfImage | null;
+}
+
+/** A QR code's modules, its size in points (88 by default, quiet zone included) and a line or two of caption */
+export interface PdfQr {
+  modules: boolean[][];
+  caption?: string[];
+  side?: number;
 }
 
 /** An image ready to embed: JPEG as it is (DCTDecode), or zlib-compressed samples (FlateDecode), with alpha as a soft mask */
@@ -102,6 +111,32 @@ function truncate(encoded: string, max: number, size: number, bold: boolean) {
   return `${s}\x85`;
 }
 
+/** Encoded text in lines that fit the width: broken at spaces, and inside a word only when it's longer than a line */
+function wrapLines(encoded: string, max: number, size: number, bold = false): string[] {
+  const out: string[] = [];
+  let cur = '';
+  const push = (word: string) => {
+    let w = word;
+    while (width(w, size, bold) > max) {
+      let n = w.length;
+      while (n > 1 && width(w.slice(0, n), size, bold) > max) n--;
+      out.push(w.slice(0, n));
+      w = w.slice(n);
+    }
+    return w;
+  };
+  for (const word of encoded.split(' ')) {
+    const next = cur ? `${cur} ${word}` : word;
+    if (width(next, size, bold) <= max) cur = next;
+    else {
+      if (cur) out.push(cur);
+      cur = push(word);
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
 const literal = (encoded: string) => `(${encoded.replace(/[\\()]/g, (m) => `\\${m}`)})`;
 const num = (n: number) => (Math.round(n * 100) / 100).toString();
 const NUMERIC = /^[-−(]?(Rs\s?)?[\d,]+(\.\d+)?%?\)?$/;
@@ -131,13 +166,23 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   const logoW = logo ? logo.width * logoScale : 0;
   const logoH = logo ? logo.height * logoScale : 0;
   const headTop = logo ? top - logoH - 10 : top;
-  const info = (table.info ?? []).slice(0, 12);
-  // The QR code: 88pt square (quiet zone included), captions under it; the heading's text keeps clear of it
-  const qrSide = 88;
-  const qrCaption = (table.qr?.caption ?? []).slice(0, 3).map(encode);
-  const qrN = table.qr?.modules.length ?? 0;
-  const qrBottom = top - qrSide - qrCaption.length * 9;
-  const headWidth = pw - margin * 2 - (qrN ? qrSide + 12 : 0);
+  const rawInfo = (table.info ?? []).slice(0, 12);
+  // QR codes at the top right, side by side (88pt squares unless sized, quiet zone included), captions under each;
+  // the heading's text keeps clear of them
+  const two = !!table.qr?.modules.length && !!table.qr2?.modules.length;
+  // Captions wrap under their code (alone, a caption may run a little to the left), three lines at most
+  const qrs = [table.qr, table.qr2]
+    .filter((q): q is PdfQr => !!q?.modules.length)
+    .map((q) => {
+      const side = q.side ?? 88;
+      const room = side + (two ? 10 : 40);
+      return { ...q, side, caption: (q.caption ?? []).flatMap((c, k) => wrapLines(encode(c), room, 7, k === 0).map((l) => ({ text: l, bold: k === 0 }))).slice(0, 3) };
+    });
+  const qrN = qrs.length;
+  const qrBottom = Math.min(...qrs.map((q) => top - q.side - q.caption.length * 9));
+  const headWidth = pw - margin * 2 - qrs.reduce((w, q) => w + q.side + 12, 0);
+  // Lines under the heading wrap to the room beside the codes rather than being cut short (an IRN must be whole)
+  const info = rawInfo.flatMap((l) => wrapLines(encode(l), headWidth, 8.5)).slice(0, 16);
   const firstY = Math.min(headTop - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0), qrN ? qrBottom - 8 : Infinity);
   const perFirst = Math.floor((firstY - margin - 24) / rowH) - 1;
   const perPage = Math.floor((top - margin - 24) / rowH) - 1;
@@ -194,24 +239,26 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
       s += `BT /F2 14 Tf ${margin} ${num(y - 14)} Td ${literal(truncate(encode(table.title), headWidth, 14, true))} Tj ET\n`;
       if (table.subtitle) s += `BT /F1 9 Tf ${margin} ${num(y - 30)} Td ${literal(truncate(encode(table.subtitle), headWidth, 9, false))} Tj ET\n`;
       info.forEach((l, k) => {
-        s += `BT /F1 8.5 Tf ${margin} ${num(y - (table.subtitle ? 44 : 30) - 4 - k * 11)} Td ${literal(truncate(encode(l), headWidth, 8.5, false))} Tj ET\n`;
+        s += `BT /F1 8.5 Tf ${margin} ${num(y - (table.subtitle ? 44 : 30) - 4 - k * 11)} Td ${literal(l)} Tj ET\n`;
       });
-      if (qrN) {
+      let right = pw - margin;
+      for (const q of qrs) {
         // One filled square per dark module, inside a 4-module quiet zone
-        const cell = qrSide / (qrN + 8);
-        const x0 = pw - margin - qrSide + 4 * cell;
+        const n = q.modules.length;
+        const cell = q.side / (n + 8);
+        const x0 = right - q.side + 4 * cell;
         const y0 = top - 4 * cell;
         s += '0 g\n';
-        table.qr!.modules.forEach((row, r) =>
+        q.modules.forEach((row, r) =>
           row.forEach((dark, c) => {
             if (dark) s += `${num(x0 + c * cell)} ${num(y0 - (r + 1) * cell)} ${num(cell)} ${num(cell)} re\n`;
           }),
         );
         s += 'f\n';
-        qrCaption.forEach((l, k) => {
-          const t = truncate(l, qrSide + 40, 7, k === 0);
-          s += `BT /${k === 0 ? 'F2' : 'F1'} 7 Tf ${num(pw - margin - width(t, 7, k === 0))} ${num(top - qrSide - 6 - k * 9)} Td ${literal(t)} Tj ET\n`;
+        q.caption.forEach((l, k) => {
+          s += `BT /${l.bold ? 'F2' : 'F1'} 7 Tf ${num(right - width(l.text, 7, l.bold))} ${num(top - q.side - 6 - k * 9)} Td ${literal(l.text)} Tj ET\n`;
         });
+        right -= q.side + 12;
       }
       y = firstY;
     }

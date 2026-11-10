@@ -2601,7 +2601,31 @@
         "transport_doc": "Off the road, the railway receipt, airway bill or bill of lading number is needed."
       }
     },
-    "msmeInterest": "Paid late: as a micro or small enterprise you can claim interest of {{amount}} so far on this invoice (MSMED Act, section 16). It shows on the customer’s account link and in reminders."
+    "msmeInterest": "Paid late: as a micro or small enterprise you can claim interest of {{amount}} so far on this invoice (MSMED Act, section 16). It shows on the customer’s account link and in reminders.",
+    "irn": {
+      "title": "e-Invoice registration for {{number}}",
+      "body": "After uploading the e-invoice JSON, paste the portal’s response here (or type the details). The IRN and signed QR code are then printed on the invoice, as GST requires.",
+      "paste": "The portal’s response (JSON)",
+      "pasteHint": "Paste it to fill in everything below.",
+      "irn": "IRN",
+      "ackNo": "Ack No",
+      "ackDate": "Ack date",
+      "qr": "Signed QR code",
+      "save": "Save",
+      "saved": "The IRN will be printed on the invoice.",
+      "notFound": "That response has no IRN in it: it may show an error from the portal.",
+      "notJson": "That isn’t the portal’s JSON response.",
+      "registered": "e-Invoice registered · IRN {{irn}} · Ack {{ackNo}}",
+      "notYet": "Not registered on the e-invoice portal yet.",
+      "add": "Add IRN",
+      "change": "Change",
+      "invalid": {
+        "irn": "An IRN is 64 letters and digits.",
+        "ackNo": "The Ack No is digits only.",
+        "ackDate": "Enter the Ack date.",
+        "signedQrCode": "Paste the signed QR code from the portal."
+      }
+    }
   },
   "payments": {
     "title": "Payments",

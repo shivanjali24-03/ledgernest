@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -31,6 +32,7 @@ import {
   type InvoiceDraftInput,
   isoDaySchema,
   ewayTransportSchema,
+  einvoiceIrnSchema,
   type EwayTransport,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
@@ -160,6 +162,40 @@ export class InvoicesController {
       `attachment; filename="${f.fileName}"`,
     );
     return f.json;
+  }
+
+  /** Records the IRN the e-invoice portal gave, to print with its signed QR code */
+  @Put(':id/irn')
+  @RequirePermission('invoices.manage')
+  async setIrn(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(einvoiceIrnSchema))
+    body: z.output<typeof einvoiceIrnSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    await this.einvoices.setIrn(
+      tenant.organizationId,
+      invoiceId,
+      body,
+      actor.userId,
+    );
+    return this.invoices.get(tenant.organizationId, invoiceId);
+  }
+
+  @Delete(':id/irn')
+  @RequirePermission('invoices.manage')
+  async clearIrn(
+    @Param('id', id) invoiceId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    await this.einvoices.clearIrn(
+      tenant.organizationId,
+      invoiceId,
+      actor.userId,
+    );
+    return this.invoices.get(tenant.organizationId, invoiceId);
   }
 
   /** One issued invoice's goods as e-way bill JSON for the portal's bulk upload, with the transport details given */

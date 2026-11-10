@@ -38,6 +38,9 @@ describe('GST e-invoice JSON (e2e)', () => {
         auth(http().post(`/api/v1${p}`)).send(body),
       patch: (p: string, body: object) =>
         auth(http().patch(`/api/v1${p}`)).send(body),
+      put: (p: string, body: object) =>
+        auth(http().put(`/api/v1${p}`)).send(body),
+      delete: (p: string) => auth(http().delete(`/api/v1${p}`)),
     };
   };
   const issue = async (
@@ -375,5 +378,63 @@ describe('GST e-invoice JSON (e2e)', () => {
     expect(text).toContain('(Whether tax is payable on reverse charge: No) Tj');
     expect(text).toContain(`(For Nest Demo Private Limited ${run}) Tj`);
     expect(text).toContain('(Authorised signatory) Tj');
+  });
+
+  it('records the IRN the portal gave, and prints it with the signed QR code; clears it if cancelled', async () => {
+    const irn =
+      'a5c12dca80e743321740b001fd70953e8738d109865d28ba4013750f2046f229';
+    const signedQrCode =
+      'eyJhbGciOiJSUzI1NiJ9.eyJJcm4iOiJhNWMxMiJ9.c2lnbmF0dXJlLXNpZ25hdHVyZQ';
+    await as('viewer')
+      .put(`/invoices/${inv.kumar}/irn`, {
+        irn,
+        ackNo: '112610036563310',
+        ackDate: '2026-10-06 11:05:00',
+        signedQrCode,
+      })
+      .expect(403);
+    await as()
+      .put(`/invoices/${inv.kumar}/irn`, {
+        irn: 'nope',
+        ackNo: '1',
+        ackDate: 'x',
+        signedQrCode: 'y',
+      })
+      .expect(400);
+    const saved = (
+      await as()
+        .put(`/invoices/${inv.kumar}/irn`, {
+          irn: irn.toUpperCase(),
+          ackNo: '112610036563310',
+          ackDate: '2026-10-06 11:05:00',
+          signedQrCode,
+        })
+        .expect(200)
+    ).body as { irn: { irn: string; ackNo: string } };
+    expect(saved.irn).toEqual({
+      irn,
+      ackNo: '112610036563310',
+      ackDate: '2026-10-06 11:05:00',
+    });
+    const pdf = await as()
+      .get(`/invoices/${inv.kumar}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain(`(IRN ${irn.slice(0, 32)}) Tj`);
+    expect(text).toContain(`(${irn.slice(32)}) Tj`);
+    expect(text).toContain(
+      '(Ack No 112610036563310 · Ack date 2026-10-06 11:05:00) Tj',
+    );
+    expect(text).toContain('(e-Invoice QR) Tj');
+    const cleared = (
+      await as().delete(`/invoices/${inv.kumar}/irn`).expect(200)
+    ).body as { irn: unknown };
+    expect(cleared.irn).toBeNull();
   });
 });

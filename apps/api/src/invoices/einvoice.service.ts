@@ -13,6 +13,7 @@ import {
   splitTax,
   zeroHeads,
   type EinvoiceInput,
+  type EinvoiceIrnInput,
   type EwayTransport,
   type GstHeads,
 } from '@ledgernest/shared';
@@ -235,6 +236,66 @@ export class EinvoiceService {
       json: ewayBillFile([buildEwayBill(input, transport)]),
       fileName: `e-way-bill-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
     };
+  }
+
+  /** Records the IRN the portal gave the invoice, to print it and its signed QR code */
+  async setIrn(
+    organizationId: string,
+    id: string,
+    input: EinvoiceIrnInput & { irn: string },
+    actorId: string,
+  ) {
+    const i = await this.prisma.invoice.findFirst({
+      where: { id, organizationId },
+      select: { status: true },
+    });
+    if (!i)
+      throw new NotFoundException({
+        message: 'Invoice not found.',
+        details: { reason: 'not_found' },
+      });
+    if (i.status !== 'issued')
+      throw new ConflictException({
+        message: 'Only issued invoices are registered on the e-invoice portal.',
+        details: { reason: 'not_issued' },
+      });
+    await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        irn: input.irn,
+        irnAckNo: input.ackNo,
+        irnAckDate: input.ackDate,
+        irnSignedQr: input.signedQrCode,
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'org.invoice.irn',
+        actorId,
+        organizationId,
+        entityType: 'invoice',
+        entityId: id,
+        after: { irn: input.irn, ackNo: input.ackNo },
+      },
+    });
+  }
+
+  /** Takes the IRN off (it was cancelled on the portal) */
+  async clearIrn(organizationId: string, id: string, actorId: string) {
+    const r = await this.prisma.invoice.updateMany({
+      where: { id, organizationId, irn: { not: null } },
+      data: { irn: null, irnAckNo: null, irnAckDate: null, irnSignedQr: null },
+    });
+    if (r.count)
+      await this.prisma.auditLog.create({
+        data: {
+          action: 'org.invoice.irn_cleared',
+          actorId,
+          organizationId,
+          entityType: 'invoice',
+          entityId: id,
+        },
+      });
   }
 
   /** Every issued invoice to a registered buyer in the dates, for the portal's bulk upload, and those that need fixing */

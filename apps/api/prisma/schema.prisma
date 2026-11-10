@@ -797,6 +797,11 @@ model Invoice {
   shareToken          String?   @unique @map("share_token")
   shareViews          Int       @default(0) @map("share_views")
   shareViewedAt       DateTime? @map("share_viewed_at")
+  /// From the e-invoice portal once registered: the IRN, its acknowledgement and the signed QR to print
+  irn                 String?   @map("irn")
+  irnAckNo            String?   @map("irn_ack_no")
+  irnAckDate          String?   @map("irn_ack_date")
+  irnSignedQr         String?   @map("irn_signed_qr")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
