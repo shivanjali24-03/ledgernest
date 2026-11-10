@@ -83,7 +83,7 @@ function ProfitChart({ monthly }: { monthly: DashboardData['monthly'] }) {
 const SETUP_LINKS = { organisation: '/settings', team: '/users', coa: '/accounts', fiscal: '/periods', bank: '/banking', gst: '/taxes', upi: '/settings' } as const;
 
 const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
-  overdue_invoices: '/invoices',
+  overdue_invoices: '/collections',
   overdue_bills: '/bills',
   unreconciled: '/banking',
   recurring_due: '/recurring',
