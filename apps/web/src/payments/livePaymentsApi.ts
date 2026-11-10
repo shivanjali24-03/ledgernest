@@ -15,6 +15,7 @@ export function createLivePaymentsApi(client: AuthClient, organizationId: string
     openBills: (contactId) => r(`/open-bills/${contactId}`),
     receive: (input) => r('/receipts', { method: 'POST', json: input }),
     pay: (input) => r('/payments', { method: 'POST', json: input }),
+    email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     void: (id, reason) => r(`/${id}/void`, { method: 'POST', json: reason ? { reason } : {} }),
   };
 }

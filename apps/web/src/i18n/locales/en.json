@@ -759,7 +759,8 @@
       "org_quote_reopen": "Quote reopened",
       "org_quote_invoice": "Quote invoiced",
       "org_quote_email": "Quote emailed",
-      "org_invoice_email": "Invoice emailed"
+      "org_invoice_email": "Invoice emailed",
+      "org_payment_email": "Receipt emailed"
     },
     "entities": {
       "membership": "Member",
@@ -2231,7 +2232,16 @@
       "payment": "Paid out"
     },
     "voidPayment": "Void payment",
-    "voidPaymentBody": "Its entry is reversed today and the bills it paid are open again."
+    "voidPaymentBody": "Its entry is reversed today and the bills it paid are open again.",
+    "emailReceipt": {
+      "action": "Email receipt",
+      "title": "Email receipt {{number}}",
+      "body": "A PDF of what came in and which invoices it settled.",
+      "blankHint": "Leave blank to send it to the customer’s email on file.",
+      "sent": "Receipt sent to {{email}}",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
+      "noEmail": "This customer has no email address. Enter one to send it to."
+    }
   },
   "bills": {
     "title": "Bills",
@@ -3423,5 +3433,12 @@
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
     },
     "duplicate": "Duplicate"
+  },
+  "emailDialog": {
+    "send": "Send",
+    "to": "Send to",
+    "badEmail": "Enter a valid email address.",
+    "note": "Note",
+    "noteHint": "Optional: it goes at the top of the email."
   }
 }

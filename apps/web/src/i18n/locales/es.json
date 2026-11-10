@@ -759,7 +759,8 @@
       "org_quote_reopen": "Presupuesto reabierto",
       "org_quote_invoice": "Presupuesto facturado",
       "org_quote_email": "Presupuesto enviado por correo",
-      "org_invoice_email": "Factura enviada por correo"
+      "org_invoice_email": "Factura enviada por correo",
+      "org_payment_email": "Recibo enviado por correo"
     },
     "entities": {
       "membership": "Miembro",
@@ -2231,7 +2232,16 @@
       "payment": "Pagos"
     },
     "voidPayment": "Anular pago",
-    "voidPaymentBody": "Su asiento se revierte hoy y las facturas que pagó vuelven a quedar pendientes."
+    "voidPaymentBody": "Su asiento se revierte hoy y las facturas que pagó vuelven a quedar pendientes.",
+    "emailReceipt": {
+      "action": "Enviar recibo",
+      "title": "Enviar recibo {{number}}",
+      "body": "Un PDF con lo cobrado y las facturas que salda.",
+      "blankHint": "Déjalo vacío para enviarlo al correo registrado del cliente.",
+      "sent": "Recibo enviado a {{email}}",
+      "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
+      "noEmail": "Este cliente no tiene correo electrónico. Introduce uno para enviarlo."
+    }
   },
   "bills": {
     "title": "Facturas de proveedor",
@@ -3423,5 +3433,12 @@
       "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}"
     },
     "duplicate": "Duplicar"
+  },
+  "emailDialog": {
+    "send": "Enviar",
+    "to": "Enviar a",
+    "badEmail": "Introduce un correo electrónico válido.",
+    "note": "Nota",
+    "noteHint": "Opcional: va al principio del correo."
   }
 }
