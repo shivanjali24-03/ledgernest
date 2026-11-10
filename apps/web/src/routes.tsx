@@ -122,8 +122,10 @@ const ROUTES: RouteObject[] = [
  * Every route in the app. Shared by the browser router and the tests. A page that breaks shows the error page in
  * its place (inside the app's frame for signed-in pages), never a stack trace.
  */
-export const routes: RouteObject[] = ROUTES.map((r) => ({
-  ...r,
-  errorElement: <RouteError />,
-  children: r.children?.map((c) => ({ ...c, errorElement: <RouteError inShell /> })),
-}));
+function withErrorPage(r: RouteObject, inShell: boolean): RouteObject {
+  const errorElement = <RouteError inShell={inShell} />;
+  if (r.index === true) return { ...r, errorElement };
+  return { ...r, errorElement, children: r.children?.map((c) => withErrorPage(c, true)) };
+}
+
+export const routes: RouteObject[] = ROUTES.map((r) => withErrorPage(r, false));
