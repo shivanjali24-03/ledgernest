@@ -5,6 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
+import RouteError from './pages/RouteError';
 import { AcceptInvite, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
@@ -54,8 +55,8 @@ const BUILT: RouteObject[] = [
 ];
 const builtPaths = new Set(BUILT.map((r) => `/${r.path}`));
 
-/** Every route in the app. Shared by the browser router and the tests. */
-export const routes: RouteObject[] = [
+/** Every route in the app, before error pages are added */
+const ROUTES: RouteObject[] = [
   {
     path: '/sign-in',
     element: (
@@ -116,3 +117,13 @@ export const routes: RouteObject[] = [
     ],
   },
 ];
+
+/**
+ * Every route in the app. Shared by the browser router and the tests. A page that breaks shows the error page in
+ * its place (inside the app's frame for signed-in pages), never a stack trace.
+ */
+export const routes: RouteObject[] = ROUTES.map((r) => ({
+  ...r,
+  errorElement: <RouteError />,
+  children: r.children?.map((c) => ({ ...c, errorElement: <RouteError inShell /> })),
+}));
