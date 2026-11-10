@@ -14,6 +14,10 @@ export interface Payment {
   amount: number;
   allocated: number;
   unallocated: number;
+  /** Tax deducted at source on a vendor payment: kept back from the bank, owed to the government */
+  tds?: { section: string; ratePpm: number; base: number; amount: number; account: { id: string; code: string; name: string } | null } | null;
+  /** What actually left (or reached) the bank */
+  bankAmount?: number;
   reference: string | null;
   notes: string | null;
   journalEntry: { id: string; number: string | null };
@@ -31,6 +35,8 @@ export interface OpenInvoice {
   currency: string | null;
   total: number;
   balance: number;
+  /** Before GST: what TDS is usually worked out on (bills) */
+  subtotal?: number;
   /** A bill's number from the vendor */
   vendorReference?: string | null;
 }

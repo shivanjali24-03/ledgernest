@@ -95,7 +95,7 @@ function save(rows: Stored[]) {
 }
 
 /** The demo company's accounts, for other demo features (taxes check account types against them). */
-export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'archivedAt' | 'currency' | 'parentId'>[] => load();
+export const demoAccountRows = (): readonly Pick<Stored, 'id' | 'code' | 'name' | 'type' | 'subtype' | 'archivedAt' | 'currency' | 'parentId'>[] => load();
 
 /** The demo's exchange gain/loss account, added the first time it's needed (as the API does). */
 export function demoEnsureFxAccount(key: FxAccountKey): string {

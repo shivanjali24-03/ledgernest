@@ -3,6 +3,8 @@ import {
   B2CL_THRESHOLD,
   billNumber,
   complianceDueDates,
+  tdsDepositDue,
+  type ComplianceItem,
   todayIn,
   creditNoteNumber,
   currencyDigits,
@@ -22,6 +24,7 @@ import {
   type Gstr2bBill,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { TdsReportService } from './tds-report.service.js';
 
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -51,7 +54,10 @@ type Rates = { rate: { id: string; kind: string; ratePpm: number } }[];
  */
 @Injectable()
 export class GstReturnsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tds: TdsReportService,
+  ) {}
 
   private async india(organizationId: string) {
     const org = await this.prisma.organization.findUniqueOrThrow({
@@ -803,7 +809,33 @@ export class GstReturnsService {
     });
     if (org.country !== 'IN') return { today: null, items: [] };
     const today = todayIn(org.timeZone, now);
-    const items = complianceDueDates(today, { gst: !!org.taxId });
+    const items: ComplianceItem[] = complianceDueDates(today, {
+      gst: !!org.taxId,
+    });
+    // TDS kept back in the last few months, due by the 7th of the next
+    const back = new Date(Date.parse(`${today}T00:00:00Z`));
+    back.setUTCMonth(back.getUTCMonth() - 3, 1);
+    const tdsByMonth = await this.tds.byMonth(
+      organizationId,
+      back.toISOString().slice(0, 10),
+      today,
+    );
+    const tdsAmounts = new Map<string, number>();
+    for (const [month, amount] of tdsByMonth) {
+      const due = tdsDepositDue(month);
+      const days0 = Math.round(
+        (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+          86_400_000,
+      );
+      if (days0 < -10 || days0 > 45) continue;
+      const [y, m] = month.split('-').map(Number) as [number, number];
+      const end = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+      items.push({ kind: 'tds', from: `${month}-01`, to: end, due });
+      tdsAmounts.set(`${month}-01`, amount);
+    }
+    items.sort(
+      (a, b) => a.due.localeCompare(b.due) || a.kind.localeCompare(b.kind),
+    );
     const days = (due: string) =>
       Math.round(
         (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
@@ -814,6 +846,7 @@ export class GstReturnsService {
       items: await Promise.all(
         items.map(async (i) => {
           let amount: number | undefined;
+          if (i.kind === 'tds') amount = tdsAmounts.get(i.from);
           if (i.kind === 'gstr3b') {
             const r = await this.gstr3b(organizationId, i.from, i.to);
             amount =

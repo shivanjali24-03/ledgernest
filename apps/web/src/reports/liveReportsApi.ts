@@ -28,6 +28,7 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     gstr1: (from, to) => r(`/gst/gstr-1?from=${from}&to=${to}`),
     cashForecast: (weeks) => r(`/cash-forecast?weeks=${weeks}`),
     compliance: () => r('/compliance'),
+    tds: (from, to) => r(`/tds?from=${from}&to=${to}`),
     gstr2b: (content, from, to) => client.request('/reports/gst/gstr-2b', { method: 'POST', json: { content, from, to }, headers }),
     exportGstr1: (from, to, format) => file(`/gst/gstr-1/export?from=${from}&to=${to}&format=${format}`, `gstr-1-${from}-${to}.${format}`),
     cashFlow: (from, to) => r(`/cash-flow?from=${from}&to=${to}`),

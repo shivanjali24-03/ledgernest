@@ -139,6 +139,11 @@ export default function Payments() {
                         {p.unallocated > 0 && ` · ${t('payments.onAccount', { amount: amount(p, p.unallocated) })}`}
                       </span>
                     )}
+                    {p.tds && (
+                      <span className="block text-xs text-ink-500" data-testid="payment-tds">
+                        {t('payments.tds.line', { section: p.tds.section, amount: amount(p, p.tds.amount), bank: amount(p, p.bankAmount ?? p.amount) })}
+                      </span>
+                    )}
                   </span>
                   <span className={clsx('font-mono font-semibold tabular-nums', p.kind === 'receipt' ? 'text-income' : 'text-expense')} dir="ltr">
                     {p.kind === 'payment' && '−'}

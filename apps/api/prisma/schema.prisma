@@ -203,6 +203,7 @@ model Account {
   budgetLines           BudgetLine[]
 
   paymentBanks Payment[] @relation("PaymentBank")
+  paymentsTds  Payment[] @relation("PaymentTds")
 
   billPayables Bill[]     @relation("BillPayable")
   billExpenses BillLine[] @relation("BillLineAccount")
@@ -834,6 +835,12 @@ model Payment {
   /// In that currency's smallest unit
   amount         BigInt
   allocated      BigInt    @default(0)
+  /// Tax deducted at source on a vendor payment: the section, rate, what it's on, what was kept back and where it's owed
+  tdsSection     String?   @map("tds_section")
+  tdsRatePpm     Int?      @map("tds_rate_ppm")
+  tdsBase        BigInt?   @map("tds_base")
+  tdsAmount      BigInt    @default(0) @map("tds_amount")
+  tdsAccountId   String?   @map("tds_account_id") @db.Uuid
   reference      String?
   notes          String?
   journalEntryId String    @map("journal_entry_id") @db.Uuid
@@ -846,6 +853,7 @@ model Payment {
   contact      Contact             @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
   fiscalYear   FiscalYear          @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
   bankAccount  Account             @relation("PaymentBank", fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+  tdsAccount   Account?            @relation("PaymentTds", fields: [organizationId, tdsAccountId], references: [organizationId, id], onDelete: NoAction)
   journalEntry JournalEntry        @relation("PaymentEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
   voidEntry    JournalEntry?       @relation("PaymentVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
   allocations  PaymentAllocation[]

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { complianceDueDates } from './index.js';
+import { complianceDueDates, tdsDepositDue } from './index.js';
 
 describe('compliance calendar', () => {
   it('lists the month’s GST returns and advance tax, soonest first', () => {
@@ -21,5 +21,11 @@ describe('compliance calendar', () => {
 
   it('shows only advance tax for a business without GST, across the year end', () => {
     expect(complianceDueDates('2027-03-01', { gst: false })).toEqual([{ kind: 'advance_tax', from: '2026-04-01', to: '2027-03-31', due: '2027-03-15', share: 1 }]);
+  });
+
+  it('has TDS paid by the 7th of the next month, and by 30 April for March', () => {
+    expect(tdsDepositDue('2026-10')).toBe('2026-11-07');
+    expect(tdsDepositDue('2026-12')).toBe('2027-01-07');
+    expect(tdsDepositDue('2027-03')).toBe('2027-04-30');
   });
 });

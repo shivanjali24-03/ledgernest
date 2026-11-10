@@ -109,6 +109,37 @@ describe('vendor payments', () => {
     await waitFor(() => expect(screen.queryByText('Sharma Office Supplies', { selector: 'span.font-medium' })).not.toBeInTheDocument());
   }, 30_000);
 
+  it('keeps TDS back from a vendor payment: the bill is settled in full, the bank pays less, and the TDS report shows it', async () => {
+    renderApp('/bills');
+    await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    const dialog = await openDialog('Pay bill', 'Pay a vendor');
+    await waitFor(() => expect(within(dialog).getByLabelText('Amount (INR)')).toHaveValue('53,100.00'));
+    // Rent: TDS under 194I at 10% of the ₹45,000 before GST
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Deduct TDS' }));
+    await userEvent.selectOptions(within(dialog).getByLabelText('TDS section'), '194I');
+    expect(within(dialog).getByLabelText('Rate (%)')).toHaveValue('10');
+    expect(within(dialog).getByLabelText('TDS on (INR)')).toHaveAttribute('placeholder', '45,000.00');
+    expect(within(dialog).getByLabelText('TDS kept back (INR)')).toHaveValue('4,500.00');
+    expect(within(dialog).getByLabelText('Owed on account')).toHaveDisplayValue('2300 · TDS payable');
+    expect(within(dialog).getByText(/^The bank pays INR 48,600\.00; INR 4,500\.00 is owed to the government as TDS\./)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Record payment' }));
+    expect(await screen.findByText(/^Recorded as PAY\/.*\/0001$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    // Settled in full: nothing left to pay on the bill
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Pay bill' })).not.toBeInTheDocument(), { timeout: 4000 });
+
+    document.body.innerHTML = '';
+    renderApp('/payments');
+    await waitFor(() => expect(screen.getByTestId('payment-tds')).toHaveTextContent('TDS 194I: ₹4,500.00 kept back · bank paid ₹48,600.00'), { timeout: 4000 });
+
+    document.body.innerHTML = '';
+    renderApp('/reports?tab=tds');
+    const bySection = await screen.findByRole('table', { name: 'By section' }, { timeout: 4000 });
+    expect(within(bySection).getByText(/^194I/).closest('tr')!).toHaveTextContent(/45,000\.00.*4,500\.00/);
+    // Sharma's GSTIN carries the PAN
+    expect(screen.getByRole('table', { name: 'Payments' })).toHaveTextContent('ABZPS6519M');
+  }, 30_000);
+
   it('shows what is owed to a vendor on their contact', async () => {
     renderApp('/bills');
     await screen.findByRole('link', { name: /^BILL\// }, { timeout: 4000 });
