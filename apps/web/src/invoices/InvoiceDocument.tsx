@@ -233,6 +233,23 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           {org.invoiceTerms}
         </p>
       )}
+      {i.instalments && i.instalments.length > 0 && (
+        <table className="mt-6 text-xs" data-testid="invoice-instalments">
+          <caption className="pb-1 text-start font-semibold">{t('instalments.payable')}</caption>
+          <tbody>
+            {i.instalments.map((x, n) => (
+              <tr key={n}>
+                <td className="pe-3 text-ink-500">{n + 1}.</td>
+                <td className="pe-3">{day(x.dueDate)}</td>
+                <td className="pe-3 text-end font-mono tabular-nums" dir="ltr">
+                  {plain(x.amount)}
+                </td>
+                {x.state && i.status === 'issued' && <td className={clsx('print:hidden', x.state === 'overdue' ? 'text-expense' : 'text-ink-500')}>{t(`instalments.states.${x.state}`)}</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {i.interest && (
         <p className={clsx('text-xs text-ink-500', !org?.invoiceTerms && 'mt-6')} data-testid="invoice-interest-terms">
           {t(i.interest.graceDays ? 'invoices.interest.terms' : 'invoices.interest.termsNoGrace', { rate: i.interest.rateBp / 100, method: t(`invoices.interest.methods.${i.interest.method}`), grace: i.interest.graceDays, count: i.interest.graceDays })}

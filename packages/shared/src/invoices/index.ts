@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { batchLabel } from '../inventory/batches.js';
 import { serialsSchema } from '../inventory/serials.js';
+import { instalmentStatus, instalmentsSchema, type Instalment } from './instalments.js';
 import { rateSchema } from '../currencies/index.js';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
 import { isoDaySchema } from '../periods/index.js';
@@ -121,6 +122,8 @@ export const invoiceDraftSchema = z
     dueDate: isoDaySchema.nullable().optional().default(null),
     /** The number series to number it from; omitted = the default */
     seriesId: z.uuid().nullable().optional().default(null),
+    /** Paid in instalments: each one's day and amount, adding up to the total (the last is the due date) */
+    instalments: instalmentsSchema.nullable().optional().default(null),
     /** Interest on late payment for this invoice, basis points a year: null = the customer's or organisation's, 0 = none */
     interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
     reference: text(64),
@@ -229,9 +232,12 @@ export function dueDateFor(issueDate: string, termsDays: number): string {
 }
 
 /** What an issued invoice is, given what's been paid and today's date */
-export function invoiceState(i: { status: InvoiceStatus; total: number; amountPaid: number; dueDate: string }, today: string): InvoiceState {
+export function invoiceState(i: { status: InvoiceStatus; total: number; amountPaid: number; dueDate: string; instalments?: Instalment[] | null }, today: string): InvoiceState {
   if (i.status !== 'issued') return i.status;
   if (i.amountPaid >= i.total) return 'paid';
+  // Paid in instalments: overdue once an instalment past its day isn't covered
+  if (i.instalments?.length) return instalmentStatus(i.instalments, i.amountPaid, today).some((x) => x.state === 'overdue') ? 'overdue' : i.amountPaid > 0 ? 'partly_paid' : 'issued';
   if (i.dueDate < today) return 'overdue';
   return i.amountPaid > 0 ? 'partly_paid' : 'issued';
 }
+export * from './instalments.js';

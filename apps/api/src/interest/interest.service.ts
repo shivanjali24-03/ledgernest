@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
+  instalmentInterest,
+  type Instalment,
+  type InterestEvent,
   accruedInterest,
   type InterestMethod,
   type InterestTerms,
@@ -51,6 +54,7 @@ export class InterestService {
         interestRateBp: true,
         interestMethod: true,
         interestGraceDays: true,
+        instalments: true,
         allocations: {
           where: {
             payment: { status: 'posted', date: { lte: asDate(asOf) } },
@@ -73,7 +77,13 @@ export class InterestService {
         method: i.interestMethod as InterestMethod,
         graceDays: i.interestGraceDays ?? 0,
       };
-      const r = accruedInterest(
+      const plan = (i.instalments as Instalment[] | null) ?? null;
+      const r = (
+        plan?.length
+          ? (t: InterestTerms, _i: unknown, e: InterestEvent[], d: string) =>
+              instalmentInterest(t, plan, e, d)
+          : accruedInterest
+      )(
         terms,
         { total: Number(i.total), dueDate: iso(i.dueDate) },
         [

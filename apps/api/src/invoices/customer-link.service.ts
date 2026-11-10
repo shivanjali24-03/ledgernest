@@ -13,6 +13,8 @@ import {
   msmeLateInterest,
   todayIn,
   upiPayUri,
+  instalmentStatus,
+  type Instalment,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -193,6 +195,7 @@ export class CustomerLinkService {
         currency: true,
         total: true,
         amountPaid: true,
+        instalments: true,
         fiscalYear: { select: { name: true } },
         fullNumber: true,
       },
@@ -228,9 +231,17 @@ export class CustomerLinkService {
           total: Number(i.total),
           amountPaid: Number(i.amountPaid),
           dueDate: iso(i.dueDate),
+          instalments: (i.instalments as Instalment[] | null) ?? null,
         },
         today,
       ),
+      /** Paid in instalments: the next one still to pay */
+      nextInstalment:
+        instalmentStatus(
+          (i.instalments as Instalment[] | null) ?? [],
+          Number(i.amountPaid),
+          today,
+        ).find((x) => x.balance > 0) ?? null,
       msmeInterest:
         charges && (i.currency ?? org.baseCurrency) === 'INR'
           ? msmeLateInterest(
