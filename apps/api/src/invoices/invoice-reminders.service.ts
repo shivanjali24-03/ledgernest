@@ -389,6 +389,18 @@ export class InvoiceRemindersService
             ? [`Amount in words: ${rupeesInWords(inv.total)}`, '']
             : []),
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
+          // What a GST tax invoice must also say (CGST Rules, rule 46): reverse charge, and the supplier's signature
+          ...(org.taxId
+            ? [
+                '',
+                'Whether tax is payable on reverse charge: No',
+                '',
+                `For ${seller}`,
+                '',
+                '',
+                'Authorised signatory',
+              ]
+            : []),
         ],
         footer: `${seller} · ${inv.number}`,
         rows: invoiceRows({ ...inv, currency }, digits),

@@ -957,6 +957,8 @@ describe('Aging reports (e2e)', () => {
     expect(text).toContain(
       '(Amount in words: Indian Rupees Three Hundred Only) Tj',
     );
+    // Not GST-registered: an invoice, without a tax invoice's declarations
+    expect(text).not.toContain('Authorised signatory');
     const receipts = (
       await as()
         .get(

@@ -359,4 +359,21 @@ describe('GST e-invoice JSON (e2e)', () => {
       ).issues.map((i) => i.kind),
     ).toContain('org_address');
   });
+
+  it('says on a tax invoice whether reverse charge applies, with a place for the signature', async () => {
+    const r = await as()
+      .get(`/invoices/${inv.kumar}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const text = (r.body as Buffer).toString('latin1');
+    expect(text).toContain('(Tax invoice INV/2026-27/');
+    expect(text).toContain('(Whether tax is payable on reverse charge: No) Tj');
+    expect(text).toContain(`(For Nest Demo Private Limited ${run}) Tj`);
+    expect(text).toContain('(Authorised signatory) Tj');
+  });
 });
