@@ -255,6 +255,31 @@ describe('Debit notes to vendors (e2e)', () => {
 
   let lamps: DebitNote;
 
+  it('gives the vendor the debit note as a PDF, against their own bill number', async () => {
+    const r = await as()
+      .get(`/debit-notes/${chair.id}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(r.headers['content-disposition']).toContain(
+      'debit-note-dn-2026-27-0001.pdf',
+    );
+    const text = (r.body as Buffer).toString('latin1');
+    expect(text).toContain('(Debit note DN/2026-27/0001) Tj');
+    expect(text).toMatch(
+      /\(Date 2026-10-12 · Against your bill SOS\/[0-9a-f]{4} dated 2026-10-05 · Your credit note SOS-CN-7\) Tj/,
+    );
+    expect(text).toContain('(Reason: One chair arrived broken) Tj');
+    expect(text).toContain(
+      '(Amount in words: Indian Rupees Five Thousand Nine Hundred Only) Tj',
+    );
+    expect(text).toContain('(Authorised signatory) Tj');
+  });
+
   it('keeps credit with the vendor once the bill is paid, then puts it on another bill and takes a refund', async () => {
     await as()
       .post('/payments/payments', {

@@ -58,6 +58,19 @@ describe('debit notes', () => {
     expect(row()).toHaveTextContent('their SOS-CN-12');
     expect(row()).toHaveTextContent('₹53,100.00');
     // Open the row's menu, retried: the list can re-render as it loads
+    // The PDF for the vendor
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    await waitFor(
+      () => {
+        const item = screen.queryByRole('menuitem', { name: 'Download PDF' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
+        expect(saved).toBeDefined();
+      },
+      { timeout: 8000 },
+    );
+    expect(new TextDecoder('latin1').decode(await saved!.arrayBuffer())).toMatch(/\(Debit note DN\/.*\) Tj/);
     await waitFor(
       () => {
         if (!screen.queryByRole('menuitem', { name: 'Void debit note' })) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));

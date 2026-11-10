@@ -1,4 +1,4 @@
-import { formatQuantity, invoiceAmounts, parseQuantity, splitTax, todayIn, vendorCreditApplySchema, vendorCreditNumber, vendorCreditRefundSchema, vendorCreditSchema } from '@ledgernest/shared';
+import { formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, vendorCreditApplySchema, vendorCreditNumber, vendorCreditRefundSchema, vendorCreditSchema } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoAdjustBillCredit, demoBillViews, demoTrackDebitNote } from '../bills/demoBillsApi';
@@ -84,6 +84,21 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
         return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map(strip) };
       }),
     get: (id) => wait(() => strip(find(load(), id))),
+    pdf: (id) =>
+      wait(() => {
+        const c = strip(find(load(), id));
+        const fmt = (minor: number) => (minor / 100).toFixed(2);
+        const total = (label: string, minor: number) => ['', '', label, '', fmt(minor)];
+        const bytes = pdfTableBytes({
+          title: `Debit note ${c.number}`,
+          subtitle: 'Nest Demo Private Limited · GSTIN 27AAPFN1234C1Z5',
+          info: [`To: ${c.contact.name}`, `Date ${c.date} · Against your bill ${c.bill.vendorReference ?? c.bill.number ?? ''}`, ...(c.reason ? [`Reason: ${c.reason}`] : [])],
+          rows: [['Description', 'Qty', 'Price (INR)', 'Taxable value', 'Tax'], ...c.lines.map((l) => [l.description, l.quantity, fmt(l.unitPrice), fmt(l.amount), fmt(l.taxAmount)]), total('Subtotal', c.subtotal), ...c.taxBreakdown.map((x) => total(x.name, x.amount)), total('Total (INR)', c.total)],
+          after: [`Amount in words: ${rupeesInWords(c.total)}`],
+          footer: `Nest Demo Private Limited · ${c.number}`,
+        });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `debit-note-${c.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
+      }),
     creditable: (billId) => wait(() => creditable(billId)),
     create: (input) =>
       wait(async () => {

@@ -32,6 +32,8 @@ export interface DebitNote {
 export interface DebitNotesApi {
   list(q: { contactId?: string; billId?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: DebitNote[] }>;
   get(id: string): Promise<DebitNote>;
+  /** The debit note as a PDF for the vendor */
+  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
   /** How much of each of a bill's lines can still be credited, and which are goods kept in stock */
   creditable(billId: string): Promise<{ billLineId: string; quantity: string; stock: boolean }[]>;
   create(input: VendorCreditInput): Promise<DebitNote>;
