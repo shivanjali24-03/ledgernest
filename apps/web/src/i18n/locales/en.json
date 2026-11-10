@@ -2741,6 +2741,15 @@
       "bill_not_open": "Only recorded bills can be paid.",
       "bill_currency": "That bill is in a different currency.",
       "bill_not_found": "That bill belongs to another vendor."
+    },
+    "duplicates": {
+      "title": "This may be a bill you’ve entered already:",
+      "draft": "Draft",
+      "reference": "same bill number",
+      "amount": "same amount, within 3 days",
+      "confirmTitle": "Record this bill again?",
+      "confirmBody": "The vendor’s bill {{reference}} is recorded already as {{number}}. Recording it twice doubles the cost and the input GST.",
+      "recordAnyway": "Record anyway"
     }
   },
   "creditNotes": {
