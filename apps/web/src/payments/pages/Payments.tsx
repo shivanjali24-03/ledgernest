@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, FileDown, HandCoins, Mail, Paperclip, Plus, Send } from 'lucide-react';
+import { Ban, Building2, FileDown, HandCoins, Mail, Paperclip, Plus, Send, SquarePen } from 'lucide-react';
 import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +19,7 @@ import RowMenu from '../../ui/RowMenu';
 import { useToast } from '../../ui/toastContext';
 import ReceiptDialog from '../ReceiptDialog';
 import type { Payment } from '../types';
+import ChequeDialog from '../ChequeDialog';
 import { usePaymentsApi } from '../usePaymentsApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 import Modal from '../../ui/Modal';
@@ -44,6 +45,7 @@ export default function Payments() {
   const [voiding, setVoiding] = useState<Payment | null>(null);
   const [files, setFiles] = useState<Payment | null>(null);
   const [emailing, setEmailing] = useState<Payment | null>(null);
+  const [cheque, setCheque] = useState<Payment | null>(null);
   const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, kind, page], queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ p, reason }: { p: Payment; reason?: string }) => api!.void(p.id, reason),
@@ -151,7 +153,7 @@ export default function Payments() {
                   </span>
                   <RowMenu
                     label={t('payments.actionsFor', { number: p.number })}
-                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(p.kind === 'receipt' ? [{ key: 'pdf', label: t('payments.downloadReceipt'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }] : []), ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(p.kind === 'receipt' ? [{ key: 'pdf', label: t('payments.downloadReceipt'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }] : []), ...(p.status === 'posted' && p.kind === 'payment' && !p.currency ? [{ key: 'cheque', label: t('payments.cheque.action'), icon: SquarePen, onSelect: () => setCheque(p) }] : []), ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
                   />
                 </li>
               ))}
@@ -177,6 +179,7 @@ export default function Payments() {
           <DocumentAttachments documentType="payment" documentId={files.id} bare />
         </Modal>
       )}
+      {cheque && api && <ChequeDialog payment={cheque} api={api} onClose={() => setCheque(null)} />}
       {emailing && api && (
         <EmailDialog
           title={t('payments.emailReceipt.title', { number: emailing.number })}

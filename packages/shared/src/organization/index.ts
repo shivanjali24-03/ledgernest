@@ -108,6 +108,8 @@ export const organizationSettingsSchema = z
       .nullable(),
     /** Email Owners and Admins a summary every Monday morning */
     weeklySummary: z.boolean(),
+    /** Every member must use two-factor sign-in to open this organisation */
+    requireTwoFactor: z.boolean(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

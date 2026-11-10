@@ -190,7 +190,18 @@
       "server": "Something went wrong on our side. Please try again.",
       "expired": "Your session has ended. Please sign in again."
     },
-    "waking": "Waking up the server… Free hosting pauses it when nobody is using it, so this can take up to a minute."
+    "waking": "Waking up the server… Free hosting pauses it when nobody is using it, so this can take up to a minute.",
+    "twoFactor": {
+      "title": "Two-factor sign-in",
+      "body": "Enter the 6-digit code from your authenticator app.",
+      "code": "Authentication code",
+      "recoveryHint": "Lost your phone? Enter one of your recovery codes instead.",
+      "verify": "Verify and sign in",
+      "back": "Use a different account",
+      "required": "Enter the code from your app.",
+      "wrong": "That code isn’t right. Try the newest code from your app.",
+      "expired": "That took too long. Enter your password again."
+    }
   },
   "common": {
     "all": "All",
@@ -955,7 +966,8 @@
       "timeZone": "Time zone",
       "invoiceTerms": "Terms and bank details",
       "weeklySummary": "Weekly summary",
-      "upiId": "UPI ID"
+      "upiId": "UPI ID",
+      "requireTwoFactor": "Require two-factor sign-in for everyone"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -965,7 +977,8 @@
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
       "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
       "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
-      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free."
+      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free.",
+      "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -979,7 +992,8 @@
       "timeZone": "Choose a time zone from the list.",
       "invalid": "Check this value.",
       "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first.",
-      "upiId": "Enter a UPI ID like yourname@okhdfcbank."
+      "upiId": "Enter a UPI ID like yourname@okhdfcbank.",
+      "twoFactorSelf": "Turn on two-factor sign-in for yourself first (in the menu under your name)."
     },
     "leave": {
       "title": "Leave without saving?",
@@ -1021,6 +1035,10 @@
       "confirm": "Delete it all",
       "mismatch": "That isn’t the organisation’s name.",
       "done": "{{name}} was deleted."
+    },
+    "security": {
+      "title": "Security",
+      "description": "How people sign in to this organisation."
     }
   },
   "accounts": {
@@ -2640,6 +2658,17 @@
       "accountReceivable": "Claim back on account",
       "noAccountReceivable": "No current asset account: add TDS receivable",
       "bankGets": "{{bank}} reaches the bank; {{tds}} is TDS the customer pays the government for you, to claim against Form 26AS. The invoices are settled in full."
+    },
+    "cheque": {
+      "action": "Print cheque",
+      "title": "Cheque for {{number}}",
+      "body": "To {{name}}, for what the bank pays (after any TDS). Laid out for standard CTS-2010 cheque leaves.",
+      "download": "Download cheque PDF",
+      "right": "Move right (mm)",
+      "down": "Move down (mm)",
+      "range": "Between -30 and 30 mm.",
+      "crossed": "Cross it “A/c Payee” (paid only into the payee’s account)",
+      "tip": "Print at actual size (100%), with the leaf fed as your printer takes envelopes. Try plain paper held over a cheque first; adjust the moves until it lines up. They are remembered on this device."
     }
   },
   "bills": {
@@ -4023,5 +4052,55 @@
     "payAll": "Pay it all by UPI",
     "invoices": "Invoices",
     "download": "Download {{number}} as PDF"
+  },
+  "twoFactor": {
+    "action": "Two-factor sign-in",
+    "title": "Two-factor sign-in",
+    "body": "Ask for a code from an authenticator app (Google Authenticator, Microsoft Authenticator, Authy…) as well as the password, so a stolen password isn’t enough.",
+    "isOn": "Two-factor sign-in is on.",
+    "isOff": "Two-factor sign-in is off. Turn it on to protect your books.",
+    "codesLeft_one": "1 recovery code left.",
+    "codesLeft_other": "{{count}} recovery codes left.",
+    "setUp": "Set up",
+    "continue": "Continue",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "newCodes": "New recovery codes",
+    "makeCodes": "Make new codes",
+    "password": "Your password",
+    "codeFromApp": "Code from the app",
+    "codeOrRecovery": "Code from the app, or a recovery code",
+    "scan": "Scan this QR code with your authenticator app, then enter the 6-digit code it shows.",
+    "manual": "Can’t scan it? Type this key into the app instead:",
+    "qrLabel": "QR code to add LedgerNest to an authenticator app",
+    "codesBody": "Keep these recovery codes somewhere safe. Each one signs you in once if you lose your phone. They won’t be shown again.",
+    "codesLabel": "Recovery codes",
+    "codesFileTitle": "LedgerNest recovery codes (each works once)",
+    "copy": "Copy",
+    "copied": "Recovery codes copied.",
+    "download": "Download",
+    "saved": "I’ve saved them",
+    "enabled": "Two-factor sign-in is on.",
+    "disabled": "Two-factor sign-in is off.",
+    "errors": {
+      "password": "That password isn’t right.",
+      "code": "That code isn’t right. Try the newest code from your app."
+    },
+    "gate": {
+      "title": "Turn on two-factor sign-in",
+      "body": "{{organization}} asks everyone to sign in with a code from an authenticator app as well as their password. Set it up to continue.",
+      "signOut": "Sign out"
+    }
+  },
+  "sessions": {
+    "action": "Where you’re signed in",
+    "title": "Where you’re signed in",
+    "body": "Each device or browser signed in to your account. Sign out any you don’t recognise, then change your password.",
+    "on": "{{browser}} on {{os}}",
+    "unknown": "Unknown device",
+    "thisDevice": "This device",
+    "lastUsed": "Last used {{when}}",
+    "signOut": "Sign out",
+    "revoked": "That device is signed out."
   }
 }

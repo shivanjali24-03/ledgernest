@@ -19,6 +19,8 @@ export interface Session {
   /** Demo only: preview the app as another role */
   setRole?: (role: BuiltInRoleId) => void;
   signOut: () => Promise<void>;
+  /** The organisation requires two-factor sign-in and this person hasn't turned it on yet */
+  twoFactorRequired?: boolean;
 }
 
 export const SessionContext = createContext<Session | null>(null);

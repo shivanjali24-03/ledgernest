@@ -1,8 +1,11 @@
 import { useContext, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { KeyRound, LogOut, MonitorX, UserX } from 'lucide-react';
+import { KeyRound, LaptopMinimal, LogOut, MonitorX, ShieldCheck, UserX } from 'lucide-react';
 import { AuthContext } from '../auth/context';
 import ChangePasswordDialog from '../auth/ChangePasswordDialog';
+import TwoFactorDialog from '../auth/TwoFactorDialog';
+import SessionsDialog from '../auth/SessionsDialog';
+import { ApiClientContext } from '../auth/apiClientContext';
 import DeleteAccountDialog from '../auth/DeleteAccountDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +20,9 @@ export default function UserMenu() {
   const [busy, setBusy] = useState(false);
   const auth = useContext(AuthContext);
   const [changing, setChanging] = useState(false);
+  const [securing, setSecuring] = useState(false);
+  const [listing, setListing] = useState(false);
+  const client = useContext(ApiClientContext);
   const [everywhere, setEverywhere] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -85,6 +91,28 @@ export default function UserMenu() {
                 >
                   <KeyRound className="size-4" aria-hidden /> {t('password.change.action')}
                 </button>
+                {client && (
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      setSecuring(true);
+                    }}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+                  >
+                    <ShieldCheck className="size-4" aria-hidden /> {t('twoFactor.action')}
+                  </button>
+                )}
+                {client && (
+                  <button
+                    onClick={() => {
+                      setOpen(false);
+                      setListing(true);
+                    }}
+                    className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+                  >
+                    <LaptopMinimal className="size-4" aria-hidden /> {t('sessions.action')}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setOpen(false);
@@ -116,6 +144,8 @@ export default function UserMenu() {
         )}
       </AnimatePresence>
       {changing && auth && <ChangePasswordDialog auth={auth} onClose={() => setChanging(false)} />}
+      {securing && client && <TwoFactorDialog client={client} onClose={() => setSecuring(false)} />}
+      {listing && client && <SessionsDialog client={client} onClose={() => setListing(false)} />}
       {deleting && auth && <DeleteAccountDialog auth={auth} onClose={() => setDeleting(false)} />}
       {auth && (
         <ConfirmDialog

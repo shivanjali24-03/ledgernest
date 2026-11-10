@@ -33,6 +33,13 @@ model User {
   failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime?  @map("locked_until")
   lastLoginAt         DateTime?  @map("last_login_at")
+  /// Two-factor sign-in: the authenticator secret (AES-256-GCM encrypted), set when enabled (null while set up)
+  totpSecret          String?    @map("totp_secret")
+  totpEnabledAt       DateTime?  @map("totp_enabled_at")
+  /// The last 30-second step a code was accepted for, so a code can't be used twice
+  totpLastStep        Int?       @map("totp_last_step")
+  /// SHA-256 hashes of unused recovery codes
+  recoveryCodes       String[]   @default([]) @map("recovery_codes")
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
@@ -80,6 +87,8 @@ model Organization {
   upiId                String?            @map("upi_id")
   /// Email Owners and Admins a summary every Monday; the day it last went
   weeklySummary        Boolean            @default(false) @map("weekly_summary")
+  /// Every member must sign in with two-factor before using this organisation
+  requireTwoFactor     Boolean   @default(false) @map("require_two_factor")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")

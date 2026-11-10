@@ -50,6 +50,9 @@ export default function SignIn() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // After the password, with two-factor on: the ticket for the code step
+  const [ticket, setTicket] = useState<string | null>(null);
+  const [code, setCode] = useState('');
   const shake = useAnimationControls();
   const waking = useTakingLong(submitting && !demo);
   const ids = { email: useId(), password: useId(), emailErr: useId(), passwordErr: useId(), caps: useId() };
@@ -74,12 +77,38 @@ export default function SignIn() {
     }
     setSubmitting(true);
     try {
-      await auth.signIn(email.trim().toLowerCase(), password);
+      const second = await auth.signIn(email.trim().toLowerCase(), password);
+      if (second) {
+        setTicket(second.ticket);
+        setCode('');
+      }
     } catch (err) {
       setError(errorMessage(err, t));
       setPassword('');
       void shake.start({ x: [0, -8, 8, -5, 5, 0], transition: { duration: 0.4 } });
       document.getElementById(ids.password)?.focus();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (submitting || !ticket) return;
+    if (!code.trim()) return setError(t('auth.twoFactor.required'));
+    setSubmitting(true);
+    setError(null);
+    try {
+      await auth.signInTwoFactor(ticket, code);
+    } catch (err) {
+      const reason = err instanceof ApiError ? (err.details?.reason as string | undefined) : undefined;
+      if (reason === 'ticket_expired') {
+        setTicket(null);
+        setPassword('');
+        setError(t('auth.twoFactor.expired'));
+      } else setError(reason === 'wrong_code' ? t('auth.twoFactor.wrong') : errorMessage(err, t));
+      setCode('');
+      void shake.start({ x: [0, -8, 8, -5, 5, 0], transition: { duration: 0.4 } });
     } finally {
       setSubmitting(false);
     }
@@ -145,6 +174,39 @@ export default function SignIn() {
               )}
             </AnimatePresence>
 
+            {ticket ? (
+              <motion.form animate={shake} onSubmit={onCode} noValidate className="mt-6 space-y-4" aria-label={t('auth.twoFactor.title')}>
+                <div>
+                  <p className="text-sm font-semibold">{t('auth.twoFactor.title')}</p>
+                  <p className="mt-1 text-sm text-ink-500">{t('auth.twoFactor.body')}</p>
+                </div>
+                <div>
+                  <label htmlFor={`${ids.password}-code`} className="mb-1.5 block text-sm font-medium">
+                    {t('auth.twoFactor.code')}
+                  </label>
+                  <input
+                    id={`${ids.password}-code`}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    dir="ltr"
+                    maxLength={9}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="123456"
+                    className={clsx(input, 'font-mono tracking-widest border-ink-200 dark:border-ink-700')}
+                  />
+                  <p className="mt-1.5 text-xs text-ink-500">{t('auth.twoFactor.recoveryHint')}</p>
+                </div>
+                <button type="submit" disabled={submitting} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 text-[15px] font-semibold text-white shadow-card hover:bg-brand-800 disabled:cursor-wait disabled:opacity-80">
+                  {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                  {t('auth.twoFactor.verify')}
+                </button>
+                <button type="button" onClick={() => { setTicket(null); setPassword(''); setError(null); }} className="w-full text-center text-xs font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {t('auth.twoFactor.back')}
+                </button>
+              </motion.form>
+            ) : (
             <motion.form variants={fadeUp} animate={shake} onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
               <div>
                 <label htmlFor={ids.email} className="mb-1.5 block text-sm font-medium">
@@ -240,6 +302,7 @@ export default function SignIn() {
                 </p>
               )}
             </motion.form>
+            )}
           </motion.div>
         </div>
       </main>

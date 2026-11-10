@@ -6,6 +6,8 @@ import type { Actor, Tenant } from './types.js';
 
 export type ResolvedAccess = Tenant & {
   organizationStatus: 'ACTIVE' | 'SUSPENDED';
+  /** The organisation requires two-factor sign-in and this member hasn't turned it on */
+  twoFactorMissing?: boolean;
 };
 
 @Injectable()
@@ -23,7 +25,7 @@ export class AccessService {
     const [org, membership] = await Promise.all([
       this.prisma.organization.findUnique({
         where: { id: organizationId },
-        select: { id: true, name: true, status: true },
+        select: { id: true, name: true, status: true, requireTwoFactor: true },
       }),
       this.prisma.membership.findUnique({
         where: {
@@ -54,7 +56,21 @@ export class AccessService {
       const permissions = actor.isSuperAdmin
         ? new Set(ORGANIZATION_PERMISSIONS)
         : membershipPermissions(membership);
-      return { ...base, role, permissions, supportAccess: false };
+      const twoFactorMissing =
+        org.requireTwoFactor &&
+        !(
+          await this.prisma.user.findUnique({
+            where: { id: actor.userId },
+            select: { totpEnabledAt: true },
+          })
+        )?.totpEnabledAt;
+      return {
+        ...base,
+        role,
+        permissions,
+        supportAccess: false,
+        twoFactorMissing,
+      };
     }
 
     if (actor.isSuperAdmin)

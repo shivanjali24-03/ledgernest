@@ -20,6 +20,8 @@ export interface OrganizationSettings {
   upiId?: string | null;
   /** Email Owners and Admins a summary every Monday morning */
   weeklySummary?: boolean;
+  /** Every member must use two-factor sign-in */
+  requireTwoFactor?: boolean;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

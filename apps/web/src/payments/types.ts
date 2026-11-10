@@ -51,6 +51,8 @@ export interface PaymentsApi {
   void(id: string, reason?: string): Promise<Payment>;
   /** A receipt as a PDF file */
   pdf(id: string): Promise<{ blob: Blob; filename: string }>;
+  /** A vendor payment as a PDF to print onto a cheque leaf, nudged in millimetres */
+  cheque(id: string, options: { offsetX: number; offsetY: number; crossed: boolean }): Promise<{ blob: Blob; filename: string }>;
   /** Emails a posted receipt to the customer as a PDF; the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
 }
