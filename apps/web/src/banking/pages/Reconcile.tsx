@@ -176,6 +176,7 @@ export default function Reconcile() {
                   {data!.bankLines.map((l) => {
                     const s = data!.suggestions.find((x) => x.statementLineId === l.id);
                     const suggested = s ? data!.bookLines.filter((b) => s.journalLineIds.includes(b.id)) : [];
+                    const hint = data!.hints?.find((h) => h.statementLineId === l.id);
                     const isSel = selected === l.id;
                     return (
                       <li key={l.id} className={clsx('space-y-2 p-4', isSel && 'bg-brand-50/60 dark:bg-brand-950/30')}>
@@ -203,10 +204,15 @@ export default function Reconcile() {
                             )}
                           </div>
                         )}
+                        {hint && !suggested.length && (
+                          <p className="ms-7 text-xs text-ink-500" data-testid="line-hint">
+                            {t('banking.rec.lastTime', { account: `${hint.account.code} · ${hint.account.name}` })}
+                          </p>
+                        )}
                         {(canReconcile || canCreate) && (
                           <div className="ms-7 flex flex-wrap gap-2">
                             {canCreate && (
-                              <Button size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setCreating({ lineId: l.id, accountId: '', taxGroupId: '' })}>
+                              <Button size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setCreating({ lineId: l.id, accountId: hint?.accountId ?? '', taxGroupId: (!data!.account.currency && hint?.taxGroupId) || '' })}>
                                 {t('banking.rec.create')}
                               </Button>
                             )}

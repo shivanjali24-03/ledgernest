@@ -30,7 +30,9 @@ function save(rows: BankTransaction[]) {
 }
 /** Statements in demo mode: imports, their lines, and each account's CSV layout */
 const STATEMENTS = 'ledgernest.demo.statements';
-type Statements = { imports: (StatementImport & { bankAccountId: string })[]; lines: (BankStatementLine & { bankAccountId: string; fingerprint: string })[]; layouts: Record<string, StatementMapping>; matches?: Record<string, { journalLineIds: string[]; reconciliationId: string | null }>; reconciliations?: Reconciliation[] };
+type Statements = { imports: (StatementImport & { bankAccountId: string })[]; lines: (BankStatementLine & { bankAccountId: string; fingerprint: string })[]; layouts: Record<string, StatementMapping>; matches?: Record<string, { journalLineIds: string[]; reconciliationId: string | null }>; reconciliations?: Reconciliation[]; learned?: Record<string, { accountId: string; taxGroupId: string | null }> };
+/** The same key the API uses: money in or out, and the description's first three words without numbers */
+const hintKey = (description: string, amount: number) => `${amount < 0 ? 'out' : 'in'}:${description.toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter((w) => w.length > 1).slice(0, 3).join(' ')}`;
 function loadStatements(): Statements {
   try {
     const raw = localStorage.getItem(STATEMENTS);
@@ -306,6 +308,11 @@ export function createDemoBankingApi(canManage: () => boolean, opts: { approvals
           bankLines,
           bookLines: free,
           suggestions,
+          hints: bankLines.flatMap((l) => {
+            const hit = !suggestions.some((x) => x.statementLineId === l.id) ? st.learned?.[hintKey(l.description, l.amount)] : undefined;
+            const a = hit && demoAccountRows().find((x) => x.id === hit.accountId);
+            return hit && a ? [{ statementLineId: l.id, accountId: hit.accountId, taxGroupId: hit.taxGroupId, account: { code: a.code, name: a.name } }] : [];
+          }),
           matched: mine.filter((l) => l.status === 'matched' && !matches[l.id]?.reconciliationId).map((l) => ({ id: l.id, date: l.date, description: l.description, reference: l.reference, amount: l.amount, bookLines: book.filter((b) => matches[l.id]?.journalLineIds.includes(b.id)) })),
           ignored: mine.filter((l) => l.status === 'ignored').map((l) => ({ id: l.id, date: l.date, description: l.description, reference: l.reference, amount: l.amount })),
           summary: { bookBalance, outstandingIn, outstandingOut, cleared: bookBalance - outstandingIn + outstandingOut, since, unmatchedToDate: bankLines.filter((l) => l.date <= date).length, statementBalance: printed?.balance ?? null },
@@ -359,6 +366,10 @@ export function createDemoBankingApi(canManage: () => boolean, opts: { approvals
       const t = await api.money({ kind: line.amount < 0 ? 'spend' : 'receive', bankAccountId: line.bankAccountId, date: line.date, reference: line.reference, description: input.description ?? line.description, taxInclusive: !!input.taxGroupId, lines: [{ accountId: input.accountId, amount: Math.abs(line.amount), taxGroupId: input.taxGroupId }] });
       const entry = await journals().get(t.journalEntry.id);
       await api.match(line.id, [entry.lines.find((l) => l.accountId === line.bankAccountId)!.id]);
+      // Remember where a line like this went, for next time
+      const st = loadStatements();
+      st.learned = { ...st.learned, [hintKey(line.description, line.amount)]: { accountId: input.accountId, taxGroupId: input.taxGroupId ?? null } };
+      saveStatements(st);
       return t;
     },
     reconcile: (input) =>

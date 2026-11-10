@@ -2655,7 +2655,8 @@
       "historyLine": "Solde {{balance}} · {{matches}} correspondances",
       "undo": "Annuler",
       "undoTitle": "Annuler le rapprochement au {{date}} ?",
-      "undoBody": "Ses correspondances sont déverrouillées pour pouvoir être modifiées."
+      "undoBody": "Ses correspondances sont déverrouillées pour pouvoir être modifiées.",
+      "lastTime": "La dernière fois, une ligne comme celle-ci est allée en {{account}}"
     }
   },
   "assets": {

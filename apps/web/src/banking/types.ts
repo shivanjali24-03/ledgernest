@@ -95,6 +95,8 @@ export interface ReconcileWorkspace {
   bankLines: { id: string; date: string; description: string; reference: string | null; amount: number; balance: number | null }[];
   bookLines: BookLine[];
   suggestions: { statementLineId: string; journalLineIds: string[]; confidence: 'high' | 'medium' }[];
+  /** For lines the books don't have: the account (and tax) used last time for a line like it */
+  hints?: { statementLineId: string; accountId: string; taxGroupId: string | null; account: { code: string; name: string } }[];
   matched: { id: string; date: string; description: string; reference: string | null; amount: number; bookLines: BookLine[] }[];
   ignored: { id: string; date: string; description: string; reference: string | null; amount: number }[];
   summary: { bookBalance: number; outstandingIn: number; outstandingOut: number; cleared: number; since: string | null; unmatchedToDate: number; statementBalance: number | null };
