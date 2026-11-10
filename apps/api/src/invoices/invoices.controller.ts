@@ -29,6 +29,7 @@ import {
   invoiceReminderSchema,
   invoiceVoidSchema,
   type InvoiceDraftInput,
+  isoDaySchema,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -40,6 +41,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { InvoiceRemindersService } from './invoice-reminders.service.js';
+import { EinvoiceService } from './einvoice.service.js';
 import { InvoiceShareService } from './invoice-share.service.js';
 import { InvoicesService } from './invoices.service.js';
 
@@ -60,6 +62,7 @@ export class InvoicesController {
     private readonly invoices: InvoicesService,
     private readonly reminders: InvoiceRemindersService,
     private readonly sharing: InvoiceShareService,
+    private readonly einvoices: EinvoiceService,
   ) {}
 
   @Get()
@@ -97,6 +100,26 @@ export class InvoicesController {
     });
   }
 
+  /** GST e-invoice JSON for every issued invoice to a registered buyer in the dates, and those needing a fix */
+  @Get('e-invoice')
+  @RequirePermission('invoices.view')
+  eInvoices(
+    @Query(
+      new ZodValidationPipe(
+        z
+          .object({ from: isoDaySchema, to: isoDaySchema })
+          .refine((v) => v.from <= v.to, {
+            path: ['to'],
+            message: 'The start comes after the end.',
+          }),
+      ),
+    )
+    q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.einvoices.range(tenant.organizationId, q.from, q.to);
+  }
+
   @Get('export')
   @RequirePermission('reports.export')
   @Header('Content-Type', 'text/csv; charset=utf-8')
@@ -117,6 +140,24 @@ export class InvoicesController {
       tenant,
       req,
     });
+  }
+
+  /** One issued invoice as GST e-invoice JSON for the Invoice Registration Portal */
+  @Get(':id/e-invoice')
+  @RequirePermission('invoices.view')
+  @ApiProduces('application/json')
+  async eInvoice(
+    @Param('id', id) invoiceId: string,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.einvoices.one(tenant.organizationId, invoiceId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${f.fileName}"`,
+    );
+    return f.json;
   }
 
   @Get(':id/pdf')

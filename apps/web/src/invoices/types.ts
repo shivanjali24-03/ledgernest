@@ -1,3 +1,4 @@
+import type { Einvoice, EinvoiceProblem } from '@ledgernest/shared';
 import type { InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
@@ -101,7 +102,18 @@ export interface InvoicesApi {
   share(id: string): Promise<InvoiceShare>;
   /** Turns the link off; sharing again makes a new one */
   unshare(id: string): Promise<void>;
+  /** An issued invoice as GST e-invoice JSON; refused with the problems when the portal would refuse it */
+  einvoice(id: string): Promise<{ blob: Blob; filename: string }>;
+  /** Every issued B2B invoice in the dates as e-invoice JSON, and those needing a fix */
+  einvoices(from: string, to: string): Promise<EinvoiceBatch>;
   /** Automatic reminders for overdue invoices */
   reminderPolicy(): Promise<ReminderPolicy>;
   setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;
+}
+
+export interface EinvoiceBatch {
+  from: string;
+  to: string;
+  invoices: Einvoice[];
+  skipped: { id: string; number: string; problems: EinvoiceProblem[] }[];
 }

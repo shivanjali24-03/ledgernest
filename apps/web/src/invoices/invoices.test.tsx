@@ -282,6 +282,33 @@ describe('invoices', () => {
     expect(await screen.findByText('This invoice link doesn’t work', {}, { timeout: 4000 })).toBeInTheDocument();
   });
 
+  it('downloads an issued B2B invoice as GST e-invoice JSON, or says what the portal needs', { timeout: 20_000 }, async () => {
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:json')), revokeObjectURL: vi.fn() });
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    await waitFor(
+      () => {
+        if (!saved) fireEvent.click(screen.getByRole('button', { name: 'e-Invoice JSON' }));
+        expect(saved).toBeDefined();
+      },
+      { timeout: 8000 },
+    );
+    const json = JSON.parse(await saved!.text()) as { Version: string; DocDtls: { Typ: string; No: string }; SellerDtls: { Gstin: string; Pin: number }; BuyerDtls: { LglNm: string; Pos: string }; ItemList: { HsnCd: string; Qty: number; AssAmt: number; CgstAmt: number }[]; ValDtls: { TotInvVal: number } };
+    expect(json).toMatchObject({ Version: '1.1', DocDtls: { Typ: 'INV' }, SellerDtls: { Gstin: '27AAPFN1234C1Z5', Pin: 411045 }, BuyerDtls: { LglNm: 'Kumar Logistics Private Limited', Pos: '27' }, ItemList: [{ HsnCd: '998314', Qty: 40, AssAmt: 100000, CgstAmt: 9000 }], ValDtls: { TotInvVal: 118000 } });
+    expect(json.DocDtls.No).toMatch(/^INV\/.+\/0001$/);
+
+    // Without the organisation's PIN code the portal would refuse it: say so, with where to fix it
+    const { createDemoSettingsApi, resetDemoSettings } = await import('../settings/demoSettingsApi');
+    await createDemoSettingsApi(() => true).update({ address: { postalCode: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'e-Invoice JSON' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Not ready for the e-invoice portal' }, { timeout: 4000 });
+    expect(within(dialog).getByText('Your organisation’s PIN code is missing or not 6 digits.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'Fix' })).toHaveAttribute('href', '/settings');
+    resetDemoSettings();
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^INV\// }, { timeout: 4000 });

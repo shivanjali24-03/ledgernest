@@ -1,4 +1,4 @@
-import { invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -12,7 +12,7 @@ import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { groupForSupply, supplyFor } from './gst';
 import type { PublicInvoice } from '../public/types';
-import type { Invoice, InvoicesApi } from './types';
+import type { EinvoiceBatch, Invoice, InvoicesApi } from './types';
 
 /**
  * Invoices in demo mode for the sample company in Pune (Maharashtra, GST state 27): the month's invoice to
@@ -190,6 +190,40 @@ export async function demoPublicInvoice(token: string): Promise<{ view: PublicIn
       upi: upi && upiId ? { link: upi, upiId } : null,
     },
     pdf: () => new Blob([pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')), after: v.currency ? undefined : [`Amount in words: ${rupeesInWords(v.total)}`], qr: upi ? { modules: qrMatrix(upi), caption: ['Scan to pay with any UPI app', `Rs ${(v.balance / 100).toFixed(2)} to ${upiId}`] } : undefined }).buffer as ArrayBuffer], { type: 'application/pdf' }),
+  };
+}
+
+/** The demo organisation's details for e-invoices, as saved in Settings */
+function demoSeller(): EinvoiceInput['seller'] {
+  let saved: { taxId?: string | null; legalName?: string | null; name?: string; phone?: string | null; email?: string | null; address?: { line1: string | null; line2: string | null; city: string | null; postalCode: string | null } } | undefined;
+  try {
+    saved = (JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: typeof saved } | null)?.settings;
+  } catch {
+    /* sample details */
+  }
+  const a = saved?.address ?? { line1: '4th Floor, Riverside Business Bay', line2: 'Baner Road', city: 'Pune', postalCode: '411045' };
+  return { gstin: saved?.taxId ?? '27AAPFN1234C1Z5', legalName: saved?.legalName ?? 'Nest Demo Private Limited', tradeName: saved?.name ?? 'Nest Demo Pvt. Ltd.', address1: a.line1, address2: a.line2, city: a.city, pin: a.postalCode, phone: saved?.phone ?? '+91 20 4000 1234', email: saved?.email ?? 'accounts@nestdemo.in' };
+}
+/** A demo invoice as e-invoice input: tax by head from its groups' rates */
+function demoEinvoiceInput(v: Invoice): EinvoiceInput {
+  return {
+    kind: 'invoice',
+    number: v.number ?? '',
+    date: v.issueDate,
+    currency: v.currency ?? 'INR',
+    placeOfSupply: v.placeOfSupply,
+    seller: demoSeller(),
+    buyer: { gstin: v.contact.taxId, legalName: v.contact.legalName ?? v.contact.name, address1: v.contact.billingAddress.line1 ?? null, address2: v.contact.billingAddress.line2 ?? null, city: v.contact.billingAddress.city ?? v.contact.billingAddress.region ?? null, pin: v.contact.billingAddress.postalCode ?? null },
+    lines: v.lines.map((l) => {
+      const g = l.taxGroup ? groupOf(l.taxGroup.id) : null;
+      const heads = zeroHeads();
+      splitTax(l.amount, false, (g?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => {
+        const kind = g!.rates[k]!.kind;
+        const h = kind === 'igst' ? 'igst' : kind === 'cgst' ? 'cgst' : kind === 'sgst' || kind === 'utgst' ? 'sgst' : kind === 'cess' ? 'cess' : null;
+        if (h) heads[h] += t.amount;
+      });
+      return { description: l.description, hsn: l.item?.hsnSac ?? null, quantity: l.quantity, unit: (l.item as { unit?: string | null } | null)?.unit ?? null, unitPrice: l.unitPrice, amount: l.amount, heads, gstRate: (g?.rates ?? []).filter((r) => ['igst', 'cgst', 'sgst', 'utgst'].includes(r.kind)).reduce((x, r) => x + r.ratePpm, 0) / 10_000 };
+    }),
   };
 }
 
@@ -424,6 +458,25 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         save(rows);
         return view(i);
       }),
+    einvoice: async (iid) => {
+      const v = view(find(await load(), iid));
+      if (v.status !== 'issued') throw refuse(409, 'not_issued');
+      const input = demoEinvoiceInput(v);
+      const problems = einvoiceProblems(input);
+      if (problems.length) throw new ApiError('conflict', 409, undefined, undefined, { reason: 'einvoice_incomplete', problems });
+      return { blob: new Blob([JSON.stringify(buildEinvoice(input), null, 2)], { type: 'application/json' }), filename: `e-invoice-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json` };
+    },
+    einvoices: async (from, to) => {
+      const views = (await load()).map(view).filter((v) => v.status === 'issued' && v.contact.taxId && v.issueDate >= from && v.issueDate <= to);
+      const out: EinvoiceBatch = { from, to, invoices: [], skipped: [] };
+      for (const v of views) {
+        const input = demoEinvoiceInput(v);
+        const problems = einvoiceProblems(input);
+        if (problems.length) out.skipped.push({ id: v.id, number: input.number, problems });
+        else out.invoices.push(buildEinvoice(input));
+      }
+      return out;
+    },
     share: (iid) =>
       wait(async () => {
         guard();
