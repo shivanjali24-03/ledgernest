@@ -95,7 +95,13 @@ const select = {
   voidEntry: {
     select: { id: true, number: true, fiscalYear: { select: { name: true } } },
   },
-  allocations: { select: { amount: true, invoice: doc, bill: doc } },
+  allocations: {
+    select: {
+      amount: true,
+      invoice: doc,
+      bill: { select: { ...doc.select, vendorReference: true } },
+    },
+  },
 } as const;
 type Row = Prisma.PaymentGetPayload<{ select: typeof select }>;
 
@@ -182,6 +188,8 @@ export class PaymentsService {
                 a.bill!.number && a.bill!.fiscalYear
                   ? billNumber(a.bill!.fiscalYear.name, a.bill!.number)
                   : null,
+              /** The vendor's own number for it */
+              vendorReference: a.bill!.vendorReference,
               amount: Number(a.amount),
             },
       ),
