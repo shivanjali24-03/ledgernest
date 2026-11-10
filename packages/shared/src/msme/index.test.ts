@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { msmeCovered, msmeDeadline, msmeReport, type MsmeBillInput } from './index.js';
+import { msmeCovered, msmeDeadline, msmeLateInterest, msmeReport, type MsmeBillInput } from './index.js';
 
 const FY = { from: '2026-04-01', to: '2027-03-31' };
 const vendor = { id: 'v1', name: 'Sharma Fabricators', category: 'micro' as const, udyamNumber: 'UDYAM-MH-26-0012345' };
@@ -53,5 +53,18 @@ describe('MSME 45-day rule', () => {
   it('carries bills still owed from an earlier year, but nothing from it is taken out of this one', () => {
     const r = msmeReport([bill({ billDate: '2026-02-01', dueDate: '2026-03-01' }), bill({ number: 'old-paid', billDate: '2026-02-01', dueDate: '2026-03-01', settlements: [{ date: '2026-02-20', amount: 1_18_000_00 }] })], '2026-08-04', FY);
     expect(r.bills.map((b) => [b.number, b.state, b.disallowed])).toEqual([['BILL-1', 'overdue', 0]]);
+  });
+});
+
+describe('MSMED interest from a late buyer', () => {
+  it('compounds monthly at three times the bank rate after the appointed day', () => {
+    // ₹1,00,000 due 1 July (agreed 30 days); bank rate 5.5% so 16.5% a year, 1.375% a month: 91 days on, ₹4,170
+    expect(msmeLateInterest(1_00_000_00, '2026-06-01', '2026-07-01', '2026-09-30', 550)).toBe(4_170_29);
+    // Not past the appointed day, nothing owed, or no rate set: none
+    expect(msmeLateInterest(1_00_000_00, '2026-06-01', '2026-07-01', '2026-07-01', 550)).toBe(0);
+    expect(msmeLateInterest(0, '2026-06-01', '2026-07-01', '2026-09-30', 550)).toBe(0);
+    expect(msmeLateInterest(1_00_000_00, '2026-06-01', '2026-07-01', '2026-09-30', 0)).toBe(0);
+    // Terms longer than 45 days don't delay it
+    expect(msmeLateInterest(1_00_000_00, '2026-06-01', '2026-09-01', '2026-07-17', 550)).toBeGreaterThan(0);
   });
 });

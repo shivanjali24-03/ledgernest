@@ -1,4 +1,4 @@
-import { msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { gstInterest, gstLateFee, msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -520,9 +520,13 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     const items = await Promise.all(
       complianceDueDates(today, { gst: true }).map(async (i) => {
         const daysLeft = Math.round((Date.parse(`${i.due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
-        if (i.kind !== 'gstr3b') return { ...i, daysLeft };
+        // The demo files nothing, so a late return shows its fee (a small business: under ₹1.5 crore)
+        const late = -daysLeft;
+        const fee = late > 0 && (i.kind === 'gstr1' || i.kind === 'gstr3b') ? gstLateFee(late, { nil: false, turnover: 0 }) : undefined;
+        if (i.kind !== 'gstr3b') return { ...i, daysLeft, ...(fee === undefined ? {} : { lateFee: fee, interest: 0 }) };
         const r = await gstr3b(i.from, i.to);
-        return { ...i, daysLeft, amount: r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess };
+        const amount = r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess;
+        return { ...i, daysLeft, amount, ...(fee === undefined ? {} : { lateFee: fee, interest: gstInterest(amount, late) }) };
       }),
     );
     // TDS kept back in the demo's payments, due by the 7th of the next month

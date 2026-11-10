@@ -16,6 +16,8 @@ export class MailService {
     subject: string;
     attachments: string[];
   }[] = [];
+  /** Their bodies, in the same order */
+  readonly capturedText: string[] = [];
 
   get configured() {
     return !!process.env.SMTP_URL;
@@ -53,6 +55,7 @@ export class MailService {
           subject: m.subject,
           attachments: (m.attachments ?? []).map((a) => a.filename),
         });
+      if (process.env.SMTP_URL === 'json') this.capturedText.push(m.text);
       return true;
     } catch (e) {
       this.log.error(

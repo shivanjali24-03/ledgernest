@@ -28,7 +28,7 @@ import {
   type BillDraftInput,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
   CurrentActor,
   CurrentTenant,
@@ -142,11 +142,28 @@ export class BillsController {
   })
   record(
     @Param('id', id) billId: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({ allowDuplicate: z.boolean().optional() }).optional(),
+      ),
+    )
+    body: { allowDuplicate?: boolean } | undefined,
     @CurrentActor() actor: Actor,
     @CurrentTenant() tenant: Tenant,
     @Req() req: Request,
   ) {
-    return this.bills.record(billId, { actor, tenant, req });
+    return this.bills.record(
+      billId,
+      { actor, tenant, req },
+      { allowDuplicate: body?.allowDuplicate === true },
+    );
+  }
+
+  /** Other bills from the same vendor that may be this one entered twice */
+  @Get(':id/duplicates')
+  @RequirePermission('bills.view')
+  duplicates(@Param('id', id) billId: string, @CurrentTenant() tenant: Tenant) {
+    return this.bills.duplicates(tenant.organizationId, billId);
   }
 
   @Post(':id/void')

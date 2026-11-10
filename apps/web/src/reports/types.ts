@@ -258,7 +258,8 @@ export type CashForecast = SharedCashForecast & { currency: string; lateCustomer
 /** What GET /reports/compliance returns */
 export interface Compliance {
   today: string | null;
-  items: (ComplianceItem & { daysLeft: number; amount?: number })[];
+  /** lateFee and interest: what filing a late GST return today would cost (paise) */
+  items: (ComplianceItem & { daysLeft: number; amount?: number; lateFee?: number; interest?: number })[];
 }
 
 /** What GET /reports/tds returns */

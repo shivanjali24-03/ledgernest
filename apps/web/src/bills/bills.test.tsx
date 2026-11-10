@@ -70,6 +70,27 @@ describe('bills', () => {
     await waitFor(() => expect(screen.getByText(/Posted as/).querySelector('a')?.textContent ?? screen.getByText(/Posted as/).parentElement!.querySelector('a')!.textContent).toMatch(/^JV\//));
   }, 20_000);
 
+  it('asks before recording the same vendor bill number twice', async () => {
+    renderApp('/bills/new');
+    await screen.findByRole('heading', { name: 'New bill' });
+    await choose('Vendor', 'Sharma Office Supplies');
+    // Already recorded in the demo as SOS/887, typed a little differently
+    await userEvent.type(screen.getByLabelText('Vendor’s bill number'), 'sos 0887');
+    await userEvent.type(screen.getByLabelText('Description on line 1'), 'Office rent');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '45000');
+    await choose('Account for line 1', '5300 · Office rent');
+    await userEvent.click(screen.getByRole('button', { name: 'Record bill' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Record this bill again?' }, { timeout: 6000 });
+    expect(dialog).toHaveTextContent(/The vendor’s bill sos 0887 is recorded already as BILL\/.*\/0001/);
+    // The draft was saved; its page warns too
+    expect(await screen.findByText('This may be a bill you’ve entered already:', {}, { timeout: 6000 })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Record anyway' }));
+    expect(await screen.findByText(/^Recorded as BILL\/.*\/0002$/, {}, { timeout: 6000 })).toBeInTheDocument();
+    // One bill, recorded: no second draft left behind by the retry
+    const { demoStoredBillViews } = await import('./demoBillsApi');
+    expect(demoStoredBillViews().filter((b) => b.vendorReference === 'sos 0887').map((b) => b.status)).toEqual(['open']);
+  }, 30_000);
+
   it('voids an unpaid bill', { timeout: 20_000 }, async () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^BILL\/.*\/0001$/ }, { timeout: 4000 }));
