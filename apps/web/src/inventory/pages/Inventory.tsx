@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Boxes, Building2, CheckCircle2, SlidersHorizontal, Undo2 } from 'lucide-react';
+import { AlertTriangle, Boxes, Building2, CheckCircle2, PackagePlus, SlidersHorizontal, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
 import { todayIn } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { SelectField, TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import AdjustStockDialog from '../AdjustStockDialog';
+import OpeningStockDialog from '../OpeningStockDialog';
 import { inventoryErrorMessage } from '../errors';
 import type { InventoryApi, StockMovement } from '../types';
 import { useInventoryApi } from '../useInventoryApi';
@@ -35,6 +36,7 @@ export default function Inventory() {
   const [asOf, setAsOf] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [selected, setSelected] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | true | null>(null);
+  const [opening, setOpening] = useState(false);
   const role = session.role ?? session.customRoleName;
   const valuation = useQuery({ queryKey: ['inventory', session.organizationId, role, 'valuation', asOf], queryFn: () => api!.valuation(asOf), enabled: !!api, placeholderData: keepPreviousData });
 
@@ -55,10 +57,17 @@ export default function Inventory() {
           title={t('inventory.title')}
           description={t('inventory.description')}
           actions={
-            canAdjust && v?.rows.length ? (
-              <Button icon={<SlidersHorizontal className="size-4" />} onClick={() => setAdjusting(true)}>
-                {t('inventory.adjust')}
-              </Button>
+            canAdjust ? (
+              <>
+                <Button variant="secondary" icon={<PackagePlus className="size-4" />} onClick={() => setOpening(true)}>
+                  {t('openingStock.action')}
+                </Button>
+                {v?.rows.length ? (
+                  <Button icon={<SlidersHorizontal className="size-4" />} onClick={() => setAdjusting(true)}>
+                    {t('inventory.adjust')}
+                  </Button>
+                ) : null}
+              </>
             ) : undefined
           }
         />
@@ -172,6 +181,7 @@ export default function Inventory() {
         <SerialLookup api={api} />
       </motion.div>
       {current && <Movements key={current.itemId} api={api} itemId={current.itemId} name={current.name} canAdjust={canAdjust} onAdjust={() => setAdjusting(current.itemId)} />}
+      {opening && <OpeningStockDialog api={api} onClose={() => setOpening(false)} />}
       {adjusting && <AdjustStockDialog api={api} itemId={adjusting === true ? undefined : adjusting} onClose={() => setAdjusting(null)} />}
     </motion.div>
   );

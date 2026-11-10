@@ -52,6 +52,8 @@ type LineIn = {
   expiryDate?: string | null;
   /** For goods with serial numbers: the units bought */
   serials?: string[];
+  /** The quantity and price are in the item's second unit */
+  inAltUnit?: boolean;
 };
 export type DraftIn = {
   contactId: string;
@@ -191,6 +193,7 @@ const select = {
       mfgDate: true,
       expiryDate: true,
       serials: true,
+      inAltUnit: true,
       costCentre: { select: { id: true, code: true, name: true } },
       item: {
         select: {
@@ -200,6 +203,7 @@ const select = {
           unit: true,
           trackBatches: true,
           trackSerials: true,
+          altUnit: true,
         },
       },
       account: { select: { id: true, code: true, name: true } },
@@ -350,7 +354,10 @@ export class BillsService {
         discount: l.discountPpm / 10_000,
         amount: amount(l.amount),
         taxAmount: amount(l.taxAmount),
-        item: l.item,
+        item: l.item && {
+          ...l.item,
+          unit: l.inAltUnit ? (l.item.altUnit ?? l.item.unit) : l.item.unit,
+        },
         account: l.account,
         costCentre: l.costCentre,
         taxGroup: l.taxGroup && {
@@ -362,6 +369,7 @@ export class BillsService {
         mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
         expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
         serials: l.serials,
+        inAltUnit: l.inAltUnit,
       })),
     };
     return {
@@ -876,6 +884,7 @@ export class BillsService {
         mfgDate: l.mfgDate ? asDate(l.mfgDate) : null,
         expiryDate: l.expiryDate ? asDate(l.expiryDate) : null,
         serials: (l.serials ?? []).map((x) => x.trim().toUpperCase()),
+        inAltUnit: l.inAltUnit ?? false,
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1088,6 +1097,7 @@ export class BillsService {
           mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
           expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
           serials: l.serials,
+          inAltUnit: l.inAltUnit,
         })),
       });
       if (!p.payableAccountId)
@@ -1256,6 +1266,7 @@ export class BillsService {
               mfgDate: l.mfgDate ?? null,
               expiryDate: l.expiryDate ?? null,
               serials: l.serials ?? [],
+              inAltUnit: l.inAltUnit ?? false,
             };
           }),
         ),

@@ -53,3 +53,23 @@ export type StockAdjustmentInput = z.input<typeof stockAdjustmentSchema>;
 export const stockValuationQuerySchema = z.object({ asOf: isoDaySchema.optional() });
 export * from './batches.js';
 export * from './serials.js';
+
+/** Opening stock for many items on the day the books start, each at what one unit cost */
+export const openingStockSchema = z.object({
+  date: isoDaySchema,
+  lines: z
+    .array(
+      z
+        .object({
+          itemId: z.uuid(),
+          quantity,
+          unitCost: z.number().int().min(0).max(MAX_LINE_AMOUNT),
+          ...batchFieldShape,
+          serials: serialsSchema,
+        })
+        .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE }),
+    )
+    .min(1, 'Enter the stock of at least one item.')
+    .max(500),
+});
+export type OpeningStockInput = z.input<typeof openingStockSchema>;

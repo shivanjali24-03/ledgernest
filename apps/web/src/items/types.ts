@@ -23,6 +23,9 @@ export interface Item {
   trackBatches?: boolean;
   /** Tracked goods whose every unit has its own serial number */
   trackSerials?: boolean;
+  /** A second unit it's also sold or bought in, and how many of the main unit make one */
+  altUnit?: string | null;
+  altFactor?: string | null;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   inventoryAccount: { id: string; code: string; name: string } | null;

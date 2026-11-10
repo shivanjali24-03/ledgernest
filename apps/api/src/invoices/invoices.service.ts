@@ -49,6 +49,8 @@ type LineIn = {
   batchId?: string | null;
   /** For goods with serial numbers: the units sold */
   serials?: string[];
+  /** The quantity and price are in the item's second unit */
+  inAltUnit?: boolean;
 };
 export type DraftIn = {
   contactId: string;
@@ -197,6 +199,7 @@ const select = {
       costCentreId: true,
       batchId: true,
       serials: true,
+      inAltUnit: true,
       costCentre: { select: { id: true, code: true, name: true } },
       item: {
         select: {
@@ -206,6 +209,7 @@ const select = {
           unit: true,
           trackBatches: true,
           trackSerials: true,
+          altUnit: true,
         },
       },
       account: { select: { id: true, code: true, name: true } },
@@ -369,7 +373,12 @@ export class InvoicesService {
         discount: l.discountPpm / 10_000,
         amount: amount(l.amount),
         taxAmount: amount(l.taxAmount),
-        item: l.item,
+        // A line in the item's second unit shows that unit
+        item: l.item && {
+          ...l.item,
+          unit: l.inAltUnit ? (l.item.altUnit ?? l.item.unit) : l.item.unit,
+        },
+        inAltUnit: l.inAltUnit,
         account: l.account,
         costCentre: l.costCentre,
         taxGroup: l.taxGroup && {
@@ -866,6 +875,7 @@ export class InvoicesService {
         costCentreId: l.costCentreId ?? null,
         batchId: l.batchId ?? null,
         serials: (l.serials ?? []).map((x) => x.trim().toUpperCase()),
+        inAltUnit: l.inAltUnit ?? false,
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1078,6 +1088,7 @@ export class InvoicesService {
           costCentreId: l.costCentreId,
           batchId: l.batchId,
           serials: l.serials,
+          inAltUnit: l.inAltUnit,
         })),
       });
       if (!p.receivableAccountId)
@@ -1221,6 +1232,7 @@ export class InvoicesService {
           costCentreId: l.costCentreId ?? null,
           batchId: l.batchId ?? null,
           serials: l.serials ?? [],
+          inAltUnit: l.inAltUnit ?? false,
         })),
         issueDate,
       );

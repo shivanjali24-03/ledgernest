@@ -21,6 +21,7 @@ import {
   stockAdjustmentSchema,
   stockValuationQuerySchema,
   expiringQuerySchema,
+  openingStockSchema,
   serialNoSchema,
   todayIn,
 } from '@ledgernest/shared';
@@ -117,6 +118,22 @@ export class InventoryController {
     @Req() req: Request,
   ) {
     return this.inventory.adjust(body, { actor, tenant, req });
+  }
+
+  @Post('opening-stock')
+  @RequirePermission('journals.post')
+  @ApiOkResponse({
+    description:
+      'Opening stock for many items, each counted in at its cost against Opening balance equity, all or nothing',
+  })
+  openingStock(
+    @Body(new ZodValidationPipe(openingStockSchema))
+    body: z.output<typeof openingStockSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.inventory.openingStock(body, { actor, tenant, req });
   }
 
   @Delete('adjustments/:id')

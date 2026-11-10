@@ -37,6 +37,8 @@ type Values = {
   trackStock: boolean;
   trackBatches?: boolean;
   trackSerials?: boolean;
+  altUnit?: string | null;
+  altFactor?: string | null;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   reorderLevel: string | null;
@@ -60,6 +62,8 @@ const EDITABLE = [
   'trackStock',
   'trackBatches',
   'trackSerials',
+  'altUnit',
+  'altFactor',
   'inventoryAccountId',
   'cogsAccountId',
   'reorderLevel',
@@ -92,6 +96,8 @@ const select = {
   trackStock: true,
   trackBatches: true,
   trackSerials: true,
+  altUnit: true,
+  altFactor: true,
   inventoryAccountId: true,
   cogsAccountId: true,
   reorderLevel: true,
@@ -136,12 +142,16 @@ export class ItemsService {
   }
 
   private view(i: Row, stock?: { quantity: bigint; value: bigint }) {
-    const { taxGroup, archivedAt, reorderLevel, ...rest } = i;
+    const { taxGroup, archivedAt, reorderLevel, altFactor, ...rest } = i;
     const level =
       reorderLevel === null ? null : parseQuantity(reorderLevel.toFixed(4));
     return {
       ...rest,
       reorderLevel: level === null ? null : formatQuantity(level),
+      altFactor:
+        altFactor === null
+          ? null
+          : formatQuantity(parseQuantity(altFactor.toFixed(4))!),
       /** For tracked goods: what's on hand and what it cost */
       stock: i.trackStock
         ? {
@@ -461,6 +471,13 @@ export class ItemsService {
       'expense_account_type',
       'Purchases of an item go to an expense or asset account.',
     );
+    if (!v.altUnit !== !v.altFactor)
+      throw refuse(
+        BadRequestException,
+        'Give the second unit and how many of the main unit make one.',
+        'alt_unit_incomplete',
+        { field: 'altFactor' },
+      );
     if (v.trackSerials && !v.trackStock)
       throw refuse(
         BadRequestException,

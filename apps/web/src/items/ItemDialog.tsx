@@ -46,6 +46,8 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [barcode, setBarcode] = useState(item?.barcode ?? '');
   const [brand, setBrand] = useState(item?.brand ?? '');
   const [category, setCategory] = useState(item?.category ?? '');
+  const [altUnit, setAltUnit] = useState(item?.altUnit ?? '');
+  const [altFactor, setAltFactor] = useState(item?.altFactor ?? '');
   const facets = useQuery({ queryKey: ['items', session.organizationId, 'facets'], queryFn: () => api.facets() });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,6 +74,8 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     barcode: kind === 'goods' ? barcode.trim() || null : null,
     brand: brand.trim() || null,
     category: category.trim() || null,
+    altUnit: kind === 'goods' && altUnit ? altUnit : null,
+    altFactor: kind === 'goods' && altUnit ? altFactor.trim() || null : null,
   });
   const save = useMutation({
     mutationFn: () => {
@@ -99,6 +103,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     if (v.purchasePrice === null && purchasePrice.trim()) next.purchasePrice = t('items.validation.price');
     if (v.hsnSac && !HSN_SAC_PATTERN.test(v.hsnSac)) next.hsnSac = t('items.validation.hsnSac');
     if (v.mrp === null && kind === 'goods' && mrp.trim()) next.mrp = t('items.validation.price');
+    if (v.altUnit && !(v.altFactor && /^\d{1,9}(\.\d{1,4})?$/.test(v.altFactor) && Number(v.altFactor) > 0)) next.altFactor = t('items.validation.altFactor');
     if (v.mrp !== null && v.salePrice !== null && v.salePrice > v.mrp) next.salePrice = t('items.validation.aboveMrp');
     if (v.barcode && (!/^[0-9A-Za-z-]{4,40}$/.test(v.barcode) || !gtinValid(v.barcode))) next.barcode = t('items.validation.barcode');
     if (v.trackStock && !v.inventoryAccountId) next.inventoryAccountId = t('inventory.errors.inventory_account_required');
@@ -145,6 +150,18 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
         {kind === 'goods' && (
           <>
             <TextField label={t('items.fields.mrp', { currency: money.currency })} value={mrp} onChange={(e) => setMrp(e.target.value)} error={errors.mrp} hint={t('items.hints.mrp')} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+            <SelectField
+              label={t('items.fields.altUnit')}
+              value={altUnit}
+              onChange={(e) => setAltUnit(e.target.value)}
+              hint={t('items.hints.altUnit')}
+              options={[{ value: '', label: t('items.noAltUnit') }, ...UQC_UNITS.filter(([code]) => code !== unit).map(([code, name]) => ({ value: code, label: `${code} · ${t(`items.uqc.${code}`, { defaultValue: name })}` }))]}
+            />
+            {altUnit ? (
+              <TextField label={t('items.fields.altFactor', { alt: altUnit, unit: unit || t('items.units') })} value={altFactor} onChange={(e) => setAltFactor(e.target.value)} error={errors.altFactor} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+            ) : (
+              <div />
+            )}
             <TextField label={t('items.fields.barcode')} value={barcode} onChange={(e) => setBarcode(e.target.value.trim())} error={errors.barcode} hint={t('items.hints.barcode')} inputMode="numeric" dir="ltr" className="font-mono" />
           </>
         )}

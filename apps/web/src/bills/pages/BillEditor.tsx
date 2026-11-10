@@ -32,6 +32,8 @@ import { billErrorMessage } from '../errors';
 import type { Bill, BillDuplicate, BillsApi } from '../types';
 import { useBillsApi } from '../useBillsApi';
 import SerialsInput from '../../inventory/SerialsInput';
+import UnitSelect from '../../items/UnitSelect';
+import { priceInUnit } from '../../items/unitPrice';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 import { heldForApproval, heldMessage } from '../../approvals/errors';
@@ -54,6 +56,7 @@ type Line = {
   mfgDate: string;
   expiryDate: string;
   serials: string;
+  inAltUnit: boolean;
 };
 const blankLine = (): Line => ({
   key: crypto.randomUUID(),
@@ -69,6 +72,7 @@ const blankLine = (): Line => ({
   mfgDate: '',
   expiryDate: '',
   serials: '',
+  inAltUnit: false,
 });
 
 /** A draft: choose the vendor, add what was bought and where it's booked, see input GST as you type, save or record. */
@@ -142,6 +146,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           mfgDate: l.mfgDate ?? '',
           expiryDate: l.expiryDate ?? '',
           serials: (l.serials ?? []).join('\n'),
+          inAltUnit: l.inAltUnit ?? false,
         }))
       : [blankLine()],
   );
@@ -172,8 +177,9 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
             unitPrice: item.purchasePrice !== null && !customer?.currency ? plain(item.purchasePrice) : '',
             taxGroupId: item.taxGroupId ?? '',
             accountId: item.expenseAccountId ?? '',
+            inAltUnit: false,
           }
-        : { itemId: '' },
+        : { itemId: '', inAltUnit: false },
     );
   };
 
@@ -234,6 +240,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       taxGroupId: l.group?.id ?? null,
       accountId: l.accountId || null,
       costCentreId: l.costCentreId || null,
+      inAltUnit: l.inAltUnit,
       ...(batched(l.itemId) ? { batchNo: l.batchNo.trim() || null, mfgDate: l.mfgDate || null, expiryDate: l.expiryDate || null } : {}),
       ...(serialed(l.itemId) ? { serials: parseSerials(l.serials) } : {}),
     })),
@@ -397,6 +404,17 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />
+                      <UnitSelect
+                        item={items.data?.find((x) => x.id === l.itemId)}
+                        inAlt={l.inAltUnit}
+                        label={t('items.lineUnit', { n: n + 1 })}
+                        disabled={!canManage}
+                        onChange={(inAlt) => {
+                          const factor = items.data?.find((x) => x.id === l.itemId)?.altFactor;
+                          const p = factor ? priceInUnit(l.price, factor, inAlt) : null;
+                          set(l.key, { inAltUnit: inAlt, ...(p !== null ? { unitPrice: plain(p) } : {}) });
+                        }}
+                      />
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.linePrice', { n: n + 1 })} value={l.unitPrice} disabled={!canManage} onChange={(e) => set(l.key, { unitPrice: e.target.value })} onBlur={() => l.price && set(l.key, { unitPrice: plain(l.price) })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.price === null && 'border-expense')} />

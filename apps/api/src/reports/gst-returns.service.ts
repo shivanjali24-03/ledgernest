@@ -9,6 +9,7 @@ import {
   tdsDepositDue,
   type ComplianceItem,
   todayIn,
+  toMainUnit,
   uqcOf,
   creditNoteNumber,
   documentsIssued,
@@ -161,7 +162,8 @@ export class GstReturnsService {
     const lineSelect = {
       quantity: true,
       amount: true,
-      item: { select: { hsnSac: true, unit: true } },
+      inAltUnit: true,
+      item: { select: { hsnSac: true, unit: true, altFactor: true } },
       taxGroup: {
         select: {
           rates: {
@@ -228,7 +230,9 @@ export class GstReturnsService {
               quantity: true,
               amount: true,
               taxGroup: lineSelect.taxGroup,
-              invoiceLine: { select: { item: lineSelect.item } },
+              invoiceLine: {
+                select: { item: lineSelect.item, inAltUnit: true },
+              },
             },
           },
         },
@@ -347,7 +351,13 @@ export class GstReturnsService {
         taxable: 0,
         ...zeroHeads(),
       };
-      h.quantity += BigInt(sign) * parseQuantity(l.quantity.toFixed(4))!;
+      // Counted in the item's main unit, so boxes and pieces of one HSN add up
+      const q = parseQuantity(l.quantity.toFixed(4))!;
+      h.quantity +=
+        BigInt(sign) *
+        (l.inAltUnit && l.item?.altFactor
+          ? toMainUnit(q, parseQuantity(l.item.altFactor.toFixed(4))!)
+          : q);
       h.taxable += sign * s.taxable;
       add(h, s.heads, sign);
       hsn.set(key, h);
@@ -421,7 +431,11 @@ export class GstReturnsService {
       }
       for (const l of n.lines)
         addHsn(
-          { ...l, item: l.invoiceLine.item },
+          {
+            ...l,
+            item: l.invoiceLine.item,
+            inAltUnit: l.invoiceLine.inAltUnit,
+          },
           split(l, n.currency, n.rate),
           -1,
         );

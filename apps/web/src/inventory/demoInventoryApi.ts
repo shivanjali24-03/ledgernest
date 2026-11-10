@@ -140,8 +140,14 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
     }
     return out;
   };
-  return {
-    // The demo company keeps no batches or serial numbers
+  const api: InventoryApi = {
+    // The demo company counts opening stock against its capital; it keeps no batches or serial numbers
+    openingStock: async (input) => {
+      const equity = demoAccountRows().find((a) => a.type === 'equity' && a.subtype === 'owner_equity')!;
+      const movements: StockMovement[] = [];
+      for (const l of input.lines) movements.push(await api.adjust({ itemId: l.itemId, date: input.date, direction: 'in', quantity: l.quantity, unitCost: l.unitCost, accountId: equity.id, reason: 'Opening stock' }));
+      return { movements };
+    },
     serial: async () => [],
     expiring: async (days) => ({ asOf: todayIn('Asia/Kolkata'), days, rows: [], expired: { count: 0, value: 0 }, expiring: { count: 0, value: 0 } }),
     valuation: (asOf) =>
@@ -220,4 +226,5 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
         demoSaveMovements('adjustment_undo', id, today, r?.id ?? null, [{ itemId: m.itemId, quantity: -n, value: -BigInt(m.value) }], m.reason);
       }),
   };
+  return api;
 }

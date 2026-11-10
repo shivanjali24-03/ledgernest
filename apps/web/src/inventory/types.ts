@@ -1,4 +1,4 @@
-import type { StockAdjustmentInput, StockMovementKind } from '@ledgernest/shared';
+import type { OpeningStockInput, StockAdjustmentInput, StockMovementKind } from '@ledgernest/shared';
 
 export interface StockMovement {
   id: string;
@@ -52,5 +52,7 @@ export interface InventoryApi {
   /** Batches that have expired or expire within some days */
   expiring(days: number): Promise<ExpiringStock>;
   adjust(input: StockAdjustmentInput): Promise<StockMovement>;
+  /** Opening stock for many items at once, against Opening balance equity */
+  openingStock(input: OpeningStockInput): Promise<{ movements: StockMovement[] }>;
   undoAdjustment(id: string): Promise<void>;
 }

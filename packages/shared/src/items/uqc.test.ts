@@ -30,3 +30,13 @@ describe('Item details for India', () => {
     });
   });
 });
+
+describe('Second units', () => {
+  it('converts a quantity in the second unit to the main one', async () => {
+    const { toMainUnit, itemCreateSchema } = await import('./index.js');
+    expect(toMainUnit(2_0000n, 12_0000n)).toBe(24_0000n);
+    expect(toMainUnit(1_5000n, 2_5000n)).toBe(3_7500n);
+    expect(itemCreateSchema.safeParse({ name: 'Soap', altUnit: 'BOX' }).success).toBe(false);
+    expect(itemCreateSchema.parse({ name: 'Soap', unit: 'PCS', altUnit: 'BOX', altFactor: '12' })).toMatchObject({ altUnit: 'BOX', altFactor: '12' });
+  });
+});

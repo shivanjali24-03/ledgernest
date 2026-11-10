@@ -22,6 +22,8 @@ export interface InvoiceLine {
   batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[];
   /** The serial numbers of the units (goods with serial numbers) */
   serials?: string[];
+  /** The quantity and price are in the item's second unit */
+  inAltUnit?: boolean;
   /** A bill line's batch, as it came in */
   batchNo?: string | null;
   mfgDate?: string | null;
