@@ -83,6 +83,16 @@ describe('signing in (live API)', () => {
     expect(api.calls('/auth/login/2fa')).toBe(2);
   });
 
+  it('asks a member to set up two-factor sign-in when the organisation requires it', async () => {
+    const strict = { ...ME, user: { ...ME.user, twoFactorEnabled: false }, organizations: ME.organizations.map((o) => ({ ...o, requireTwoFactor: true })) };
+    const { client } = live({ me: strict });
+    renderApp('/reports', client);
+    await signIn(ME.user.email, 'Right-Password-1');
+    expect(await screen.findByRole('heading', { name: 'Turn on two-factor sign-in' }, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByText(/Acme Traders asks everyone to sign in with a code/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Reports' })).not.toBeInTheDocument();
+  });
+
   it('says how long a locked account must wait', async () => {
     const { api, client } = live();
     api.state.loginStatus = { status: 423, body: { message: 'locked', details: { retryAfterMinutes: 9 } } };

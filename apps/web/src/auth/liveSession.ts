@@ -9,7 +9,7 @@ import type { MeResponse } from './client';
  */
 export function liveSession(me: MeResponse, signOut: () => Promise<void>): Session {
   const org = me.organizations[0];
-  const base = { mode: 'live' as const, name: me.user.name, email: me.user.email, organization: org?.name ?? null, organizationId: org?.id ?? null, signOut };
+  const base = { mode: 'live' as const, name: me.user.name, email: me.user.email, organization: org?.name ?? null, organizationId: org?.id ?? null, signOut, twoFactorRequired: !!org?.requireTwoFactor && !me.user.twoFactorEnabled };
 
   if (me.user.isSuperAdmin) {
     return { ...base, role: 'super_admin', permissions: permissionsOf([BUILT_IN_ROLES.super_admin]) };

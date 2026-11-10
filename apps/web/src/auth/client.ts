@@ -2,7 +2,7 @@ import type { BuiltInRoleId, Permission } from '@ledgernest/shared';
 
 /** What GET /auth/me returns. */
 export interface MeResponse {
-  user: { id: string; email: string; name: string; locale: string; isSuperAdmin: boolean };
+  user: { id: string; email: string; name: string; locale: string; isSuperAdmin: boolean; twoFactorEnabled?: boolean };
   platformPermissions: Permission[];
   organizations: {
     id: string;
@@ -11,6 +11,8 @@ export interface MeResponse {
     status: string;
     baseCurrency: string;
     locale: string;
+    /** Every member must use two-factor sign-in */
+    requireTwoFactor?: boolean;
     role: { type: 'built_in'; key: BuiltInRoleId } | { type: 'custom'; key: string | null; name?: string };
     permissions: Permission[];
   }[];
