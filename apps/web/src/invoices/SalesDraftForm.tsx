@@ -56,6 +56,8 @@ export interface SalesDraftConfig {
   /** The second date when left blank: the due date from payment terms, or the expiry date */
   autoUntil: (date: string, customer: Contact | null) => string;
   untilHint: (customer: Contact | null) => string | undefined;
+  /** Warn when this takes the customer over their credit limit (invoices) */
+  creditCheck?: boolean;
   labels: { date: string; until: string; save: string; extra: string; delete: string; deleteTitle: string; deleteBody: string; deleted: string };
 }
 
@@ -134,6 +136,9 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
       }),
     );
   const autoDue = config.autoUntil(issueDate, customer);
+  // What the customer would owe with this invoice, against their limit (drafts aren't owed yet, so this one counts in full)
+  const owedAfter = (customer?.receivable ?? 0) + amounts.total;
+  const overLimit = !!config.creditCheck && customer?.creditLimit != null && owedAfter > customer.creditLimit;
 
   const payload = (): SalesDraftPayload => ({
     contactId,
@@ -316,6 +321,11 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         <TextField label={t('invoices.fields.notes')} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!canManage} dir="auto" placeholder={t('invoices.notesPlaceholder')} />
       </Card>
 
+      {overLimit && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="credit-limit-warning">
+          {t('invoices.overLimit', { name: customer!.name, amount: `${currency} ${plain(owedAfter)}`, limit: `${currency} ${plain(customer!.creditLimit!)}` })}
+        </p>
+      )}
       {canManage && (
         <div className="flex flex-wrap items-center gap-2">
           {invoice && config.remove && (

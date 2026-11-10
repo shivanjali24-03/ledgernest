@@ -81,6 +81,8 @@ const fields = {
     .optional()
     .default(null),
   paymentTermsDays: z.number().int().min(0).max(PAYMENT_TERMS_MAX_DAYS).optional().default(30),
+  /** The most a customer may owe, in their currency's smallest unit; null = no limit */
+  creditLimit: z.number().int().min(0).max(1e15).nullable().optional().default(null),
   notes: text(1000),
 };
 
@@ -132,6 +134,7 @@ export const contactUpdateSchema = z
       .regex(/^[A-Z]{3}$/)
       .nullable(),
     paymentTermsDays: z.number().int().min(0).max(PAYMENT_TERMS_MAX_DAYS),
+    creditLimit: z.number().int().min(0).max(1e15).nullable(),
     notes: z
       .string()
       .trim()

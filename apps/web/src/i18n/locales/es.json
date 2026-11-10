@@ -1864,11 +1864,14 @@
       "paymentTerms": "Plazo de pago (días)",
       "notes": "Notas",
       "billingAddress": "Dirección de facturación",
-      "shippingAddress": "Dirección de envío"
+      "shippingAddress": "Dirección de envío",
+      "creditLimit": "Límite de crédito"
     },
     "hints": {
       "gstin": "15 caracteres; el estado se rellena a partir de él.",
-      "paymentTerms": "0 = al contado"
+      "paymentTerms": "0 = al contado",
+      "creditLimit": "Lo máximo que puede deber, en {{currency}}. Déjalo vacío si no hay límite. Las facturas que lo superen muestran un aviso.",
+      "badLimit": "Introduce un importe, como 50000."
     },
     "address": {
       "line1": "Dirección",
@@ -1901,7 +1904,8 @@
       "noInvoices": "Aún no hay facturas para este cliente",
       "noQuotes": "Aún no hay presupuestos para este cliente",
       "noBills": "Aún no hay facturas de este proveedor",
-      "more": "y {{count}} más en Facturas"
+      "more": "y {{count}} más en Facturas",
+      "limit": "Límite de crédito {{limit}} · {{used}} % usado"
     }
   },
   "items": {
@@ -2143,7 +2147,8 @@
       "send": "Enviar",
       "sent": "Factura enviada a {{email}}",
       "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}"
-    }
+    },
+    "overLimit": "Con esto {{name}} debería {{amount}}, por encima de su límite de crédito de {{limit}}. Aun así puedes guardarla o emitirla."
   },
   "payments": {
     "title": "Pagos",

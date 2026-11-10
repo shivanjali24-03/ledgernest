@@ -625,6 +625,8 @@ model Contact {
   /// Invoices and bills in this currency by default; null = the base currency
   currency         String?   @db.Char(3)
   paymentTermsDays Int       @default(30) @map("payment_terms_days")
+  /// The most a customer may owe us, in their currency's smallest unit; null = no limit
+  creditLimit      BigInt?   @map("credit_limit")
   notes            String?
   archivedAt       DateTime? @map("archived_at")
   createdAt        DateTime  @default(now()) @map("created_at")

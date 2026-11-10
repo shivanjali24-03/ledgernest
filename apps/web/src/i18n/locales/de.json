@@ -1864,11 +1864,14 @@
       "paymentTerms": "Zahlungsziel (Tage)",
       "notes": "Notizen",
       "billingAddress": "Rechnungsadresse",
-      "shippingAddress": "Lieferadresse"
+      "shippingAddress": "Lieferadresse",
+      "creditLimit": "Kreditlimit"
     },
     "hints": {
       "gstin": "15 Zeichen; der Bundesstaat wird daraus ausgefüllt.",
-      "paymentTerms": "0 = sofort fällig"
+      "paymentTerms": "0 = sofort fällig",
+      "creditLimit": "Der Höchstbetrag, den der Kunde schulden darf, in {{currency}}. Leer lassen für kein Limit. Rechnungen darüber zeigen eine Warnung.",
+      "badLimit": "Geben Sie einen Betrag ein, z. B. 50000."
     },
     "address": {
       "line1": "Adresse",
@@ -1901,7 +1904,8 @@
       "noInvoices": "Noch keine Rechnungen für diesen Kunden",
       "noQuotes": "Noch keine Angebote für diesen Kunden",
       "noBills": "Noch keine Rechnungen von diesem Lieferanten",
-      "more": "und {{count}} weitere unter Rechnungen"
+      "more": "und {{count}} weitere unter Rechnungen",
+      "limit": "Kreditlimit {{limit}} · {{used}} % genutzt"
     }
   },
   "items": {
@@ -2143,7 +2147,8 @@
       "send": "Senden",
       "sent": "Rechnung an {{email}} gesendet",
       "sentDemo": "In der Demo wird nichts wirklich gesendet; sie ginge an {{email}}"
-    }
+    },
+    "overLimit": "Damit schuldet {{name}} {{amount}}, mehr als das Kreditlimit von {{limit}}. Sie können sie trotzdem speichern oder ausstellen."
   },
   "payments": {
     "title": "Zahlungen",

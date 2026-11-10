@@ -40,6 +40,7 @@ const select = {
   stateCode: true,
   currency: true,
   paymentTermsDays: true,
+  creditLimit: true,
   notes: true,
   archivedAt: true,
   createdAt: true,
@@ -58,6 +59,7 @@ type Values = {
   shippingAddress: ContactAddress | null;
   currency: string | null;
   paymentTermsDays: number;
+  creditLimit: number | null;
   notes: string | null;
 };
 
@@ -73,6 +75,7 @@ const EDITABLE = [
   'shippingAddress',
   'currency',
   'paymentTermsDays',
+  'creditLimit',
   'notes',
 ] as const;
 
@@ -100,6 +103,7 @@ export class ContactsService {
       billingAddress: c.billingAddress as ContactAddress,
       shippingAddress: c.shippingAddress as ContactAddress | null,
       archived: !!c.archivedAt,
+      creditLimit: c.creditLimit === null ? null : Number(c.creditLimit),
       ...balances,
     };
   }
@@ -251,6 +255,10 @@ export class ContactsService {
   private data(v: Values & { stateCode: string | null }) {
     return {
       ...v,
+      creditLimit:
+        v.creditLimit === null || v.creditLimit === undefined
+          ? null
+          : BigInt(v.creditLimit),
       billingAddress: v.billingAddress as Prisma.InputJsonValue,
       shippingAddress:
         v.shippingAddress === null

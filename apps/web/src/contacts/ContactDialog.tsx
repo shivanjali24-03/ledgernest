@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { contactCreateSchema, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput } from '@ledgernest/shared';
+import { contactCreateSchema, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useCurrenciesApi } from '../currencies/useCurrenciesApi';
 import { useIntlLocale } from '../i18n';
@@ -70,6 +70,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [shipping, setShipping] = useState<Address>(() => toForm(contact?.shippingAddress ?? null));
   const [currency, setCurrency] = useState(contact?.currency ?? '');
   const [terms, setTerms] = useState(String(contact?.paymentTermsDays ?? 30));
+  const limitDigits = currencyDigits(currency || currencies.data?.base || contact?.currency || 'INR');
+  const [limit, setLimit] = useState(contact?.creditLimit != null ? String(contact.creditLimit / 10 ** currencyDigits(contact.currency ?? 'INR')) : '');
   const [notes, setNotes] = useState(contact?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -95,6 +97,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     shippingAddress: sameShipping ? null : fromForm(shipping),
     currency: currency || null,
     paymentTermsDays: Number(terms),
+    // Only customers have one; blank = no limit
+    creditLimit: isCustomer && limit.trim() ? (toMinor(limit, limitDigits) ?? Number.NaN) : null,
     notes,
   });
   const save = useMutation({
@@ -182,6 +186,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           <TextField label={t('contacts.fields.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} dir="ltr" />
           <TextField label={t('contacts.fields.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} dir="ltr" />
           <TextField label={t('contacts.fields.paymentTerms')} type="number" min={0} max={365} value={terms} onChange={(e) => setTerms(e.target.value)} error={errors.paymentTermsDays} hint={t('contacts.hints.paymentTerms')} />
+          {isCustomer && <TextField label={t('contacts.fields.creditLimit')} value={limit} onChange={(e) => setLimit(e.target.value)} inputMode="decimal" dir="ltr" error={errors.creditLimit ? t('contacts.hints.badLimit') : undefined} hint={t('contacts.hints.creditLimit', { currency: currency || currencies.data?.base || '' })} />}
         </div>
         <AddressFields prefix="billing" value={billing} onChange={setBilling} errors={errors} />
         <div className="space-y-3">

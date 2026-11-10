@@ -133,6 +133,11 @@ export default function ContactPage() {
             <p className="mt-1 font-mono text-xl font-semibold tabular-nums" dir="ltr">
               {amount(c.receivable, c.currency)}
             </p>
+            {c.creditLimit != null && (
+              <p className={`mt-1 text-xs ${c.receivable > c.creditLimit ? 'text-expense' : 'text-ink-500'}`}>
+                {t('contacts.page.limit', { limit: amount(c.creditLimit, c.currency), used: c.creditLimit ? Math.round((Math.max(0, c.receivable) / c.creditLimit) * 100) : 100 })}
+              </p>
+            )}
             {can('reports.view') && (
               <Link to={`/reports?tab=statement&contact=${c.id}`} className="mt-2 inline-block text-sm text-brand-700 hover:underline dark:text-brand-300">
                 {t('contacts.customerStatement')}
