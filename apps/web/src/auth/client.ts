@@ -167,6 +167,19 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     return { blob: await res.blob(), filename, headers: res.headers };
   }
 
+  /** Asks for a reset link; the answer is the same whether or not the address has an account */
+  async function forgotPassword(email: string): Promise<void> {
+    const res = await send('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+    if (!res.ok) throw await toApiError(res, 'request');
+  }
+
+  /** Sets a new password from a reset link (every device is signed out) */
+  async function resetPassword(token: string, password: string): Promise<void> {
+    const res = await send('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
+    if (!res.ok) throw await toApiError(res, 'request');
+    accessToken = null;
+  }
+
   async function logout(): Promise<void> {
     try {
       await send('/auth/logout', { method: 'POST' });
@@ -183,6 +196,17 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     request,
     download,
     me: () => request<MeResponse>('/auth/me'),
+    forgotPassword,
+    resetPassword,
+    /** Other devices are signed out; this one stays */
+    changePassword: (currentPassword: string, newPassword: string) => request<void>('/auth/change-password', { method: 'POST', json: { currentPassword, newPassword } }),
+    logoutAll: async () => {
+      try {
+        await request<{ sessions: number }>('/auth/logout-all', { method: 'POST' });
+      } finally {
+        accessToken = null;
+      }
+    },
     /** Called when the session can't be renewed (expired, revoked, or the account was suspended). */
     onSessionLost(fn: () => void) {
       lostListeners.add(fn);

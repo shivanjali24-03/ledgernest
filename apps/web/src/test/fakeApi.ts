@@ -36,7 +36,12 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
     /** Next login answer can be forced (e.g. 423) */
     loginStatus: null as null | { status: number; body?: unknown },
     networkDown: false,
+    /** Emails a reset link was asked for */
+    resetRequests: [] as string[],
+    password,
   };
+  /** The only reset link that works */
+  const RESET_TOKEN = 'reset-token-0123456789abcdefghijklmnop';
 
   const issue = () => {
     const n = ++state.counter;
@@ -54,7 +59,7 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
       case 'POST /auth/login': {
         if (state.loginStatus) return json(state.loginStatus.status, state.loginStatus.body ?? { message: 'forced' });
         const body = JSON.parse(String(init.body)) as { email: string; password: string };
-        if (body.email !== me.user.email || body.password !== password) return json(401, { message: 'Email or password is incorrect.' });
+        if (body.email !== me.user.email || body.password !== state.password) return json(401, { message: 'Email or password is incorrect.' });
         return json(200, issue());
       }
       case 'POST /auth/refresh':
@@ -63,6 +68,29 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
         state.cookie = null;
         state.validAccess.clear();
         return json(204);
+      case 'POST /auth/forgot-password':
+        state.resetRequests.push((JSON.parse(String(init.body)) as { email: string }).email);
+        return json(204);
+      case 'POST /auth/reset-password': {
+        const body = JSON.parse(String(init.body)) as { token: string; password: string };
+        if (body.token !== RESET_TOKEN) return json(400, { message: 'expired', details: { reason: 'invalid_token' } });
+        state.password = body.password;
+        state.cookie = null;
+        state.validAccess.clear();
+        return json(204);
+      }
+      case 'POST /auth/change-password': {
+        if (!auth || !state.validAccess.has(auth)) return json(401, { message: 'expired' });
+        const body = JSON.parse(String(init.body)) as { currentPassword: string; newPassword: string };
+        if (body.currentPassword !== state.password) return json(400, { message: 'wrong', details: { reason: 'wrong_password' } });
+        state.password = body.newPassword;
+        return json(204);
+      }
+      case 'POST /auth/logout-all':
+        if (!auth || !state.validAccess.has(auth)) return json(401, { message: 'expired' });
+        state.cookie = null;
+        state.validAccess.clear();
+        return json(200, { sessions: 2 });
       case 'GET /auth/me':
         return auth && state.validAccess.has(auth) ? json(200, me) : json(401, { message: 'expired' });
       default:
@@ -73,6 +101,7 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
   return {
     fetch,
     state,
+    RESET_TOKEN,
     /** Simulates the 15 minutes passing: every access token stops working. */
     expireAccessTokens: () => state.validAccess.clear(),
     /** Simulates the session being revoked elsewhere (e.g. sign-out on another device). */

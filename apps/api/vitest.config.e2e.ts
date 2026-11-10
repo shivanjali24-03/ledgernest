@@ -12,6 +12,7 @@ export default defineConfig({
       JWT_ACCESS_SECRET: 'test-only-secret-that-is-long-enough-123',
       COOKIE_SECURE: 'false',
       LOGIN_RATE_LIMIT: '1000',
+      PASSWORD_RESET_RATE_LIMIT: '1000',
     },
     fileParallelism: false,
   },
