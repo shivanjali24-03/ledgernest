@@ -31,6 +31,7 @@ import {
   FileUp,
   Plug,
   Megaphone,
+  CalendarCheck,
 } from 'lucide-react';
 import type { Permission } from '@ledgernest/shared';
 
@@ -69,6 +70,7 @@ export const NAV: NavGroup[] = [
       { to: '/journals', labelKey: 'nav.items.journals', icon: BookOpen, permission: 'journals.view', ready: true, keywords: 'debit credit posting voucher jv reverse' },
       { to: '/taxes', labelKey: 'nav.items.taxes', icon: Percent, permission: 'accounts.view', ready: true, keywords: 'gst vat sales tax cgst sgst igst utgst rates slabs' },
       { to: '/currencies', labelKey: 'nav.items.currencies', icon: Coins, permission: 'accounts.view', ready: true, keywords: 'foreign currency exchange rate usd eur forex fx ecb revalue' },
+      { to: '/year-end', labelKey: 'nav.items.yearEnd', icon: CalendarCheck, permission: 'reports.view', ready: true, keywords: 'year end closing march close audit checklist financial year finalisation' },
       { to: '/reports', labelKey: 'nav.items.reports', icon: BarChart3, permission: 'reports.view', ready: true, keywords: 'trial balance general ledger profit loss balance sheet' },
       { to: '/budgets', labelKey: 'nav.items.budgets', icon: Target, permission: 'reports.view', ready: true, keywords: 'budget plan forecast target variance actual' },
     ],

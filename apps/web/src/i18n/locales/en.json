@@ -41,7 +41,8 @@
       "quotes": "Quotes",
       "recurringBills": "Recurring bills",
       "debitNotes": "Debit notes",
-      "collections": "Collections"
+      "collections": "Collections",
+      "yearEnd": "Year-end close"
     },
     "soon": "Soon"
   },
@@ -4314,5 +4315,47 @@
     "emailed_other": "Reminders for {{count}} invoices sent to {{email}}.",
     "message_one": "Dear {{name}}, {{amount}} is overdue with {{organization}} (1 invoice, {{days}} days late). You can see it and pay by UPI here: {{link}}",
     "message_other": "Dear {{name}}, {{amount}} is overdue with {{organization}} ({{count}} invoices, the oldest {{days}} days late). You can see them and pay the lot by UPI here: {{link}}"
+  },
+  "yearEnd": {
+    "title": "Year-end close",
+    "description": "Everything to do before the books for the year are final and go to the auditor, in order.",
+    "year": "Financial year",
+    "progress": "{{done}} of {{total}} done for {{year}}",
+    "noYears": "Add a financial year first.",
+    "status": {
+      "done": "done",
+      "attention": "needs attention",
+      "todo": "to do",
+      "loading": "checking"
+    },
+    "steps": {
+      "bank": "Reconcile the bank",
+      "drafts": "Post or delete draft entries",
+      "confirmations": "Get balance confirmations",
+      "msme": "Pay MSME suppliers in time (43B(h))",
+      "gst": "Fix GST details",
+      "close": "Close the months",
+      "backup": "Keep a backup"
+    },
+    "details": {
+      "bank_one": "1 bank line isn’t matched yet.",
+      "bank_other": "{{count}} bank lines aren’t matched yet.",
+      "bankDone": "Every bank line is matched.",
+      "drafts_one": "1 journal entry is still a draft.",
+      "drafts_other": "{{count}} journal entries are still drafts.",
+      "draftsDone": "No drafts left.",
+      "confirmationsNone": "Not asked yet: ask customers and vendors to confirm their year-end balances.",
+      "confirmations": "{{asked}} asked: {{waiting}} waiting, {{disputed}} disputed.",
+      "msme": "{{amount}} owed past the deadline would be disallowed if still unpaid at the year end.",
+      "msmeDone": "Nothing at risk under section 43B(h).",
+      "gst_one": "1 thing to fix before filing.",
+      "gst_other": "{{count}} things to fix before filing.",
+      "gstDone": "Nothing found to fix.",
+      "close_one": "1 month is still open.",
+      "close_other": "{{count}} months are still open. Closing the last one moves the year’s profit to retained earnings.",
+      "closeDone": "Closed, with the closing entry {{number}}.",
+      "closed": "Every month is closed.",
+      "backup": "Download a full backup from Settings and keep it safe; books must be kept for eight years."
+    }
   }
 }
