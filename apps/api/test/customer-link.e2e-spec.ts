@@ -258,6 +258,7 @@ describe('Customer account links (e2e)', () => {
         msmeCategory: 'micro',
         udyamNumber: 'UDYAM-MH-26-0012345',
         msmeBankRateBp: 550,
+        email: 'accounts@linkstraders.example',
       },
     });
     const a = (await visitor(token).expect(200)).body as Account & {
@@ -286,6 +287,10 @@ describe('Customer account links (e2e)', () => {
         .expect(200);
       expect(app.get(MailService).capturedText.at(-1)).toContain(
         `under section 16 of the MSMED Act, 2006 to interest on payments made after the appointed day. On this invoice it comes to INR ${(expected / 100).toFixed(2)} so far.`,
+      );
+      // Replies go to the business, not the server's no-reply address
+      expect(app.get(MailService).capturedReplyTo.at(-1)).toBe(
+        'accounts@linkstraders.example',
       );
     } finally {
       delete process.env.SMTP_URL;

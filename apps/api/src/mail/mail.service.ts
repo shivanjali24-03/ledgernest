@@ -18,6 +18,8 @@ export class MailService {
   }[] = [];
   /** Their bodies, in the same order */
   readonly capturedText: string[] = [];
+  /** And where replies go */
+  readonly capturedReplyTo: (string | null)[] = [];
 
   get configured() {
     return !!process.env.SMTP_URL;
@@ -38,6 +40,8 @@ export class MailService {
     subject: string;
     text: string;
     attachments?: { filename: string; content: Buffer; contentType: string }[];
+    /** Where replies go: the organisation's own address, for documents sent on its behalf */
+    replyTo?: string | null;
   }) {
     const t = this.transporter;
     if (!t || !m.to.length) return false;
@@ -48,6 +52,7 @@ export class MailService {
         subject: m.subject,
         text: m.text,
         attachments: m.attachments,
+        ...(m.replyTo ? { replyTo: m.replyTo } : {}),
       });
       if (process.env.SMTP_URL === 'json')
         this.captured.push({
@@ -55,7 +60,10 @@ export class MailService {
           subject: m.subject,
           attachments: (m.attachments ?? []).map((a) => a.filename),
         });
-      if (process.env.SMTP_URL === 'json') this.capturedText.push(m.text);
+      if (process.env.SMTP_URL === 'json') {
+        this.capturedText.push(m.text);
+        this.capturedReplyTo.push(m.replyTo ?? null);
+      }
       return true;
     } catch (e) {
       this.log.error(

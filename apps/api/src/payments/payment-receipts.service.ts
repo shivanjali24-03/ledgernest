@@ -15,6 +15,7 @@ import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { organizationReplyTo } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PaymentsService } from './payments.service.js';
 
@@ -228,6 +229,7 @@ export class PaymentReceiptsService {
       await organizationLogo(this.prisma, organizationId),
     );
     const sent = await this.mail.send({
+      replyTo: await organizationReplyTo(this.prisma, organizationId),
       to: [to],
       subject: advice
         ? `Payment advice ${p.number} from ${org.name}`

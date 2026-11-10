@@ -31,6 +31,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationReplyTo } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoicesService } from './invoices.service.js';
 
@@ -257,6 +258,7 @@ export class InvoiceRemindersService
           ? 'is due today'
           : `is due on ${inv.dueDate}`;
     const sent = await this.mail.send({
+      replyTo: await organizationReplyTo(this.prisma, organizationId),
       to: [to],
       subject: `Payment reminder: invoice ${inv.number} from ${org.name}`,
       text: [
@@ -452,6 +454,7 @@ export class InvoiceRemindersService
       inv,
     );
     const sent = await this.mail.send({
+      replyTo: await organizationReplyTo(this.prisma, organizationId),
       to: [to],
       subject: `Invoice ${inv.number} from ${org.name}`,
       text: [
