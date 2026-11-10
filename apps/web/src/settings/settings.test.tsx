@@ -97,6 +97,23 @@ describe('organisation settings', () => {
     expect(vouchers).toMatch(/<VOUCHER VCHTYPE="(Journal|Receipt|Payment|Contra)"/);
   });
 
+  it('deletes the organisation only once its name is typed (the demo starts over)', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete organisation…' }, { timeout: 4000 }));
+    const dialog = await screen.findByRole('dialog', { name: /^Delete .+ for good\?$/ });
+    const confirm = within(dialog).getByRole('button', { name: 'Delete it all' });
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(dialog).getByLabelText(/^Type “.+” to confirm$/), 'Nest');
+    expect(confirm).toBeDisabled();
+    await userEvent.clear(within(dialog).getByLabelText(/^Type “.+” to confirm$/));
+    await userEvent.type(within(dialog).getByLabelText(/^Type “.+” to confirm$/), 'Nest Demo Pvt. Ltd.');
+    localStorage.setItem('ledgernest.demo.marker', 'x');
+    await waitFor(() => expect(confirm).toBeEnabled());
+    fireEvent.click(confirm);
+    expect(await screen.findByText('Nest Demo Pvt. Ltd. was deleted.', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(localStorage.getItem('ledgernest.demo.marker')).toBeNull();
+  });
+
   it('turns on the weekly summary email', async () => {
     renderApp();
     const box = await screen.findByRole('checkbox', { name: /^Weekly summary/ }, { timeout: 4000 });

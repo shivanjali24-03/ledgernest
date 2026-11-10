@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Patch, Put, Req, Res, StreamableFile } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiNoContentResponse, ApiOkResponse, ApiProduces, ApiTags } from '@nestjs/swagger';
-import { logoUploadSchema, organizationSettingsSchema, type LogoUpload, type OrganizationSettingsUpdate } from '@ledgernest/shared';
+import { logoUploadSchema, organizationDeleteSchema, organizationSettingsSchema, type LogoUpload, type OrganizationDeleteInput, type OrganizationSettingsUpdate } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
@@ -65,5 +65,14 @@ export class OrganizationController {
   @ApiNoContentResponse()
   async removeLogo(@CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
     await this.organizations.removeLogo({ actor, tenant, req });
+  }
+
+  /** Deletes the organisation and all its books, for an Owner who typed its name. Download a backup first. */
+  @Delete()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('org.delete')
+  @ApiNoContentResponse({ description: 'The organisation and everything in it are gone' })
+  async remove(@Body(new ZodValidationPipe(organizationDeleteSchema)) body: OrganizationDeleteInput, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    await this.organizations.remove(body.confirmName, { actor, tenant, req });
   }
 }

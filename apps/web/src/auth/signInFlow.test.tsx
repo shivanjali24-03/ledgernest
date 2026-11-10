@@ -221,4 +221,21 @@ describe('passwords', () => {
     expect(await screen.findByRole('heading', { name: 'Sign in to LedgerNest' })).toBeInTheDocument();
     expect(api.state.cookie).toBeNull();
   });
+
+  it('deletes your own account after checking the password, then signs out', async () => {
+    const { api, client } = live({ signedIn: true });
+    renderApp('/', client);
+    await userEvent.click(await screen.findByRole('button', { name: 'Account' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete my account' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Delete your account?' });
+    await userEvent.type(within(dialog).getByLabelText('Current password'), 'Wrong-Password-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete my account' }));
+    expect(await within(dialog).findByText('Your current password isn’t right.')).toBeInTheDocument();
+    expect(api.state.deleted).toBe(false);
+    await userEvent.clear(within(dialog).getByLabelText('Current password'));
+    await userEvent.type(within(dialog).getByLabelText('Current password'), 'Right-Password-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete my account' }));
+    expect(await screen.findByRole('heading', { name: 'Sign in to LedgerNest' })).toBeInTheDocument();
+    expect(api.state.deleted).toBe(true);
+  });
 });

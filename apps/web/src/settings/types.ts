@@ -32,6 +32,8 @@ export interface SettingsApi {
   update(input: OrganizationSettingsInput): Promise<OrganizationSettings>;
   setLogo(upload: { type: LogoType; data: string }): Promise<OrganizationSettings>;
   removeLogo(): Promise<void>;
+  /** Deletes the organisation and everything in it; the name must be typed exactly */
+  remove(confirmName: string): Promise<void>;
   /** The logo image, or null when there is none */
   logo(): Promise<Blob | null>;
 }

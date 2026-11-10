@@ -5,6 +5,7 @@ import type { Env } from '../config/env.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { PasswordService } from './password.service.js';
+import { AccountService } from './account.service.js';
 import { MailModule } from '../mail/mail.module.js';
 
 @Module({
@@ -21,7 +22,7 @@ import { MailModule } from '../mail/mail.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService],
+  providers: [AuthService, PasswordService, AccountService],
   exports: [AuthService],
 })
 export class AuthModule {}

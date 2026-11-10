@@ -91,6 +91,16 @@ export function createDemoSettingsApi(canManage: () => boolean): SettingsApi {
         save(s);
         return s.settings;
       }),
+    // The demo starts over: every sample record is cleared and comes back fresh
+    remove: async (confirmName) => {
+      if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['org.delete'] });
+      if (confirmName.trim() !== load().settings.name.trim()) throw new ApiError('validation', 400, undefined, undefined, { reason: 'name_mismatch' });
+      try {
+        for (const k of Object.keys(localStorage)) if (k.startsWith('ledgernest.demo.')) localStorage.removeItem(k);
+      } catch {
+        /* storage unavailable */
+      }
+    },
     removeLogo: () =>
       wait(() => {
         if (!canManage()) throw forbidden();

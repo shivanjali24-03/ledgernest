@@ -54,6 +54,10 @@ export const changePasswordSchema = z
   .refine((v) => v.currentPassword !== v.newPassword, { message: 'same_password', path: ['newPassword'] });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+/** Deleting your own account: your password, to be sure it's you */
+export const accountDeleteSchema = z.object({ password: z.string().min(1, 'Enter your password.').max(128) });
+export type AccountDeleteInput = z.infer<typeof accountDeleteSchema>;
+
 /** How long a reset link works */
 export const PASSWORD_RESET_MINUTES = 30;
 

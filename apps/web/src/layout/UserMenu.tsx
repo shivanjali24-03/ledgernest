@@ -1,8 +1,9 @@
 import { useContext, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { KeyRound, LogOut, MonitorX } from 'lucide-react';
+import { KeyRound, LogOut, MonitorX, UserX } from 'lucide-react';
 import { AuthContext } from '../auth/context';
 import ChangePasswordDialog from '../auth/ChangePasswordDialog';
+import DeleteAccountDialog from '../auth/DeleteAccountDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useTranslation } from 'react-i18next';
 import { scaleIn } from '../motion/tokens';
@@ -17,6 +18,7 @@ export default function UserMenu() {
   const auth = useContext(AuthContext);
   const [changing, setChanging] = useState(false);
   const [everywhere, setEverywhere] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
@@ -92,6 +94,15 @@ export default function UserMenu() {
                 >
                   <MonitorX className="size-4" aria-hidden /> {t('password.everywhere.action')}
                 </button>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    setDeleting(true);
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-expense hover:bg-expense/10"
+                >
+                  <UserX className="size-4" aria-hidden /> {t('account.delete.action')}
+                </button>
               </>
             )}
             <button
@@ -105,6 +116,7 @@ export default function UserMenu() {
         )}
       </AnimatePresence>
       {changing && auth && <ChangePasswordDialog auth={auth} onClose={() => setChanging(false)} />}
+      {deleting && auth && <DeleteAccountDialog auth={auth} onClose={() => setDeleting(false)} />}
       {auth && (
         <ConfirmDialog
           open={everywhere}
