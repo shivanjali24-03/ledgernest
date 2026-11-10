@@ -2,9 +2,9 @@
 
 # LedgerNest
 
-**Modern accounting software for every business, in every language.**
+**Accounting for Indian businesses that want to get paid faster and file GST without the scramble.**
 
-Double-entry bookkeeping, invoices, banking and real-time reports, with role-based access from Super Admin to Viewer.
+GST invoices with a UPI QR code, shared on WhatsApp, matched against GSTR-2B, with TDS, e-invoices and a Tally export for your CA. In English, हिन्दी and मराठी.
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -14,7 +14,7 @@ Double-entry bookkeeping, invoices, banking and real-time reports, with role-bas
 
 </div>
 
-> **Status:** early development. See the [feature list](docs/FEATURES.md) for what's planned and what's done.
+> **Status:** feature-complete for small and mid-sized Indian businesses; see the [feature list](docs/FEATURES.md) for everything that's done.
 
 ## Try it
 
@@ -27,6 +27,22 @@ Double-entry bookkeeping, invoices, banking and real-time reports, with role-bas
 The API runs on a free plan that sleeps when idle, so the first sign-in can take up to a minute. How it's hosted: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Why LedgerNest
+
+**Built for how Indian businesses actually work:**
+
+| | |
+|---|---|
+| **Get paid by UPI** | Every rupee invoice carries a UPI QR code for what's still owed: on screen, in the PDF, in emails and reminders. Any UPI app pays straight into your bank. No gateway, no fees. |
+| **Send it on WhatsApp** | Share an invoice as a link your customer opens without an account, to pay by UPI or download the PDF. See when they opened it. Chase overdue invoices on WhatsApp in one tap. |
+| **GSTR-2B, matched** | Upload the portal's GSTR-2B and see which bills your suppliers haven't filed (credit at risk) before you claim it. |
+| **Know your cash 13 weeks ahead** | The forecast learns how late each customer really pays, and warns you before cash runs short. |
+| **Never miss a due date** | GSTR-1, GSTR-3B (with the tax to pay), GSTR-9, TDS deposits and advance tax on the dashboard, with days left. |
+| **TDS, both ways** | Keep TDS back from contractors and landlords (Form 26Q, challan dates), and record TDS your customers kept back (Form 26AS). |
+| **e-Invoices and a health check** | e-Invoice JSON for the IRP, checked before upload; a GST health check that finds missing HSN codes, states and GSTINs before filing. |
+| **Your CA uses Tally?** | Export ledgers and vouchers as Tally Prime XML, party ledgers and all. |
+| **On your phone** | Install it like an app; amounts in lakh and crore, and in words on invoices. |
+
+**And the basics done properly:**
 
 - **Works for any domain:** industry chart-of-accounts templates for retail, services, healthcare, education, manufacturing, non-profits and more.
 - **Roles you can trust:** Super Admin, Owner, Admin, Accountant, Bookkeeper, Auditor and Viewer, plus custom roles.
