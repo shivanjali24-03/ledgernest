@@ -1071,10 +1071,13 @@ export class BillsService {
       const label = billNumber(year.name, number);
 
       // The entry: expenses and input tax credit against what's owed to the vendor (like any taxed journal line)
-      const { baseCurrency } = await tx.organization.findUniqueOrThrow({
-        where: { id: organizationId },
-        select: { baseCurrency: true },
-      });
+      const { baseCurrency, gstScheme } =
+        await tx.organization.findUniqueOrThrow({
+          where: { id: organizationId },
+          select: { baseCurrency: true, gstScheme: true },
+        });
+      // A composition dealer can't claim input tax credit: the GST it pays is part of the cost
+      const noCredit = gstScheme === 'composition';
       let rate: string | null = null;
       const base = (minor: number) =>
         rate
@@ -1101,9 +1104,11 @@ export class BillsService {
       const expense = p.lines.map((l, n) => ({
         accountId: l.accountId,
         description: l.description,
-        debit: base(p.amounts.lines[n]!.net),
+        debit: base(
+          p.amounts.lines[n]!.net + (noCredit ? p.amounts.lines[n]!.tax : 0),
+        ),
         credit: 0,
-        taxGroupId: l.group?.id ?? null,
+        taxGroupId: noCredit ? null : (l.group?.id ?? null),
         taxInclusive: false,
         costCentreId: l.costCentreId ?? null,
       }));
