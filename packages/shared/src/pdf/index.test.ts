@@ -40,3 +40,13 @@ describe('pdfTableBytes', () => {
     expect(text(pdfTableBytes({ title: 'Narrow', rows: [['a', 'b']] }))).toContain('/MediaBox [0 0 595 842]');
   });
 });
+
+describe('pdfTableBytes info lines', () => {
+  it('writes the extra header lines and still pages correctly', () => {
+    const rows = [['A', 'B'], ...Array.from({ length: 60 }, (_, i) => [`r${i}`, String(i)])];
+    const pdf = text(pdfTableBytes({ title: 'Tax invoice', subtitle: 'Seller', info: ['Bill to: Kumar Logistics', 'GSTIN 27AAKCK4821R1Z5'], rows }));
+    expect(pdf).toContain('(Bill to: Kumar Logistics) Tj');
+    expect(pdf).toContain('(GSTIN 27AAKCK4821R1Z5) Tj');
+    expect(pdf).toContain('(Page 2 of 2) Tj');
+  });
+});

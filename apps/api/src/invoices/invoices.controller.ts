@@ -21,6 +21,7 @@ import {
 import {
   invoiceDraftSchema,
   invoiceListQuerySchema,
+  invoiceEmailSchema,
   invoiceReminderSchema,
   invoiceVoidSchema,
   type InvoiceDraftInput,
@@ -159,5 +160,27 @@ export class InvoicesController {
     @Req() req: Request,
   ) {
     return this.reminders.remind(invoiceId, body, { actor, tenant, req });
+  }
+
+  @Post(':id/email')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Emails an issued invoice as a PDF to the customer, or to the address given',
+  })
+  email(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(invoiceEmailSchema))
+    body: z.output<typeof invoiceEmailSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reminders.emailInvoice(invoiceId, body, {
+      actor,
+      tenant,
+      req,
+    });
   }
 }

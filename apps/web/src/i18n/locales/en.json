@@ -752,7 +752,8 @@
       "org_quote_decline": "Quote declined",
       "org_quote_reopen": "Quote reopened",
       "org_quote_invoice": "Quote invoiced",
-      "org_quote_email": "Quote emailed"
+      "org_quote_email": "Quote emailed",
+      "org_invoice_email": "Invoice emailed"
     },
     "entities": {
       "membership": "Member",
@@ -2114,7 +2115,19 @@
         "maxReminders": "1 to 10 reminders."
       }
     },
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "email": {
+      "action": "Email",
+      "title": "Email {{number}} to the customer",
+      "body": "It goes as a PDF with your GSTIN and theirs, the lines, tax by rate and what’s still due.",
+      "to": "Send to",
+      "badEmail": "Enter a valid email address.",
+      "note": "Note",
+      "noteHint": "Optional: it goes at the top of the email.",
+      "send": "Send",
+      "sent": "Invoice sent to {{email}}",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
+    }
   },
   "payments": {
     "title": "Payments",

@@ -376,6 +376,17 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         save(rows);
         return { sentTo: to, lastRemindedAt: i.lastRemindedAt!, reminders: i.reminders! };
       }),
+    email: (iid, input) =>
+      wait(async () => {
+        guard();
+        const q = invoiceReminderSchema.safeParse(input);
+        if (!q.success) throw new ApiError('validation', 400, undefined, undefined, { fields: q.error.issues });
+        const v = view(find(await load(), iid));
+        if (v.status !== 'issued') throw refuse(409, 'not_issued');
+        const to = q.data.email ?? v.contact.email;
+        if (!to) throw refuse(400, 'no_email');
+        return { sentTo: to };
+      }),
     reminderPolicy: () =>
       wait(() => {
         try {

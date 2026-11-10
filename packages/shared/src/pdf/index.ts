@@ -10,6 +10,8 @@ export interface PdfTable {
   title: string;
   /** Under the title, e.g. the organisation and period */
   subtitle?: string;
+  /** More lines under the subtitle on the first page (who it's from and to, dates, tax numbers) */
+  info?: string[];
   /** Bottom-left of every page */
   footer?: string;
   /** The first row is the header */
@@ -77,7 +79,8 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   const numeric = Array.from({ length: cols }, (_, j) => !/code|gstin|document|number|hsn|reference|date|section/i.test(header[j] ?? '') && body.some((r) => r[j]) && body.every((r) => !r[j] || NUMERIC.test(r[j])));
 
   const top = ph - margin;
-  const firstY = top - (table.subtitle ? 44 : 30);
+  const info = (table.info ?? []).slice(0, 12);
+  const firstY = top - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0);
   const perFirst = Math.floor((firstY - margin - 24) / rowH) - 1;
   const perPage = Math.floor((top - margin - 24) / rowH) - 1;
   const pages: string[][][] = [];
@@ -109,6 +112,9 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     if (p === 0) {
       s += `BT /F2 14 Tf ${margin} ${num(y - 14)} Td ${literal(encode(table.title))} Tj ET\n`;
       if (table.subtitle) s += `BT /F1 9 Tf ${margin} ${num(y - 30)} Td ${literal(encode(table.subtitle))} Tj ET\n`;
+      info.forEach((l, k) => {
+        s += `BT /F1 8.5 Tf ${margin} ${num(y - (table.subtitle ? 44 : 30) - 4 - k * 11)} Td ${literal(truncate(encode(l), pw - margin * 2, 8.5, false))} Tj ET\n`;
+      });
       y = firstY;
     }
     s += line(header, y - 9, true);

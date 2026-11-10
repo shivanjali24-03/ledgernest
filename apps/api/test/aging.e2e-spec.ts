@@ -740,4 +740,43 @@ describe('Aging reports (e2e)', () => {
       .get('/reports/sales?side=sideways&from=2026-04-01&to=2026-07-31')
       .expect(400);
   });
+
+  it('emails an issued invoice as a PDF', async () => {
+    delete process.env.SMTP_URL;
+    expect(
+      (await as().post(`/invoices/${inv.c}/email`, {}).expect(409)).body
+        .details,
+    ).toMatchObject({ reason: 'mail_off' });
+    process.env.SMTP_URL = 'json';
+    try {
+      // Kumar's email is on file by now
+      expect(
+        (await as().post(`/invoices/${inv.c}/email`, {}).expect(200)).body,
+      ).toEqual({ sentTo: 'accounts@kumar.example' });
+      expect(app.get(MailService).captured.at(-1)).toEqual({
+        to: ['accounts@kumar.example'],
+        subject: `Invoice INV/2026-27/0004 from Aging ${run}`,
+        attachments: ['invoice-inv-2026-27-0004.pdf'],
+      });
+      await as()
+        .post(`/invoices/${inv.c}/email`, { email: 'ap@other.example' })
+        .expect(200);
+      expect(
+        (await as().post(`/invoices/${inv.d}/email`, {}).expect(409)).body
+          .details,
+      ).toMatchObject({ reason: 'not_issued' });
+      expect(
+        await prisma.auditLog.count({
+          where: {
+            organizationId: org,
+            action: 'org.invoice.email',
+            entityId: inv.c,
+          },
+        }),
+      ).toBe(2);
+      await as('viewer').post(`/invoices/${inv.c}/email`, {}).expect(403);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
 });

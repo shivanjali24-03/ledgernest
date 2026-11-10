@@ -146,6 +146,27 @@ export const invoiceReminderSchema = z.object({
 });
 export type InvoiceReminderInput = z.input<typeof invoiceReminderSchema>;
 
+/** Emailing an issued invoice as a PDF: to the customer's email unless another is given, with an optional note */
+export const invoiceEmailSchema = invoiceReminderSchema;
+
+/** An invoice's lines, tax by rate and totals as rows for the PDF (amounts in major units) */
+export function invoiceRows(
+  i: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
+  digits: number,
+): string[][] {
+  const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
+  // Labels under Discount, amounts under Tax, so the number columns stay right-aligned
+  const total = (label: string, minor: number) => ['', '', '', '', label, '', fmt(minor)];
+  return [
+    ['Description', 'HSN/SAC', 'Qty', `Price (${i.currency})`, 'Discount', 'Taxable value', 'Tax'],
+    ...i.lines.map((l) => [l.description, l.item?.hsnSac ?? '', l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', fmt(l.amount), fmt(l.taxAmount)]),
+    total('Subtotal', i.subtotal),
+    ...i.taxBreakdown.map((t) => total(t.name, t.amount)),
+    total(`Total (${i.currency})`, i.total),
+    ...(i.amountPaid ? [total('Paid', i.amountPaid), total('Balance due', i.balance)] : []),
+  ];
+}
+
 /** Automatic payment reminders for overdue invoices */
 export const reminderPolicySchema = z.object({
   enabled: z.boolean(),
