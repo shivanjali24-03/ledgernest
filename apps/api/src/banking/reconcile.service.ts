@@ -4,12 +4,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { journalNumber } from '@ledgernest/shared';
+import {
+  invoiceNumber,
+  journalNumber,
+  suggestReceipts,
+} from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PaymentsService } from '../payments/payments.service.js';
 import { BankingService } from './banking.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -74,6 +79,7 @@ export class ReconcileService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly banking: BankingService,
+    private readonly payments: PaymentsService,
   ) {}
 
   private async account(
@@ -345,6 +351,12 @@ export class ReconcileService {
       account.id,
       bankLines.filter((l) => !usedS.has(l.id)),
     );
+    // Money in with nothing in the books for it yet: the customer invoice it most likely pays
+    const receipts = await this.receiptHints(
+      organizationId,
+      account.currency,
+      bankLines.filter((l) => !usedS.has(l.id) && l.amount > 0),
+    );
     return {
       account: {
         id: account.id,
@@ -357,6 +369,7 @@ export class ReconcileService {
       bookLines,
       suggestions,
       hints,
+      receipts,
       matched: matched.map((m) => ({
         id: m.id,
         date: iso(m.date),
@@ -944,5 +957,129 @@ export class ReconcileService {
       const hit = learned.get(key(l.description, l.amount));
       return hit ? [{ statementLineId: l.id, ...hit }] : [];
     });
+  }
+
+  /** Money in with nothing in the books for it yet, matched to the open invoice it most likely pays */
+  private async receiptHints(
+    organizationId: string,
+    currency: string | null,
+    lines: {
+      id: string;
+      description: string;
+      reference: string | null;
+      amount: number;
+    }[],
+  ) {
+    if (!lines.length) return [];
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        organizationId,
+        status: 'issued',
+        currency,
+        amountPaid: { lt: this.prisma.invoice.fields.total },
+      },
+      orderBy: [{ dueDate: 'asc' }],
+      take: 500,
+      select: {
+        id: true,
+        number: true,
+        total: true,
+        amountPaid: true,
+        fiscalYear: { select: { name: true } },
+        contact: { select: { id: true, name: true, legalName: true } },
+      },
+    });
+    return suggestReceipts(
+      lines,
+      invoices
+        .filter((i) => i.number && i.fiscalYear)
+        .map((i) => ({
+          id: i.id,
+          number: invoiceNumber(i.fiscalYear!.name, i.number!),
+          balance: Number(i.total - i.amountPaid),
+          contact: i.contact,
+        })),
+    );
+  }
+
+  /**
+   * Records money in from a bank line as the customer's receipt against an invoice (up to what it still owes; any
+   * more is an advance), dated and referenced as the bank has it, and matches the line to it.
+   */
+  async receive(
+    input: { statementLineId: string; invoiceId: string },
+    ctx: Ctx,
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    const s = await this.prisma.bankStatementLine.findFirst({
+      where: { organizationId, id: input.statementLineId },
+      select: {
+        id: true,
+        bankAccountId: true,
+        date: true,
+        reference: true,
+        description: true,
+        amount: true,
+        status: true,
+      },
+    });
+    if (!s) throw new NotFoundException('Statement line not found.');
+    if (s.status !== 'unmatched')
+      throw refuse(
+        ConflictException,
+        'This bank line is already dealt with.',
+        'line_not_unmatched',
+      );
+    const amount = Number(s.amount);
+    if (amount <= 0)
+      throw refuse(
+        BadRequestException,
+        'Only money coming in can be a customer’s receipt.',
+        'not_money_in',
+      );
+    const inv = await this.prisma.invoice.findFirst({
+      where: { organizationId, id: input.invoiceId },
+      select: { contactId: true, total: true, amountPaid: true, status: true },
+    });
+    if (!inv || inv.status !== 'issued')
+      throw refuse(
+        BadRequestException,
+        'Choose an issued invoice.',
+        'invoice_not_found',
+        {
+          field: 'invoiceId',
+        },
+      );
+    const payment = await this.payments.receive(
+      {
+        contactId: inv.contactId,
+        date: iso(s.date),
+        bankAccountId: s.bankAccountId,
+        amount,
+        rate: null,
+        reference: (s.reference ?? s.description).slice(0, 64),
+        notes: null,
+        allocations: [
+          {
+            invoiceId: input.invoiceId,
+            amount: Math.min(amount, Number(inv.total - inv.amountPaid)),
+          },
+        ],
+      },
+      ctx,
+    );
+    const bankLine = await this.prisma.journalLine.findFirst({
+      where: {
+        organizationId,
+        entryId: payment.journalEntry.id,
+        accountId: s.bankAccountId,
+      },
+      select: { id: true },
+    });
+    await this.match(
+      { statementLineId: s.id, journalLineIds: [bankLine!.id] },
+      ctx,
+    );
+    return payment;
   }
 }

@@ -85,6 +85,22 @@ describe('reconciliation', () => {
     expect((within(line).getByLabelText('Account for the new entry') as HTMLSelectElement).value).toBe(sampleId('5900'));
   }, 20_000);
 
+  it('spots a UPI payment for an invoice and records the receipt from the line, matched', async () => {
+    const { demoInvoiceViews, resetDemoInvoices } = await import('../invoices/demoInvoicesApi');
+    resetDemoInvoices();
+    const inv = (await demoInvoiceViews()).find((i) => i.status === 'issued' && i.balance > 0 && !!i.number)! as { id: string; number: string; balance: number };
+    // Paid by scanning the invoice's QR code: the UPI note carries its number
+    const csv = ['Date,Narration,Withdrawal,Deposit', `${dmy(today)},UPI/CR/412345678901/KUMAR LOG/Invoice ${inv.number},,"${(inv.balance / 100).toFixed(2)}"`].join('\n');
+    await createDemoBankingApi(() => true).importStatement({ bankAccountId: HDFC, fileName: 'hdfc.csv', content: csv });
+    renderApp(`/banking/reconcile/${HDFC}`);
+    const box = await screen.findByTestId('line-receipt', {}, { timeout: 6000 });
+    expect(box).toHaveTextContent(`Pays ${inv.number} from Kumar Logistics`);
+    await userEvent.click(within(box).getByRole('button', { name: 'Record receipt' }));
+    expect(await screen.findByText(new RegExp(`^Recorded RCT/.+ for ${inv.number.replace(/\//g, '\\/')}, matched to the bank$`), {}, { timeout: 6000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('line-receipt')).not.toBeInTheDocument(), { timeout: 6000 });
+    expect((await demoInvoiceViews()).find((i) => i.id === inv.id)!.balance).toBe(0);
+  }, 30_000);
+
   it('is read-only without the right to reconcile', async () => {
     const csv = ['Date,Narration,Withdrawal,Deposit', `${dmy(rentDay)},OFFICE RENT RENT-NOV,"85,000.00",`].join('\n');
     await createDemoBankingApi(() => true).importStatement({ bankAccountId: HDFC, fileName: 'hdfc.csv', content: csv });

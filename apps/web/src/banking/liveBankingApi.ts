@@ -30,6 +30,7 @@ export function createLiveBankingApi(client: AuthClient, organizationId: string)
     unmatch: (statementLineId) => r(`/reconcile/unmatch/${statementLineId}`, { method: 'POST' }),
     ignore: (statementLineId, ignored) => r('/reconcile/ignore', { method: 'POST', json: { statementLineId, ignored } }),
     createFromLine: (input) => r('/reconcile/create', { method: 'POST', json: input }),
+    receiveFromLine: (statementLineId, invoiceId) => r('/reconcile/receive', { method: 'POST', json: { statementLineId, invoiceId } }),
     reconcile: (input) => r('/reconciliations', { method: 'POST', json: input }),
     reconciliations: (bankAccountId) => r(`/reconciliations?bankAccountId=${bankAccountId}`),
     undoReconciliation: (id) => r(`/reconciliations/${id}`, { method: 'DELETE' }),

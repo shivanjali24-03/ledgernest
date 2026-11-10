@@ -2975,7 +2975,10 @@
       "undo": "Undo",
       "undoTitle": "Undo the reconciliation to {{date}}?",
       "undoBody": "Its matches are unlocked, so they can be changed again.",
-      "lastTime": "Last time a line like this went to {{account}}"
+      "lastTime": "Last time a line like this went to {{account}}",
+      "paysInvoice": "Pays {{number}} from {{name}} ({{balance}} owed)",
+      "recordReceipt": "Record receipt",
+      "received": "Recorded {{number}} for {{invoice}}, matched to the bank"
     }
   },
   "assets": {

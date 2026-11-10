@@ -1,3 +1,4 @@
+import type { ReceiptSuggestion } from '@ledgernest/shared';
 import type { BankMoneyInput, BankTransactionKind, BankTransferInput, StatementImportInput, StatementIssue, StatementLine, StatementLineStatus, StatementMapping } from '@ledgernest/shared';
 import type { Ledger } from '../reports/types';
 
@@ -97,6 +98,8 @@ export interface ReconcileWorkspace {
   suggestions: { statementLineId: string; journalLineIds: string[]; confidence: 'high' | 'medium' }[];
   /** For lines the books don't have: the account (and tax) used last time for a line like it */
   hints?: { statementLineId: string; accountId: string; taxGroupId: string | null; account: { code: string; name: string } }[];
+  /** Money in that most likely pays an open invoice: by its number in a UPI note (high), or its balance and the customer's name (medium) */
+  receipts?: ReceiptSuggestion[];
   matched: { id: string; date: string; description: string; reference: string | null; amount: number; bookLines: BookLine[] }[];
   ignored: { id: string; date: string; description: string; reference: string | null; amount: number }[];
   summary: { bookBalance: number; outstandingIn: number; outstandingOut: number; cleared: number; since: string | null; unmatchedToDate: number; statementBalance: number | null };
@@ -132,6 +135,8 @@ export interface BankingApi {
   unmatch(statementLineId: string): Promise<void>;
   ignore(statementLineId: string, ignored: boolean): Promise<void>;
   createFromLine(input: { statementLineId: string; accountId: string; taxGroupId: string | null; description: string | null }): Promise<BankTransaction>;
+  /** Records a bank line as the customer's receipt against an invoice, already matched */
+  receiveFromLine(statementLineId: string, invoiceId: string): Promise<{ number: string }>;
   reconcile(input: { bankAccountId: string; statementDate: string; statementBalance: number }): Promise<Reconciliation>;
   reconciliations(bankAccountId: string): Promise<Reconciliation[]>;
   undoReconciliation(id: string): Promise<void>;
