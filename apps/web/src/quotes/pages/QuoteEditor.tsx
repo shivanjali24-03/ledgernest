@@ -165,6 +165,7 @@ export default function QuoteEditor() {
   const quote = query.data;
   const [params] = useSearchParams();
   const copyId = isNew ? params.get('copy') : null;
+  const forContact = isNew ? params.get('contact') : null;
   const copy = useQuery({ queryKey: ['quotes', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const canManage = session.permissions.has('invoices.manage');
   const [emailing, setEmailing] = useState(false);
@@ -256,7 +257,7 @@ export default function QuoteEditor() {
                 </Card>
               )
             ) : (
-              <DraftForm key="new" quote={null} api={api} />
+              <DraftForm key={`new-${forContact ?? ''}`} quote={null} template={forContact ? ({ contact: { id: forContact }, lines: [], currency: null, notes: null, placeOfSupply: null, reference: null } as unknown as Quote) : undefined} api={api} />
             )
           ) : null
         ) : query.isPending ? (

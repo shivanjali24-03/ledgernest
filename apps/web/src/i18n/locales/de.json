@@ -1886,7 +1886,17 @@
     "weOwe": "Wir schulden {{amount}}",
     "paidAhead": "Vorausbezahlt {{amount}}",
     "customerStatement": "Kontoauszug",
-    "vendorStatement": "Lieferantenauszug"
+    "vendorStatement": "Lieferantenauszug",
+    "page": {
+      "address": "Adresse",
+      "terms": "Zahlungsbedingungen",
+      "owedToUs": "Man schuldet uns",
+      "weOwe": "Wir schulden",
+      "noInvoices": "Noch keine Rechnungen für diesen Kunden",
+      "noQuotes": "Noch keine Angebote für diesen Kunden",
+      "noBills": "Noch keine Rechnungen von diesem Lieferanten",
+      "more": "und {{count}} weitere unter Rechnungen"
+    }
   },
   "items": {
     "title": "Produkte und Leistungen",

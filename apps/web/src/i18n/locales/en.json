@@ -1886,7 +1886,17 @@
     "weOwe": "We owe {{amount}}",
     "paidAhead": "Paid ahead {{amount}}",
     "customerStatement": "Statement of account",
-    "vendorStatement": "Vendor statement"
+    "vendorStatement": "Vendor statement",
+    "page": {
+      "address": "Address",
+      "terms": "Payment terms",
+      "owedToUs": "Owed to us",
+      "weOwe": "We owe",
+      "noInvoices": "No invoices for this customer yet",
+      "noQuotes": "No quotes for this customer yet",
+      "noBills": "No bills from this vendor yet",
+      "more": "and {{count}} more under Invoices"
+    }
   },
   "items": {
     "title": "Products and services",

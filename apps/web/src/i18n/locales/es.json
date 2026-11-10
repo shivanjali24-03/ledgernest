@@ -1886,7 +1886,17 @@
     "weOwe": "Debemos {{amount}}",
     "paidAhead": "Anticipado {{amount}}",
     "customerStatement": "Estado de cuenta",
-    "vendorStatement": "Estado de cuenta del proveedor"
+    "vendorStatement": "Estado de cuenta del proveedor",
+    "page": {
+      "address": "Dirección",
+      "terms": "Condiciones de pago",
+      "owedToUs": "Nos deben",
+      "weOwe": "Debemos",
+      "noInvoices": "Aún no hay facturas para este cliente",
+      "noQuotes": "Aún no hay presupuestos para este cliente",
+      "noBills": "Aún no hay facturas de este proveedor",
+      "more": "y {{count}} más en Facturas"
+    }
   },
   "items": {
     "title": "Productos y servicios",

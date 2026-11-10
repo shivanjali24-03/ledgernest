@@ -64,7 +64,7 @@ describe('imports', () => {
 
     document.body.innerHTML = '';
     renderApp('/contacts');
-    expect(await screen.findByRole('button', { name: 'Mehta Traders' }, { timeout: 4000 })).toBeInTheDocument();
-    expect(within(screen.getByRole('button', { name: 'Mehta Traders' }).closest('li')!).getByText('Vendor')).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: 'Mehta Traders' }, { timeout: 4000 })).toBeInTheDocument();
+    expect(within(screen.getByRole('link', { name: 'Mehta Traders' }).closest('li')!).getByText('Vendor')).toBeInTheDocument();
   }, 40_000);
 });

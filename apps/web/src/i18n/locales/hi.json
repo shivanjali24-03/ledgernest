@@ -1886,7 +1886,17 @@
     "weOwe": "हमें देना है {{amount}}",
     "paidAhead": "अग्रिम दिया {{amount}}",
     "customerStatement": "खाता विवरण",
-    "vendorStatement": "विक्रेता विवरण"
+    "vendorStatement": "विक्रेता विवरण",
+    "page": {
+      "address": "पता",
+      "terms": "भुगतान शर्तें",
+      "owedToUs": "हमें देय",
+      "weOwe": "हम पर देय",
+      "noInvoices": "इस ग्राहक के लिए अभी कोई इनवॉइस नहीं",
+      "noQuotes": "इस ग्राहक के लिए अभी कोई कोटेशन नहीं",
+      "noBills": "इस विक्रेता से अभी कोई बिल नहीं",
+      "more": "और {{count}} इनवॉइस पृष्ठ पर"
+    }
   },
   "items": {
     "title": "उत्पाद और सेवाएँ",

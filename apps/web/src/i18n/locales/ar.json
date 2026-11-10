@@ -1886,7 +1886,17 @@
     "weOwe": "علينا {{amount}}",
     "paidAhead": "مدفوع مقدمًا {{amount}}",
     "customerStatement": "كشف الحساب",
-    "vendorStatement": "كشف حساب المورد"
+    "vendorStatement": "كشف حساب المورد",
+    "page": {
+      "address": "العنوان",
+      "terms": "شروط الدفع",
+      "owedToUs": "مستحق لنا",
+      "weOwe": "مستحق علينا",
+      "noInvoices": "لا فواتير لهذا العميل بعد",
+      "noQuotes": "لا عروض أسعار لهذا العميل بعد",
+      "noBills": "لا فواتير من هذا المورد بعد",
+      "more": "و{{count}} أخرى في الفواتير"
+    }
   },
   "items": {
     "title": "المنتجات والخدمات",

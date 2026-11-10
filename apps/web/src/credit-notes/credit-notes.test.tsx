@@ -52,7 +52,7 @@ describe('credit notes', () => {
 
     document.body.innerHTML = '';
     renderApp('/contacts');
-    const kumar = (await screen.findByRole('button', { name: 'Kumar Logistics' }, { timeout: 4000 })).closest('li')!;
+    const kumar = (await screen.findByRole('link', { name: 'Kumar Logistics' }, { timeout: 4000 })).closest('li')!;
     await waitFor(() => expect(kumar).toHaveTextContent('Owes ₹1,06,200.00'));
 
     document.body.innerHTML = '';
