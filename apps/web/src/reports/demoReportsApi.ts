@@ -10,6 +10,15 @@ import type { CashForecast, Compliance, Gstr2bReport, TdsReport } from './types'
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
+/** The demo organisation's UPI ID, once saved in Settings */
+const demoUpiSet = () => {
+  try {
+    return !!(JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: { upiId?: string | null } } | null)?.settings?.upiId;
+  } catch {
+    return false;
+  }
+};
+
 export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   const accounts = createDemoAccountsApi(() => true);
   const journals = createDemoJournalsApi(() => true);
@@ -323,7 +332,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     const { createDemoQuotesApi } = await import('../quotes/demoQuotesApi');
     const expiring = (await createDemoQuotesApi(() => true).list({ state: 'open', page: 1, pageSize: 1000 })).items.filter((q) => q.expiryDate <= weekOn.toISOString().slice(0, 10)).length;
     if (expiring) alerts.push({ kind: 'quotes_expiring', count: expiring });
-    return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
+    return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true, gst: true, upi: demoUpiSet() } };
   };
 
   /** The cash flow statement from the demo's books, both ways, as the API works it out */

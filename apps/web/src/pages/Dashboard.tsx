@@ -79,12 +79,14 @@ function ProfitChart({ monthly }: { monthly: DashboardData['monthly'] }) {
   );
 }
 
+const SETUP_LINKS = { organisation: '/settings', team: '/users', coa: '/accounts', fiscal: '/periods', bank: '/banking', gst: '/taxes', upi: '/settings' } as const;
+
 const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   overdue_invoices: '/invoices',
   overdue_bills: '/bills',
   unreconciled: '/banking',
   recurring_due: '/recurring',
-  open_periods: '/fiscal-years',
+  open_periods: '/periods',
   draft_entries: '/journals',
   approvals_waiting: '/approvals',
   low_stock: '/inventory',
@@ -105,7 +107,8 @@ export default function Dashboard() {
   const compliance = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'compliance'], queryFn: () => api!.compliance(), enabled: !!api && canRead && !!data });
   const forecast = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && canRead && !!data });
   const firstName = session.name.split(' ')[0];
-  const setup = data ? (['organisation', 'team', 'coa', 'fiscal', 'bank'] as const).map((k) => ({ key: k, done: data.setup[k] })) : [];
+  // India adds GST and UPI; each step not done yet links to where it's done
+  const setup = data ? ((['organisation', 'team', 'coa', 'fiscal', 'bank', 'gst', 'upi'] as const).filter((k) => data.setup[k] !== undefined).map((k) => ({ key: k, done: !!data.setup[k], to: SETUP_LINKS[k] }))) : [];
   const done = setup.filter((s) => s.done).length;
   const kpis = data
     ? ([
@@ -216,7 +219,13 @@ export default function Dashboard() {
                 {setup.map((s) => (
                   <li key={s.key} className="flex items-center gap-2.5 text-sm">
                     {s.done ? <CheckCircle2 className="size-5 text-income" aria-hidden /> : <Circle className="size-5 text-ink-300" aria-hidden />}
-                    <span className={clsx(s.done && 'text-ink-400 line-through')}>{t(`dashboard.setup.${s.key}`)}</span>
+                    {s.done ? (
+                      <span className="text-ink-400 line-through">{t(`dashboard.setup.${s.key}`)}</span>
+                    ) : (
+                      <Link to={s.to} className="hover:text-brand-700 hover:underline dark:hover:text-brand-300">
+                        {t(`dashboard.setup.${s.key}`)}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
