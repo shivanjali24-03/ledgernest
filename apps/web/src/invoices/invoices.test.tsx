@@ -209,9 +209,15 @@ describe('invoices', () => {
     cleanup();
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
-    const card = await screen.findByTestId('invoice-upi', {}, { timeout: 4000 });
-    expect(within(card).getByRole('img', { name: 'QR code to pay ₹1,18,000.00 to nestdemo@okhdfcbank by UPI' })).toBeInTheDocument();
-    expect(within(card).getByRole('link', { name: 'Pay with a UPI app' }).getAttribute('href')).toMatch(/^upi:\/\/pay\?pa=nestdemo%40okhdfcbank&pn=Nest%20Demo%20Private%20Limited&am=118000\.00&cu=INR&tn=Invoice%20INV%2F/);
+    // Found afresh each try: the page can remount while the invoice and settings load
+    await waitFor(
+      () => {
+        const card = screen.getByTestId('invoice-upi');
+        expect(within(card).getByRole('img', { name: 'QR code to pay ₹1,18,000.00 to nestdemo@okhdfcbank by UPI' })).toBeInTheDocument();
+        expect(within(card).getByRole('link', { name: 'Pay with a UPI app' }).getAttribute('href')).toMatch(/^upi:\/\/pay\?pa=nestdemo%40okhdfcbank&pn=Nest%20Demo%20Private%20Limited&am=118000\.00&cu=INR&tn=Invoice%20INV%2F/);
+      },
+      { timeout: 8000 },
+    );
     await waitFor(
       () => {
         if (!saved) fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
