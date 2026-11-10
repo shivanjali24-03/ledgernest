@@ -113,7 +113,8 @@
       "approvals_waiting": "{{count}} en attente de votre approbation",
       "low_stock": "{{count}} articles en stock bas",
       "quotes_expiring": "{{count}} devis expirent cette semaine",
-      "recurring_bills_due": "{{count}} factures récurrentes à créer"
+      "recurring_bills_due": "{{count}} factures récurrentes à créer",
+      "bills_due_soon": "{{count}} factures fournisseurs à payer cette semaine, {{amount}}"
     }
   },
   "comingSoon": {

@@ -113,7 +113,8 @@
       "approvals_waiting": "{{count}} waiting for your approval",
       "low_stock": "{{count}} items low on stock",
       "quotes_expiring": "{{count}} quotes expiring this week",
-      "recurring_bills_due": "{{count}} recurring bills due"
+      "recurring_bills_due": "{{count}} recurring bills due",
+      "bills_due_soon": "{{count}} bills due this week, {{amount}}"
     }
   },
   "comingSoon": {

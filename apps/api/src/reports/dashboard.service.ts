@@ -209,6 +209,28 @@ export class DashboardService {
             0,
           ),
         });
+      // What falls due in the coming week, to plan the cash for
+      const weekOn = asDate(today);
+      weekOn.setUTCDate(weekOn.getUTCDate() + 7);
+      const soon = (
+        await this.prisma.bill.findMany({
+          where: {
+            organizationId,
+            status: 'open',
+            dueDate: { gte: asDate(today), lte: weekOn },
+          },
+          select: { total: true, amountPaid: true, currency: true, rate: true },
+        })
+      ).filter((b) => b.total > b.amountPaid);
+      if (soon.length)
+        alerts.push({
+          kind: 'bills_due_soon',
+          count: soon.length,
+          amount: soon.reduce(
+            (s, b) => s + inBase(b.total - b.amountPaid, b.currency, b.rate),
+            0,
+          ),
+        });
     }
     if (permissions.has('banking.view')) {
       const lines = await this.prisma.bankStatementLine.count({

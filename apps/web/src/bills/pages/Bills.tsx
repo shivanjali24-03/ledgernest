@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { Download, Building2, Plus, Receipt } from 'lucide-react';
@@ -30,7 +30,9 @@ export default function Bills() {
   const navigate = useNavigate();
   const api = useBillsApi();
   const canManage = session.permissions.has('bills.manage');
-  const [filter, setFilter] = useState<Filter>('all');
+  const [params] = useSearchParams();
+  const FILTERS = ['all', 'draft', 'unpaid', 'overdue', 'paid', 'void'] as const;
+  const [filter, setFilter] = useState<Filter>(FILTERS.find((f) => f === params.get('state')) ?? 'all');
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
   const toast = useToast();
@@ -105,7 +107,7 @@ export default function Bills() {
         </motion.dl>
       )}
       <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3">
-        <Segmented<Filter> label={t('bills.filter')} value={filter} onChange={(v) => (setFilter(v), setPage(1))} options={(['all', 'draft', 'unpaid', 'overdue', 'paid', 'void'] as const).map((v) => ({ value: v, label: t(`invoices.filters.${v}`) }))} />
+        <Segmented<Filter> label={t('bills.filter')} value={filter} onChange={(v) => (setFilter(v), setPage(1))} options={FILTERS.map((v) => ({ value: v, label: t(`invoices.filters.${v}`) }))} />
         <div className="min-w-56 flex-1">
           <SearchInput value={search} onChange={(v) => (setSearch(v), setPage(1))} label={t('bills.search')} />
         </div>

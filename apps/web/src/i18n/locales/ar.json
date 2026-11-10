@@ -113,7 +113,8 @@
       "approvals_waiting": "{{count}} بانتظار موافقتك",
       "low_stock": "{{count}} أصناف مخزونها منخفض",
       "quotes_expiring": "{{count}} عروض أسعار تنتهي هذا الأسبوع",
-      "recurring_bills_due": "{{count}} فواتير متكررة مستحقة"
+      "recurring_bills_due": "{{count}} فواتير متكررة مستحقة",
+      "bills_due_soon": "{{count}} فواتير موردين مستحقة هذا الأسبوع، {{amount}}"
     }
   },
   "comingSoon": {

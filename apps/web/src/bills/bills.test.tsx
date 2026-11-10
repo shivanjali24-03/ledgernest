@@ -105,9 +105,14 @@ describe('bills', () => {
     expect(await screen.findByText(/ scheduled$/, {}, { timeout: 4000 })).toBeInTheDocument();
     await router.navigate('/recurring-bills');
     expect(await screen.findByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' }, { timeout: 4000 })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Run now' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Run now' }, { timeout: 4000 }));
     // The schedule lists the bill it made (more lasting than the toast, which can come and go under load)
     await waitFor(() => expect(screen.getByText('Made:')).toBeInTheDocument(), { timeout: 10_000 });
+  });
+
+  it('opens with the filter from the address, as the dashboard links it', async () => {
+    renderApp('/bills?state=draft');
+    expect(await screen.findByRole('radio', { name: 'Drafts' }, { timeout: 4000 })).toBeChecked();
   });
 
   it('is read-only for Auditors', async () => {

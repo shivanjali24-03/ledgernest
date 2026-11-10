@@ -113,7 +113,8 @@
       "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत",
       "low_stock": "{{count}} वस्तूंचा साठा कमी",
       "quotes_expiring": "{{count}} कोटेशनची मुदत या आठवड्यात संपत आहे",
-      "recurring_bills_due": "{{count}} आवर्ती बिले देय"
+      "recurring_bills_due": "{{count}} आवर्ती बिले देय",
+      "bills_due_soon": "या आठवड्यात {{count}} बिले देय, {{amount}}"
     }
   },
   "comingSoon": {
