@@ -269,7 +269,7 @@ export interface GstAccountSpec {
   subtype: 'current_asset' | 'tax_payable';
   parent?: string;
   /** Which tax kind posts here, and on which side */
-  kind?: 'cgst' | 'sgst' | 'utgst' | 'igst';
+  kind?: 'cgst' | 'sgst' | 'utgst' | 'igst' | 'cess';
   role?: 'input' | 'output';
 }
 
@@ -290,6 +290,25 @@ export function gstAccountPlan(utgst: boolean): GstAccountSpec[] {
     { key: 'igst_output', code: '2130', type: 'liability', subtype: 'tax_payable', parent: '2100', kind: 'igst', role: 'output' },
   ];
 }
+
+/**
+ * GST compensation cess, charged on top of GST on some goods (tobacco, pan masala, aerated drinks, coal, motor
+ * cars): its own input and output accounts beside GST's, and a group per GST rate with the cess added.
+ */
+export const CESS_ACCOUNTS: GstAccountSpec[] = [
+  { key: 'cess_input', code: '1350', type: 'asset', subtype: 'current_asset', parent: '1300', kind: 'cess', role: 'input' },
+  { key: 'cess_output', code: '2150', type: 'liability', subtype: 'tax_payable', parent: '2100', kind: 'cess', role: 'output' },
+];
+export const CESS_ACCOUNT_NAMES: Record<'cess_input' | 'cess_output', { en: string } & Record<string, string>> = {
+  cess_input: { en: 'Compensation cess input', hi: 'क्षतिपूर्ति उपकर इनपुट', mr: 'भरपाई उपकर इनपुट' },
+  cess_output: { en: 'Compensation cess output', hi: 'क्षतिपूर्ति उपकर आउटपुट', mr: 'भरपाई उपकर आउटपुट' },
+};
+/** Adding cess at a rate to a GST rate (both parts per million): two groups, within the state and between states */
+export const gstCessSchema = z.object({
+  gstRatePpm: z.number().int().min(1).max(280_000),
+  cessRatePpm: z.number().int().min(1).max(3_000_000),
+});
+export type GstCessInput = z.input<typeof gstCessSchema>;
 
 /** UTGST accounts aren't in the industry templates, so their names live here (the rest come from the templates). */
 export const UTGST_ACCOUNT_NAMES: Record<'utgst_input' | 'utgst_output', { en: string } & Record<string, string>> = {

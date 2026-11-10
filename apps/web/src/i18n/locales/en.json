@@ -2105,6 +2105,17 @@
       "overlap": "A slab of this rate already applies on some of these dates. Give that one an end date first.",
       "in_use": "Organisations use this slab. Give it an end date instead.",
       "slab_not_found": "A chosen slab no longer exists."
+    },
+    "cess": {
+      "title": "Compensation cess",
+      "body": "For goods that still carry cess on top of GST, like tobacco and pan masala at 28%. Choose the GST rate and the cess rate; a group within the state and one between states are made.",
+      "gstRate": "GST rate",
+      "cessRate": "Cess, %",
+      "add": "Add cess",
+      "added": "Added: {{groups}}",
+      "already": "Those groups are already there.",
+      "gstFirst": "Set up GST at that rate first.",
+      "failed": "The cess couldn’t be added."
     }
   },
   "gstSlabs": {

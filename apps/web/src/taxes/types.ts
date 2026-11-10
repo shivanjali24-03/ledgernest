@@ -63,6 +63,8 @@ export interface GstSetupResult extends TaxesResponse {
 export interface TaxesApi {
   list(): Promise<TaxesResponse>;
   setupGst(slabIds?: string[]): Promise<GstSetupResult>;
+  /** Compensation cess on top of a GST rate: the cess rate and a group within the state and between states */
+  addCess(input: { gstRatePpm: number; cessRatePpm: number }): Promise<TaxesResponse & { created: { groups: string[] } }>;
   createRate(input: TaxRateCreateInput): Promise<TaxRate>;
   updateRate(id: string, patch: TaxRateUpdateInput): Promise<TaxRate>;
   archiveRate(id: string, archive: boolean): Promise<TaxRate>;
