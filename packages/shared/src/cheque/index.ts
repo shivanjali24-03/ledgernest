@@ -72,7 +72,8 @@ export function chequeLayout(c: ChequeInput, o: ChequeOptions) {
         { x1: 16, y1: 16, x2: 30, y2: 4 },
       ].map((l) => ({ x1: l.x1 + o.offsetX, y1: l.y1 + o.offsetY, x2: l.x2 + o.offsetX, y2: l.y2 + o.offsetY }))
     : [];
-  if (o.crossed) texts.push({ ...at(12.5, 12.5), text: 'A/c Payee', size: 7, bold: true });
+  // Written along the slant, between the two lines
+  if (o.crossed) texts.push({ ...at(14.5, 15.2), text: 'A/c Payee', size: 7, bold: true, angle: (Math.atan2(12, 14) * 180) / Math.PI });
   return { texts, lines };
 }
 
