@@ -12,7 +12,7 @@ import { useToast } from './toastContext';
  * Sends something by email: an address (filled with the contact's) and an optional note. The caller says what's sent
  * and how; the demo's toast says nothing really went.
  */
-export default function EmailDialog({ title, description, defaultEmail, blankHint, send, sentMessage, demoMessage, errorMessage, onClose }: { title: string; description: string; defaultEmail: string | null; /** When set, a blank address is allowed and means the one on file */ blankHint?: string; send: (input: { email?: string; message?: string }) => Promise<{ sentTo: string }>; sentMessage: (email: string) => string; demoMessage: (email: string) => string; errorMessage: (e: unknown) => string; onClose: () => void }) {
+export default function EmailDialog<R extends { sentTo: string }>({ title, description, defaultEmail, blankHint, sendLabel, send, onSent, sentMessage, demoMessage, errorMessage, onClose }: { title: string; description: string; defaultEmail: string | null; /** When set, a blank address is allowed and means the one on file */ blankHint?: string; /** The button, when "Send" isn't enough */ sendLabel?: string; send: (input: { email?: string; message?: string }) => Promise<R>; /** After it went, before the dialog closes (e.g. to update what's shown) */ onSent?: (r: R) => void; sentMessage: (email: string) => string; demoMessage: (email: string) => string; errorMessage: (e: unknown) => string; onClose: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const session = useSession();
@@ -24,6 +24,7 @@ export default function EmailDialog({ title, description, defaultEmail, blankHin
     mutationFn: () => send({ email: email.trim() || undefined, message: message.trim() || undefined }),
     onSuccess: (r) => {
       toast(session.mode === 'demo' ? demoMessage(r.sentTo) : sentMessage(r.sentTo));
+      onSent?.(r);
       onClose();
     },
     onError: (e) => toast(errorMessage(e), 'error'),
@@ -45,7 +46,7 @@ export default function EmailDialog({ title, description, defaultEmail, blankHin
             {t('common.cancel')}
           </Button>
           <Button type="submit" form="email-dialog-form" loading={mutation.isPending}>
-            {t('emailDialog.send')}
+            {sendLabel ?? t('emailDialog.send')}
           </Button>
         </>
       }
