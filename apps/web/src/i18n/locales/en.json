@@ -4091,5 +4091,16 @@
       "body": "{{organization}} asks everyone to sign in with a code from an authenticator app as well as their password. Set it up to continue.",
       "signOut": "Sign out"
     }
+  },
+  "sessions": {
+    "action": "Where you’re signed in",
+    "title": "Where you’re signed in",
+    "body": "Each device or browser signed in to your account. Sign out any you don’t recognise, then change your password.",
+    "on": "{{browser}} on {{os}}",
+    "unknown": "Unknown device",
+    "thisDevice": "This device",
+    "lastUsed": "Last used {{when}}",
+    "signOut": "Sign out",
+    "revoked": "That device is signed out."
   }
 }

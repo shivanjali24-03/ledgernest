@@ -204,6 +204,10 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
   return {
     login,
     loginTwoFactor,
+    sessions: {
+      list: () => request<{ id: string; current: boolean; startedAt: string; lastUsedAt: string; ip: string | null; device: { browser: string | null; os: string | null; mobile: boolean } }[]>('/auth/sessions'),
+      revoke: (id: string) => request<void>(`/auth/sessions/${id}`, { method: 'DELETE' }),
+    },
     twoFactor: {
       status: () => request<{ enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number }>('/auth/2fa'),
       setup: (password: string) => request<{ secret: string; uri: string }>('/auth/2fa/setup', { method: 'POST', json: { password } }),
