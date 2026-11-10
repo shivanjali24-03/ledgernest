@@ -2300,7 +2300,38 @@
       },
       "messageReminder": "Dear {{name}}, a gentle reminder that invoice {{number}} from {{organization}} for {{amount}} was due on {{date}}. You can view it or pay by UPI here: {{link}}. If you’ve already paid, thank you, and please ignore this."
     },
-    "amountInWords": "Amount in words:"
+    "amountInWords": "Amount in words:",
+    "einvoice": {
+      "action": "e-Invoice JSON",
+      "fix": "Fix",
+      "problemsTitle": "Not ready for the e-invoice portal",
+      "problemsBody": "The portal would refuse this invoice. Fix these, then download again.",
+      "problems": {
+        "gstin_seller": "Your organisation’s GSTIN is missing or not valid.",
+        "address_seller": "Your organisation’s address is missing.",
+        "city_seller": "Your organisation’s city is missing.",
+        "pin_seller": "Your organisation’s PIN code is missing or not 6 digits.",
+        "gstin_buyer": "The customer’s GSTIN is missing or not valid: e-invoices are for registered buyers.",
+        "address_buyer": "The customer’s billing address is missing.",
+        "city_buyer": "The customer’s city is missing.",
+        "pin_buyer": "The customer’s PIN code is missing or not 6 digits.",
+        "hsn": "Line {{line}} ({{description}}) needs an HSN or SAC code of 4 to 8 digits on its item.",
+        "not_inr": "e-Invoices are in rupees: this invoice is in another currency.",
+        "no_lines": "The invoice has no lines.",
+        "number_too_long": "The invoice number is longer than the portal’s 16 characters.",
+        "no_place_of_supply": "The invoice has no place of supply."
+      },
+      "batch": "e-Invoices (JSON)",
+      "batchDone_one": "One e-invoice is ready to upload on the portal.",
+      "batchDone_other": "{{count}} e-invoices are ready to upload on the portal.",
+      "batchNone": "No B2B invoices in these dates are ready for the e-invoice portal.",
+      "batchFailed": "The e-invoices couldn’t be made. Try again.",
+      "skippedTitle_one": "One invoice needs fixing first",
+      "skippedTitle_other": "{{count}} invoices need fixing first",
+      "skippedBody": "They’re not in the file. Open each to see what the portal needs.",
+      "problemCount_one": "1 thing to fix",
+      "problemCount_other": "{{count}} things to fix"
+    }
   },
   "payments": {
     "title": "Payments",

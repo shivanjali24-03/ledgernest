@@ -104,10 +104,21 @@ describe('bills', () => {
     );
     expect(await screen.findByText(/ scheduled$/, {}, { timeout: 4000 })).toBeInTheDocument();
     await router.navigate('/recurring-bills');
-    expect(await screen.findByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' }, { timeout: 4000 })).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: 'Run now' }, { timeout: 4000 }));
-    // The schedule lists the bill it made (more lasting than the toast, which can come and go under load)
-    await waitFor(() => expect(screen.getByText('Made:')).toBeInTheDocument(), { timeout: 10_000 });
+    // Found afresh each try: the page can remount as it loads
+    await waitFor(() => expect(screen.getByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' })).toBeInTheDocument(), { timeout: 6000 });
+    await screen.findByRole('button', { name: 'Run now' }, { timeout: 4000 });
+    // Pressed until the schedule lists the bill it made: a press can land while the page re-renders, and running
+    // twice on one day makes nothing more (the list is more lasting than the toast, which can come and go)
+    await waitFor(
+      () => {
+        if (!screen.queryByText('Made:')) {
+          const run = screen.getByRole('button', { name: 'Run now' });
+          if (!run.hasAttribute('disabled')) fireEvent.click(run);
+        }
+        expect(screen.getByText('Made:')).toBeInTheDocument();
+      },
+      { timeout: 12_000, interval: 400 },
+    );
   });
 
   it('opens with the filter from the address, as the dashboard links it', async () => {

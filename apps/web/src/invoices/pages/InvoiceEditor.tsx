@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { dueDateFor } from '@ledgernest/shared';
-import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2 } from 'lucide-react';
+import { dueDateFor, type EinvoiceProblem } from '@ledgernest/shared';
+import { ApiError } from '../../auth/client';
+import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
+import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -26,6 +28,7 @@ import SalesDraftForm, { type SalesDraftPayload } from '../SalesDraftForm';
 import ReminderDialog from '../ReminderDialog';
 import { saveBlob } from '../../lib/saveBlob';
 import ShareInvoiceDialog from '../ShareInvoiceDialog';
+import EinvoiceProblemsDialog from '../EinvoiceProblemsDialog';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -85,6 +88,13 @@ export default function InvoiceEditor() {
   const [reminding, setReminding] = useState(false);
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [einvoiceProblems, setEinvoiceProblems] = useState<EinvoiceProblem[] | null>(null);
+  const india = useOrganizationSettings().data?.country === 'IN';
+  const einvoice = useMutation({
+    mutationFn: () => api!.einvoice(invoice!.id),
+    onSuccess: (f) => saveBlob(f),
+    onError: (e) => (e instanceof ApiError && e.details?.reason === 'einvoice_incomplete' ? setEinvoiceProblems(e.details.problems as EinvoiceProblem[]) : toast(invoiceErrorMessage(e, t), 'error')),
+  });
   const download = useMutation({
     mutationFn: () => api!.pdf(invoice!.id),
     onSuccess: (f) => saveBlob(f),
@@ -138,6 +148,11 @@ export default function InvoiceEditor() {
                 {invoice.status !== 'draft' && (
                   <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate()}>
                     {t('common.downloadPdf')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && india && invoice.contact.taxId && (
+                  <Button variant="ghost" icon={<FileJson className="size-4" />} loading={einvoice.isPending} onClick={() => einvoice.mutate()}>
+                    {t('invoices.einvoice.action')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
@@ -274,6 +289,7 @@ export default function InvoiceEditor() {
         {invoice && <DocumentAttachments documentType="invoice" documentId={invoice.id} />}
       </motion.div>
       {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
+      {einvoiceProblems && invoice && <EinvoiceProblemsDialog invoice={invoice} problems={einvoiceProblems} onClose={() => setEinvoiceProblems(null)} />}
       {sharing && invoice && api && <ShareInvoiceDialog api={api} invoice={invoice} onClose={() => setSharing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}

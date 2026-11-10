@@ -19,6 +19,7 @@ import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import Gstr2bPanel from '../Gstr2bPanel';
 import CashForecastPanel from '../CashForecastPanel';
+import EinvoiceBatchButton from '../EinvoiceBatchButton';
 import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
@@ -366,6 +367,7 @@ export default function Reports() {
               <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
             </div>
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
+            {gstReturn === 'gstr-1' && session.permissions.has('invoices.view') && <EinvoiceBatchButton from={from} to={to} />}
           </div>
           {gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
         </motion.div>

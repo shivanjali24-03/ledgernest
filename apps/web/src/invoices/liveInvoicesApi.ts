@@ -33,6 +33,11 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
     remind: (id, input) => r(`/${id}/remind`, { method: 'POST', json: input }),
     email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     share: (id) => r(`/${id}/share`, { method: 'POST' }),
+    einvoice: async (id) => {
+      const { blob, filename } = await client.download(`/invoices/${id}/e-invoice`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'e-invoice.json' };
+    },
+    einvoices: (from, to) => r(`/e-invoice?from=${from}&to=${to}`),
     unshare: async (id) => {
       await r(`/${id}/share`, { method: 'DELETE' });
     },

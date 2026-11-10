@@ -5,6 +5,7 @@ import { InvoiceRemindersService } from './invoice-reminders.service.js';
 import { JournalsModule } from '../journals/journals.module.js';
 import { InvoicesController } from './invoices.controller.js';
 import { ReminderPolicyController } from './reminder-policy.controller.js';
+import { EinvoiceService } from './einvoice.service.js';
 import { InvoiceShareService } from './invoice-share.service.js';
 import { PublicInvoicesController } from './public-invoices.controller.js';
 import { InvoicesService } from './invoices.service.js';
@@ -17,7 +18,12 @@ import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
     ReminderPolicyController,
     PublicInvoicesController,
   ],
-  providers: [InvoicesService, InvoiceRemindersService, InvoiceShareService],
+  providers: [
+    InvoicesService,
+    InvoiceRemindersService,
+    InvoiceShareService,
+    EinvoiceService,
+  ],
   exports: [InvoicesService],
 })
 export class InvoicesModule {}
