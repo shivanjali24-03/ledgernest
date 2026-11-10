@@ -5,6 +5,14 @@ import type { InvoicesApi } from './types';
 export function createLiveInvoicesApi(client: AuthClient, organizationId: string): InvoicesApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/invoices${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
+    exportList: async (q) => {
+      const p = new URLSearchParams();
+      if (q.state) p.set('state', q.state);
+      if (q.contactId) p.set('contactId', q.contactId);
+      if (q.search) p.set('search', q.search);
+      const { blob, filename } = await client.download(`/invoices/export?${p}`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'invoices.csv' };
+    },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
       if (q.state) p.set('state', q.state);

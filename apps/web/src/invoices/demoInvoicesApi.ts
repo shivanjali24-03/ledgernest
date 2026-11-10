@@ -1,5 +1,6 @@
 import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
@@ -263,7 +264,12 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
     return i;
   };
   const prepare = demoPrepareSale;
-  return {
+  const api: InvoicesApi = {
+    exportList: async (q) => {
+      const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
+      const rows = [['number', 'state', 'issue_date', 'due_date', 'customer', 'reference', 'currency', 'total', 'paid', 'balance'], ...all.map((i) => { const cur = i.currency ?? 'INR'; return [i.number ?? 'Draft', i.state, i.issueDate, i.dueDate, i.contact.name, i.reference ?? '', cur, major(i.total, cur), i.status === 'issued' ? major(i.amountPaid, cur) : '', i.status === 'issued' ? major(i.balance, cur) : '']; })];
+      return { blob: csvBlob(rows), filename: 'invoices.csv' };
+    },
     list: (q) =>
       wait(async () => {
         const all = (await load()).map(view);
@@ -422,4 +428,5 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         return p.data;
       }),
   };
+  return api;
 }

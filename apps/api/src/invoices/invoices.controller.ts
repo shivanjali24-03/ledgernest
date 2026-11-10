@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,11 +12,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
   ApiOkResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -26,7 +29,7 @@ import {
   invoiceVoidSchema,
   type InvoiceDraftInput,
 } from '@ledgernest/shared';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   CurrentActor,
@@ -85,6 +88,28 @@ export class InvoicesController {
     @Req() req: Request,
   ) {
     return this.reminders.remindOverdue(body.contactId, {
+      actor,
+      tenant,
+      req,
+    });
+  }
+
+  @Get('export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async exportCsv(
+    @Query(new ZodValidationPipe(invoiceListQuerySchema))
+    q: z.output<typeof invoiceListQuerySchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { page: _p, pageSize: _s, ...filters } = q;
+    res.setHeader('Content-Disposition', `attachment; filename="invoices.csv"`);
+    return this.invoices.exportCsv(tenant.organizationId, filters, {
       actor,
       tenant,
       req,

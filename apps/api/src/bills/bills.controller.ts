@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,11 +12,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
   ApiOkResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -24,7 +27,7 @@ import {
   billVoidSchema,
   type BillDraftInput,
 } from '@ledgernest/shared';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import {
   CurrentActor,
@@ -62,6 +65,28 @@ export class BillsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.bills.list(tenant.organizationId, q);
+  }
+
+  @Get('export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async exportCsv(
+    @Query(new ZodValidationPipe(billListQuerySchema))
+    q: z.output<typeof billListQuerySchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { page: _p, pageSize: _s, ...filters } = q;
+    res.setHeader('Content-Disposition', `attachment; filename="bills.csv"`);
+    return this.bills.exportCsv(tenant.organizationId, filters, {
+      actor,
+      tenant,
+      req,
+    });
   }
 
   @Get(':id')

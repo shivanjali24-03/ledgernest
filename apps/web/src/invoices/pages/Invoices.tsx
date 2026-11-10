@@ -1,8 +1,8 @@
 import { useDeferredValue, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Building2, FileText, Plus } from 'lucide-react';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
+import { Download, Building2, FileText, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
 import { formatDate, formatMoney } from '../../lib/format';
@@ -10,6 +10,9 @@ import { useMoney } from '../../lib/useMoney';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
+import { saveBlob } from '../../lib/saveBlob';
+import { apiErrorMessage } from '../../platform/errors';
+import { useToast } from '../../ui/toastContext';
 import { Card, EmptyState, ErrorState, PageHeader, Pagination, SearchInput, Segmented, SkeletonRows } from '../../ui/Kit';
 import { stateTone } from '../state';
 import type { InvoiceFilter } from '../types';
@@ -30,6 +33,16 @@ export default function Invoices() {
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
+  const toast = useToast();
+  const canExport = session.permissions.has('reports.export');
+  const exporting = useMutation({
+    mutationFn: () => api!.exportList({ state: filter === 'all' ? undefined : filter, search: deferred || undefined }),
+    onSuccess: (f) => {
+      saveBlob(f);
+      toast(t('audit.exported', { file: f.filename }));
+    },
+    onError: (e) => toast(apiErrorMessage(e, t), 'error'),
+  });
   const [page, setPage] = useState(1);
   const query = useQuery({
     queryKey: ['invoices', session.organizationId, session.role ?? session.customRoleName, filter, deferred, page],
@@ -54,11 +67,18 @@ export default function Invoices() {
           title={t('invoices.title')}
           description={t('invoices.description')}
           actions={
-            canManage ? (
-              <Button icon={<Plus className="size-4" />} onClick={() => navigate('/invoices/new')}>
-                {t('invoices.new')}
-              </Button>
-            ) : undefined
+            <>
+              {canExport && (
+                <Button variant="secondary" icon={<Download className="size-4" />} loading={exporting.isPending} onClick={() => exporting.mutate()}>
+                  {t('reports.export')}
+                </Button>
+              )}
+              {canManage && (
+                <Button icon={<Plus className="size-4" />} onClick={() => navigate('/invoices/new')}>
+                  {t('invoices.new')}
+                </Button>
+              )}
+            </>
           }
         />
       </motion.div>

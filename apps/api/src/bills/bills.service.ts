@@ -24,6 +24,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
+import { allPages, major, toCsv } from '../common/list-export.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
@@ -416,6 +417,59 @@ export class BillsService {
         };
       }),
     };
+  }
+
+  /** The list as CSV, with the same filters, every page; recorded as an export */
+  async exportCsv(
+    organizationId: string,
+    q: Omit<Parameters<BillsService['list']>[1], 'page' | 'pageSize'>,
+    ctx: Ctx,
+  ) {
+    const { baseCurrency } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { baseCurrency: true },
+    });
+    const rows = await allPages((page) =>
+      this.list(organizationId, { ...q, page, pageSize: 100 }),
+    );
+    await this.audit.record({
+      action: 'org.report.export',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'report',
+      entityId: 'bills',
+      after: { report: 'bills', ...q, rows: rows.length },
+      req: ctx.req,
+    });
+    return toCsv([
+      [
+        'number',
+        'state',
+        'bill_date',
+        'due_date',
+        'vendor',
+        'vendor_reference',
+        'currency',
+        'total',
+        'paid',
+        'balance',
+      ],
+      ...rows.map((b) => {
+        const cur = b.currency ?? baseCurrency;
+        return [
+          b.number ?? 'Draft',
+          b.state,
+          b.billDate,
+          b.dueDate,
+          b.contact.name,
+          b.vendorReference ?? '',
+          cur,
+          major(b.total, cur),
+          b.status === 'open' ? major(b.amountPaid, cur) : '',
+          b.status === 'open' ? major(b.balance, cur) : '',
+        ];
+      }),
+    ]);
   }
 
   /**

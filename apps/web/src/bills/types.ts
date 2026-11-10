@@ -66,6 +66,8 @@ export interface BillsApi {
     summary: { outstanding: number; overdue: number };
     items: BillSummary[];
   }>;
+  /** The list as CSV, with the same filters (every page) */
+  exportList(q: { state?: BillFilter; contactId?: string; search?: string }): Promise<{ blob: Blob; filename: string }>;
   get(id: string): Promise<Bill>;
   create(input: BillDraftInput): Promise<Bill>;
   update(id: string, input: BillDraftInput): Promise<Bill>;
