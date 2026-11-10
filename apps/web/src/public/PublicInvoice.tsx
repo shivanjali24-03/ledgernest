@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, FileDown, FileX, Smartphone } from 'lucide-react';
 import clsx from 'clsx';
-import { currencyDigits, INDIAN_STATES } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../auth/client';
 import { useIntlLocale } from '../i18n';
@@ -241,6 +241,11 @@ function Invoice({ data, locale }: { data: Awaited<ReturnType<typeof loadPublicI
             </>
           )}
         </dl>
+        {i.currency === 'INR' && (
+          <p className="mt-3 text-end text-xs text-ink-600 dark:text-ink-300">
+            <span className="font-medium">{t('invoices.amountInWords')}</span> {rupeesInWords(i.total)}
+          </p>
+        )}
         {org.terms && (
           <p className="mt-6 whitespace-pre-line border-t border-ink-200 pt-4 text-xs text-ink-500 dark:border-ink-700" dir="auto">
             {org.terms}

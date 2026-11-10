@@ -201,6 +201,9 @@ describe('invoices', () => {
     const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
     expect(text.startsWith('%PDF-1.4')).toBe(true);
     expect(text).toMatch(/\(Tax invoice INV\/[^)]+\/0001\) Tj/);
+    expect(text).toContain('(Amount in words: Indian Rupees One Lakh Eighteen Thousand Only) Tj');
+    // And on screen, under the totals
+    await waitFor(() => expect(screen.getByTestId('amount-in-words')).toHaveTextContent('Amount in words: Indian Rupees One Lakh Eighteen Thousand Only'));
   });
 
   it('shows a pay-by-UPI QR code for what is owed once the UPI ID is set, and puts it in the PDF', { timeout: 20_000 }, async () => {

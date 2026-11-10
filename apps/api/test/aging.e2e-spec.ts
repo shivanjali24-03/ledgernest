@@ -954,6 +954,7 @@ describe('Aging reports (e2e)', () => {
     const text = (file.body as Buffer).toString('latin1');
     expect(text.startsWith('%PDF-1.4')).toBe(true);
     expect(text).toContain('INV/2026-27/0004) Tj');
+    expect(text).toContain('(Amount in words: Indian Rupees Three Hundred Only) Tj');
     const receipts = (
       await as()
         .get(

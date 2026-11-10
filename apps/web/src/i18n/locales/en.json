@@ -2289,7 +2289,8 @@
       "turnedOff": "The link no longer works. Share again for a new one.",
       "message": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, due on {{date}}. View it, download the PDF or pay by UPI here: {{link}}",
       "messagePaid": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, paid in full ({{date}} was the due date). Thank you! View or download it here: {{link}}"
-    }
+    },
+    "amountInWords": "Amount in words:"
   },
   "payments": {
     "title": "Payments",
