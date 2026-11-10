@@ -187,7 +187,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     const totals = { buckets: zero(), total: 0, advance: 0 };
     for (const d of docs) {
       if (d.date > asOf || !d.number) continue;
-      const credited = 'credits' in d ? d.credits.filter((c) => c.date <= asOf).reduce((s, c) => s + c.amount, 0) : 0;
+      const credited = 'credits' in d ? (d.credits ?? []).filter((c) => c.date <= asOf).reduce((s, c) => s + c.amount, 0) : 0;
       const outstanding = d.total - credited - d.payments.filter((p) => p.date <= asOf).reduce((s, p) => s + p.amount, 0);
       if (outstanding <= 0) continue;
       const bucket = agingBucket(d.dueDate, asOf);

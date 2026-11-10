@@ -50,6 +50,8 @@ type Stored = {
   voidNumber: string | null;
   lines: StoredLine[];
   payments?: { id: string; number: string; date: string; amount: number }[];
+  debitNotes?: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
+  credits?: { id: string; number: string; date: string; amount: number }[];
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -168,6 +170,24 @@ export async function demoAdjustBillPaid(billId: string, delta: number, payment?
   save(rows);
 }
 
+/** A debit note's credit put on a bill (or taken off it when the note is voided) */
+export async function demoAdjustBillCredit(billId: string, credit: { id: string; number: string; date: string; amount: number }, remove = false) {
+  const rows = await loadRows();
+  const i = rows.find((r) => r.id === billId);
+  if (!i) return;
+  i.amountPaid += remove ? -credit.amount : credit.amount;
+  i.credits = remove ? (i.credits ?? []).filter((c) => !(c.id === credit.id && c.amount === credit.amount)) : [...(i.credits ?? []), credit];
+  save(rows);
+}
+/** Lists a debit note on its bill, or marks it void there */
+export async function demoTrackDebitNote(billId: string, note: { id: string; number: string; status: 'issued' | 'void'; total: number }) {
+  const rows = await loadRows();
+  const i = rows.find((r) => r.id === billId);
+  if (!i) return;
+  i.debitNotes = [...(i.debitNotes ?? []).filter((n) => n.id !== note.id), note];
+  save(rows);
+}
+
 export const resetDemoBills = () => {
   try {
     localStorage.removeItem(KEY);
@@ -258,13 +278,16 @@ function view(i: Stored): Bill {
     taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
     journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
     payments: i.payments ?? [],
+    debitNotes: i.debitNotes ?? [],
+    credits: i.credits ?? [],
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
       const acc = accounts.find((x) => x.id === l.accountId);
       const g = groups[n];
       return {
-        id: `${i.id}-${n}`,
+        // A UUID like the API's, stable per line: the bill's with the line's index in its last digits
+        id: `${i.id.slice(0, 32)}${n.toString(16).padStart(4, '0')}`,
         lineNo: n + 1,
         description: l.description,
         quantity: l.quantity,

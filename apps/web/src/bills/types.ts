@@ -37,6 +37,10 @@ export interface Bill {
   voidEntry: { id: string; number: string | null } | null;
   /** Payments that settled it */
   payments: { id: string; number: string; date: string; amount: number }[];
+  /** Debit notes raised against it */
+  debitNotes?: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
+  /** Credit from debit notes that came off it */
+  credits?: { id: string; number: string; date: string; amount: number }[];
   lines: BillLine[];
 }
 

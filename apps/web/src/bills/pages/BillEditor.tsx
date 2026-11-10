@@ -3,7 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, BookCheck, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, BookCheck, FileMinus, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
+import DebitNoteDialog from '../../debit-notes/DebitNoteDialog';
+import { useDebitNotesApi } from '../../debit-notes/useDebitNotesApi';
 import ReceiptDialog from '../../payments/ReceiptDialog';
 import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -457,6 +459,8 @@ export default function BillEditor() {
   const [repeating, setRepeating] = useState(false);
   const recurringApi = useRecurringBillsApi();
   const [paying, setPaying] = useState(false);
+  const [debiting, setDebiting] = useState(false);
+  const debitNotesApi = useDebitNotesApi();
   const paymentsApi = usePaymentsApi();
   const canPay = session.permissions.has('payments.manage');
   const voidIt = useMutation({
@@ -494,6 +498,11 @@ export default function BillEditor() {
                 {bill.status === 'open' && canPay && bill.balance > 0 && (
                   <Button icon={<Send className="size-4 rtl:-scale-x-100" />} onClick={() => setPaying(true)}>
                     {t('payments.payBill')}
+                  </Button>
+                )}
+                {bill.status === 'open' && canManage && !bill.currency && (
+                  <Button variant="secondary" icon={<FileMinus className="size-4" />} onClick={() => setDebiting(true)}>
+                    {t('debitNotes.new')}
                   </Button>
                 )}
                 {bill.status !== 'void' && canManage && (
@@ -545,6 +554,16 @@ export default function BillEditor() {
                   </span>
                 </span>
               ))}
+              {(bill!.debitNotes ?? []).map((n) => (
+                <span key={n.id}>
+                  {' · '}
+                  {t('debitNotes.creditedBy')}{' '}
+                  <Link to="/debit-notes" className={link} dir="ltr">
+                    {n.number}
+                  </Link>
+                  {n.status === 'void' && ` (${t('debitNotes.statuses.void')})`}
+                </span>
+              ))}
               {bill!.voidEntry && (
                 <>
                   {' · '}
@@ -568,6 +587,17 @@ export default function BillEditor() {
           onClose={() => setPaying(false)}
           onDone={() => {
             setPaying(false);
+            void queryClient.invalidateQueries({ queryKey: key });
+          }}
+        />
+      )}
+      {debiting && bill && debitNotesApi && (
+        <DebitNoteDialog
+          bill={bill}
+          api={debitNotesApi}
+          onClose={() => setDebiting(false)}
+          onDone={() => {
+            setDebiting(false);
             void queryClient.invalidateQueries({ queryKey: key });
           }}
         />

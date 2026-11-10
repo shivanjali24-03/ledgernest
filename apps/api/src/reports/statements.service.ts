@@ -8,6 +8,7 @@ import {
   billNumber,
   buildStatement,
   creditNoteNumber,
+  vendorCreditNumber,
   csvCell,
   currencyDigits,
   pdfTableBytes,
@@ -158,6 +159,44 @@ export class StatementsService {
           b.vendorReference,
           Number(b.total),
         );
+      // Debit notes bring what's owed down; a vendor refunding one brings it back up
+      const debitNotes = await this.prisma.vendorCredit.findMany({
+        where: { ...where, date: { lte: until } },
+        select: {
+          id: true,
+          total: true,
+          number: true,
+          date: true,
+          vendorReference: true,
+          reason: true,
+          fiscalYear: { select: { name: true } },
+          voidEntry: { select: { date: true } },
+          applications: {
+            where: { journalEntryId: { not: null }, date: { lte: until } },
+            select: { id: true, date: true, amount: true, reference: true },
+          },
+        },
+      });
+      for (const n of debitNotes) {
+        const label = vendorCreditNumber(n.fiscalYear.name, n.number);
+        add(
+          { ...n, currency: null },
+          'debit_note',
+          n.date,
+          label,
+          n.vendorReference ?? n.reason,
+          -Number(n.total),
+        );
+        for (const r of n.applications)
+          add(
+            { id: r.id, currency: null, voidEntry: null },
+            'refund',
+            r.date,
+            label,
+            r.reference,
+            Number(r.amount),
+          );
+      }
     }
     const kind = side === 'receivables' ? 'receipt' : 'payment';
     const payments = await this.prisma.payment.findMany({
