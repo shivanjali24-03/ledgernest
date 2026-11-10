@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { HSN_SAC_PATTERN, ITEM_KINDS, toMinor, type ItemKind, type ItemUpdateInput } from '@ledgernest/shared';
+import { gtinValid, HSN_SAC_PATTERN, ITEM_KINDS, isUqc, toMinor, UQC_UNITS, type ItemKind, type ItemUpdateInput } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../accounts/useAccountsApi';
 import { ApiError } from '../auth/client';
@@ -40,6 +40,11 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
   const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
   const [reorderLevel, setReorderLevel] = useState(item?.reorderLevel ?? '');
+  const [mrp, setMrp] = useState(price(item?.mrp));
+  const [barcode, setBarcode] = useState(item?.barcode ?? '');
+  const [brand, setBrand] = useState(item?.brand ?? '');
+  const [category, setCategory] = useState(item?.category ?? '');
+  const facets = useQuery({ queryKey: ['items', session.organizationId, 'facets'], queryFn: () => api.facets() });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const active = (accounts.data ?? []).filter((a) => !a.archived);
@@ -59,6 +64,10 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     inventoryAccountId: kind === 'goods' && trackStock ? inventoryAccountId || null : null,
     cogsAccountId: kind === 'goods' && trackStock ? cogsAccountId || null : null,
     reorderLevel: kind === 'goods' && trackStock ? reorderLevel.trim() || null : null,
+    mrp: kind === 'goods' && mrp.trim() ? toMinor(mrp, money.digits) : null,
+    barcode: kind === 'goods' ? barcode.trim() || null : null,
+    brand: brand.trim() || null,
+    category: category.trim() || null,
   });
   const save = useMutation({
     mutationFn: () => {
@@ -85,6 +94,9 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     if (v.salePrice === null && salePrice.trim()) next.salePrice = t('items.validation.price');
     if (v.purchasePrice === null && purchasePrice.trim()) next.purchasePrice = t('items.validation.price');
     if (v.hsnSac && !HSN_SAC_PATTERN.test(v.hsnSac)) next.hsnSac = t('items.validation.hsnSac');
+    if (v.mrp === null && kind === 'goods' && mrp.trim()) next.mrp = t('items.validation.price');
+    if (v.mrp !== null && v.salePrice !== null && v.salePrice > v.mrp) next.salePrice = t('items.validation.aboveMrp');
+    if (v.barcode && (!/^[0-9A-Za-z-]{4,40}$/.test(v.barcode) || !gtinValid(v.barcode))) next.barcode = t('items.validation.barcode');
     if (v.trackStock && !v.inventoryAccountId) next.inventoryAccountId = t('inventory.errors.inventory_account_required');
     if (v.trackStock && !v.cogsAccountId) next.cogsAccountId = t('inventory.errors.cogs_account_required');
     if (v.reorderLevel && !/^\d{1,9}(\.\d{1,4})?$/.test(v.reorderLevel)) next.reorderLevel = t('inventory.problems.quantity');
@@ -115,7 +127,35 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
         <SelectField label={t('items.fields.kind')} value={kind} onChange={(e) => setKind(e.target.value as ItemKind)} options={ITEM_KINDS.map((k) => ({ value: k, label: t(`items.kinds.${k}`) }))} />
         <TextField label={t(kind === 'goods' ? 'items.fields.hsn' : 'items.fields.sac')} value={hsnSac} onChange={(e) => setHsnSac(e.target.value)} error={errors.hsnSac} dir="ltr" inputMode="numeric" hint={t('items.hints.hsnSac')} />
         <TextField label={t('items.fields.sku')} value={sku} onChange={(e) => setSku(e.target.value.toUpperCase())} error={errors.sku} dir="ltr" className="font-mono" />
-        <TextField label={t('items.fields.unit')} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={kind === 'goods' ? 'nos' : 'hrs'} />
+        {kind === 'goods' ? (
+          <SelectField
+            label={t('items.fields.unit')}
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+            hint={t('items.hints.uqc')}
+            options={[{ value: '', label: t('items.chooseUnit') }, ...(unit && !isUqc(unit) ? [{ value: unit, label: unit }] : []), ...UQC_UNITS.map(([code, name]) => ({ value: code, label: `${code} · ${t(`items.uqc.${code}`, { defaultValue: name })}` }))]}
+          />
+        ) : (
+          <TextField label={t('items.fields.unit')} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="hrs" />
+        )}
+        {kind === 'goods' && (
+          <>
+            <TextField label={t('items.fields.mrp', { currency: money.currency })} value={mrp} onChange={(e) => setMrp(e.target.value)} error={errors.mrp} hint={t('items.hints.mrp')} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+            <TextField label={t('items.fields.barcode')} value={barcode} onChange={(e) => setBarcode(e.target.value.trim())} error={errors.barcode} hint={t('items.hints.barcode')} inputMode="numeric" dir="ltr" className="font-mono" />
+          </>
+        )}
+        <TextField label={t('items.fields.brand')} value={brand} onChange={(e) => setBrand(e.target.value)} error={errors.brand} list="item-brands" dir="auto" />
+        <TextField label={t('items.fields.category')} value={category} onChange={(e) => setCategory(e.target.value)} error={errors.category} list="item-categories" dir="auto" />
+        <datalist id="item-brands">
+          {(facets.data?.brands ?? []).map((b) => (
+            <option key={b} value={b} />
+          ))}
+        </datalist>
+        <datalist id="item-categories">
+          {(facets.data?.categories ?? []).map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
         <div className="sm:col-span-2">
           <TextField label={t('items.fields.description')} value={description} onChange={(e) => setDescription(e.target.value)} dir="auto" />
         </div>

@@ -9,6 +9,7 @@ import {
   tdsDepositDue,
   type ComplianceItem,
   todayIn,
+  uqcOf,
   creditNoteNumber,
   documentsIssued,
   currencyDigits,
@@ -645,7 +646,7 @@ export class GstReturnsService {
             data: g.hsn.map((h, k) => ({
               num: k + 1,
               hsn_sc: h.hsn,
-              uqc: h.unit ?? 'NA',
+              uqc: uqcOf(h.unit),
               qty: Number(h.quantity),
               rt: h.rate,
               txval: rupees(h.taxable),

@@ -740,6 +740,12 @@ model Item {
   cogsAccountId      String?   @map("cogs_account_id") @db.Uuid
   /// Stock at or below this is low (tracked goods only)
   reorderLevel       Decimal?  @map("reorder_level") @db.Decimal(13, 4)
+  /// Maximum retail price, tax included, in paise (Legal Metrology)
+  mrp                BigInt?
+  /// The barcode on the pack; unique in the organisation
+  barcode            String?
+  brand              String?
+  category           String?
   archivedAt         DateTime? @map("archived_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
@@ -759,6 +765,8 @@ model Item {
 
   @@unique([organizationId, id])
   @@unique([organizationId, sku])
+  @@unique([organizationId, barcode])
+  @@index([organizationId, category])
   @@index([organizationId, archivedAt])
   @@map("items")
 }

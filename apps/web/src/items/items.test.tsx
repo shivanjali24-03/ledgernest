@@ -61,6 +61,39 @@ describe('products and services', () => {
     expect(within(added).getByText('₹45,000.00')).toBeInTheDocument();
   });
 
+  it('adds packed goods with a GST unit, MRP, barcode, brand and category, checking the barcode and the MRP', async () => {
+    renderApp();
+    await row('Software development');
+    await userEvent.click(screen.getByRole('button', { name: 'Add item' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New product or service' });
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Assam Tea 250g');
+    await userEvent.selectOptions(within(dialog).getByLabelText('Type'), 'goods');
+    const unit = within(dialog).getByLabelText('Unit') as HTMLSelectElement;
+    expect(unit.tagName).toBe('SELECT');
+    await userEvent.selectOptions(unit, 'PAC');
+    await userEvent.type(within(dialog).getByLabelText('Sale price (INR)'), '150');
+    await userEvent.type(within(dialog).getByLabelText('MRP (INR)'), '140');
+    await userEvent.type(within(dialog).getByLabelText('Barcode'), '8901030865278');
+    await userEvent.type(within(dialog).getByLabelText('Brand'), 'Tata');
+    await userEvent.type(within(dialog).getByLabelText('Category'), 'Beverages');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add item' }));
+    expect(await within(dialog).findByText('The sale price is more than the MRP.')).toBeInTheDocument();
+    expect(within(dialog).getByText('That barcode isn’t right: check the number on the pack.')).toBeInTheDocument();
+    await userEvent.clear(within(dialog).getByLabelText('Sale price (INR)'));
+    await userEvent.type(within(dialog).getByLabelText('Sale price (INR)'), '120');
+    await userEvent.clear(within(dialog).getByLabelText('Barcode'));
+    await userEvent.type(within(dialog).getByLabelText('Barcode'), '8901030865275');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add item' }));
+    expect(await screen.findByText('Assam Tea 250g added')).toBeInTheDocument();
+    const added = await row('Assam Tea 250g');
+    expect(within(added).getByText(/Tata · Beverages/)).toBeInTheDocument();
+    expect(within(added).getByText(/MRP ₹140.00/)).toBeInTheDocument();
+    // A scanned barcode finds it
+    await userEvent.type(screen.getByRole('searchbox'), '8901030865275');
+    await waitFor(() => expect(screen.queryByText('Software development')).not.toBeInTheDocument());
+    expect(screen.getByText('Assam Tea 250g')).toBeInTheDocument();
+  }, 30_000);
+
   it('refuses a second item with the same SKU', async () => {
     renderApp();
     await row('Software development');

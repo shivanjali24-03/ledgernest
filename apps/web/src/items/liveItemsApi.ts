@@ -15,9 +15,11 @@ export function createLiveItemsApi(client: AuthClient, organizationId: string): 
       const p = new URLSearchParams();
       if (q.search) p.set('search', q.search);
       if (q.kind) p.set('kind', q.kind);
+      if (q.category) p.set('category', q.category);
       if (q.archived) p.set('archived', 'true');
       return r(`?${p}`);
     },
+    facets: () => r('/facets'),
     create: (input) => r('', { method: 'POST', json: input }),
     update: (id, input) => r(`/${id}`, { method: 'PATCH', json: input }),
     archive: (id, archive) => r(`/${id}/${archive ? 'archive' : 'restore'}`, { method: 'POST' }),
