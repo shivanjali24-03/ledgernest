@@ -3586,7 +3586,30 @@
     "notSaved": "Nothing was saved: some rows need fixing.",
     "done": "{{count}} rows imported",
     "openingDone": "Opening balances saved as a draft entry",
-    "noPermission": "You don’t have permission to import anything here."
+    "noPermission": "You don’t have permission to import anything here.",
+    "tally": {
+      "title": "Move from Tally",
+      "body": "In Tally, open Display More Reports › List of Accounts, export it as XML, and choose the file here. Your ledgers become accounts, Sundry Debtors and Creditors become customers and vendors (with GSTIN, address and credit days), and the opening balances go into a draft entry to check.",
+      "choose": "Choose Tally XML",
+      "noLedgers": "No ledgers were found in that file. Export the List of Accounts as XML from Tally.",
+      "planLabel": "What will be imported",
+      "accounts_one": "1 account to add",
+      "accounts_other": "{{count}} accounts to add",
+      "matched_one": "1 already in your chart",
+      "matched_other": "{{count}} already in your chart",
+      "parties": "{{customers}} customers and {{vendors}} vendors",
+      "openings": "Opening balances: {{debit}} debit, {{credit}} credit",
+      "skipped": "Left out: {{names}}",
+      "partyNote": "Customer and vendor balances go to the Debtors and Creditors accounts as totals; any difference goes to Opening balance equity. Check the draft entry before posting it.",
+      "date": "Opening balances on",
+      "import": "Import from Tally",
+      "stopped": "The import stopped: fix the file and try again.",
+      "failedStep": "{{step}} couldn’t be imported:",
+      "rowError": "Row {{row}}: {{message}}",
+      "done": "Imported from Tally.",
+      "finished": "Imported from Tally.",
+      "review": "Review the opening balances"
+    }
   },
   "integrations": {
     "title": "Integrations",

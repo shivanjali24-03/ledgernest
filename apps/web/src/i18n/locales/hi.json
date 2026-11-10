@@ -3586,7 +3586,30 @@
     "notSaved": "कुछ सहेजा नहीं गया: कुछ पंक्तियाँ ठीक करनी हैं।",
     "done": "{{count}} पंक्तियाँ आयात हुईं",
     "openingDone": "प्रारंभिक शेष ड्राफ़्ट प्रविष्टि के रूप में सहेजे गए",
-    "noPermission": "आपको यहाँ कुछ भी आयात करने की अनुमति नहीं है।"
+    "noPermission": "आपको यहाँ कुछ भी आयात करने की अनुमति नहीं है।",
+    "tally": {
+      "title": "Tally से आएँ",
+      "body": "Tally में Display More Reports › List of Accounts खोलें, उसे XML के रूप में निर्यात करें, और फ़ाइल यहाँ चुनें। आपके लेजर खाते बनेंगे, Sundry Debtors और Creditors ग्राहक व विक्रेता बनेंगे (GSTIN, पते और क्रेडिट दिनों के साथ), और प्रारंभिक शेष जाँच के लिए एक ड्राफ़्ट प्रविष्टि में जाएँगे।",
+      "choose": "Tally XML चुनें",
+      "noLedgers": "उस फ़ाइल में कोई लेजर नहीं मिला। Tally से List of Accounts को XML के रूप में निर्यात करें।",
+      "planLabel": "क्या आयात होगा",
+      "accounts_one": "जोड़ने के लिए 1 खाता",
+      "accounts_other": "जोड़ने के लिए {{count}} खाते",
+      "matched_one": "1 पहले से आपके खातों में",
+      "matched_other": "{{count}} पहले से आपके खातों में",
+      "parties": "{{customers}} ग्राहक और {{vendors}} विक्रेता",
+      "openings": "प्रारंभिक शेष: {{debit}} नामे, {{credit}} जमा",
+      "skipped": "छोड़े गए: {{names}}",
+      "partyNote": "ग्राहक और विक्रेता की शेष राशि Debtors और Creditors खातों में कुल के रूप में जाती है; कोई अंतर Opening balance equity में जाता है। पोस्ट करने से पहले ड्राफ़्ट प्रविष्टि जाँचें।",
+      "date": "प्रारंभिक शेष की तारीख",
+      "import": "Tally से आयात करें",
+      "stopped": "आयात रुक गया: फ़ाइल ठीक करें और फिर कोशिश करें।",
+      "failedStep": "{{step}} आयात नहीं हो सका:",
+      "rowError": "पंक्ति {{row}}: {{message}}",
+      "done": "Tally से आयात हो गया।",
+      "finished": "Tally से आयात हो गया।",
+      "review": "प्रारंभिक शेष देखें"
+    }
   },
   "integrations": {
     "title": "एकीकरण",

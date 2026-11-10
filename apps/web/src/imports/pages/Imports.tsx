@@ -17,6 +17,7 @@ import { Card, EmptyState, PageHeader, Segmented } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import type { ImportResult } from '../types';
 import { useImportsApi } from '../useImportsApi';
+import TallyImportCard from '../TallyImportCard';
 
 const MAX_FILE_BYTES = 5_000_000;
 
@@ -99,6 +100,11 @@ export default function Imports() {
       <motion.div variants={fadeUp}>
         <PageHeader eyebrow={<span dir="auto">{session.organization}</span>} title={t('imports.title')} description={t('imports.description')} />
       </motion.div>
+      {(['accounts', 'contacts', 'opening_balances'] as const).every((k) => kinds.includes(k)) && (
+        <motion.div variants={fadeUp}>
+          <TallyImportCard api={api} />
+        </motion.div>
+      )}
       <motion.div variants={fadeUp}>
         <Card className="space-y-4 p-5">
           <Segmented<ImportKind> label={t('imports.what')} value={kind} onChange={choose} options={kinds.map((k) => ({ value: k, label: t(`imports.kinds.${k}`) }))} />
