@@ -7,6 +7,7 @@ import { gstinCheckChar } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { MailService } from '../src/mail/mail.service.js';
 
 type Entry = {
   lines: {
@@ -286,6 +287,27 @@ describe('Credit notes (e2e)', () => {
     expect(text).toContain(
       '(Amount in words: Indian Rupees Two Thousand Nine Hundred and Fifty Only) Tj',
     );
+  });
+
+  it('emails the credit note to the customer as a PDF', async () => {
+    process.env.SMTP_URL = 'json';
+    try {
+      await as()
+        .post(`/credit-notes/${cn.one!.id}/email`, {
+          email: 'accounts@kumar.example',
+        })
+        .expect(200);
+      expect(app.get(MailService).captured.at(-1)).toMatchObject({
+        to: ['accounts@kumar.example'],
+        subject: expect.stringMatching(/^Credit note CN\/2026-27\/0001 from /),
+        attachments: ['credit-note-cn-2026-27-0001.pdf'],
+      });
+      expect(app.get(MailService).capturedText.at(-1)).toMatch(
+        /Please find attached credit note CN\/2026-27\/0001 against invoice INV\//,
+      );
+    } finally {
+      delete process.env.SMTP_URL;
+    }
   });
 
   it('refuses crediting more than is left, a line of another invoice, or as an Auditor', async () => {

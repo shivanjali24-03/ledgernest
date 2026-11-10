@@ -2912,7 +2912,16 @@
       "before_credit_note": "A refund can’t be dated before its credit note."
     },
     "returnsStock": "Goods came back into stock",
-    "returnsStockHint": "Tracked items return at the cost they left at, out of cost of sales. Leave it off for a price correction."
+    "returnsStockHint": "Tracked items return at the cost they left at, out of cost of sales. Leave it off for a price correction.",
+    "email": {
+      "action": "Email credit note",
+      "title": "Email credit note {{number}}",
+      "body": "The customer gets the credit note as a PDF.",
+      "blankHint": "Leave blank to use the customer’s email address.",
+      "sent": "Sent to {{email}}.",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
+      "noEmail": "This customer has no email address. Enter one to send it to."
+    }
   },
   "recurring": {
     "title": "Recurring invoices",
@@ -4183,6 +4192,15 @@
       "stock_line": "Goods kept in stock go back with a stock adjustment instead.",
       "bill_currency": "Debit notes are for bills in rupees for now.",
       "bill_not_open": "Only recorded bills can be credited."
+    },
+    "email": {
+      "action": "Email debit note",
+      "title": "Email debit note {{number}}",
+      "body": "The vendor gets the debit note as a PDF.",
+      "blankHint": "Leave blank to use the vendor’s email address.",
+      "sent": "Sent to {{email}}.",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
+      "noEmail": "This vendor has no email address. Enter one to send it to."
     }
   },
   "account": {

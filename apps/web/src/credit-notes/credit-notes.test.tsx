@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -61,6 +61,18 @@ describe('credit notes', () => {
     expect(row).toHaveTextContent('₹11,800.00');
     expect(row).toHaveTextContent('Four hours not delivered');
     expect(row).toHaveTextContent(/₹11,800.00 on INV\//);
+    // Emailed to the customer (the demo only pretends)
+    await waitFor(
+      () => {
+        const item = screen.queryByRole('menuitem', { name: 'Email credit note' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(within(row).getByRole('button', { name: /^Actions for CN\// }));
+        expect(screen.getByRole('dialog', { name: /^Email credit note CN\// })).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
+    fireEvent.click(within(screen.getByRole('dialog', { name: /^Email credit note CN\// })).getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in', {}, { timeout: 4000 })).toBeInTheDocument();
     // The PDF for the customer
     let saved: Blob | undefined;
     Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });

@@ -12,6 +12,7 @@ export function createLiveCreditNotesApi(client: AuthClient, organizationId: str
       return r(`?${p}`);
     },
     get: (id) => r(`/${id}`),
+    email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     pdf: async (id) => {
       const { blob, filename } = await client.download(`/credit-notes/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
       return { blob, filename: filename ?? 'credit-note.pdf' };
