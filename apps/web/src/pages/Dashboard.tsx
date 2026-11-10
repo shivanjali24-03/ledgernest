@@ -88,6 +88,7 @@ const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   approvals_waiting: '/approvals',
   low_stock: '/inventory',
   quotes_expiring: '/quotes?state=open',
+  recurring_bills_due: '/recurring-bills',
 };
 
 export default function Dashboard() {

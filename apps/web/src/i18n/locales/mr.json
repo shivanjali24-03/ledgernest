@@ -112,7 +112,8 @@
       "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत",
       "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत",
       "low_stock": "{{count}} वस्तूंचा साठा कमी",
-      "quotes_expiring": "{{count}} कोटेशनची मुदत या आठवड्यात संपत आहे"
+      "quotes_expiring": "{{count}} कोटेशनची मुदत या आठवड्यात संपत आहे",
+      "recurring_bills_due": "{{count}} आवर्ती बिले देय"
     }
   },
   "comingSoon": {

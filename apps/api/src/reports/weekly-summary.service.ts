@@ -19,6 +19,7 @@ const ATTENTION: Record<string, (n: number, amount: string) => string> = {
   approvals_waiting: (n) => `${n} waiting for approval`,
   low_stock: (n) => `${n} item${n === 1 ? '' : 's'} low on stock`,
   quotes_expiring: (n) => `${n} quote${n === 1 ? '' : 's'} expiring this week`,
+  recurring_bills_due: (n) => `${n} recurring bill${n === 1 ? '' : 's'} due`,
 };
 
 /**

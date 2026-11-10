@@ -254,4 +254,17 @@ describe('Recurring bills (e2e)', () => {
       ]),
     );
   });
+
+  it('flags on the dashboard a schedule whose next bill is overdue', async () => {
+    // The rent schedule is active again, and its next date (1 August) has passed without a run
+    const alerts = (
+      (await as().get('/reports/dashboard').expect(200)).body as {
+        alerts: { kind: string; count: number }[];
+      }
+    ).alerts;
+    expect(alerts.find((a) => a.kind === 'recurring_bills_due')).toEqual({
+      kind: 'recurring_bills_due',
+      count: 1,
+    });
+  });
 });

@@ -112,7 +112,8 @@
       "draft_entries": "{{count}} قيود مسودة غير مرحّلة",
       "approvals_waiting": "{{count}} بانتظار موافقتك",
       "low_stock": "{{count}} أصناف مخزونها منخفض",
-      "quotes_expiring": "{{count}} عروض أسعار تنتهي هذا الأسبوع"
+      "quotes_expiring": "{{count}} عروض أسعار تنتهي هذا الأسبوع",
+      "recurring_bills_due": "{{count}} فواتير متكررة مستحقة"
     }
   },
   "comingSoon": {
