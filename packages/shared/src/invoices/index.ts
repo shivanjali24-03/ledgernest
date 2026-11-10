@@ -121,6 +121,8 @@ export const invoiceDraftSchema = z
     dueDate: isoDaySchema.nullable().optional().default(null),
     /** The number series to number it from; omitted = the default */
     seriesId: z.uuid().nullable().optional().default(null),
+    /** Interest on late payment for this invoice, basis points a year: null = the customer's or organisation's, 0 = none */
+    interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
     reference: text(64),
     notes: text(1000),
     /** GST state code of the place of supply; omitted = the customer's state */

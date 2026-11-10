@@ -37,6 +37,8 @@ export interface SalesDraft {
   currency: string | null;
   /** The number series it will be numbered from (invoices) */
   seriesId?: string | null;
+  /** Its own interest rate on late payment (invoices; null = the default) */
+  interestRateBp?: number | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
@@ -47,6 +49,7 @@ export interface SalesDraftPayload {
   notes: string;
   placeOfSupply: string | null;
   seriesId?: string | null;
+  interestRateBp?: number | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
@@ -64,6 +67,8 @@ export interface SalesDraftConfig {
   untilHint: (customer: Contact | null) => string | undefined;
   /** Number series to choose from (invoices, when there's more than one) */
   series?: { id: string; name: string; preview: string; isDefault: boolean }[];
+  /** It can carry its own interest rate on late payment (invoices) */
+  interest?: boolean;
   /** Lines of goods kept in batches choose their batch (invoices) */
   batches?: boolean;
   /** Warn when this takes the customer over their credit limit (invoices) */
@@ -130,6 +135,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
+  const [interestRate, setInterestRate] = useState(invoice?.interestRateBp != null ? String(invoice.interestRateBp / 100) : '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
       ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
@@ -181,6 +187,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
+    ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
   const save = useMutation({
@@ -224,6 +231,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         <TextField label={config.labels.date} type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} disabled={!canManage} />
         <TextField label={config.labels.until} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate ? config.untilHint(customer) : undefined} />
         <TextField label={t('invoices.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} disabled={!canManage} placeholder="PO-4471" dir="auto" />
+        {config.interest && <TextField label={t('invoices.interest.rateField')} value={interestRate} onChange={(e) => setInterestRate(e.target.value)} disabled={!canManage} inputMode="decimal" dir="ltr" placeholder={t('invoices.interest.rateDefault')} hint={t('invoices.interest.rateHint')} />}
         {config.series && config.series.length > 1 && (
           <SelectField
             label={t('invoices.fields.series')}

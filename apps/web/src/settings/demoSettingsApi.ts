@@ -51,6 +51,9 @@ function save(s: Stored) {
   }
 }
 
+/** The demo company's settings as they stand (for invoices' interest terms) */
+export const demoSettings = () => load().settings;
+
 /** Test helper */
 export const resetDemoSettings = () => {
   try {

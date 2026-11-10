@@ -1018,7 +1018,10 @@
       "udyamNumber": "Your Udyam registration number",
       "msmeBankRate": "RBI bank rate (%)",
       "gstScheme": "GST scheme",
-      "compositionRate": "Composition rate"
+      "compositionRate": "Composition rate",
+      "interestRate": "Interest, % a year",
+      "interestMethod": "Worked out",
+      "interestGraceDays": "Days of grace"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1032,7 +1035,9 @@
       "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first.",
       "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly.",
       "composition": "Invoices become bills of supply with no GST charged, saying you’re a composition taxable person; due dates show CMP-08 each quarter and GSTR-4 each year.",
-      "compositionRate": "The tax for each quarter (CMP-08) is your turnover at this rate, shown on the dashboard’s due dates."
+      "compositionRate": "The tax for each quarter (CMP-08) is your turnover at this rate, shown on the dashboard’s due dates.",
+      "interestRate": "Blank for no interest. 18% is common in India.",
+      "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -1112,6 +1117,14 @@
       "100": "1%: traders and manufacturers",
       "500": "5%: restaurants",
       "600": "6%: services"
+    },
+    "interest": {
+      "title": "Interest on late payment",
+      "description": "Charge interest on invoices paid after their due date. The terms are printed on each invoice and kept with it; a customer can have their own rate, or none."
+    },
+    "interestMethods": {
+      "simple": "Simple interest, day by day",
+      "monthly": "Compounded monthly"
     }
   },
   "accounts": {
@@ -2229,14 +2242,17 @@
       "shippingAddress": "Shipping address",
       "creditLimit": "Credit limit",
       "msme": "MSME (Udyam)",
-      "udyam": "Udyam registration number"
+      "udyam": "Udyam registration number",
+      "interestRate": "Interest on late payment, % a year"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
       "paymentTerms": "0 = due on receipt",
       "creditLimit": "The most they may owe, in {{currency}}. Leave blank for no limit. Invoices over it show a warning.",
       "badLimit": "Enter an amount, like 50000.",
-      "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h)."
+      "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h).",
+      "interestDefault": "As set for the organisation",
+      "interestRate": "Blank uses the organisation's rate; 0 charges none."
     },
     "address": {
       "line1": "Address",
@@ -2729,6 +2745,21 @@
         "ackDate": "Enter the Ack date.",
         "signedQrCode": "Paste the signed QR code from the portal."
       }
+    },
+    "interest": {
+      "terms_one": "Interest at {{rate}}% a year ({{method}}) is charged on amounts unpaid after the due date, if not paid within {{count}} day of it.",
+      "terms_other": "Interest at {{rate}}% a year ({{method}}) is charged on amounts unpaid after the due date, if not paid within {{count}} days of it.",
+      "methods": {
+        "simple": "simple",
+        "monthly": "compounded monthly"
+      },
+      "accrued": "{{days}} days late: interest so far {{amount}}, growing by {{perDay}} a day.",
+      "inGrace_one": "Past the due date, but within the grace: no interest if paid in the next {{count}} day.",
+      "inGrace_other": "Past the due date, but within the grace: no interest if paid in the next {{count}} days.",
+      "rateField": "Interest, % a year",
+      "rateDefault": "Customer’s or organisation’s",
+      "rateHint": "Only for this invoice; 0 charges none.",
+      "termsNoGrace": "Interest at {{rate}}% a year ({{method}}) is charged on amounts unpaid after the due date."
     }
   },
   "payments": {

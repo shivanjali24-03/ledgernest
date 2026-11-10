@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel } from '@ledgernest/shared';
@@ -230,6 +231,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
       {org?.invoiceTerms && (
         <p className="mt-6 whitespace-pre-line text-xs text-ink-500" dir="auto" data-testid="invoice-terms">
           {org.invoiceTerms}
+        </p>
+      )}
+      {i.interest && (
+        <p className={clsx('text-xs text-ink-500', !org?.invoiceTerms && 'mt-6')} data-testid="invoice-interest-terms">
+          {t(i.interest.graceDays ? 'invoices.interest.terms' : 'invoices.interest.termsNoGrace', { rate: i.interest.rateBp / 100, method: t(`invoices.interest.methods.${i.interest.method}`), grace: i.interest.graceDays, count: i.interest.graceDays })}
         </p>
       )}
     </article>

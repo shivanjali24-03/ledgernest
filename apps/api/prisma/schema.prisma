@@ -98,6 +98,10 @@ model Organization {
   gstScheme            String             @default("regular") @map("gst_scheme")
   /// The composition rate in basis points: 100 (traders, manufacturers), 500 (restaurants) or 600 (services)
   compositionRateBp    Int                @default(100) @map("composition_rate_bp")
+  /// Interest on invoices paid late: yearly rate in basis points (null = none), simple or monthly, days of grace
+  interestRateBp       Int?               @map("interest_rate_bp")
+  interestMethod       String             @default("simple") @map("interest_method")
+  interestGraceDays    Int                @default(0) @map("interest_grace_days")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
@@ -687,6 +691,8 @@ model Contact {
   /// MSME category from the vendor's Udyam certificate (micro, small or medium); null = not an MSME
   msmeCategory     String?   @map("msme_category")
   udyamNumber      String?   @map("udyam_number")
+  /// Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none
+  interestRateBp   Int?      @map("interest_rate_bp")
   notes            String?
   /// A link the customer opens without signing in: what they owe across invoices, to pay by UPI (random, revocable)
   shareToken       String?   @unique @map("share_token")
@@ -792,6 +798,10 @@ model Invoice {
   /// The series that numbered it, and the number as written (kept, so changing the series never renumbers it)
   seriesId            String?   @map("series_id") @db.Uuid
   fullNumber          String?   @map("full_number")
+  /// Interest terms: on a draft, a rate chosen for it (null = the default); once issued, the terms it was issued with
+  interestRateBp      Int?      @map("interest_rate_bp")
+  interestMethod      String?   @map("interest_method")
+  interestGraceDays   Int?      @map("interest_grace_days")
   fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
   status              String    @default("draft") /// draft | issued | void
   issueDate           DateTime  @map("issue_date") @db.Date

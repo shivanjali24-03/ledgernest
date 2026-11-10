@@ -30,6 +30,19 @@ export interface InvoiceLine {
   expiryDate?: string | null;
 }
 
+export interface InvoiceInterest {
+  rateBp: number;
+  method: 'simple' | 'monthly';
+  graceDays: number;
+  /** The sentence printed on the invoice */
+  text: string;
+  /** Interest to today, and what it grows by each day */
+  accrued: number;
+  perDay: number;
+  daysLate: number;
+  inGrace: boolean;
+}
+
 export interface Invoice {
   id: string;
   number: string | null;
@@ -42,6 +55,10 @@ export interface Invoice {
   placeOfSupply: string | null;
   /** The number series it's (to be) numbered from */
   seriesId?: string | null;
+  /** A draft's own interest rate (basis points; null = the default, 0 = none) */
+  interestRateBp?: number | null;
+  /** Once issued: its interest terms and what's accrued */
+  interest?: InvoiceInterest | null;
   reference: string | null;
   notes: string | null;
   contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; phone?: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };
