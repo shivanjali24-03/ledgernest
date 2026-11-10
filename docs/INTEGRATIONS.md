@@ -114,6 +114,7 @@ Scheduled reports (**Reports → Scheduled**) are always kept in the app, to dow
 | `SCHEDULED_REPORTS_MINUTES` | `15` (how often due reports are made; 0 turns it off) |
 | `INVOICE_REMINDERS_MINUTES` | `60` (how often automatic payment reminders go out; 0 turns it off) |
 | `WEEKLY_SUMMARY_MINUTES` | `60` (how often to check for Monday weekly summaries; 0 turns it off) |
+| `HOUSEKEEPING_MINUTES` | `360` (how often expired sign-in tokens, used or expired reset links, and webhook deliveries older than 90 days are cleared; the audit trail is never touched; 0 turns it off) |
 
 Reports come as Excel, CSV or PDF. PDFs use the standard PDF fonts, which cover Western European text: the rupee sign is written "Rs", and names in Devanagari (Hindi, Marathi) show as "?", so choose Excel or CSV for those.
 
