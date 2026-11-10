@@ -71,15 +71,17 @@ describe('debit notes', () => {
       { timeout: 8000 },
     );
     expect(new TextDecoder('latin1').decode(await saved!.arrayBuffer())).toMatch(/\(Debit note DN\/.*\) Tj/);
+    // Open the menu and pick Void in one retried step: the menu may still be closing from the download
     await waitFor(
       () => {
-        if (!screen.queryByRole('menuitem', { name: 'Void debit note' })) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
-        expect(screen.getByRole('menuitem', { name: 'Void debit note' })).toBeInTheDocument();
+        const item = screen.queryByRole('menuitem', { name: 'Void debit note' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
+        expect(screen.getByRole('dialog', { name: /^Void DN\/.*\?$/ })).toBeInTheDocument();
       },
-      { timeout: 6000 },
+      { timeout: 8000 },
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Void debit note' }));
-    const confirm = await screen.findByRole('dialog', { name: /^Void DN\/.*\?$/ });
+    const confirm = screen.getByRole('dialog', { name: /^Void DN\/.*\?$/ });
     await userEvent.click(within(confirm).getByRole('button', { name: 'Void debit note' }));
     expect(await screen.findByText(/^DN\/.*\/0001 voided$/, {}, { timeout: 4000 })).toBeInTheDocument();
 
