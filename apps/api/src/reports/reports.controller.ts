@@ -49,6 +49,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CashForecastService } from './cash-forecast.service.js';
+import { TallyExportService } from './tally-export.service.js';
 import { TdsReportService } from './tds-report.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
@@ -99,6 +100,7 @@ export class ReportsController {
     private readonly statements: StatementsService,
     private readonly sales: SalesReportService,
     private readonly forecast: CashForecastService,
+    private readonly tally: TallyExportService,
     private readonly tds: TdsReportService,
   ) {}
 
@@ -537,6 +539,46 @@ export class ReportsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.tds.report(tenant.organizationId, q.from, q.to, q.side);
+  }
+
+  /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates; import masters first */
+  @Get('tally/export')
+  @RequirePermission('reports.export')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('application/xml')
+  async tallyExport(
+    @Query(
+      new ZodValidationPipe(
+        z
+          .object({
+            part: z.enum(['masters', 'vouchers']),
+            from: isoDaySchema.optional(),
+            to: isoDaySchema.optional(),
+          })
+          .refine(
+            (v) => v.part === 'masters' || (v.from && v.to && v.from <= v.to),
+            {
+              path: ['to'],
+              message: 'Vouchers need dates, the start before the end.',
+            },
+          ),
+      ),
+    )
+    q: { part: 'masters' | 'vouchers'; from?: string; to?: string },
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const xml =
+      q.part === 'masters'
+        ? await this.tally.masters(tenant.organizationId)
+        : (await this.tally.vouchers(tenant.organizationId, q.from!, q.to!))
+            .xml;
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="tally-${q.part}${q.part === 'vouchers' ? `-${q.from}-${q.to}` : ''}.xml"`,
+    );
+    return xml;
   }
 
   @Get('compliance')

@@ -1,4 +1,4 @@
-import { panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -410,6 +410,32 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       payments,
     };
   };
+  /** The demo's books for Tally: its accounts and contacts as ledgers, its posted entries as vouchers */
+  const tally = async (part: 'masters' | 'vouchers', from?: string, to?: string) => {
+    const [{ demoAccountRows }, { demoContactRows }] = await Promise.all([import('../accounts/demoAccountsApi'), import('../contacts/demoContactsApi')]);
+    const accounts = demoAccountRows();
+    const contacts = demoContactRows();
+    const names = uniqueLedgerNames([...accounts.map((a) => ({ key: a.id, name: a.name, suffix: a.code })), ...contacts.map((c) => ({ key: c.id, name: c.name, suffix: c.isCustomer ? 'customer' : 'vendor' }))]);
+    const company = 'Nest Demo Private Limited';
+    if (part === 'masters') {
+      const xml = tallyMastersXml(company, [...accounts.map((a) => ({ name: names.get(a.id)!, parent: tallyGroup(a.type, a.subtype) })), ...contacts.map((c) => ({ name: names.get(c.id)!, parent: c.isCustomer ? 'Sundry Debtors' : 'Sundry Creditors', gstin: c.taxId }))]);
+      return { blob: new Blob([xml], { type: 'application/xml' }), filename: 'tally-masters.xml' };
+    }
+    const journals = createDemoJournalsApi(() => true);
+    const list = await journals.list({ status: 'posted', from, to, page: 1, pageSize: 500 });
+    const entries = await Promise.all(list.items.map((e) => journals.get(e.id)));
+    const byId = new Map(accounts.map((a) => [a.id, a]));
+    const vouchers = entries
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((e) => {
+        const lines = e.lines.map((l) => {
+          const a = byId.get(l.accountId);
+          return { ledger: names.get(l.accountId) ?? l.account.name, bank: a?.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash'), debit: l.debit, credit: l.credit };
+        });
+        return { type: tallyVoucherType(lines, null), date: e.date, number: e.number ?? '', narration: e.memo, lines };
+      });
+    return { blob: new Blob([tallyVouchersXml(company, vouchers)], { type: 'application/xml' }), filename: `tally-vouchers-${from}-${to}.xml` };
+  };
   /** The demo organisation is GST-registered in Maharashtra */
   const compliance = async (): Promise<Compliance> => {
     const today = todayIn('Asia/Kolkata');
@@ -545,6 +571,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     cashForecast,
     compliance,
     tds,
+    tally,
     gstr1,
     async exportGstr1(from, to, format) {
       guard();

@@ -224,6 +224,8 @@ export interface ReportsApi {
   compliance(): Promise<Compliance>;
   /** TDS kept back from vendor payments in the dates */
   tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
+  /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates */
+  tally(part: 'masters' | 'vouchers', from?: string, to?: string): Promise<{ blob: Blob; filename: string }>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }

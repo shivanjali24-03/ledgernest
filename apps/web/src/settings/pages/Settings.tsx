@@ -20,6 +20,7 @@ import { useToast } from '../../ui/toastContext';
 import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField } from '../form';
 import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
+import TallyCard from '../TallyCard';
 import ReminderPolicyCard from '../../invoices/ReminderPolicyCard';
 import type { OrganizationSettings, SettingsApi } from '../types';
 import { useSettingsApi } from '../useSettingsApi';
@@ -277,6 +278,11 @@ export default function Settings() {
       {session.permissions.has('invoices.view') && (
         <motion.div variants={fadeUp}>
           <ReminderPolicyCard />
+        </motion.div>
+      )}
+      {session.permissions.has('reports.export') && (
+        <motion.div variants={fadeUp}>
+          <TallyCard />
         </motion.div>
       )}
       {session.permissions.has('org.delete') && (
