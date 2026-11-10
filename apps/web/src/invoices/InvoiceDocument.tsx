@@ -169,7 +169,7 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
                   {plain(l.unitPrice)}
                   {l.discount > 0 && <span className="block text-xs text-ink-500">−{l.discount}%</span>}
                 </td>
-                <td className="py-2.5 text-end text-ink-600 dark:text-ink-300">{l.taxGroup?.name ?? '—'}</td>
+                <td className="py-2.5 text-end text-ink-600 dark:text-ink-300">{(l.taxGroup ?? l.rcmTaxGroup)?.name ?? '—'}</td>
                 <td className="py-2.5 text-end tabular-nums" dir="ltr">
                   {plain(l.amount)}
                 </td>
@@ -289,6 +289,16 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           </table>
         ) : null;
       })()}
+      {i.reverseCharge && (
+        <div className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="invoice-reverse-charge">
+          <p className="font-semibold">{t('invoices.reverseCharge.yes')}</p>
+          {!!i.reverseChargeTax?.length && (
+            <p className="mt-1">
+              {t('invoices.reverseCharge.buyerPays')}: <span dir="ltr">{i.reverseChargeTax.map((x) => `${x.name} ${money(x.amount)}`).join(', ')}</span>
+            </p>
+          )}
+        </div>
+      )}
       {i.supplyKind && i.supplyKind !== 'regular' && (
         <div className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="invoice-supply-declaration">
           <p className="font-semibold">{supplyDeclaration(i.supplyKind, { number: org?.lutNumber ?? null })}</p>

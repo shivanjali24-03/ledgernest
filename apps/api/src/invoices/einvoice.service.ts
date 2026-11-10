@@ -33,6 +33,15 @@ const head = (kind: string): keyof GstHeads | null =>
           ? 'cess'
           : null;
 
+const groupRates = {
+  rates: {
+    orderBy: { position: 'asc' as const },
+    select: {
+      rate: { select: { id: true, kind: true, ratePpm: true } },
+    },
+  },
+} as const;
+
 const invoiceSelect = {
   id: true,
   number: true,
@@ -45,6 +54,7 @@ const invoiceSelect = {
   pricesIncludeTax: true,
   supplyKind: true,
   exportDetails: true,
+  reverseCharge: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -59,16 +69,8 @@ const invoiceSelect = {
       amount: true,
       inAltUnit: true,
       item: { select: { hsnSac: true, unit: true, altUnit: true } },
-      taxGroup: {
-        select: {
-          rates: {
-            orderBy: { position: 'asc' as const },
-            select: {
-              rate: { select: { id: true, kind: true, ratePpm: true } },
-            },
-          },
-        },
-      },
+      taxGroup: { select: groupRates },
+      rcmTaxGroup: { select: groupRates },
     },
   },
 } as const;
@@ -122,6 +124,7 @@ export class EinvoiceService {
       pricesIncludeTax?: boolean;
       supplyKind?: string;
       exportDetails?: unknown;
+      reverseCharge?: boolean;
       fullNumber: string | null;
       fiscalYear: { name: string } | null;
       contact: {
@@ -144,6 +147,9 @@ export class EinvoiceService {
         taxGroup: {
           rates: { rate: { id: string; kind: string; ratePpm: number } }[];
         } | null;
+        rcmTaxGroup?: {
+          rates: { rate: { id: string; kind: string; ratePpm: number } }[];
+        } | null;
       }[];
     },
     seller: EinvoiceInput['seller'],
@@ -163,6 +169,7 @@ export class EinvoiceService {
       exportDetails:
         (i.exportDetails as EinvoiceInput['exportDetails']) ?? null,
       foreignCurrency: i.currency,
+      reverseCharge: !!i.reverseCharge,
       seller,
       buyer: {
         gstin: i.contact.taxId?.toUpperCase() ?? null,
@@ -188,7 +195,8 @@ export class EinvoiceService {
           })()
         : null,
       lines: i.lines.map((l) => {
-        const rates = l.taxGroup?.rates ?? [];
+        // Under reverse charge the buyer pays the tax, reported to the portal all the same
+        const rates = (l.taxGroup ?? l.rcmTaxGroup)?.rates ?? [];
         const heads = zeroHeads();
         splitTax(
           Number(l.amount),
@@ -205,12 +213,13 @@ export class EinvoiceService {
           // The unit the line's quantity is in
           unit: (l.inAltUnit ? l.item?.altUnit : null) ?? l.item?.unit ?? null,
           // Prices that include GST go to the portal without it
-          unitPrice: i.pricesIncludeTax
-            ? Math.round(
-                (Number(l.unitPrice) * 1_000_000) /
-                  (1_000_000 + rates.reduce((s, r) => s + r.rate.ratePpm, 0)),
-              )
-            : Number(l.unitPrice),
+          unitPrice:
+            i.pricesIncludeTax && !i.reverseCharge
+              ? Math.round(
+                  (Number(l.unitPrice) * 1_000_000) /
+                    (1_000_000 + rates.reduce((s, r) => s + r.rate.ratePpm, 0)),
+                )
+              : Number(l.unitPrice),
           amount: Number(l.amount),
           heads,
           gstRate:

@@ -192,13 +192,16 @@ export class GstReturnsService {
           placeOfSupply: true,
           supplyKind: true,
           exportDetails: true,
+          reverseCharge: true,
           status: true,
           fiscalYear: { select: { name: true } },
           fullNumber: true,
           voidEntry: { select: { date: true } },
           contact: { select: { name: true, taxId: true } },
           series: { select: { name: true } },
-          lines: { select: lineSelect },
+          lines: {
+            select: { ...lineSelect, rcmTaxGroup: lineSelect.taxGroup },
+          },
         },
       }),
       this.prisma.creditNote.findMany({
@@ -312,6 +315,8 @@ export class GstReturnsService {
       items: RateRow[];
       /** R regular, SEWP / SEWOP to an SEZ with or without IGST, DE deemed export */
       invoiceType?: 'R' | 'SEWP' | 'SEWOP' | 'DE';
+      /** The buyer pays the tax under reverse charge */
+      reverseCharge?: boolean;
     }[] = [];
     const b2cl: {
       number: string;
@@ -347,7 +352,7 @@ export class GstReturnsService {
       } & GstHeads
     >();
     const addHsn = (
-      l: (typeof invoices)[number]['lines'][number],
+      l: Omit<(typeof invoices)[number]['lines'][number], 'rcmTaxGroup'>,
       s: ReturnType<typeof split>,
       sign: 1 | -1,
     ) => {
@@ -381,9 +386,13 @@ export class GstReturnsService {
         cancelled++;
         continue;
       }
-      const items = byRate(i.lines, i.currency, i.rate);
+      // Under reverse charge the lines carry no tax; the return reports the tax the buyer pays
+      const lines = i.reverseCharge
+        ? i.lines.map((l) => ({ ...l, taxGroup: l.rcmTaxGroup }))
+        : i.lines;
+      const items = byRate(lines, i.currency, i.rate);
       const value = inBase(Number(i.total), i.currency, i.rate);
-      for (const l of i.lines) addHsn(l, split(l, i.currency, i.rate), 1);
+      for (const l of lines) addHsn(l, split(l, i.currency, i.rate), 1);
       const doc = { number: label, date: iso(i.issueDate), value, items };
       const kind = i.supplyKind;
       const exp = (i.exportDetails ?? {}) as Record<string, string | null>;
@@ -410,6 +419,7 @@ export class GstReturnsService {
                 : kind === 'deemed_export'
                   ? 'DE'
                   : 'R',
+          reverseCharge: i.reverseCharge,
         });
       else if (!i.placeOfSupply)
         exports.push({ ...doc, currency: i.currency, exportType: 'WOPAY' });
@@ -615,7 +625,7 @@ export class GstReturnsService {
               idt: dmy(i.date),
               val: rupees(i.value),
               pos: i.placeOfSupply,
-              rchrg: 'N',
+              rchrg: i.reverseCharge ? 'Y' : 'N',
               inv_typ: i.invoiceType ?? 'R',
               itms: items(i.items),
             })),

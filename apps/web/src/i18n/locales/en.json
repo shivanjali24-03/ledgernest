@@ -2628,7 +2628,9 @@
       "no_interest_terms": "Only an issued invoice with interest terms can be charged interest.",
       "instalments_total": "The instalments must add up to the invoice total.",
       "instalments_before_issue": "The first instalment can’t fall due before the invoice date.",
-      "no_lut": "Add a letter of undertaking (LUT) covering the invoice date in Settings first."
+      "no_lut": "Add a letter of undertaking (LUT) covering the invoice date in Settings first.",
+      "rcm_kind": "Reverse charge applies to ordinary domestic supplies only.",
+      "rcm_unregistered": "Under reverse charge the buyer pays the GST, so they must be registered: add their GSTIN."
     },
     "reminder": {
       "action": "Send reminder",
@@ -2854,6 +2856,12 @@
       "shippingBillNo": "Shipping bill no.",
       "shippingBillDate": "Shipping bill date",
       "countryCode": "Country code"
+    },
+    "reverseCharge": {
+      "label": "Buyer pays GST (reverse charge)",
+      "hint": "For services notified under reverse charge, like goods transport by a GTA or legal services to a business",
+      "buyerPays": "GST payable by the buyer",
+      "yes": "Whether tax is payable on reverse charge: Yes"
     }
   },
   "payments": {

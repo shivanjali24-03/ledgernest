@@ -248,6 +248,8 @@ export const invoiceDraftSchema = z
     supplyKind: z.enum(SUPPLY_KINDS).optional().default('regular'),
     /** For an export: the shipping bill and where the goods go */
     exportDetails: exportDetailsSchema.nullable().optional().default(null),
+    /** The buyer pays the GST under reverse charge (a registered buyer of, say, transport by a GTA or legal services): none is charged on the invoice */
+    reverseCharge: z.boolean().optional().default(false),
     /** Prices include GST, which is taken out of each line */
     pricesIncludeTax: z.boolean().optional().default(false),
     /** A discount on the whole invoice, before tax */

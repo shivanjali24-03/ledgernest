@@ -109,5 +109,8 @@ describe('E-invoices for exports and SEZ supplies', () => {
     // A domestic buyer still needs a GSTIN
     expect(einvoiceProblems(base)).toContainEqual({ code: 'gstin', party: 'buyer' });
   });
-});
 
+  it('marks a reverse-charge supply, the buyer paying the tax', () => {
+    expect(buildEinvoice(input({ reverseCharge: true })).TranDtls.RegRev).toBe('Y');
+  });
+});

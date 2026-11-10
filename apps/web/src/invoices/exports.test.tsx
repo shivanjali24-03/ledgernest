@@ -65,3 +65,37 @@ describe('exports and SEZ supplies', () => {
     expect(screen.getByTestId('invoice-supply-declaration')).toHaveTextContent('Shipping bill no.: 1234567');
   }, 30_000);
 });
+
+describe('reverse charge on sales', () => {
+  it('charges no GST, keeping the tax the buyer pays', async () => {
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const d = await api.create({ contactId: kumar.id, issueDate: '2026-10-01', reverseCharge: true, lines: [line()] });
+    expect(d).toMatchObject({ reverseCharge: true, taxTotal: 0, total: 1_000_00 });
+    expect(d.lines[0]!.taxGroup).toBeNull();
+    expect(d.lines[0]!.rcmTaxGroup?.name).toBe('GST 18%');
+    expect(d.reverseChargeTax).toEqual([
+      { name: 'CGST 9%', amount: 90_00 },
+      { name: 'SGST 9%', amount: 90_00 },
+    ]);
+    await api.issue(d.id);
+    renderApp(`/invoices/${d.id}`);
+    expect(await screen.findByTestId('invoice-reverse-charge', {}, { timeout: 10_000 })).toHaveTextContent('Whether tax is payable on reverse charge: Yes');
+  }, 30_000);
+
+  it('refuses it for an unregistered buyer or an export', async () => {
+    const api = createDemoInvoicesApi(() => true);
+    const northwind = demoContactRows().find((c) => c.name === 'Northwind Inc.')!;
+    await expect(api.create({ contactId: northwind.id, issueDate: '2026-10-01', reverseCharge: true, lines: [line()] })).rejects.toMatchObject({ details: { reason: 'rcm_unregistered' } });
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    await expect(api.create({ contactId: kumar.id, issueDate: '2026-10-01', supplyKind: 'sez_with_igst', reverseCharge: true, lines: [line()] })).rejects.toMatchObject({ details: { reason: 'rcm_kind' } });
+  });
+
+  it('shows the buyer’s GST in the draft’s totals instead of charging it', async () => {
+    renderApp('/invoices/new');
+    await userEvent.type(await screen.findByLabelText('Description on line 1', {}, { timeout: 10_000 }), 'Transport');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
+    await userEvent.click(await screen.findByRole('checkbox', { name: /Buyer pays GST/ }, { timeout: 10_000 }));
+    expect(screen.getByRole('status', { name: 'Totals' })).toHaveTextContent('GST payable by the buyer');
+  }, 30_000);
+});

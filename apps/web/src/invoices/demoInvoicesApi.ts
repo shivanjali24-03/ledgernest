@@ -23,7 +23,7 @@ import type { EinvoiceBatch, InterestStatus, Invoice, InvoicesApi } from './type
 const KEY = 'ledgernest.demo.invoices';
 const POLICY_KEY = 'ledgernest.demo.reminderPolicy';
 const ORG_STATE = '27';
-type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string; costCentreId?: string | null };
+type StoredLine = { itemId: string | null; description: string; quantity: string; unitPrice: number; discountPpm: number; taxGroupId: string | null; accountId: string; costCentreId?: string | null; /** Under reverse charge: the GST the buyer pays */ rcmTaxGroupId?: string | null };
 type Stored = {
   id: string;
   number: number | null;
@@ -44,6 +44,7 @@ type Stored = {
   discount?: InvoiceDiscount | null;
   supplyKind?: SupplyKind;
   exportDetails?: ExportDetails | null;
+  reverseCharge?: boolean;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -235,10 +236,11 @@ function demoEinvoiceInput(v: Invoice): EinvoiceInput {
     placeOfSupply: v.placeOfSupply,
     supplyKind: v.supplyKind ?? 'regular',
     exportDetails: v.exportDetails ?? null,
+    reverseCharge: !!v.reverseCharge,
     seller: demoSeller(),
     buyer: { gstin: v.contact.taxId, legalName: v.contact.legalName ?? v.contact.name, address1: v.contact.billingAddress.line1 ?? null, address2: v.contact.billingAddress.line2 ?? null, city: v.contact.billingAddress.city ?? v.contact.billingAddress.region ?? null, pin: v.contact.billingAddress.postalCode ?? null },
     lines: v.lines.map((l) => {
-      const g = l.taxGroup ? groupOf(l.taxGroup.id) : null;
+      const g = groupOf((l.taxGroup ?? l.rcmTaxGroup)?.id ?? null);
       const heads = zeroHeads();
       splitTax(l.amount, false, (g?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => {
         const kind = g!.rates[k]!.kind;
@@ -274,6 +276,14 @@ function view(i: Stored): Invoice {
     const g = groups[n];
     if (!g) return;
     splitTax(a.lines[n]!.net, false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => breakdown.set(g.rates[k]!.name, (breakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
+  });
+  // Under reverse charge: the GST the buyer pays, by rate
+  const rcmGroups = i.lines.map((l) => groupOf(l.rcmTaxGroupId ?? null));
+  const rcmBreakdown = new Map<string, number>();
+  i.lines.forEach((_l, n) => {
+    const g = rcmGroups[n];
+    if (!g) return;
+    splitTax(a.lines[n]!.net, false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => rcmBreakdown.set(g.rates[k]!.name, (rcmBreakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
   });
   const receivable = accounts.find((x) => x.type === 'asset' && (x.currency ?? null) === i.currency && /receivable/i.test(x.name));
   const base = {
@@ -313,6 +323,7 @@ function view(i: Stored): Invoice {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
       const acc = accounts.find((x) => x.id === l.accountId);
       const g = groups[n];
+      const rg = rcmGroups[n];
       return {
         // A UUID like the API's, stable per line: the invoice's with the line's index in its last digits
         id: `${i.id.slice(0, 32)}${n.toString(16).padStart(4, '0')}`,
@@ -327,6 +338,7 @@ function view(i: Stored): Invoice {
         costCentre: demoCostCentreRef(l.costCentreId),
         account: acc ? { id: acc.id, code: acc.code, name: acc.name } : null,
         taxGroup: g ? { id: g.id, name: g.name, supply: g.supply } : null,
+        rcmTaxGroup: rg ? { id: rg.id, name: rg.name, supply: rg.supply } : null,
       };
     }),
   };
@@ -344,6 +356,8 @@ function view(i: Stored): Invoice {
     shipTo: i.shipTo ?? null,
     supplyKind: i.supplyKind ?? 'regular',
     exportDetails: i.exportDetails ?? null,
+    reverseCharge: !!i.reverseCharge,
+    reverseChargeTax: [...rcmBreakdown].map(([name, amount]) => ({ name, amount })),
     state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate, instalments: plan }, today()),
   };
 }
@@ -362,6 +376,9 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
   // An export has no Indian place of supply; exports and SEZ supplies are inter-state (IGST), or without tax under a LUT
   const placeOfSupply = isExport(kind) ? null : (d.placeOfSupply ?? shipToState ?? contact.stateCode);
   const supply = kind === 'regular' || kind === 'deemed_export' ? supplyFor(ORG_STATE, placeOfSupply) : 'inter';
+  const rcm = !!d.reverseCharge;
+  if (rcm && kind !== 'regular') throw refuse(400, 'rcm_kind', { field: 'reverseCharge' });
+  if (rcm && !(contact.taxId && /^\d{2}[A-Z0-9]{13}$/.test(contact.taxId))) throw refuse(400, 'rcm_unregistered', { field: 'reverseCharge' });
   if (zeroRatedUnderLut(kind)) {
     const org = demoSettings();
     if (!org.lutNumber || (org.lutFrom && d.issueDate < org.lutFrom) || (org.lutTo && d.issueDate > org.lutTo)) throw refuse(400, 'no_lut', { field: 'supplyKind' });
@@ -379,9 +396,10 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
     if (group) group = groupForSupply(group, supply, groups);
     if (zeroRatedUnderLut(kind)) group = null;
-    return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
+    // Under reverse charge the line carries no GST: the buyer pays it
+    return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: rcm ? null : (group?.id ?? null), rcmTaxGroupId: rcm ? (group?.id ?? null) : null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null, pricesIncludeTax: !!d.pricesIncludeTax, discount: d.discount ?? null, supplyKind: kind, exportDetails: isExport(kind) ? (d.exportDetails ?? null) : null };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null, pricesIncludeTax: !!d.pricesIncludeTax, discount: d.discount ?? null, supplyKind: kind, exportDetails: isExport(kind) ? (d.exportDetails ?? null) : null, reverseCharge: rcm };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
@@ -414,7 +432,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         if (s.chargeable < INTEREST_MIN_CHARGE) throw refuse(409, 'nothing_to_charge');
         const src = view(find(await load(), iid));
         const accountId = demoEnsureFxAccount('interest_income');
-        const parts = splitInterest(s.chargeable, src.lines.map((l) => ({ key: l.taxGroup?.id ?? null, value: l.amount })));
+        const parts = splitInterest(s.chargeable, src.lines.map((l) => ({ key: src.reverseCharge ? null : (l.taxGroup?.id ?? null), value: l.amount })));
         const d = await api.create({ contactId: src.contact.id, issueDate: today(), dueDate: today(), reference: src.number, notes: `Interest at ${src.interest!.rateBp / 100}% a year on the late payment of invoice ${src.number}, due ${src.dueDate}, to ${today()}.`, placeOfSupply: src.placeOfSupply, interestRateBp: 0, lines: parts.map((p) => ({ description: `Interest on late payment of ${src.number}`, quantity: '1', unitPrice: p.amount, taxGroupId: p.key, accountId })) });
         const rows = await load();
         find(rows, d.id).interestOnInvoiceId = iid;
@@ -538,7 +556,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const toInr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor);
         const lines = [
           i.currency ? { accountId: receivable.id, description: label, currency: i.currency, foreignDebit: v.total, rate: rate! } : { accountId: receivable.id, description: label, debit: v.total },
-          ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null), costCentreId: l.costCentre?.id ?? null })),
+          ...v.lines.filter((l) => l.amount > 0).map((l) => ({ accountId: l.account!.id, description: l.description, credit: toInr(l.amount), taxGroupId: i.currency || i.reverseCharge ? null : (l.taxGroup?.id ?? null), costCentreId: l.costCentre?.id ?? null })),
         ];
         // Tracked goods leave stock at their average cost, to cost of sales
         const cost = demoCostOfSale(v.lines.map((l) => ({ itemId: l.item?.id ?? null, quantity: l.quantity, costCentreId: l.costCentre?.id ?? null })));

@@ -527,7 +527,12 @@ export class InvoiceRemindersService
                 '',
                 ...(composition
                   ? []
-                  : ['Whether tax is payable on reverse charge: No']),
+                  : inv.reverseCharge
+                    ? [
+                        'Whether tax is payable on reverse charge: Yes',
+                        `GST payable by the recipient: ${inv.reverseChargeTax.map((t) => `${t.name} ${currency} ${(t.amount / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))}`).join(', ') || 'none'}`,
+                      ]
+                    : ['Whether tax is payable on reverse charge: No']),
                 '',
                 `For ${seller}`,
                 '',

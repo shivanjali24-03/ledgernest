@@ -91,6 +91,8 @@ export type DraftIn = {
   supplyKind?: SupplyKind;
   /** For an export: the shipping bill and where the goods go */
   exportDetails?: ExportDetails | null;
+  /** The buyer pays the GST under reverse charge */
+  reverseCharge?: boolean;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -142,6 +144,7 @@ const select = {
   discountTotal: true,
   supplyKind: true,
   exportDetails: true,
+  reverseCharge: true,
   total: true,
   amountPaid: true,
   issuedAt: true,
@@ -262,10 +265,12 @@ const select = {
       },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: groupSelect },
+      rcmTaxGroup: { select: groupSelect },
     },
   },
 } as const;
 type Row = Prisma.InvoiceGetPayload<{ select: typeof select }>;
+const GSTIN_SHAPE = /^\d{2}[A-Z0-9]{13}$/;
 
 const entryLabel = (
   e: { number: number | null; fiscalYear: { name: string } | null } | null,
@@ -316,19 +321,23 @@ export class InvoicesService {
     const amount = (b: bigint) => Number(b);
     // Tax by rate for the invoice's footer (CGST 9% ₹…, SGST 9% ₹…)
     const breakdown = new Map<string, number>();
+    // Under reverse charge: the GST the buyer pays, by rate, printed but not charged
+    const rcmBreakdown = new Map<string, number>();
     for (const l of i.lines) {
-      if (!l.taxGroup) continue;
+      const group = l.taxGroup ?? l.rcmTaxGroup;
+      if (!group) continue;
+      const into = l.taxGroup ? breakdown : rcmBreakdown;
       const { taxes } = splitTax(
         Number(l.amount),
         false,
-        l.taxGroup.rates.map((r) => ({
+        group.rates.map((r) => ({
           rateId: r.rate.id,
           ratePpm: r.rate.ratePpm,
         })),
       );
       taxes.forEach((t, n) => {
-        const name = l.taxGroup!.rates[n]!.rate.name;
-        breakdown.set(name, (breakdown.get(name) ?? 0) + t.amount);
+        const name = group.rates[n]!.rate.name;
+        into.set(name, (into.get(name) ?? 0) + t.amount);
       });
     }
     const v = {
@@ -366,6 +375,12 @@ export class InvoicesService {
       /** An ordinary supply, an export or SEZ supply, or a deemed export; and an export's shipping bill */
       supplyKind: i.supplyKind as SupplyKind,
       exportDetails: (i.exportDetails as ExportDetails | null) ?? null,
+      /** The buyer pays the GST under reverse charge, and how much it is */
+      reverseCharge: i.reverseCharge,
+      reverseChargeTax: [...rcmBreakdown].map(([name, value]) => ({
+        name,
+        amount: value,
+      })),
       /** A discount on the whole invoice, and what it came to */
       discount: (i.discount as InvoiceDiscount | null) ?? null,
       discountTotal: amount(i.discountTotal),
@@ -453,6 +468,12 @@ export class InvoicesService {
           id: l.taxGroup.id,
           name: l.taxGroup.name,
           supply: l.taxGroup.supply,
+        },
+        /** Under reverse charge: the GST the buyer pays (the line charges none) */
+        rcmTaxGroup: l.rcmTaxGroup && {
+          id: l.rcmTaxGroup.id,
+          name: l.rcmTaxGroup.name,
+          supply: l.rcmTaxGroup.supply,
         },
         batchId: l.batchId,
         /** The serial numbers of the units (goods with serial numbers) */
@@ -744,6 +765,7 @@ export class InvoicesService {
         currency: true,
         stateCode: true,
         paymentTermsDays: true,
+        taxId: true,
       },
     });
     if (!contact)
@@ -825,6 +847,23 @@ export class InvoicesService {
         );
     }
 
+    // Reverse charge: a domestic supply to a registered buyer, who pays the GST (CGST Act s.9(3), notified services)
+    const rcm = !!input.reverseCharge;
+    if (rcm && kind !== 'regular')
+      throw refuse(
+        BadRequestException,
+        'Reverse charge applies to ordinary domestic supplies only.',
+        'rcm_kind',
+        { field: 'reverseCharge' },
+      );
+    if (rcm && !(contact.taxId && GSTIN_SHAPE.test(contact.taxId)))
+      throw refuse(
+        BadRequestException,
+        'Under reverse charge the buyer pays the GST, so they must be registered: add their GSTIN.',
+        'rcm_unregistered',
+        { field: 'reverseCharge' },
+      );
+
     const itemIds = [
       ...new Set(
         input.lines.map((l) => l.itemId).filter((x): x is string => !!x),
@@ -884,6 +923,8 @@ export class InvoicesService {
     const lines: (LineIn & {
       accountId: string;
       group: Awaited<ReturnType<typeof forSupply>> | null;
+      /** Under reverse charge: the GST the buyer pays */
+      rcmGroup?: Awaited<ReturnType<typeof forSupply>> | null;
     })[] = [];
     for (const [n, l] of input.lines.entries()) {
       const item = l.itemId ? items.get(l.itemId)! : null;
@@ -911,11 +952,12 @@ export class InvoicesService {
           { line: n + 1 },
         );
       if (group) group = await forSupply(group);
-      // Under LUT nothing is taxed
+      // Under LUT nothing is taxed; under reverse charge the buyer pays it, so the line carries none
       lines.push({
         ...l,
         accountId,
-        group: zeroRatedUnderLut(kind) ? null : group,
+        group: zeroRatedUnderLut(kind) || rcm ? null : group,
+        rcmGroup: rcm ? group : null,
       });
     }
     await checkCostCentres(tx, organizationId, lines);
@@ -1019,6 +1061,7 @@ export class InvoicesService {
     }
     return {
       supplyKind: kind,
+      reverseCharge: rcm,
       contactId: contact.id,
       currency,
       placeOfSupply,
@@ -1051,6 +1094,7 @@ export class InvoicesService {
         unitPrice: BigInt(l.unitPrice),
         discountPpm: l.discount,
         taxGroupId: l.group?.id ?? null,
+        rcmTaxGroupId: l.rcmGroup?.id ?? null,
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
         batchId: l.batchId ?? null,
@@ -1133,6 +1177,7 @@ export class InvoicesService {
           roundOff: BigInt(p.amounts.roundOff),
           pricesIncludeTax: !!input.pricesIncludeTax,
           supplyKind: p.supplyKind,
+          reverseCharge: p.reverseCharge,
           exportDetails: input.exportDetails
             ? (input.exportDetails as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
@@ -1210,6 +1255,7 @@ export class InvoicesService {
           roundOff: BigInt(p.amounts.roundOff),
           pricesIncludeTax: !!input.pricesIncludeTax,
           supplyKind: p.supplyKind,
+          reverseCharge: p.reverseCharge,
           exportDetails: input.exportDetails
             ? (input.exportDetails as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
@@ -1304,13 +1350,14 @@ export class InvoicesService {
         discount: (i.discount as InvoiceDiscount | null) ?? null,
         supplyKind: i.supplyKind as SupplyKind,
         exportDetails: (i.exportDetails as ExportDetails | null) ?? null,
+        reverseCharge: i.reverseCharge,
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
           description: l.description,
           quantity: formatQuantity(parseQuantity(l.quantity.toFixed(4))!),
           unitPrice: Number(l.unitPrice),
           discount: l.discountPpm,
-          taxGroupId: l.taxGroupId,
+          taxGroupId: l.taxGroupId ?? l.rcmTaxGroup?.id ?? null,
           accountId: l.accountId,
           costCentreId: l.costCentreId,
           batchId: l.batchId,
