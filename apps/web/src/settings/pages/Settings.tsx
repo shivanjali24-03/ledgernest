@@ -21,6 +21,7 @@ import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, ty
 import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
 import TallyCard from '../TallyCard';
+import DeleteOrganizationCard from '../DeleteOrganizationCard';
 import ReminderPolicyCard from '../../invoices/ReminderPolicyCard';
 import type { OrganizationSettings, SettingsApi } from '../types';
 import { useSettingsApi } from '../useSettingsApi';
@@ -288,6 +289,11 @@ export default function Settings() {
       {session.permissions.has('org.delete') && (
         <motion.div variants={fadeUp}>
           <BackupsCard />
+        </motion.div>
+      )}
+      {session.permissions.has('org.delete') && api && (
+        <motion.div variants={fadeUp}>
+          <DeleteOrganizationCard api={api} />
         </motion.div>
       )}
     </motion.div>

@@ -38,6 +38,7 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
     networkDown: false,
     /** Emails a reset link was asked for */
     resetRequests: [] as string[],
+    deleted: false,
     password,
   };
   /** The only reset link that works */
@@ -84,6 +85,15 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
         const body = JSON.parse(String(init.body)) as { currentPassword: string; newPassword: string };
         if (body.currentPassword !== state.password) return json(400, { message: 'wrong', details: { reason: 'wrong_password' } });
         state.password = body.newPassword;
+        return json(204);
+      }
+      case 'POST /auth/delete-account': {
+        if (!auth || !state.validAccess.has(auth)) return json(401, { message: 'expired' });
+        const body = JSON.parse(String(init.body)) as { password: string };
+        if (body.password !== state.password) return json(400, { message: 'wrong', details: { reason: 'wrong_password' } });
+        state.cookie = null;
+        state.validAccess.clear();
+        state.deleted = true;
         return json(204);
       }
       case 'POST /auth/logout-all':

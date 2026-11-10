@@ -114,6 +114,10 @@ export const organizationSettingsSchema = z
 export type OrganizationSettingsInput = z.input<typeof organizationSettingsSchema>;
 export type OrganizationSettingsUpdate = z.output<typeof organizationSettingsSchema>;
 
+/** Deleting the organisation: its name typed out, so it can't happen by a slip */
+export const organizationDeleteSchema = z.object({ confirmName: z.string().trim().min(1, 'Type the organisation’s name.').max(200) });
+export type OrganizationDeleteInput = z.infer<typeof organizationDeleteSchema>;
+
 /** Logos: small raster images only. SVG is refused because it can carry scripts. */
 export const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
 export type LogoType = (typeof LOGO_TYPES)[number];

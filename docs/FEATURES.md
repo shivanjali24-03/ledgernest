@@ -12,6 +12,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Organisations (multi-tenant) | Each business is a separate organisation; data is always isolated by organisation | 📋 |
 | Sign-in and sessions | Email + password (hashed with Argon2), short-lived access token, rotating refresh token, account lockout | ✅ #7 |
 | Passwords | Forgotten passwords reset by an emailed link (works once, for 30 minutes, the same answer whether or not the address has an account); change your own password from the account menu (other devices signed out); sign out of every device | ✅ |
+| Deleting data (DPDP) | Owners delete an organisation and all its books after typing its name, with a backup offered first and a platform audit entry kept; anyone deletes their own account with their password: name and email erased and sign-in disabled, while what they recorded stays (accounting records must be kept), shown as a deleted user. An organisation's only Owner hands it over first | ✅ |
 | Roles and permissions | Built-in roles (below) plus **custom roles** built from a permission matrix | ✅ #11 |
 | Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | ✅ #11 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | ✅ Done (#12) |

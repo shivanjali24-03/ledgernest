@@ -200,6 +200,11 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     resetPassword,
     /** Other devices are signed out; this one stays */
     changePassword: (currentPassword: string, newPassword: string) => request<void>('/auth/change-password', { method: 'POST', json: { currentPassword, newPassword } }),
+    /** Erases the account; the session ends with it */
+    deleteAccount: async (password: string) => {
+      await request<void>('/auth/delete-account', { method: 'POST', json: { password } });
+      accessToken = null;
+    },
     logoutAll: async () => {
       try {
         await request<{ sessions: number }>('/auth/logout-all', { method: 'POST' });

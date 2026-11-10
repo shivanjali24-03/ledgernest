@@ -30,6 +30,8 @@ export interface Auth {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   /** Signs out every device, this one included */
   signOutEverywhere: () => Promise<void>;
+  /** Erases the signed-in person's account (the demo just signs out) */
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<Auth | null>(null);

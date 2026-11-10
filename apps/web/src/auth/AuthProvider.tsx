@@ -151,7 +151,18 @@ export default function AuthProvider({
     setState({ status: 'signedOut', reason: 'signedOut' });
   }, [client, queryClient]);
 
-  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere }), [mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere]);
+  const deleteAccount = useCallback(
+    async (password: string) => {
+      if (client) await client.deleteAccount(password);
+      writeDemo(null);
+      broadcast('signed-out');
+      queryClient.clear();
+      setState({ status: 'signedOut', reason: 'signedOut' });
+    },
+    [client, queryClient],
+  );
+
+  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount }), [mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount]);
   const platformApi = useMemo(() => platformApiOverride ?? (client ? createLivePlatformApi(client) : createDemoPlatformApi()), [client, platformApiOverride]);
   const session = useMemo(() => (state.status === 'signedIn' && state.me ? liveSession(state.me, signOut) : null), [state, signOut]);
 

@@ -3,13 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, type ChangePasswordInput, type ForgotPasswordInput, type LoginInput, type ResetPasswordInput } from '@ledgernest/shared';
+import { accountDeleteSchema, changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, type AccountDeleteInput, type ChangePasswordInput, type ForgotPasswordInput, type LoginInput, type ResetPasswordInput } from '@ledgernest/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { Env } from '../config/env.js';
 import { AuthService, type IssuedTokens, type RequestContext } from './auth.service.js';
 import { CurrentActor, Public } from '../access/decorators.js';
 import type { Actor } from '../access/types.js';
 import { clearRefreshCookie, setRefreshCookie } from './session-cookie.js';
+import { AccountService } from './account.service.js';
 import { PasswordService } from './password.service.js';
 import { hashToken, REFRESH_COOKIE } from './tokens.js';
 
@@ -24,6 +25,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly passwords: PasswordService,
+    private readonly accounts: AccountService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -102,6 +104,16 @@ export class AuthController {
     const r = await this.passwords.signOutEverywhere(actor.userId, ctxOf(req));
     this.clearRefreshCookie(res);
     return r;
+  }
+
+  @Post('delete-account')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOkResponse({ description: 'The account is erased (name and email removed, sign-in disabled) and signed out everywhere' })
+  async deleteAccount(@Body(new ZodValidationPipe(accountDeleteSchema)) body: AccountDeleteInput, @CurrentActor() actor: Actor, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    await this.accounts.remove(actor.userId, body.password, ctxOf(req));
+    this.clearRefreshCookie(res);
   }
 
   @Get('me')

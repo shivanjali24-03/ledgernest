@@ -10,6 +10,7 @@ export function createLiveSettingsApi(client: AuthClient, organizationId: string
     update: (input) => r('', { method: 'PATCH', json: input }),
     setLogo: (upload) => r('/logo', { method: 'PUT', json: upload }),
     removeLogo: () => r('/logo', { method: 'DELETE' }),
+    remove: (confirmName) => r('', { method: 'DELETE', json: { confirmName } }),
     async logo() {
       try {
         return (await client.download('/organization/logo', { headers })).blob;

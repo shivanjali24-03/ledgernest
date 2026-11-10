@@ -180,4 +180,38 @@ export class OrganizationService {
   logo() {
     return this.tenantPrisma.db.organizationLogo.findFirst({ select: { contentType: true, data: true, updatedAt: true } });
   }
+
+  /**
+   * Deletes the organisation and everything in it, for an Owner who typed its name. The audit log keeps a platform
+   * entry saying who deleted what, when; the organisation's own entries stay, no longer tied to it.
+   */
+  async remove(confirmName: string, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true, slug: true },
+    });
+    if (confirmName.trim() !== org.name.trim())
+      throw refuse(
+        BadRequestException,
+        'The name doesn’t match. Type the organisation’s name exactly as it is.',
+        'name_mismatch',
+        { field: 'confirmName' },
+      );
+    await this.prisma.$transaction(async (tx) => {
+      await this.audit.record(
+        {
+          action: 'organization.deleted',
+          actorId: ctx.actor.userId,
+          organizationId: null,
+          entityType: 'organization',
+          entityId: organizationId,
+          before: { name: org.name, slug: org.slug },
+          req: ctx.req,
+        },
+        tx,
+      );
+      await tx.organization.delete({ where: { id: organizationId } });
+    });
+  }
 }

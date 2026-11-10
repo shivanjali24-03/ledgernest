@@ -1008,6 +1008,17 @@
     "email": {
       "title": "Email",
       "description": "What LedgerNest emails your team."
+    },
+    "delete": {
+      "title": "Delete this organisation",
+      "body": "Every account, invoice, bill, payment, report and file goes, for everyone, and can’t be brought back. Download a backup above first: GST law asks you to keep your records for six years.",
+      "action": "Delete organisation…",
+      "confirmTitle": "Delete {{name}} for good?",
+      "confirmBody": "This can’t be undone. Everyone in it loses access.",
+      "typeName": "Type “{{name}}” to confirm",
+      "confirm": "Delete it all",
+      "mismatch": "That isn’t the organisation’s name.",
+      "done": "{{name}} was deleted."
     }
   },
   "accounts": {
@@ -3893,6 +3904,16 @@
       "stock_line": "Goods kept in stock go back with a stock adjustment instead.",
       "bill_currency": "Debit notes are for bills in rupees for now.",
       "bill_not_open": "Only recorded bills can be credited."
+    }
+  },
+  "account": {
+    "delete": {
+      "action": "Delete my account",
+      "title": "Delete your account?",
+      "body": "Your name and email are erased and you can’t sign in again. What you recorded stays in the books, shown as a deleted user, as accounting records must be kept.",
+      "confirm": "Delete my account",
+      "soleOwner": "You’re the only Owner of {{names}}. Make someone else Owner, or delete the organisation, first.",
+      "lastSuperAdmin": "You’re the only Super Admin. Make someone else Super Admin first."
     }
   }
 }
