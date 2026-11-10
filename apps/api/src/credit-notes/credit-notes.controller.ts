@@ -9,11 +9,14 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
   ApiOkResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -24,7 +27,7 @@ import {
   creditRefundSchema,
   type CreditApplyInput,
 } from '@ledgernest/shared';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import {
   CurrentActor,
@@ -33,6 +36,7 @@ import {
 } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { CreditNotePdfService } from './credit-note-pdf.service.js';
 import { CreditNotesService } from './credit-notes.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -47,7 +51,10 @@ const id = new ParseUUIDPipe({ version: '4' });
 })
 @Controller('credit-notes')
 export class CreditNotesController {
-  constructor(private readonly notes: CreditNotesService) {}
+  constructor(
+    private readonly notes: CreditNotesService,
+    private readonly pdfs: CreditNotePdfService,
+  ) {}
 
   @Get()
   @RequirePermission('invoices.view')
@@ -73,6 +80,24 @@ export class CreditNotesController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.notes.creditable(tenant.organizationId, invoiceId);
+  }
+
+  /** The credit note as a PDF for the customer */
+  @Get(':id/pdf')
+  @RequirePermission('invoices.view')
+  @ApiProduces('application/pdf')
+  async pdf(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) creditNoteId: string,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.pdfs.download(tenant.organizationId, creditNoteId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(f.data, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
+    });
   }
 
   @Get(':id')

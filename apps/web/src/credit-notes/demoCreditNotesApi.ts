@@ -1,4 +1,4 @@
-import { creditApplySchema, creditNoteNumber, creditNoteSchema, creditRefundSchema, currencyDigits, formatQuantity, invoiceAmounts, parseQuantity, splitTax, todayIn, toBase } from '@ledgernest/shared';
+import { creditApplySchema, creditNoteNumber, creditNoteSchema, creditRefundSchema, currencyDigits, formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
@@ -86,6 +86,22 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
         return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map(strip) };
       }),
     get: (id) => wait(() => strip(find(load(), id))),
+    pdf: (id) =>
+      wait(() => {
+        const c = strip(find(load(), id));
+        const cur = c.currency ?? 'INR';
+        const fmt = (minor: number) => (minor / 10 ** currencyDigits(cur)).toFixed(currencyDigits(cur));
+        const total = (label: string, minor: number) => ['', '', label, '', fmt(minor)];
+        const bytes = pdfTableBytes({
+          title: `Credit note ${c.number}`,
+          subtitle: 'Nest Demo Private Limited · GSTIN 27AAPFN1234C1Z5',
+          info: [`To: ${c.contact.name}`, `Date ${c.date} · Against invoice ${c.invoice.number ?? ''}`, ...(c.reason ? [`Reason: ${c.reason}`] : [])],
+          rows: [['Description', 'Qty', `Price (${cur})`, 'Taxable value', 'Tax'], ...c.lines.map((l) => [l.description, l.quantity, fmt(l.unitPrice), fmt(l.amount), fmt(l.taxAmount)]), total('Subtotal', c.subtotal), ...c.taxBreakdown.map((x) => total(x.name, x.amount)), total(`Total (${cur})`, c.total)],
+          after: cur === 'INR' ? [`Amount in words: ${rupeesInWords(c.total)}`] : undefined,
+          footer: `Nest Demo Private Limited · ${c.number}`,
+        });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `credit-note-${c.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
+      }),
     creditable: (invoiceId) => wait(() => creditable(invoiceId)),
     create: (input) =>
       wait(async () => {

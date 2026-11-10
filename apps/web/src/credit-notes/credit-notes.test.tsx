@@ -61,6 +61,13 @@ describe('credit notes', () => {
     expect(row).toHaveTextContent('₹11,800.00');
     expect(row).toHaveTextContent('Four hours not delivered');
     expect(row).toHaveTextContent(/₹11,800.00 on INV\//);
+    // The PDF for the customer
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    await userEvent.click(within(row).getByRole('button', { name: /^Actions for CN\// }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Download PDF' }));
+    await waitFor(() => expect(saved).toBeDefined(), { timeout: 4000 });
+    expect(new TextDecoder('latin1').decode(await saved!.arrayBuffer())).toMatch(/\(Credit note CN\/.*\) Tj/);
     await userEvent.click(within(row).getByRole('button', { name: /^Actions for CN\// }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Void credit note' }));
     const confirm = (await screen.findByText(/invoices it went onto are owed again/, {}, { timeout: 3000 })).closest('[role="dialog"]') as HTMLElement;

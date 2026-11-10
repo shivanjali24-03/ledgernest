@@ -33,6 +33,8 @@ export interface CreditNote {
 export interface CreditNotesApi {
   list(q: { contactId?: string; invoiceId?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: CreditNote[] }>;
   get(id: string): Promise<CreditNote>;
+  /** The credit note as a PDF for the customer */
+  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
   /** How much of each of an invoice's lines can still be credited */
   creditable(invoiceId: string): Promise<{ invoiceLineId: string; quantity: string }[]>;
   create(input: CreditNoteInput): Promise<CreditNote>;
