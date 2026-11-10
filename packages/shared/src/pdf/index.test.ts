@@ -50,3 +50,19 @@ describe('pdfTableBytes info lines', () => {
     expect(pdf).toContain('(Page 2 of 2) Tj');
   });
 });
+
+describe('pdfTableBytes after-text', () => {
+  it('prints terms after the table, wrapping long lines', () => {
+    const long = 'Bank: HDFC Bank, Baner branch. Account 50200012345678, IFSC HDFC0001234. Please quote the invoice number with your payment so we can match it quickly.';
+    const pdf = text(pdfTableBytes({ title: 'Tax invoice', rows: [['A', 'B'], ['x', '1']], after: ['Terms', long] }));
+    expect(pdf).toContain('(Terms) Tj');
+    expect(pdf).toContain('(Bank: HDFC Bank,');
+    expect(pdf).toContain('/Count 1');
+  });
+  it('moves them to a page of their own when the last page is full', () => {
+    const rows = [['A', 'B'], ...Array.from({ length: 52 }, (_, i) => [`r${i}`, String(i)])];
+    const pdf = text(pdfTableBytes({ title: 'Long', rows, after: Array.from({ length: 10 }, (_, i) => `Line ${i}`) }));
+    expect(pdf).toContain('(Page 2 of 2) Tj');
+    expect(pdf).toContain('(Line 9) Tj');
+  });
+});

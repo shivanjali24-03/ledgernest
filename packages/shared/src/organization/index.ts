@@ -95,6 +95,8 @@ export const organizationSettingsSchema = z
     timeZone: z.string().trim().refine(isTimeZone, 'Choose a time zone from the list.'),
     /** 1 = January … 4 = April (India) */
     fiscalYearStartMonth: z.number().int().min(1).max(12),
+    /** Printed at the foot of invoices and quotes: payment terms, bank details */
+    invoiceTerms: optionalText(1000),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

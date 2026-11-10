@@ -14,7 +14,7 @@ import { apiErrorMessage } from '../../platform/errors';
 import { countryOptions, currencyOptions, localeOptions, monthOptions } from '../../platform/options';
 import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
-import { SelectField, TextField } from '../../ui/Field';
+import { Field, inputClass, SelectField, TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField } from '../form';
@@ -164,6 +164,14 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
           error={errors.timeZone}
           hint={t('settings.hints.timeZone', { time: timeIn(v.timeZone, locale) })}
         />
+      </Section>
+
+      <Section title={t('settings.documents.title')} description={t('settings.documents.description')}>
+        <div className="sm:col-span-2">
+          <Field label={t('settings.fields.invoiceTerms')} error={errors.invoiceTerms} hint={t('settings.hints.invoiceTerms')}>
+            {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={v.invoiceTerms} onChange={set('invoiceTerms')} disabled={!canManage} maxLength={1000} rows={4} dir="auto" className={`${inputClass} h-auto border-ink-200 py-2 dark:border-ink-700`} />}
+          </Field>
+        </div>
       </Section>
 
       {/* Appears only with unsaved changes; slides with transform so it stays smooth at high refresh rates */}

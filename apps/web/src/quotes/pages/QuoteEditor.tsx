@@ -11,6 +11,7 @@ import { invoiceErrorMessage } from '../../invoices/errors';
 import SalesDraftForm, { type SalesDraftPayload } from '../../invoices/SalesDraftForm';
 import { formatDate, formatMoney } from '../../lib/format';
 import { useMoney } from '../../lib/useMoney';
+import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
@@ -57,6 +58,7 @@ function DraftForm({ quote, template, api }: { quote: Quote | null; template?: Q
 /** A settled quote (or one you can't change): its lines and totals, to read or print */
 function QuoteView({ quote }: { quote: Quote }) {
   const { t } = useTranslation();
+  const terms = useOrganizationSettings().data?.invoiceTerms;
   const locale = useIntlLocale();
   const money = useMoney();
   const fmt = (minor: number) => (quote.currency ? formatMoney(minor, quote.currency, locale) : money.format(minor));
@@ -144,6 +146,11 @@ function QuoteView({ quote }: { quote: Quote }) {
       {quote.notes && (
         <p className="border-t border-ink-100 p-5 text-sm text-ink-600 dark:border-ink-800 dark:text-ink-300" dir="auto">
           {quote.notes}
+        </p>
+      )}
+      {terms && (
+        <p className="whitespace-pre-line border-t border-ink-100 p-5 text-xs text-ink-500 dark:border-ink-800" dir="auto">
+          {terms}
         </p>
       )}
     </Card>

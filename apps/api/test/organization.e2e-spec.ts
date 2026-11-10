@@ -86,6 +86,14 @@ describe('Organisation settings (e2e)', () => {
     expect(await audits('org.settings.update')).toHaveLength(1);
   });
 
+  it('keeps the terms printed on invoices and quotes, up to 1,000 characters', async () => {
+    const terms = 'Payment within 15 days.\nBank: HDFC Bank, Baner · A/c 50200012345678 · IFSC HDFC0001234';
+    expect((await as('owner', orgA).patch('/organization', { invoiceTerms: terms }).expect(200)).body.invoiceTerms).toBe(terms);
+    expect((await as('viewer', orgA).get('/organization').expect(200)).body.organization.invoiceTerms).toBe(terms);
+    await as('owner', orgA).patch('/organization', { invoiceTerms: 'x'.repeat(1001) }).expect(400);
+    expect((await as('owner', orgA).patch('/organization', { invoiceTerms: '  ' }).expect(200)).body.invoiceTerms).toBeNull();
+  });
+
   it('refuses invalid values, and never lets an organisation change its web address', async () => {
     const bad = await as('owner', orgA).patch('/organization', { timeZone: 'Mars/Olympus', baseCurrency: 'XX' }).expect(400);
     expect(JSON.stringify(bad.body)).toMatch(/timeZone/);

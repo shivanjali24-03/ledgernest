@@ -906,14 +906,16 @@
       "baseCurrency": "Devise de base",
       "fiscalYearStartMonth": "L'exercice commence en",
       "locale": "Format des nombres et des dates",
-      "timeZone": "Fuseau horaire"
+      "timeZone": "Fuseau horaire",
+      "invoiceTerms": "Conditions et coordonnées bancaires"
     },
     "hints": {
       "legalName": "Telle qu'enregistrée, pour les factures et déclarations.",
       "taxId": "Numéro de TVA, SIRET, GSTIN ou équivalent.",
       "baseCurrency": "Vos livres sont tenus dans cette devise.",
       "fiscalYear": "Votre exercice va de {{span}}.",
-      "timeZone": "Il y est {{time}}. Détermine le jour d'une transaction."
+      "timeZone": "Il y est {{time}}. Détermine le jour d'une transaction.",
+      "invoiceTerms": "Imprimé au pied des factures et devis, à l’écran et dans les PDF envoyés : conditions de paiement, compte bancaire, un remerciement. Jusqu’à 1 000 caractères."
     },
     "locked": {
       "baseCurrency": "Non modifiable une fois des écritures comptabilisées",
@@ -949,6 +951,10 @@
         "size": "Utilisez une image de moins de 256 Ko.",
         "mismatch": "Ce fichier n'est pas le type d'image qu'indique son nom."
       }
+    },
+    "documents": {
+      "title": "Factures et devis",
+      "description": "Ce qui figure au pied de chaque facture et devis."
     }
   },
   "accounts": {

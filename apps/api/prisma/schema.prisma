@@ -73,6 +73,8 @@ model Organization {
   city                 String?
   region               String? /// state, province or emirate
   postalCode           String?            @map("postal_code")
+  /// Printed at the foot of invoices and quotes: payment terms, bank details
+  invoiceTerms         String?            @map("invoice_terms")
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
