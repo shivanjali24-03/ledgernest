@@ -203,7 +203,7 @@ function Row({ row: x, label, day, plain }: { row: Gstr2bRow; label: string; day
       <td className="px-3 py-2">
         {x.bill ? (
           <>
-            <Link to={`/bills/${x.bill.id}`} className="font-mono hover:underline" dir="ltr">
+            <Link to={x.bill.kind === 'debit_note' ? '/debit-notes' : `/bills/${x.bill.id}`} className="font-mono hover:underline" dir="ltr">
               {x.bill.vendorReference ?? x.bill.number ?? t('reports.gstr2b.bill')}
             </Link>
             <span className="block text-xs text-ink-500">

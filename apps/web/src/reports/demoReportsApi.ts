@@ -508,7 +508,19 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
         }
         return { id: b.id, number: b.number, vendorReference: b.vendorReference, vendorName: b.contact.legalName ?? b.contact.name, vendorGstin: b.contact.taxId && isGstin(b.contact.taxId) ? b.contact.taxId : null, date: b.billDate, taxable: b.subtotal, heads, total: b.total };
       });
-    return { gstin: file.gstin, period: file.period, otherGstin: !!file.gstin && file.gstin !== '27AAPFN1234C1Z5', from, to, ...reconcileGstr2b(file.docs, bills) };
+    const [{ demoDebitNoteRows }, { demoContactRows }] = await Promise.all([import('../debit-notes/demoDebitNotesApi'), import('../contacts/demoContactsApi')]);
+    const notes: Gstr2bBill[] = demoDebitNoteRows()
+      .filter((n) => n.date >= from && n.date <= to)
+      .map((n) => {
+        const heads = zeroHeads();
+        for (const x of n.taxBreakdown) {
+          const h = /^IGST/i.test(x.name) ? 'igst' : /^CGST/i.test(x.name) ? 'cgst' : /^(SGST|UTGST)/i.test(x.name) ? 'sgst' : /cess/i.test(x.name) ? 'cess' : null;
+          if (h) heads[h] += x.amount;
+        }
+        const c = demoContactRows().find((x) => x.id === n.contact.id);
+        return { id: n.id, kind: 'debit_note' as const, number: n.number, vendorReference: n.vendorReference, vendorName: c?.legalName ?? n.contact.name, vendorGstin: c?.taxId && isGstin(c.taxId) ? c.taxId : null, date: n.date, taxable: n.subtotal, heads, total: n.total };
+      });
+    return { gstin: file.gstin, period: file.period, otherGstin: !!file.gstin && file.gstin !== '27AAPFN1234C1Z5', from, to, ...reconcileGstr2b(file.docs, bills, 100, notes) };
   };
   /** GSTR-3B from the demo's tax summary, set off as the API does */
   const gstr3b = async (from: string, to: string): Promise<Gstr3b> => {

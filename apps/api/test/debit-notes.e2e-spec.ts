@@ -359,6 +359,59 @@ describe('Debit notes to vendors (e2e)', () => {
     expect(g.itc).toMatchObject({ cgst: 1_350_00, sgst: 1_350_00 });
   });
 
+  it('matches the supplier’s credit note in GSTR-2B to the debit note, and flags one not in the books', async () => {
+    const credit = (ntnum: string, txval: number) => ({
+      ntnum,
+      typ: 'C',
+      dt: '12-10-2026',
+      val: txval * 1.18,
+      rev: 'N',
+      itcavl: 'Y',
+      items: [
+        { txval, igst: 0, cgst: txval * 0.09, sgst: txval * 0.09, cess: 0 },
+      ],
+    });
+    const r = (
+      await as()
+        .post('/reports/gst/gstr-2b', {
+          from: '2026-10-01',
+          to: '2026-10-31',
+          content: JSON.stringify({
+            data: {
+              gstin: gstin('27AAPFN1234C1Z'),
+              rtnprd: '102026',
+              docdata: {
+                cdnr: [
+                  {
+                    ctin: gstin('27ABZPS6519M1Z'),
+                    trdnm: 'SHARMA OFFICE SUPPLIES',
+                    nt: [credit('SOS/CN/7', 5000), credit('SOS-CN-9', 800)],
+                  },
+                ],
+              },
+            },
+          }),
+        })
+        .expect(200)
+    ).body as {
+      rows: {
+        status: string;
+        doc: { number: string } | null;
+        bill: { kind?: string; number: string | null } | null;
+      }[];
+    };
+    const row = (n: string) => r.rows.find((x) => x.doc?.number === n)!;
+    expect(row('SOS/CN/7')).toMatchObject({
+      status: 'matched',
+      bill: { kind: 'debit_note', number: 'DN/2026-27/0001' },
+    });
+    // Their credit note with no debit note here: input credit to give back
+    expect(row('SOS-CN-9')).toMatchObject({
+      status: 'missing_in_books',
+      bill: null,
+    });
+  });
+
   it('voids a debit note the vendor hasn’t refunded, and keeps its entry from being reversed by hand', async () => {
     await as()
       .post(`/journals/${chair.journalEntry.id}/reverse`, {})
