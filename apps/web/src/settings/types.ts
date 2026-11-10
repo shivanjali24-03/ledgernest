@@ -26,6 +26,8 @@ export interface OrganizationSettings {
   msmeCategory?: 'micro' | 'small' | 'medium' | null;
   udyamNumber?: string | null;
   msmeBankRateBp?: number | null;
+  /** Regular GST, or the composition scheme */
+  gstScheme?: 'regular' | 'composition';
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

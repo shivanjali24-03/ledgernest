@@ -136,7 +136,9 @@
         "gstr3b": "GSTR-3B for {{period}}",
         "gstr9": "GSTR-9 annual return for {{period}}",
         "advance_tax": "Advance tax: {{share}}% of the year’s tax ({{period}})",
-        "tds": "TDS for {{period}} to the government"
+        "tds": "TDS for {{period}} to the government",
+        "cmp08": "CMP-08 for {{period}}",
+        "gstr4": "GSTR-4 annual return for {{period}}"
       },
       "daysLeft_one": "1 day left",
       "daysLeft_other": "{{count}} days left",
@@ -1012,7 +1014,8 @@
       "requireTwoFactor": "Require two-factor sign-in for everyone",
       "msmeCategory": "Your MSME category",
       "udyamNumber": "Your Udyam registration number",
-      "msmeBankRate": "RBI bank rate (%)"
+      "msmeBankRate": "RBI bank rate (%)",
+      "gstScheme": "GST scheme"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1024,7 +1027,8 @@
       "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
       "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free.",
       "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first.",
-      "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly."
+      "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly.",
+      "composition": "Invoices become bills of supply with no GST charged, saying you’re a composition taxable person; due dates show CMP-08 each quarter and GSTR-4 each year."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -1091,6 +1095,14 @@
     "msme": {
       "title": "MSME (Udyam)",
       "description": "If your business is registered as a micro or small enterprise, buyers who pay after 45 days owe you interest at three times the RBI bank rate (MSMED Act, section 16). LedgerNest works it out on overdue invoices, account links and reminders."
+    },
+    "gst": {
+      "title": "GST registration",
+      "description": "How you’re registered for GST."
+    },
+    "gstSchemes": {
+      "regular": "Regular",
+      "composition": "Composition scheme"
     }
   },
   "accounts": {
@@ -2459,7 +2471,8 @@
       "nothing_owed": "Only issued invoices with something still owed get reminders.",
       "no_email": "This customer has no email address. Enter one to send it to.",
       "mail_off": "Email isn’t set up on this server, so reminders can’t be sent from here.",
-      "mail_failed": "The email couldn’t be sent. Try again later."
+      "mail_failed": "The email couldn’t be sent. Try again later.",
+      "composition_no_tax": "Under the composition scheme no GST is charged: take the tax off the lines."
     },
     "reminder": {
       "action": "Send reminder",

@@ -24,6 +24,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | ✅ #38 |
 | Logo on documents | The organisation's logo (PNG with transparency, or JPEG) at the top of its invoice, quote, receipt and payment advice PDFs, fitted to 120 × 40 points; a WebP logo shows in the app but not on PDFs | ✅ |
 | Tax invoices as GST requires | A GST-registered business's invoice PDF is a "Tax invoice" with both GSTINs and addresses, the place of supply, HSN/SAC on each line, taxable value and each tax, the amount in words, whether tax is payable on reverse charge, and the supplier's signature block (CGST Rules, rule 46) | ✅ |
+| Composition scheme | A composition dealer (Settings > GST registration) charges no GST: sales lines refuse a tax group and items' GST isn't applied; invoices print as "Bill of supply" with "Composition taxable person, not eligible to collect tax on supplies"; due dates show CMP-08 each quarter (18th after it) and GSTR-4 (30 April) instead of GSTR-1, GSTR-3B and GSTR-9 | ✅ |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | ✅ Amounts follow the organisation's currency and format (#42) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
 | Light and dark themes | System default, remembered per user | ✅ (#4) |

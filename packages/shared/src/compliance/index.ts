@@ -5,7 +5,7 @@
  * announced case by case; these are the regular ones.
  */
 
-export type ComplianceKind = 'gstr1' | 'gstr3b' | 'gstr9' | 'advance_tax' | 'tds';
+export type ComplianceKind = 'gstr1' | 'gstr3b' | 'gstr9' | 'cmp08' | 'gstr4' | 'advance_tax' | 'tds';
 
 export interface ComplianceItem {
   kind: ComplianceKind;
@@ -33,7 +33,12 @@ export function tdsDepositDue(month: string): string {
  * Due dates from a little before today (recently missed) to the horizon, soonest first. GST returns only for a
  * GST-registered business; financial years start in April, as Indian tax years do.
  */
-export function complianceDueDates(today: string, { gst, horizonDays = 45, lookbackDays = 10 }: { gst: boolean; horizonDays?: number; lookbackDays?: number }): ComplianceItem[] {
+/**
+ * A composition dealer files CMP-08 for each quarter (by the 18th of the next month) and GSTR-4 for the year (by
+ * 30 April), instead of GSTR-1, GSTR-3B and GSTR-9.
+ */
+export function complianceDueDates(today: string, { gst, scheme = 'regular', horizonDays = 45, lookbackDays = 10 }: { gst: boolean; scheme?: 'regular' | 'composition'; horizonDays?: number; lookbackDays?: number }): ComplianceItem[] {
+  const composition = gst && scheme === 'composition';
   const from = addDays(today, -lookbackDays);
   const to = addDays(today, horizonDays);
   const out: ComplianceItem[] = [];
@@ -47,14 +52,18 @@ export function complianceDueDates(today: string, { gst, horizonDays = 45, lookb
     const ny = next.getUTCFullYear();
     const nm = next.getUTCMonth() + 1;
     const period = { from: `${py}-${pad(pm)}-01`, to: monthEnd(py, pm) };
-    if (gst) {
+    if (gst && !composition) {
       out.push({ kind: 'gstr1', ...period, due: `${ny}-${pad(nm)}-11` });
       out.push({ kind: 'gstr3b', ...period, due: `${ny}-${pad(nm)}-20` });
     }
+    // A quarter ends in June, September, December and March
+    if (composition && pm % 3 === 0) out.push({ kind: 'cmp08', from: `${new Date(Date.UTC(py, pm - 3, 1)).toISOString().slice(0, 10)}`, to: period.to, due: `${ny}-${pad(nm)}-18` });
   }
   for (const fyStart of [y - 2, y - 1, y]) {
     const fy = { from: `${fyStart}-04-01`, to: `${fyStart + 1}-03-31` };
-    if (gst) out.push({ kind: 'gstr9', ...fy, due: `${fyStart + 1}-12-31` });
+    if (gst && !composition) out.push({ kind: 'gstr9', ...fy, due: `${fyStart + 1}-12-31` });
+    // The year's GSTR-4: by 30 April after it ends
+    if (composition) out.push({ kind: 'gstr4', ...fy, due: `${fyStart + 1}-04-30` });
     for (const [due, share] of [
       [`${fyStart}-06-15`, 0.15],
       [`${fyStart}-09-15`, 0.45],

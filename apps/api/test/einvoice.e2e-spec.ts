@@ -7,6 +7,7 @@ import { gstinCheckChar } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { GstReturnsService } from '../src/reports/gst-returns.service.js';
 
 const gstin = (first14: string) => `${first14}${gstinCheckChar(first14)}`;
 const OURS = gstin('27AAPFN1234C1Z');
@@ -436,5 +437,60 @@ describe('GST e-invoice JSON (e2e)', () => {
       await as().delete(`/invoices/${inv.kumar}/irn`).expect(200)
     ).body as { irn: unknown };
     expect(cleared.irn).toBeNull();
+  });
+
+  it('under the composition scheme: no GST on sales, bills of supply, and CMP-08 and GSTR-4 to file', async () => {
+    await as().patch('/organization', { gstScheme: 'composition' }).expect(200);
+    expect(
+      (
+        await as()
+          .post('/invoices', {
+            contactId: contact.kumar,
+            issueDate: '2026-10-20',
+            lines: [
+              {
+                description: 'Repairs',
+                quantity: '1',
+                unitPrice: 1_000_00,
+                taxGroupId: gst18,
+                accountId: acc.sales,
+              },
+            ],
+          })
+          .expect(400)
+      ).body.details,
+    ).toMatchObject({ reason: 'composition_no_tax' });
+    const id = await issue(contact.kumar, '2026-10-20', [
+      {
+        description: 'Repairs',
+        quantity: '1',
+        unitPrice: 1_000_00,
+        accountId: acc.sales,
+      },
+    ]);
+    const pdf = await as()
+      .get(`/invoices/${id}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('(Bill of supply INV/2026-27/');
+    expect(text).toContain(
+      '(Composition taxable person, not eligible to collect tax on supplies) Tj',
+    );
+    expect(text).not.toContain('reverse charge');
+    expect(text).toContain('(Authorised signatory) Tj');
+    const due = await app
+      .get(GstReturnsService)
+      .compliance(org, new Date('2026-10-10T06:00:00Z'));
+    const kinds = due.items.map((i) => i.kind);
+    expect(kinds).toContain('cmp08');
+    expect(kinds).not.toContain('gstr1');
+    expect(kinds).not.toContain('gstr3b');
+    await as().patch('/organization', { gstScheme: 'regular' }).expect(200);
   });
 });
