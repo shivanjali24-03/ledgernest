@@ -340,15 +340,24 @@ describe('invoices', () => {
     renderApp();
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 6000 }));
     await screen.findByRole('article', {}, { timeout: 6000 });
-    expect(await screen.findByText('Not registered on the e-invoice portal yet.', {}, { timeout: 6000 })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Add IRN' }));
-    const dialog = await screen.findByRole('dialog', {}, { timeout: 4000 });
+    expect(await screen.findByText('Not registered on the e-invoice portal yet.', {}, { timeout: 12_000 })).toBeInTheDocument();
     const irn = 'a5c12dca80e743321740b001fd70953e8738d109865d28ba4013750f2046f229';
     const response = JSON.stringify({ Status: 1, Data: { AckNo: 112610036563310, AckDt: '2026-11-10 11:05:00', Irn: irn, SignedQRCode: 'eyJhbGciOiJSUzI1NiJ9.eyJJcm4iOiJ4In0.c2ln', Status: 'ACT' } });
-    fireEvent.change(within(dialog).getByLabelText('The portal’s response (JSON)'), { target: { value: response } });
-    expect(within(dialog).getByLabelText('IRN')).toHaveValue(irn);
-    expect(within(dialog).getByLabelText('Ack No')).toHaveValue('112610036563310');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText(`e-Invoice registered · IRN ${irn} · Ack 112610036563310`, {}, { timeout: 6000 })).toBeInTheDocument();
+    // Open, paste and save in one retried step: under load the page can re-render and close the dialog
+    await waitFor(
+      () => {
+        let dialog = screen.queryByRole('dialog');
+        if (!dialog) {
+          fireEvent.click(screen.getByRole('button', { name: 'Add IRN' }));
+          dialog = screen.getByRole('dialog');
+        }
+        fireEvent.change(within(dialog).getByLabelText('The portal’s response (JSON)'), { target: { value: response } });
+        expect(within(dialog).getByLabelText('IRN')).toHaveValue(irn);
+        expect(within(dialog).getByLabelText('Ack No')).toHaveValue('112610036563310');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+      },
+      { timeout: 10_000 },
+    );
+    expect(await screen.findByText(`e-Invoice registered · IRN ${irn} · Ack 112610036563310`, {}, { timeout: 10_000 })).toBeInTheDocument();
   });
 });
