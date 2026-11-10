@@ -47,6 +47,8 @@ type LineIn = {
   costCentreId?: string | null;
   /** For goods kept in batches: the batch to sell from; null = earliest expiry first */
   batchId?: string | null;
+  /** For goods with serial numbers: the units sold */
+  serials?: string[];
 };
 export type DraftIn = {
   contactId: string;
@@ -194,6 +196,7 @@ const select = {
       taxGroupId: true,
       costCentreId: true,
       batchId: true,
+      serials: true,
       costCentre: { select: { id: true, code: true, name: true } },
       item: {
         select: {
@@ -202,6 +205,7 @@ const select = {
           hsnSac: true,
           unit: true,
           trackBatches: true,
+          trackSerials: true,
         },
       },
       account: { select: { id: true, code: true, name: true } },
@@ -374,6 +378,8 @@ export class InvoicesService {
           supply: l.taxGroup.supply,
         },
         batchId: l.batchId,
+        /** The serial numbers of the units (goods with serial numbers) */
+        serials: l.serials,
         /** The batches an issued line's goods came from (goods kept in batches) */
         batches: [] as {
           batchNo: string;
@@ -859,6 +865,7 @@ export class InvoicesService {
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
         batchId: l.batchId ?? null,
+        serials: (l.serials ?? []).map((x) => x.trim().toUpperCase()),
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1070,6 +1077,7 @@ export class InvoicesService {
           accountId: l.accountId,
           costCentreId: l.costCentreId,
           batchId: l.batchId,
+          serials: l.serials,
         })),
       });
       if (!p.receivableAccountId)
@@ -1212,6 +1220,7 @@ export class InvoicesService {
           quantity: l.quantity,
           costCentreId: l.costCentreId ?? null,
           batchId: l.batchId ?? null,
+          serials: l.serials ?? [],
         })),
         issueDate,
       );

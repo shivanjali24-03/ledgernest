@@ -3616,7 +3616,8 @@
       "unitCost": "Enter what one unit cost.",
       "account": "Choose the other account.",
       "reason": "Say why the stock changed.",
-      "batch": "Enter or choose the batch."
+      "batch": "Enter or choose the batch.",
+      "serials": "Enter the serial numbers."
     },
     "errors": {
       "insufficient_stock": "Not enough in stock: only {{onHand}} on hand.",
@@ -4634,6 +4635,37 @@
       "expiredAgo_other": "expired {{count}} days ago",
       "none_one": "Nothing expires within {{count}} day.",
       "none_other": "Nothing expires within {{count}} days."
+    }
+  },
+  "serials": {
+    "track": "Record a serial number for each unit",
+    "trackHint": "For phones (IMEI), appliances and machines: bills record each unit's serial, invoices name the units sold and print them, and any serial can be traced for warranty or theft. Not with batches; turn it on before any stock moves.",
+    "placeholder": "One serial per unit, one per line",
+    "wholeUnits": "Whole units only, one serial each",
+    "count": "{{count}} of {{needed}} serials",
+    "lineSerials": "Serial numbers for line {{n}}",
+    "serials": "Serial numbers",
+    "short": "S/N",
+    "returning": "Serial numbers coming back on {{description}}",
+    "lookup": "Find a serial number",
+    "find": "Find",
+    "notFound": "No unit with serial number {{serial}}.",
+    "notValid": "That isn’t a serial number.",
+    "statuses": {
+      "in_stock": "In stock",
+      "sold": "Sold",
+      "written_off": "Written off",
+      "removed": "Bill voided"
+    },
+    "errors": {
+      "serials_not_whole": "Goods with serial numbers come in whole units, each with its serial.",
+      "serials_count": "Enter one serial number for each unit.",
+      "serials_duplicate": "A serial number is entered twice.",
+      "serial_in_stock": "Serial number {{serial}} is already in stock.",
+      "serial_not_in_stock": "Serial number {{serial}} isn’t in stock.",
+      "serial_not_sold": "Serial number {{serial}} wasn’t sold on this invoice line.",
+      "serials_need_stock": "Only goods whose stock is tracked can have serial numbers.",
+      "batches_or_serials": "Goods are kept either in batches or by serial number, not both."
     }
   }
 }

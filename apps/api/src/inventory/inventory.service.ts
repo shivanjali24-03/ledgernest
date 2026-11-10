@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   allocateBatches,
+  serialsProblem,
   averageUnitCost,
   batchExpired,
   billNumber,
@@ -35,7 +36,11 @@ type Movement = {
   value: bigint;
   batchId?: string | null;
   sourceLineId?: string | null;
+  /** Serial numbers of the units moved (upper-cased) */
+  serials?: string[];
 };
+const upper = (xs: string[] | undefined | null) =>
+  (xs ?? []).map((x) => x.trim().toUpperCase()).filter(Boolean);
 /** A batch as a bill line or a stock count brings it in */
 type BatchIn = {
   batchNo: string | null;
@@ -119,6 +124,7 @@ export class InventoryService {
           inventoryAccountId: string;
           cogsAccountId: string;
           trackBatches: boolean;
+          trackSerials: boolean;
         }
       >();
     const items = await tx.item.findMany({
@@ -129,6 +135,7 @@ export class InventoryService {
         inventoryAccountId: true,
         cogsAccountId: true,
         trackBatches: true,
+        trackSerials: true,
       },
     });
     return new Map(
@@ -140,6 +147,7 @@ export class InventoryService {
           inventoryAccountId: i.inventoryAccountId!,
           cogsAccountId: i.cogsAccountId!,
           trackBatches: i.trackBatches,
+          trackSerials: i.trackSerials,
         },
       ]),
     );
@@ -348,6 +356,148 @@ export class InventoryService {
         );
   }
 
+  /** A line of goods with serial numbers needs one per unit, none twice */
+  private checkSerials(
+    item: { id: string; name: string },
+    quantity: string,
+    serials: string[],
+  ) {
+    const problem = serialsProblem(quantity, serials);
+    if (problem)
+      throw refuse(
+        BadRequestException,
+        problem === 'not_whole'
+          ? `${item.name} is sold in whole units, each with its serial number.`
+          : problem === 'duplicate'
+            ? `A serial number of ${item.name} is entered twice.`
+            : `Enter one serial number for each ${item.name}: ${formatQuantity(parseQuantity(quantity) ?? 0n)} needed, ${serials.length} given.`,
+        `serials_${problem}`,
+        { itemId: item.id },
+      );
+  }
+
+  /**
+   * Where each unit is after some movements: units coming in are in stock (they mustn't be already); units going
+   * out must be in stock, and are then sold, written off or removed (a voided bill) by what moved them.
+   */
+  private async applySerials(
+    tx: Tx,
+    organizationId: string,
+    kind: StockMovementKind,
+    movements: Movement[],
+  ) {
+    for (const m of movements) {
+      const serials = upper(m.serials);
+      if (!serials.length) continue;
+      const rows = await tx.stockSerial.findMany({
+        where: { organizationId, itemId: m.itemId, serialNo: { in: serials } },
+        select: { id: true, serialNo: true, status: true },
+      });
+      const found = new Map(rows.map((r) => [r.serialNo, r]));
+      if (m.quantity > 0n) {
+        const already = rows.find((r) => r.status === 'in_stock');
+        if (already)
+          throw refuse(
+            ConflictException,
+            `Serial number ${already.serialNo} is already in stock.`,
+            'serial_in_stock',
+            { serial: already.serialNo },
+          );
+        await tx.stockSerial.updateMany({
+          where: { organizationId, id: { in: rows.map((r) => r.id) } },
+          data: { status: 'in_stock' },
+        });
+        const fresh = serials.filter((x) => !found.has(x));
+        if (fresh.length)
+          await tx.stockSerial.createMany({
+            data: fresh.map((serialNo) => ({
+              organizationId,
+              itemId: m.itemId,
+              serialNo,
+              status: 'in_stock',
+            })),
+          });
+      } else {
+        const missing = serials.find(
+          (x) => found.get(x)?.status !== 'in_stock',
+        );
+        if (missing)
+          throw refuse(
+            ConflictException,
+            `Serial number ${missing} isn’t in stock.`,
+            'serial_not_in_stock',
+            { serial: missing },
+          );
+        const status =
+          kind === 'invoice' || kind === 'credit_note_void'
+            ? 'sold'
+            : kind === 'adjustment'
+              ? 'written_off'
+              : 'removed';
+        await tx.stockSerial.updateMany({
+          where: { organizationId, id: { in: rows.map((r) => r.id) } },
+          data: { status },
+        });
+      }
+    }
+  }
+
+  /**
+   * One serial number's story: the item, where the unit is now, and each movement (bought on a bill, sold on an
+   * invoice, returned, written off), for warranty claims and lost or stolen goods.
+   */
+  async serialHistory(organizationId: string, serial: string) {
+    const serialNo = serial.trim().toUpperCase();
+    const units = await this.prisma.stockSerial.findMany({
+      where: { organizationId, serialNo },
+      select: { itemId: true, serialNo: true, status: true },
+    });
+    const out = [];
+    for (const u of units) {
+      const moved = await this.prisma.stockMovement.findMany({
+        where: { organizationId, itemId: u.itemId, serials: { has: serialNo } },
+        select: { id: true },
+      });
+      const ids = new Set(moved.map((m) => m.id));
+      const all = (await this.movements(organizationId, u.itemId)).movements;
+      const mine = all.filter((m) => ids.has(m.id));
+      const contacts = await this.documentContacts(
+        organizationId,
+        mine.map((m) => m.document?.id).filter((x): x is string => !!x),
+      );
+      out.push({
+        itemId: u.itemId,
+        item: all[0]?.item ?? '',
+        serialNo: u.serialNo,
+        status: u.status,
+        movements: mine.map((m) => ({
+          id: m.id,
+          date: m.date,
+          kind: m.kind,
+          document: m.document,
+          contact: m.document ? (contacts.get(m.document.id) ?? null) : null,
+          reason: m.reason,
+        })),
+      });
+    }
+    return out;
+  }
+
+  /** The customer or vendor of some invoices, bills and credit notes */
+  private async documentContacts(organizationId: string, ids: string[]) {
+    if (!ids.length) return new Map<string, string>();
+    const pick = { id: true, contact: { select: { name: true } } } as const;
+    const where = { organizationId, id: { in: ids } };
+    const [invoices, bills, notes] = await Promise.all([
+      this.prisma.invoice.findMany({ where, select: pick }),
+      this.prisma.bill.findMany({ where, select: pick }),
+      this.prisma.creditNote.findMany({ where, select: pick }),
+    ]);
+    return new Map(
+      [...invoices, ...bills, ...notes].map((d) => [d.id, d.contact.name]),
+    );
+  }
+
   /** The inventory account each tracked item on some lines is bought into */
   async inventoryAccounts(
     tx: Tx,
@@ -371,6 +521,7 @@ export class InventoryService {
       quantity: string;
       costCentreId?: string | null;
       batchId?: string | null;
+      serials?: string[];
     }[],
     /** The day it's sold: expired batches can't be */
     day?: string,
@@ -473,13 +624,17 @@ export class InventoryService {
             sourceLineId: l.id ?? null,
           });
         }
-      } else
+      } else {
+        if (item.trackSerials)
+          this.checkSerials(item, l.quantity, upper(l.serials));
         movements.push({
           itemId: item.id,
           quantity: -q,
           value: -value,
           sourceLineId: l.id ?? null,
+          serials: item.trackSerials ? upper(l.serials) : [],
         });
+      }
       if (value > 0n) {
         const description = `Cost of ${item.name}`;
         journal.push(
@@ -516,6 +671,7 @@ export class InventoryService {
       itemId: string | null;
       quantity: string;
       costCentreId?: string | null;
+      serials?: string[];
     }[],
   ) {
     const items = await this.tracked(
@@ -538,7 +694,12 @@ export class InventoryService {
               sourceLineId: l.invoiceLineId,
             },
             orderBy: { createdAt: 'asc' },
-            select: { quantity: true, value: true, batchId: true },
+            select: {
+              quantity: true,
+              value: true,
+              batchId: true,
+              serials: true,
+            },
           })
         : [];
       if (!sold.length)
@@ -550,13 +711,53 @@ export class InventoryService {
             itemId: item.id,
           },
           take: 1,
-          select: { quantity: true, value: true, batchId: true },
+          select: { quantity: true, value: true, batchId: true, serials: true },
         });
       if (!sold.length) continue;
       const soldQ = sold.reduce((x, m) => x - signed(m.quantity), 0n);
       const soldV = sold.reduce((x, m) => x - m.value, 0n);
       const q = parseQuantity(l.quantity)!;
       const value = costOfQuantity(soldQ, soldV, q);
+      // Units with serial numbers: which ones came back, each one sold on this line
+      if (item.trackSerials) {
+        const back = upper(l.serials);
+        this.checkSerials(item, l.quantity, back);
+        const soldSerials = new Set(sold.flatMap((m) => m.serials ?? []));
+        const stranger = back.find((x) => !soldSerials.has(x));
+        if (stranger)
+          throw refuse(
+            BadRequestException,
+            `Serial number ${stranger} wasn’t sold on this invoice line.`,
+            'serial_not_sold',
+            { serial: stranger },
+          );
+        movements.push({
+          itemId: item.id,
+          quantity: q,
+          value,
+          sourceLineId: l.invoiceLineId ?? null,
+          serials: back,
+        });
+        if (value > 0n) {
+          const description = `${item.name} returned`;
+          journal.push(
+            {
+              accountId: item.inventoryAccountId,
+              description,
+              debit: Number(value),
+              credit: 0,
+            },
+            {
+              accountId: item.cogsAccountId,
+              description,
+              debit: 0,
+              credit: Number(value),
+              costCentreId: l.costCentreId ?? null,
+            },
+          );
+        }
+        continue;
+      }
       // Back into the batches it left, in order
       let restQ = q;
       let restV = value;
@@ -609,6 +810,7 @@ export class InventoryService {
       itemId: string | null;
       quantity: string;
       value: number;
+      serials?: string[];
     } & Partial<BatchIn>)[],
   ) {
     const items = await this.tracked(
@@ -620,10 +822,13 @@ export class InventoryService {
     for (const l of lines) {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
+      if (item.trackSerials)
+        this.checkSerials(item, l.quantity, upper(l.serials));
       out.push({
         itemId: item.id,
         quantity: parseQuantity(l.quantity)!,
         value: BigInt(l.value),
+        serials: item.trackSerials ? upper(l.serials) : [],
         batchId: item.trackBatches
           ? await this.batchFor(tx, organizationId, item, {
               batchNo: l.batchNo ?? null,
@@ -666,8 +871,10 @@ export class InventoryService {
         createdById: m.actorId,
         batchId: x.batchId ?? null,
         sourceLineId: x.sourceLineId ?? null,
+        serials: upper(x.serials),
       })),
     });
+    await this.applySerials(tx, organizationId, m.kind, movements);
   }
 
   /**
@@ -691,6 +898,7 @@ export class InventoryService {
         value: true,
         batchId: true,
         sourceLineId: true,
+        serials: true,
         item: { select: { name: true } },
         batch: { select: { batchNo: true } },
       },
@@ -757,6 +965,7 @@ export class InventoryService {
         value: -d.value,
         batchId: d.batchId,
         sourceLineId: d.sourceLineId,
+        serials: d.serials,
       })),
     );
   }
@@ -774,6 +983,7 @@ export class InventoryService {
           name: true,
           trackStock: true,
           trackBatches: true,
+          trackSerials: true,
           inventoryAccountId: true,
           archivedAt: true,
         },
@@ -804,6 +1014,8 @@ export class InventoryService {
       let value: bigint;
       // Goods kept in batches are counted batch by batch: new stock into its batch, a write-off from one that has it
       let batchId: string | null = null;
+      const serials = item.trackSerials ? upper(input.serials) : [];
+      if (item.trackSerials) this.checkSerials(item, input.quantity, serials);
       if (item.trackBatches) {
         if (input.direction === 'in')
           batchId = await this.batchFor(tx, organizationId, item, input);
@@ -905,9 +1117,18 @@ export class InventoryService {
           journalEntryId: entry?.id ?? null,
           createdById: ctx.actor.userId,
           batchId,
+          serials,
         },
         select: { id: true },
       });
+      await this.applySerials(tx, organizationId, 'adjustment', [
+        {
+          itemId: item.id,
+          quantity: input.direction === 'out' ? -q : q,
+          value,
+          serials,
+        },
+      ]);
       await this.audit.record(
         {
           action: 'org.stock.adjust',
@@ -946,6 +1167,7 @@ export class InventoryService {
           journalEntryId: true,
           reason: true,
           batchId: true,
+          serials: true,
           item: { select: { name: true } },
         },
       });
@@ -1006,8 +1228,12 @@ export class InventoryService {
           journalEntryId: reversal?.id ?? null,
           createdById: ctx.actor.userId,
           batchId: m.batchId,
+          serials: m.serials,
         },
       });
+      await this.applySerials(tx, organizationId, 'adjustment_undo', [
+        { itemId: m.itemId, quantity: -q, value: -m.value, serials: m.serials },
+      ]);
       await this.audit.record(
         {
           action: 'org.stock.adjust_undo',

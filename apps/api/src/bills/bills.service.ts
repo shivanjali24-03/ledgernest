@@ -50,6 +50,8 @@ type LineIn = {
   batchNo?: string | null;
   mfgDate?: string | null;
   expiryDate?: string | null;
+  /** For goods with serial numbers: the units bought */
+  serials?: string[];
 };
 export type DraftIn = {
   contactId: string;
@@ -188,6 +190,7 @@ const select = {
       batchNo: true,
       mfgDate: true,
       expiryDate: true,
+      serials: true,
       costCentre: { select: { id: true, code: true, name: true } },
       item: {
         select: {
@@ -196,6 +199,7 @@ const select = {
           hsnSac: true,
           unit: true,
           trackBatches: true,
+          trackSerials: true,
         },
       },
       account: { select: { id: true, code: true, name: true } },
@@ -357,6 +361,7 @@ export class BillsService {
         batchNo: l.batchNo,
         mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
         expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
+        serials: l.serials,
       })),
     };
     return {
@@ -870,6 +875,7 @@ export class BillsService {
         batchNo: l.batchNo ?? null,
         mfgDate: l.mfgDate ? asDate(l.mfgDate) : null,
         expiryDate: l.expiryDate ? asDate(l.expiryDate) : null,
+        serials: (l.serials ?? []).map((x) => x.trim().toUpperCase()),
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1081,6 +1087,7 @@ export class BillsService {
           batchNo: l.batchNo,
           mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
           expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
+          serials: l.serials,
         })),
       });
       if (!p.payableAccountId)
@@ -1248,6 +1255,7 @@ export class BillsService {
               batchNo: l.batchNo ?? null,
               mfgDate: l.mfgDate ?? null,
               expiryDate: l.expiryDate ?? null,
+              serials: l.serials ?? [],
             };
           }),
         ),

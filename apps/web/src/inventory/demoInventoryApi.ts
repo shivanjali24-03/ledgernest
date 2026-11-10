@@ -141,7 +141,8 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
     return out;
   };
   return {
-    // The demo company keeps no batches
+    // The demo company keeps no batches or serial numbers
+    serial: async () => [],
     expiring: async (days) => ({ asOf: todayIn('Asia/Kolkata'), days, rows: [], expired: { count: 0, value: 0 }, expiring: { count: 0, value: 0 } }),
     valuation: (asOf) =>
       wait(async () => {

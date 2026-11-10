@@ -136,6 +136,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
                     {l.description}
                   </span>
                   {l.item?.hsnSac && <span className="block text-xs text-ink-500">{t('invoices.hsnSac', { code: l.item.hsnSac })}</span>}
+                  {(l.serials?.length ?? 0) > 0 && (
+                    <span className="block font-mono text-xs text-ink-500" dir="ltr">
+                      {t('serials.short')} {l.serials!.join(', ')}
+                    </span>
+                  )}
                   {(l.batches ?? []).map((b) => (
                     <span key={b.batchNo} className="block text-xs text-ink-500" dir="ltr">
                       {batchLabel(b)} · {b.quantity}

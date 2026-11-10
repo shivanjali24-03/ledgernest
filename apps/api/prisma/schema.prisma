@@ -122,6 +122,7 @@ model Organization {
   invoices             Invoice[]
   numberSeries         NumberSeries[]
   stockBatches         StockBatch[]
+  stockSerials         StockSerial[]
   invoiceLines         InvoiceLine[]
   payments             Payment[]
   allocations          PaymentAllocation[]
@@ -739,6 +740,8 @@ model Item {
   trackStock         Boolean   @default(false) @map("track_stock")
   /// Tracked goods kept in batches with manufacturing and expiry dates
   trackBatches       Boolean   @default(false) @map("track_batches")
+  /// Tracked goods whose every unit has its own serial number
+  trackSerials       Boolean   @default(false) @map("track_serials")
   inventoryAccountId String?   @map("inventory_account_id") @db.Uuid
   cogsAccountId      String?   @map("cogs_account_id") @db.Uuid
   /// Stock at or below this is low (tracked goods only)
@@ -761,6 +764,7 @@ model Item {
   cogsAccount      Account?        @relation("ItemCogs", fields: [organizationId, cogsAccountId], references: [organizationId, id], onDelete: NoAction)
   stockMovements   StockMovement[]
   batches          StockBatch[]
+  serials          StockSerial[]
 
   invoiceLines InvoiceLine[]
   quoteLines   QuoteLine[]
@@ -852,23 +856,25 @@ model Invoice {
 }
 
 model InvoiceLine {
-  id             String  @id @default(uuid()) @db.Uuid
-  organizationId String  @map("organization_id") @db.Uuid
-  invoiceId      String  @map("invoice_id") @db.Uuid
-  lineNo         Int     @map("line_no")
-  itemId         String? @map("item_id") @db.Uuid
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  lineNo         Int      @map("line_no")
+  itemId         String?  @map("item_id") @db.Uuid
   description    String
-  quantity       Decimal @db.Decimal(13, 4)
+  quantity       Decimal  @db.Decimal(13, 4)
+  /// The serial numbers of the units sold (goods with serial numbers)
+  serials        String[] @default([])
   /// The batch chosen to sell from (goods kept in batches); null = earliest expiry first
-  batchId        String? @map("batch_id") @db.Uuid
-  unitPrice      BigInt  @map("unit_price")
-  discountPpm    Int     @default(0) @map("discount_ppm")
-  taxGroupId     String? @map("tax_group_id") @db.Uuid
-  accountId      String? @map("account_id") @db.Uuid
+  batchId        String?  @map("batch_id") @db.Uuid
+  unitPrice      BigInt   @map("unit_price")
+  discountPpm    Int      @default(0) @map("discount_ppm")
+  taxGroupId     String?  @map("tax_group_id") @db.Uuid
+  accountId      String?  @map("account_id") @db.Uuid
   /// Worked out from the above: net of discount, and its tax
   amount         BigInt
-  taxAmount      BigInt  @default(0) @map("tax_amount")
-  costCentreId   String? @map("cost_centre_id") @db.Uuid
+  taxAmount      BigInt   @default(0) @map("tax_amount")
+  costCentreId   String?  @map("cost_centre_id") @db.Uuid
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
@@ -1017,6 +1023,8 @@ model BillLine {
   itemId         String?   @map("item_id") @db.Uuid
   description    String
   quantity       Decimal   @db.Decimal(13, 4)
+  /// The serial numbers of the units bought
+  serials        String[]  @default([])
   /// For goods kept in batches: the batch that came in, with its dates
   batchNo        String?   @map("batch_no")
   mfgDate        DateTime? @map("mfg_date") @db.Date
@@ -1202,19 +1210,21 @@ model CreditNote {
 
 /// A line of a credit note: a quantity of one of the invoice's lines, at its price, discount and tax.
 model CreditNoteLine {
-  id             String  @id @default(uuid()) @db.Uuid
-  organizationId String  @map("organization_id") @db.Uuid
-  creditNoteId   String  @map("credit_note_id") @db.Uuid
-  lineNo         Int     @map("line_no")
-  invoiceLineId  String  @map("invoice_line_id") @db.Uuid
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  creditNoteId   String   @map("credit_note_id") @db.Uuid
+  lineNo         Int      @map("line_no")
+  invoiceLineId  String   @map("invoice_line_id") @db.Uuid
   description    String
-  quantity       Decimal @db.Decimal(13, 4)
-  unitPrice      BigInt  @map("unit_price")
-  discountPpm    Int     @default(0) @map("discount_ppm")
-  taxGroupId     String? @map("tax_group_id") @db.Uuid
-  accountId      String  @map("account_id") @db.Uuid
+  quantity       Decimal  @db.Decimal(13, 4)
+  /// The serial numbers of the units that came back
+  serials        String[] @default([])
+  unitPrice      BigInt   @map("unit_price")
+  discountPpm    Int      @default(0) @map("discount_ppm")
+  taxGroupId     String?  @map("tax_group_id") @db.Uuid
+  accountId      String   @map("account_id") @db.Uuid
   amount         BigInt
-  taxAmount      BigInt  @default(0) @map("tax_amount")
+  taxAmount      BigInt   @default(0) @map("tax_amount")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   creditNote   CreditNote   @relation(fields: [organizationId, creditNoteId], references: [organizationId, id], onDelete: Cascade)
@@ -1624,6 +1634,8 @@ model StockMovement {
   batchId        String?  @map("batch_id") @db.Uuid
   /// The invoice, bill or credit note line it came from
   sourceLineId   String?  @map("source_line_id") @db.Uuid
+  /// The serial numbers of the units it moved (goods with serial numbers)
+  serials        String[] @default([])
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   item         Item          @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
@@ -1634,6 +1646,7 @@ model StockMovement {
   @@index([organizationId, itemId, date])
   @@index([organizationId, sourceId])
   @@index([organizationId, batchId])
+  @@index([serials], type: Gin)
   @@map("stock_movements")
 }
 
@@ -2044,4 +2057,25 @@ model StockBatch {
   @@unique([organizationId, itemId, batchNo])
   @@index([organizationId, expiryDate])
   @@map("stock_batches")
+}
+
+/// One unit of goods with a serial number (an IMEI, a machine number) and where it is now
+model StockSerial {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  itemId         String   @map("item_id") @db.Uuid
+  /// Upper-cased as entered
+  serialNo       String   @map("serial_no")
+  /// in_stock | sold | written_off | removed (its bill was voided)
+  status         String   @default("in_stock")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item         Item         @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, itemId, serialNo])
+  @@index([organizationId, serialNo])
+  @@map("stock_serials")
 }

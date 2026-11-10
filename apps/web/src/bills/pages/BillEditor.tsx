@@ -4,7 +4,7 @@ import { formatDate } from '../../lib/format';
 import { ApiError } from '../../auth/client';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
+import { currencyDigits, dueDateFor, parseSerials, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
 import { ArrowLeft, Ban, BookCheck, FileMinus, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
 import DebitNoteDialog from '../../debit-notes/DebitNoteDialog';
 import { useDebitNotesApi } from '../../debit-notes/useDebitNotesApi';
@@ -31,6 +31,7 @@ import BillDocument from '../BillDocument';
 import { billErrorMessage } from '../errors';
 import type { Bill, BillDuplicate, BillsApi } from '../types';
 import { useBillsApi } from '../useBillsApi';
+import SerialsInput from '../../inventory/SerialsInput';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
 import { heldForApproval, heldMessage } from '../../approvals/errors';
@@ -52,6 +53,7 @@ type Line = {
   batchNo: string;
   mfgDate: string;
   expiryDate: string;
+  serials: string;
 };
 const blankLine = (): Line => ({
   key: crypto.randomUUID(),
@@ -66,6 +68,7 @@ const blankLine = (): Line => ({
   batchNo: '',
   mfgDate: '',
   expiryDate: '',
+  serials: '',
 });
 
 /** A draft: choose the vendor, add what was bought and where it's booked, see input GST as you type, save or record. */
@@ -100,6 +103,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     enabled: !!itemsApi,
   });
   const batched = (itemId: string) => !!items.data?.find((x) => x.id === itemId)?.trackBatches;
+  const serialed = (itemId: string) => !!items.data?.find((x) => x.id === itemId)?.trackSerials;
   const taxes = useQuery({
     queryKey: ['taxes', session.organizationId, role],
     queryFn: () => taxesApi!.list(),
@@ -137,6 +141,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           batchNo: l.batchNo ?? '',
           mfgDate: l.mfgDate ?? '',
           expiryDate: l.expiryDate ?? '',
+          serials: (l.serials ?? []).join('\n'),
         }))
       : [blankLine()],
   );
@@ -230,6 +235,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       accountId: l.accountId || null,
       costCentreId: l.costCentreId || null,
       ...(batched(l.itemId) ? { batchNo: l.batchNo.trim() || null, mfgDate: l.mfgDate || null, expiryDate: l.expiryDate || null } : {}),
+      ...(serialed(l.itemId) ? { serials: parseSerials(l.serials) } : {}),
     })),
   });
   const save = useMutation({
@@ -380,6 +386,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
                       <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
+                      {serialed(l.itemId) && <SerialsInput value={l.serials} onChange={(v) => set(l.key, { serials: v })} quantity={l.quantity} label={t('serials.lineSerials', { n: n + 1 })} disabled={!canManage} />}
                       {batched(l.itemId) && (
                         <div className="mt-1 grid grid-cols-3 gap-1">
                           <input aria-label={t('batches.lineBatch', { n: n + 1 })} placeholder={t('batches.batchNo')} value={l.batchNo} disabled={!canManage} onChange={(e) => set(l.key, { batchNo: e.target.value })} dir="ltr" className={clsx(cell, 'font-mono', !l.batchNo.trim() && 'border-expense')} />

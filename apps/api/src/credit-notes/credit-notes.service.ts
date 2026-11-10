@@ -431,7 +431,11 @@ export class CreditNotesService {
             'over_credited',
             { line: n + 1, left: formatQuantity(left > 0n ? left : 0n) },
           );
-        return { src, quantity: formatQuantity(parseQuantity(l.quantity)!) };
+        return {
+          src,
+          quantity: formatQuantity(parseQuantity(l.quantity)!),
+          serials: (l.serials ?? []).map((x) => x.trim().toUpperCase()),
+        };
       });
       const amounts = invoiceAmounts(
         lines.map((l) => ({
@@ -559,6 +563,7 @@ export class CreditNotesService {
               itemId: l.src.itemId,
               quantity: l.quantity,
               costCentreId: l.src.costCentreId,
+              serials: l.serials,
             })),
           )
         : { movements: [], journal: [] };
@@ -631,6 +636,7 @@ export class CreditNotesService {
           accountId: l.src.accountId!,
           amount: BigInt(amounts.lines[n]!.net),
           taxAmount: BigInt(amounts.lines[n]!.tax),
+          serials: input.returnsStock ? l.serials : [],
         })),
       });
       if (onInvoice > 0) {

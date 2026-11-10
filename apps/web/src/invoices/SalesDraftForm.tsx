@@ -1,12 +1,13 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../contacts/useContactsApi';
 import type { Contact } from '../contacts/types';
+import SerialsInput from '../inventory/SerialsInput';
 import CostCentreSelect from '../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../cost-centres/useCostCentresApi';
 import { useIntlLocale } from '../i18n';
@@ -34,7 +35,7 @@ export interface SalesDraft {
   currency: string | null;
   /** The number series it will be numbered from (invoices) */
   seriesId?: string | null;
-  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null }[];
+  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[] }[];
 }
 export interface SalesDraftPayload {
   contactId: string;
@@ -44,7 +45,7 @@ export interface SalesDraftPayload {
   notes: string;
   placeOfSupply: string | null;
   seriesId?: string | null;
-  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null }[];
+  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[] }[];
 }
 export interface SalesDraftConfig {
   initial: SalesDraft | null;
@@ -68,8 +69,8 @@ export interface SalesDraftConfig {
   labels: { date: string; until: string; save: string; extra: string; delete: string; deleteTitle: string; deleteBody: string; deleted: string };
 }
 
-type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string; batchId: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '', batchId: '' });
+type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string; batchId: string; serials: string };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '', batchId: '', serials: '' });
 
 /** For goods kept in batches: which batch to sell from, or the earliest expiry first; expired batches can't be chosen */
 function BatchSelect({ itemId, value, onChange, label, disabled }: { itemId: string; value: string; onChange: (v: string) => void; label: string; disabled: boolean }) {
@@ -129,7 +130,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
-      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '' }))
+      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n') }))
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
@@ -178,7 +179,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, ...(config.batches ? { batchId: l.batchId || null } : {}) })),
+    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
   const save = useMutation({
     mutationFn: (extra: boolean) => config.save(payload(), extra),
@@ -293,6 +294,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
                       <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
                       {config.batches && l.itemId && items.data?.find((x) => x.id === l.itemId)?.trackBatches && <BatchSelect itemId={l.itemId} value={l.batchId} onChange={(v) => set(l.key, { batchId: v })} label={t('batches.lineBatch', { n: n + 1 })} disabled={!canManage} />}
+                      {config.batches && l.itemId && items.data?.find((x) => x.id === l.itemId)?.trackSerials && <SerialsInput value={l.serials} onChange={(v) => set(l.key, { serials: v })} quantity={l.quantity} label={t('serials.lineSerials', { n: n + 1 })} disabled={!canManage} />}
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />

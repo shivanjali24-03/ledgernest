@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toMinor, todayIn } from '@ledgernest/shared';
+import { parseSerials, toMinor, todayIn } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../accounts/useAccountsApi';
 import { useItemsApi } from '../items/useItemsApi';
@@ -13,6 +13,7 @@ import { Segmented } from '../ui/Kit';
 import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
 import { inventoryErrorMessage } from './errors';
+import SerialsInput from './SerialsInput';
 import type { InventoryApi } from './types';
 
 type Direction = 'in' | 'out';
@@ -43,6 +44,8 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
   const [mfgDate, setMfgDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const batched = !!item?.trackBatches;
+  const serialed = !!item?.trackSerials;
+  const [serials, setSerials] = useState('');
   const batches = useQuery({ queryKey: ['items', session.organizationId, 'batches', item?.id], queryFn: () => itemsApi!.batches(item!.id), enabled: !!itemsApi && batched });
   const others = (accounts.data ?? []).filter((a) => !a.archived && a.childCount === 0 && !a.currency && a.id !== item?.inventoryAccountId);
   // Write-offs usually go to an expense; stock counted in, to equity (opening stock) or an expense (found)
@@ -50,9 +53,9 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
   const account = accountId || suggested[0]?.id || '';
   const qtyOk = /^\d{1,9}(\.\d{1,4})?$/.test(quantity.trim()) && Number(quantity) > 0;
   const cost = unitCost.trim() ? toMinor(unitCost, money.digits) : null;
-  const problem = !item ? 'item' : !qtyOk ? 'quantity' : unitCost.trim() && cost === null ? 'unitCost' : batched && !batchNo.trim() ? 'batch' : !account ? 'account' : reason.trim().length < 3 ? 'reason' : null;
+  const problem = !item ? 'item' : !qtyOk ? 'quantity' : unitCost.trim() && cost === null ? 'unitCost' : batched && !batchNo.trim() ? 'batch' : serialed && !parseSerials(serials).length ? 'serials' : !account ? 'account' : reason.trim().length < 3 ? 'reason' : null;
   const save = useMutation({
-    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim(), ...(batched ? { batchNo: batchNo.trim(), mfgDate: direction === 'in' ? mfgDate || null : null, expiryDate: direction === 'in' ? expiryDate || null : null } : {}) }),
+    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim(), ...(batched ? { batchNo: batchNo.trim(), mfgDate: direction === 'in' ? mfgDate || null : null, expiryDate: direction === 'in' ? expiryDate || null : null } : {}), ...(serialed ? { serials: parseSerials(serials) } : {}) }),
     onSuccess: (m) => {
       for (const k of ['inventory', 'items', 'journals', 'reports']) void qc.invalidateQueries({ queryKey: [k] });
       toast(t(direction === 'in' ? 'inventory.addedToast' : 'inventory.writtenOffToast', { quantity: m.quantity.replace(/^-/, ''), item: m.item }));
@@ -111,6 +114,11 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
             dir="ltr"
             className="text-end font-mono"
           />
+        )}
+        {serialed && (
+          <div className="sm:col-span-2">
+            <SerialsInput value={serials} onChange={setSerials} quantity={quantity || '0'} label={t('serials.serials')} />
+          </div>
         )}
         {batched &&
           (direction === 'out' ? (

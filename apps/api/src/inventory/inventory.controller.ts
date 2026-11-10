@@ -21,6 +21,7 @@ import {
   stockAdjustmentSchema,
   stockValuationQuerySchema,
   expiringQuerySchema,
+  serialNoSchema,
   todayIn,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
@@ -85,6 +86,19 @@ export class InventoryController {
       todayIn(timeZone),
       q.days,
     );
+  }
+
+  @Get('serials/:serial')
+  @RequirePermission('invoices.view')
+  @ApiOkResponse({
+    description:
+      'A serial number: the item, where the unit is now, and when it was bought, sold, returned or written off',
+  })
+  serial(
+    @Param('serial', new ZodValidationPipe(serialNoSchema)) serial: string,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.inventory.serialHistory(tenant.organizationId, serial);
   }
 
   @Get('items/:id/movements')

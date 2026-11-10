@@ -55,6 +55,8 @@ const fields = {
   trackStock: z.boolean(),
   /** Tracked goods kept in batches with manufacturing and expiry dates (medicines, food) */
   trackBatches: z.boolean(),
+  /** Tracked goods whose every unit has its own serial number (phones, appliances) */
+  trackSerials: z.boolean(),
   /** The inventory (asset) account the stock sits in */
   inventoryAccountId: z.uuid().nullable(),
   /** The cost of sales account stock goes to as it's sold */
@@ -96,6 +98,7 @@ export const itemCreateSchema = z.object({
   expenseAccountId: fields.expenseAccountId.optional().default(null),
   trackStock: fields.trackStock.optional().default(false),
   trackBatches: fields.trackBatches.optional().default(false),
+  trackSerials: fields.trackSerials.optional().default(false),
   inventoryAccountId: fields.inventoryAccountId.optional().default(null),
   cogsAccountId: fields.cogsAccountId.optional().default(null),
   reorderLevel: fields.reorderLevel.optional().default(null),
