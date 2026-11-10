@@ -14,6 +14,8 @@ import {
   findIndianState,
   invoiceRows,
   pdfTableBytes,
+  qrMatrix,
+  upiPayUri,
   type invoiceEmailSchema,
   reminderDue,
   todayIn,
@@ -214,9 +216,16 @@ export class InvoiceRemindersService
       });
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { name: true, baseCurrency: true, timeZone: true },
+      select: {
+        name: true,
+        legalName: true,
+        baseCurrency: true,
+        timeZone: true,
+        upiId: true,
+      },
     });
     const currency = inv.currency ?? org.baseCurrency;
+    const upi = this.upiLink(org, inv, currency);
     const digits = currencyDigits(currency);
     const money = (minor: number) =>
       `${currency} ${(minor / 10 ** digits).toFixed(digits)}`;
@@ -236,6 +245,11 @@ export class InvoiceRemindersService
         ...(input.message ? [input.message] : []),
         `This is a reminder that invoice ${inv.number}, dated ${inv.issueDate}, ${when}.`,
         `Invoice total: ${money(inv.total)}\nPaid so far: ${money(inv.amountPaid)}\nStill to pay: ${money(inv.balance)}`,
+        ...(upi
+          ? [
+              `Pay by UPI to ${org.upiId}: on your phone, open ${upi} and your UPI app fills in the amount.`,
+            ]
+          : []),
         'If you’ve already paid, thank you, and please ignore this reminder.',
         org.name,
       ].join('\n\n'),
@@ -268,7 +282,32 @@ export class InvoiceRemindersService
     return { sentTo: to, ...updated };
   }
 
-  /** An issued invoice as a PDF to the customer (or the address given), with an optional note */
+  /**
+   * The pay-by-UPI link for what's still owed on an invoice: only for issued rupee invoices with a balance, when the
+   * organisation has set its UPI ID (UPI moves rupees only)
+   */
+  upiLink(
+    org: { upiId: string | null; name: string; legalName?: string | null },
+    inv: { status: string; number: string | null; balance: number },
+    currency: string,
+  ) {
+    if (
+      !org.upiId ||
+      currency !== 'INR' ||
+      inv.status !== 'issued' ||
+      inv.balance <= 0 ||
+      !inv.number
+    )
+      return null;
+    return upiPayUri({
+      upiId: org.upiId,
+      name: org.legalName ?? org.name,
+      amount: inv.balance,
+      note: `Invoice ${inv.number}`,
+      reference: inv.number,
+    });
+  }
+
   /** An invoice as a PDF: seller and buyer with GSTINs, place of supply, lines, tax by rate, totals and terms */
   async invoicePdf(
     organizationId: string,
@@ -287,10 +326,12 @@ export class InvoiceRemindersService
         postalCode: true,
         baseCurrency: true,
         invoiceTerms: true,
+        upiId: true,
       },
     });
     const currency = inv.currency ?? org.baseCurrency;
     const digits = currencyDigits(currency);
+    const upi = this.upiLink(org, inv, currency);
     const address = (a: Record<string, string | null | undefined>) =>
       [a.line1, a.line2, a.city, a.region, a.postalCode]
         .filter(Boolean)
@@ -318,10 +359,20 @@ export class InvoiceRemindersService
         after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
         footer: `${seller} · ${inv.number}`,
         rows: invoiceRows({ ...inv, currency }, digits),
+        qr: upi
+          ? {
+              modules: qrMatrix(upi),
+              caption: [
+                'Scan to pay with any UPI app',
+                `Rs ${(inv.balance / 100).toFixed(2)} to ${org.upiId}`,
+              ],
+            }
+          : undefined,
       }),
     );
     return {
       org,
+      upi,
       pdf,
       currency,
       digits,
@@ -365,7 +416,7 @@ export class InvoiceRemindersService
         message: 'This customer has no email address. Enter one to send it to.',
         details: { reason: 'no_email' },
       });
-    const { org, pdf, currency, digits, fileName } = await this.invoicePdf(
+    const { org, upi, pdf, currency, digits, fileName } = await this.invoicePdf(
       organizationId,
       inv,
     );
@@ -379,6 +430,11 @@ export class InvoiceRemindersService
         ...(inv.amountPaid
           ? [
               `Paid so far: ${currency} ${(inv.amountPaid / 10 ** digits).toFixed(digits)}. Still to pay: ${currency} ${(inv.balance / 10 ** digits).toFixed(digits)}.`,
+            ]
+          : []),
+        ...(upi
+          ? [
+              `Pay by UPI: scan the QR code on the invoice with any UPI app, or on your phone open ${upi}`,
             ]
           : []),
         org.name,

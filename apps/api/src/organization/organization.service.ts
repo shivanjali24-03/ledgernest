@@ -32,6 +32,7 @@ const select = {
   region: true,
   postalCode: true,
   invoiceTerms: true,
+  upiId: true,
   weeklySummary: true,
   createdAt: true,
   updatedAt: true,
@@ -56,6 +57,7 @@ type Columns = Partial<{
   region: string | null;
   postalCode: string | null;
   invoiceTerms: string | null;
+  upiId: string | null;
   weeklySummary: boolean;
 }>;
 

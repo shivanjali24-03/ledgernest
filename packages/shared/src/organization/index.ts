@@ -1,3 +1,4 @@
+import { isUpiId } from '../upi/index.js';
 import { z } from 'zod';
 import { emailSchema } from '../auth/index.js';
 
@@ -97,6 +98,14 @@ export const organizationSettingsSchema = z
     fiscalYearStartMonth: z.number().int().min(1).max(12),
     /** Printed at the foot of invoices and quotes: payment terms, bank details */
     invoiceTerms: optionalText(1000),
+    /** UPI ID for the pay-by-UPI QR code on invoices, like sharmatraders@okhdfcbank */
+    upiId: z
+      .string()
+      .trim()
+      .max(320)
+      .transform((v) => v || null)
+      .refine((v) => v === null || isUpiId(v), 'Enter a UPI ID like yourname@okhdfcbank.')
+      .nullable(),
     /** Email Owners and Admins a summary every Monday morning */
     weeklySummary: z.boolean(),
   })

@@ -75,6 +75,8 @@ model Organization {
   postalCode           String?            @map("postal_code")
   /// Printed at the foot of invoices and quotes: payment terms, bank details
   invoiceTerms         String?            @map("invoice_terms")
+  /// UPI ID (name@bank) printed as a pay-by-UPI QR code on invoices
+  upiId                String?            @map("upi_id")
   /// Email Owners and Admins a summary every Monday; the day it last went
   weeklySummary        Boolean            @default(false) @map("weekly_summary")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date

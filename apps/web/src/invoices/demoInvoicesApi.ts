@@ -1,4 +1,4 @@
-import { invoiceRows, pdfTableBytes, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { invoiceRows, pdfTableBytes, qrMatrix, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -268,7 +268,15 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
     pdf: async (iid) => {
       const v = view(find(await load(), iid));
       if (v.status === 'draft') throw refuse(409, 'not_issued');
-      const bytes = pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')) });
+      // The demo organisation's UPI ID, when one was saved in Settings
+      let upiId: string | null = null;
+      try {
+        upiId = (JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: { upiId?: string | null } } | null)?.settings?.upiId ?? null;
+      } catch {
+        /* no saved settings */
+      }
+      const upi = upiId && !v.currency && v.status === 'issued' && v.balance > 0 && v.number ? upiPayUri({ upiId, name: 'Nest Demo Private Limited', amount: v.balance, note: `Invoice ${v.number}`, reference: v.number }) : null;
+      const bytes = pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')), qr: upi ? { modules: qrMatrix(upi), caption: ['Scan to pay with any UPI app', `Rs ${(v.balance / 100).toFixed(2)} to ${upiId}`] } : undefined });
       return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `invoice-${(v.number ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
     },
     exportList: async (q) => {

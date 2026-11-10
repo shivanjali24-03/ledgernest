@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -191,6 +191,43 @@ describe('invoices', () => {
     const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
     expect(text.startsWith('%PDF-1.4')).toBe(true);
     expect(text).toMatch(/\(Tax invoice INV\/[^)]+\/0001\) Tj/);
+  });
+
+  it('shows a pay-by-UPI QR code for what is owed once the UPI ID is set, and puts it in the PDF', { timeout: 20_000 }, async () => {
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    localStorage.removeItem('ledgernest.demo.settings');
+    renderApp('/settings');
+    const upi = await screen.findByLabelText('UPI ID', {}, { timeout: 4000 });
+    await userEvent.type(upi, 'nope');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Enter a UPI ID like yourname@okhdfcbank.')).toBeInTheDocument();
+    await userEvent.clear(upi);
+    await userEvent.type(upi, 'nestdemo@okhdfcbank');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.upiId).toBe('nestdemo@okhdfcbank'));
+    cleanup();
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    // Found afresh each try: the page can remount while the invoice and settings load
+    await waitFor(
+      () => {
+        const card = screen.getByTestId('invoice-upi');
+        expect(within(card).getByRole('img', { name: 'QR code to pay ₹1,18,000.00 to nestdemo@okhdfcbank by UPI' })).toBeInTheDocument();
+        expect(within(card).getByRole('link', { name: 'Pay with a UPI app' }).getAttribute('href')).toMatch(/^upi:\/\/pay\?pa=nestdemo%40okhdfcbank&pn=Nest%20Demo%20Private%20Limited&am=118000\.00&cu=INR&tn=Invoice%20INV%2F/);
+      },
+      { timeout: 8000 },
+    );
+    await waitFor(
+      () => {
+        if (!saved) fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
+        expect(saved).toBeDefined();
+      },
+      { timeout: 8000 },
+    );
+    const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
+    expect(text).toContain('(Rs 118000.00 to nestdemo@okhdfcbank) Tj');
+    localStorage.removeItem('ledgernest.demo.settings');
   });
 
   it('is read-only for Auditors', async () => {

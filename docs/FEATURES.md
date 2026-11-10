@@ -52,6 +52,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms, and what each owes or is owed | ✅ #64 |
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
 | Invoices | Printable (PDF) GST invoices with your terms and bank details at the foot, emailed to the customer as a PDF, numbering, due dates, place of supply; receipts against one or many invoices, with advances and realised exchange differences | ✅ #66, #69 |
+| Pay by UPI | Set the organisation's UPI ID once: every rupee invoice with something still owed then carries a UPI QR code for the balance (on screen, in the PDF, in the emailed invoice and in reminders) that Google Pay, PhonePe, Paytm, BHIM or any bank app scans with the amount and invoice number filled in. No gateway, no fees, money straight to the bank | ✅ |
 | Quotes | Estimates for customers, priced with the same lines and GST rules as invoices; sent, accepted or declined, expired past their date, emailed to the customer as a PDF, and turned into a draft invoice in one step | ✅ |
 | Recurring bills | Rent, subscriptions and other repeat bills made from a template on a schedule, as drafts or recorded, catching up on missed dates; approvals still apply | ✅ |
 | Credit limits | A most-owed amount per customer, in their currency; the customer page shows how much is used, and an invoice that would go over it shows a warning before saving or issuing | ✅ |

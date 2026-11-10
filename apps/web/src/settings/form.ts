@@ -19,6 +19,7 @@ export interface SettingsValues {
   timeZone: string;
   fiscalYearStartMonth: string;
   invoiceTerms: string;
+  upiId: string;
   /** 'true' or 'false' (form values are strings) */
   weeklySummary: string;
 }
@@ -44,6 +45,7 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   timeZone: s.timeZone,
   fiscalYearStartMonth: String(s.fiscalYearStartMonth),
   invoiceTerms: s.invoiceTerms ?? '',
+  upiId: s.upiId ?? '',
   weeklySummary: String(!!s.weeklySummary),
 });
 
@@ -66,7 +68,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'weeklySummary'].includes(key) ? (key as SettingsField) : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary'].includes(key) ? (key as SettingsField) : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */

@@ -925,7 +925,8 @@
       "locale": "Number and date format",
       "timeZone": "Time zone",
       "invoiceTerms": "Terms and bank details",
-      "weeklySummary": "Weekly summary"
+      "weeklySummary": "Weekly summary",
+      "upiId": "UPI ID"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -934,7 +935,8 @@
       "fiscalYear": "Your financial year runs {{span}}.",
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
       "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
-      "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server."
+      "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
+      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what's still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -947,7 +949,8 @@
       "phone": "Use digits, spaces, brackets or dashes, optionally starting with +.",
       "timeZone": "Choose a time zone from the list.",
       "invalid": "Check this value.",
-      "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first."
+      "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first.",
+      "upiId": "Enter a UPI ID like yourname@okhdfcbank."
     },
     "leave": {
       "title": "Leave without saving?",
@@ -2164,7 +2167,13 @@
       "sent": "Invoice sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
     },
-    "overLimit": "This takes {{name}} to {{amount}}, over their credit limit of {{limit}}. You can still save or issue it."
+    "overLimit": "This takes {{name}} to {{amount}}, over their credit limit of {{limit}}. You can still save or issue it.",
+    "upi": {
+      "title": "Pay by UPI",
+      "body": "Scan with any UPI app: Google Pay, PhonePe, Paytm, BHIM or your bank's.",
+      "qrLabel": "QR code to pay {{amount}} to {{upiId}} by UPI",
+      "open": "Pay with a UPI app"
+    }
   },
   "payments": {
     "title": "Payments",
