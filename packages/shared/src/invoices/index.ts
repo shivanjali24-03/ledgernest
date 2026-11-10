@@ -146,6 +146,36 @@ export const invoiceReminderSchema = z.object({
 });
 export type InvoiceReminderInput = z.input<typeof invoiceReminderSchema>;
 
+/** Automatic payment reminders for overdue invoices */
+export const reminderPolicySchema = z.object({
+  enabled: z.boolean(),
+  /** Days after the due date for the first one */
+  firstAfterDays: z.number().int().min(0).max(90),
+  /** Days between one reminder and the next */
+  repeatEveryDays: z.number().int().min(1).max(90),
+  /** At most this many per invoice, manual ones included */
+  maxReminders: z.number().int().min(1).max(10),
+});
+export type ReminderPolicy = z.infer<typeof reminderPolicySchema>;
+export const DEFAULT_REMINDER_POLICY: ReminderPolicy = { enabled: false, firstAfterDays: 3, repeatEveryDays: 7, maxReminders: 3 };
+
+/**
+ * Whether an invoice is due an automatic reminder today: issued with something owed, past its due date by the
+ * policy's days, under the limit, and long enough since the last one (manual or automatic).
+ */
+export function reminderDue(
+  i: { status: string; balance: number; dueDate: string; reminders: number; lastRemindedAt: string | null },
+  policy: ReminderPolicy,
+  today: string,
+): boolean {
+  if (!policy.enabled || i.status !== 'issued' || i.balance <= 0 || i.reminders >= policy.maxReminders) return false;
+  const late = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${i.dueDate}T00:00:00Z`)) / 86_400_000);
+  if (late < Math.max(1, policy.firstAfterDays)) return false;
+  if (!i.lastRemindedAt) return true;
+  const since = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${i.lastRemindedAt.slice(0, 10)}T00:00:00Z`)) / 86_400_000);
+  return since >= policy.repeatEveryDays;
+}
+
 export const invoiceVoidSchema = z.object({
   /** The day the reversal is dated; omitted = today */
   date: isoDaySchema.optional(),

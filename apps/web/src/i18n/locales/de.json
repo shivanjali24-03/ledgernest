@@ -740,7 +740,8 @@
       "org_backup_export": "Sicherung heruntergeladen",
       "org_backup_restore": "Aus einer Sicherung wiederhergestellt",
       "org_statement_email": "Kontoauszug per E-Mail gesendet",
-      "org_invoice_remind": "Zahlungserinnerung gesendet"
+      "org_invoice_remind": "Zahlungserinnerung gesendet",
+      "org_invoice_reminder_policy": "Einstellungen für Zahlungserinnerungen geändert"
     },
     "entities": {
       "membership": "Mitglied",
@@ -2055,6 +2056,24 @@
       "sent": "Erinnerung an {{email}} gesendet",
       "sentDemo": "In der Demo wird nichts wirklich gesendet; sie ginge an {{email}}",
       "history": "Gesendete Erinnerungen: {{count}}, zuletzt am {{date}}"
+    },
+    "reminderPolicy": {
+      "title": "Zahlungserinnerungen",
+      "body": "Kunden automatisch per E-Mail erinnern, wenn eine Rechnung überfällig ist. Erinnerungen gehen an die hinterlegte E-Mail des Kunden, und nur, wenn E-Mail auf dem Server eingerichtet ist.",
+      "bodyDemo": "Kunden automatisch per E-Mail erinnern, wenn eine Rechnung überfällig ist. Die Demo speichert die Einstellung, sendet aber nichts.",
+      "enabled": "Automatische Erinnerungen senden",
+      "firstAfterDays": "Die erste, Tage nach Fälligkeit",
+      "repeatEveryDays": "Danach alle (Tage)",
+      "maxReminders": "Höchstens, je Rechnung",
+      "hint": "Von Hand gesendete Erinnerungen zählen zum Limit und zum Abstand.",
+      "save": "Speichern",
+      "savedOn": "Automatische Erinnerungen sind an",
+      "savedOff": "Automatische Erinnerungen sind aus",
+      "bad": {
+        "firstAfterDays": "0 bis 90 Tage.",
+        "repeatEveryDays": "1 bis 90 Tage.",
+        "maxReminders": "1 bis 10 Erinnerungen."
+      }
     }
   },
   "payments": {

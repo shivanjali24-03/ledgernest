@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
 import { routes } from '../routes';
+import { resetDemoInvoices } from '../invoices/demoInvoicesApi';
 import { resetDemoSettings } from './demoSettingsApi';
 
 function renderApp(path = '/settings') {
@@ -20,6 +21,7 @@ const previewAs = (role: string) => userEvent.selectOptions(screen.getByLabelTex
 
 beforeEach(() => {
   resetDemoSettings();
+  resetDemoInvoices();
   sessionStorage.clear();
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:logo'), revokeObjectURL: vi.fn() });
 });
@@ -34,6 +36,24 @@ describe('organisation settings', () => {
     expect(screen.getByText("Can't change once entries are posted")).toBeInTheDocument();
     expect(screen.getByText('Your financial year runs April – March.')).toBeInTheDocument();
     expect(screen.queryByText('You have unsaved changes')).not.toBeInTheDocument();
+  });
+
+  it('turns on automatic payment reminders, checking the numbers', async () => {
+    renderApp();
+    const on = await screen.findByRole('checkbox', { name: 'Send automatic reminders' }, { timeout: 4000 });
+    expect(on).not.toBeChecked();
+    expect(screen.getByLabelText('First, days after the due date')).toBeDisabled();
+    await userEvent.click(on);
+    const max = screen.getByLabelText('At most, per invoice');
+    fireEvent.change(max, { target: { value: '0' } });
+    expect(screen.getByText('1 to 10 reminders.')).toBeInTheDocument();
+    const card = on.closest('form')!;
+    expect(within(card).getByRole('button', { name: 'Save' })).toBeDisabled();
+    fireEvent.change(max, { target: { value: '4' } });
+    fireEvent.change(screen.getByLabelText('First, days after the due date'), { target: { value: '5' } });
+    await userEvent.click(within(card).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Automatic reminders are on')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.reminderPolicy')!)).toEqual({ enabled: true, firstAfterDays: 5, repeatEveryDays: 7, maxReminders: 4 });
   });
 
   it('saves only after a change, and keeps it', async () => {

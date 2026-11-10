@@ -740,7 +740,8 @@
       "org_backup_export": "Backup downloaded",
       "org_backup_restore": "Restored from a backup",
       "org_statement_email": "Statement emailed",
-      "org_invoice_remind": "Payment reminder sent"
+      "org_invoice_remind": "Payment reminder sent",
+      "org_invoice_reminder_policy": "Payment reminder settings changed"
     },
     "entities": {
       "membership": "Member",
@@ -2055,6 +2056,24 @@
       "sent": "Reminder sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
       "history": "Reminders sent: {{count}}, last on {{date}}"
+    },
+    "reminderPolicy": {
+      "title": "Payment reminders",
+      "body": "Email customers automatically when an invoice is overdue. Reminders go to the customer’s email on file, and only when email is set up on the server.",
+      "bodyDemo": "Email customers automatically when an invoice is overdue. The demo keeps the setting but sends nothing.",
+      "enabled": "Send automatic reminders",
+      "firstAfterDays": "First, days after the due date",
+      "repeatEveryDays": "Then every (days)",
+      "maxReminders": "At most, per invoice",
+      "hint": "Reminders sent by hand count towards the limit and the spacing.",
+      "save": "Save",
+      "savedOn": "Automatic reminders are on",
+      "savedOff": "Automatic reminders are off",
+      "bad": {
+        "firstAfterDays": "0 to 90 days.",
+        "repeatEveryDays": "1 to 90 days.",
+        "maxReminders": "1 to 10 reminders."
+      }
     }
   },
   "payments": {

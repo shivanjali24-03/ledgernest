@@ -1,4 +1,4 @@
-import type { InvoiceDraftInput, InvoiceState, InvoiceStatus } from '@ledgernest/shared';
+import type { InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
   id: string;
@@ -81,4 +81,7 @@ export interface InvoicesApi {
   void(id: string, input: { date?: string; reason?: string }): Promise<Invoice>;
   /** Emails the customer a payment reminder; the demo only pretends */
   remind(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; lastRemindedAt: string; reminders: number }>;
+  /** Automatic reminders for overdue invoices */
+  reminderPolicy(): Promise<ReminderPolicy>;
+  setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;
 }
