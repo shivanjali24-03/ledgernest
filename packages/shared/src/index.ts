@@ -40,3 +40,4 @@ export * from './sales-report/index.js';
 export * from './upi/index.js';
 export * from './taxes/gstr2b.js';
 export * from './forecast/index.js';
+export * from './invoices/words.js';

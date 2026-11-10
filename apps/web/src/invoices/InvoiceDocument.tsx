@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, upiPayUri } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -207,6 +207,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           )}
         </dl>
       </section>
+      {currency === 'INR' && (
+        <p className="mt-4 text-end text-xs text-ink-600 dark:text-ink-300" data-testid="amount-in-words">
+          <span className="font-medium">{t('invoices.amountInWords')}</span> {rupeesInWords(i.total)}
+        </p>
+      )}
       {i.notes && (
         <p className="mt-8 whitespace-pre-line border-t border-ink-200 pt-4 text-ink-600 dark:border-ink-700 dark:text-ink-300" dir="auto">
           {i.notes}
