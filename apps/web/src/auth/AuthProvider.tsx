@@ -100,8 +100,19 @@ export default function AuthProvider({
         setState({ status: 'signedIn', demoEmail: email });
         return;
       }
-      await client.login(email, password);
+      const second = await client.login(email, password);
+      if (second) return second;
       queryClient.clear(); // never show the previous user's cached data
+      setState({ status: 'signedIn', me: await client.me() });
+    },
+    [client, queryClient],
+  );
+
+  const signInTwoFactor = useCallback(
+    async (ticket: string, code: string) => {
+      if (!client) return;
+      await client.loginTwoFactor(ticket, code);
+      queryClient.clear();
       setState({ status: 'signedIn', me: await client.me() });
     },
     [client, queryClient],
@@ -162,7 +173,7 @@ export default function AuthProvider({
     [client, queryClient],
   );
 
-  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount }), [mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount]);
+  const auth = useMemo<Auth>(() => ({ mode, state, signIn, signInTwoFactor, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount }), [mode, state, signIn, signInTwoFactor, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere, deleteAccount]);
   const platformApi = useMemo(() => platformApiOverride ?? (client ? createLivePlatformApi(client) : createDemoPlatformApi()), [client, platformApiOverride]);
   const session = useMemo(() => (state.status === 'signedIn' && state.me ? liveSession(state.me, signOut) : null), [state, signOut]);
 
