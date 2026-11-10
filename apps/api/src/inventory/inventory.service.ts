@@ -478,7 +478,12 @@ export class InventoryService {
               sourceId: invoiceId,
               sourceLineId: l.invoiceLineId,
             },
-            orderBy: { createdAt: 'asc' },
+            // In the order they were taken: earliest expiry first
+            orderBy: [
+              { createdAt: 'asc' },
+              { batch: { expiryDate: { sort: 'asc', nulls: 'last' } } },
+              { batch: { createdAt: 'asc' } },
+            ],
             select: { quantity: true, value: true, batchId: true },
           })
         : [];
