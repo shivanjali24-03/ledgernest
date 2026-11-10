@@ -35,6 +35,11 @@ export interface Quote {
   invoice: { id: string; number: string | null; status: string } | null;
   sentAt: string | null;
   decidedAt: string | null;
+  /** Who accepted or declined it from the customer's link, and what they said */
+  decidedBy?: string | null;
+  decisionNote?: string | null;
+  /** The customer's link, and how often it was opened */
+  share?: { token: string; views: number; lastViewedAt: string | null } | null;
   createdAt: string;
   updatedAt: string;
   lines: QuoteLine[];
@@ -56,4 +61,7 @@ export interface QuotesApi {
   convert(id: string, input: { issueDate?: string }): Promise<{ quote: Quote; invoiceId: string }>;
   /** Emails it as a PDF (a draft becomes sent); the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; quote: Quote }>;
+  /** The customer's link to accept or decline (a draft becomes sent); the same until turned off */
+  share(id: string): Promise<Quote>;
+  unshare(id: string): Promise<Quote>;
 }

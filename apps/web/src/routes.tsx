@@ -6,7 +6,7 @@ import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
 import RouteError from './pages/RouteError';
-import { AcceptInvite, BalanceConfirmation, LegalPage, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, BalanceConfirmation, LegalPage, PublicQuote, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -80,6 +80,15 @@ const ROUTES: RouteObject[] = [
     element: (
       <Suspense fallback={<Splash />}>
         <ResetPassword />
+      </Suspense>
+    ),
+  },
+  {
+    // Public: a quote its customer accepts or declines from the link they were sent
+    path: '/q/:token',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <PublicQuote />
       </Suspense>
     ),
   },

@@ -58,6 +58,11 @@ const select = {
   total: true,
   sentAt: true,
   decidedAt: true,
+  decidedBy: true,
+  decisionNote: true,
+  shareToken: true,
+  shareViews: true,
+  shareViewedAt: true,
   createdAt: true,
   updatedAt: true,
   contact: { select: { id: true, name: true, email: true } },
@@ -144,6 +149,17 @@ export class QuotesService {
       },
       sentAt: q.sentAt,
       decidedAt: q.decidedAt,
+      /** Set when the customer answered from their link */
+      decidedBy: q.decidedBy,
+      decisionNote: q.decisionNote,
+      /** The customer's link, and how often it was opened */
+      share: q.shareToken
+        ? {
+            token: q.shareToken,
+            views: q.shareViews,
+            lastViewedAt: q.shareViewedAt,
+          }
+        : null,
       createdAt: q.createdAt,
       updatedAt: q.updatedAt,
       lines: q.lines.map((l) => ({

@@ -24,6 +24,10 @@ type Stored = {
   invoiceId: string | null;
   sentAt: string | null;
   decidedAt: string | null;
+  decidedBy?: string | null;
+  decisionNote?: string | null;
+  shareToken?: string | null;
+  shareViews?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -110,6 +114,9 @@ async function view(q: Stored): Promise<Quote> {
     invoice: invoice ? { id: invoice.id, number: invoice.number, status: invoice.status } : null,
     sentAt: q.sentAt,
     decidedAt: q.decidedAt,
+    decidedBy: q.decidedBy ?? null,
+    decisionNote: q.decisionNote ?? null,
+    share: q.shareToken ? { token: q.shareToken, views: q.shareViews ?? 0, lastViewedAt: null } : null,
     createdAt: q.createdAt,
     updatedAt: q.updatedAt,
     lines: q.lines.map((l, n) => {
@@ -132,6 +139,32 @@ async function view(q: Stored): Promise<Quote> {
       };
     }),
   };
+}
+
+/** A demo quote opened from its link in this browser: counted, as the real one is */
+export async function demoQuoteByToken(token: string): Promise<Quote | null> {
+  const rows = load();
+  const q = rows.find((r) => r.shareToken === token);
+  if (!q) return null;
+  q.shareViews = (q.shareViews ?? 0) + 1;
+  save(rows);
+  return view(q);
+}
+/** The customer's answer from the demo link */
+export async function demoDecideQuote(token: string, input: { response: 'accept' | 'decline'; name: string; note?: string | null }): Promise<Quote> {
+  const rows = load();
+  const q = rows.find((r) => r.shareToken === token);
+  if (!q) throw new ApiError('not_found', 404);
+  if (q.status !== 'sent') throw refuse(409, 'answered');
+  if (q.expiryDate < today()) throw refuse(409, 'expired');
+  Object.assign(q, { status: input.response === 'accept' ? 'accepted' : 'declined', decidedAt: new Date().toISOString(), decidedBy: input.name, decisionNote: input.note ?? null });
+  save(rows);
+  return view(q);
+}
+/** The PDF of a demo quote */
+export async function demoQuotePdf(q: Quote) {
+  const cur = q.currency ?? 'INR';
+  return new Blob([pdfTableBytes({ title: `Quote ${q.number}`, subtitle: `Nest Demo Private Limited for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, footer: `Nest Demo Private Limited · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) }).buffer as ArrayBuffer], { type: 'application/pdf' });
 }
 
 export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
@@ -246,6 +279,31 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         if (q.status === 'draft') Object.assign(q, { status: 'sent', sentAt: new Date().toISOString() });
         save(rows);
         return { sentTo: to, quote: await view(q) };
+      }),
+    share: (id) =>
+      wait(async () => {
+        guard();
+        const rows = load();
+        const q = find(rows, id);
+        if (q.status === 'declined' || q.status === 'invoiced') throw refuse(409, 'not_sendable');
+        if (!q.shareToken) {
+          const b = new Uint8Array(24);
+          crypto.getRandomValues(b);
+          q.shareToken = btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          q.shareViews = 0;
+          if (q.status === 'draft') Object.assign(q, { status: 'sent', sentAt: new Date().toISOString() });
+          save(rows);
+        }
+        return view(q);
+      }),
+    unshare: (id) =>
+      wait(async () => {
+        guard();
+        const rows = load();
+        const q = find(rows, id);
+        q.shareToken = null;
+        save(rows);
+        return view(q);
       }),
   };
 }

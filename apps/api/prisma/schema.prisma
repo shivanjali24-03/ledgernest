@@ -1817,6 +1817,13 @@ model Quote {
   createdById    String?   @map("created_by_id") @db.Uuid
   sentAt         DateTime? @map("sent_at")
   decidedAt      DateTime? @map("decided_at")
+  /// A link the customer opens without signing in, to accept or decline (random, revocable)
+  shareToken     String?   @unique @map("share_token")
+  shareViews     Int       @default(0) @map("share_views")
+  shareViewedAt  DateTime? @map("share_viewed_at")
+  /// Who accepted or declined it from the link, and what they said
+  decidedBy      String?   @map("decided_by")
+  decisionNote   String?   @map("decision_note")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
