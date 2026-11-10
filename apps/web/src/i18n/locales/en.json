@@ -1905,7 +1905,14 @@
       "noQuotes": "No quotes for this customer yet",
       "noBills": "No bills from this vendor yet",
       "more": "and {{count}} more under Invoices",
-      "limit": "Credit limit {{limit}} · {{used}}% used"
+      "limit": "Credit limit {{limit}} · {{used}}% used",
+      "remindOverdue": "Remind about overdue ({{count}})",
+      "remindTitle": "Remind {{name}} about overdue invoices?",
+      "remindBody": "A payment reminder for each of the {{count}} overdue invoices goes to {{email}}.",
+      "remindNoEmail": "This customer has no email address. Add one to their details first.",
+      "remindConfirm": "Send reminders",
+      "reminded": "Sent {{count}} reminders to {{email}}",
+      "remindedDemo": "In the demo nothing is really sent; {{count}} reminders would go to {{email}}"
     }
   },
   "items": {

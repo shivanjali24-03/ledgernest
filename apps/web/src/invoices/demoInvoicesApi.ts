@@ -376,6 +376,19 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         save(rows);
         return { sentTo: to, lastRemindedAt: i.lastRemindedAt!, reminders: i.reminders! };
       }),
+    remindOverdue: (contactId) =>
+      wait(async () => {
+        guard();
+        const contact = demoContactRows().find((c) => c.id === contactId);
+        if (!contact) throw new ApiError('not_found', 404);
+        if (!contact.email) throw refuse(400, 'no_email');
+        const rows = await load();
+        const due = rows.filter((i) => i.contactId === contactId && i.status === 'issued' && i.dueDate < today() && view(i).balance > 0);
+        const now = new Date().toISOString();
+        for (const i of due) Object.assign(i, { lastRemindedAt: now, reminders: (i.reminders ?? 0) + 1 });
+        save(rows);
+        return { sentTo: contact.email, sent: due.length, failed: [] };
+      }),
     email: (iid, input) =>
       wait(async () => {
         guard();

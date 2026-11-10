@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   Logger,
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
@@ -375,5 +376,62 @@ export class InvoiceRemindersService
       req: ctx.req,
     });
     return { sentTo: to };
+  }
+
+  /**
+   * A reminder for each of a customer's overdue invoices, by hand. Returns what went and what didn't (and why),
+   * so one bad invoice doesn't stop the rest.
+   */
+  async remindOverdue(contactId: string, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const contact = await this.prisma.contact.findFirst({
+      where: { id: contactId, organizationId },
+      select: { id: true, email: true },
+    });
+    if (!contact) throw new NotFoundException('That contact doesn’t exist.');
+    if (!this.mail.configured)
+      throw new ConflictException({
+        message:
+          'Email isn’t set up on this server, so reminders can’t be sent from here.',
+        details: { reason: 'mail_off' },
+      });
+    if (!contact.email)
+      throw new BadRequestException({
+        message:
+          'This customer has no email address. Add one to their details first.',
+        details: { reason: 'no_email' },
+      });
+    const { timeZone } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { timeZone: true },
+    });
+    const overdue = await this.prisma.invoice.findMany({
+      where: {
+        organizationId,
+        contactId,
+        status: 'issued',
+        dueDate: { lt: new Date(`${todayIn(timeZone)}T00:00:00Z`) },
+        total: { gt: this.prisma.invoice.fields.amountPaid },
+      },
+      select: { id: true },
+      orderBy: { dueDate: 'asc' },
+      take: 50,
+    });
+    const sent: string[] = [];
+    const failed: { id: string; reason: string }[] = [];
+    for (const i of overdue) {
+      try {
+        await this.remind(i.id, {}, ctx);
+        sent.push(i.id);
+      } catch (e) {
+        const reason =
+          e instanceof ConflictException || e instanceof BadRequestException
+            ? (((e.getResponse() as { details?: { reason?: string } }).details
+                ?.reason as string | undefined) ?? 'failed')
+            : 'failed';
+        failed.push({ id: i.id, reason });
+      }
+    }
+    return { sentTo: contact.email, sent: sent.length, failed };
   }
 }

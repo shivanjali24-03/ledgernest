@@ -135,4 +135,24 @@ describe('customers and vendors', () => {
     await userEvent.selectOptions(item(), [...item().options].find((o) => o.textContent === 'Software development')!.value);
     await waitFor(() => expect(screen.getByTestId('credit-limit-warning')).toHaveTextContent(/over their credit limit of INR 1,000\.00/), { timeout: 4000 });
   });
+
+  it('reminds a customer about all their overdue invoices from their page', { timeout: 20_000 }, async () => {
+    // An invoice for Kumar already past due, dated in an open month: the 1st of this one (or yesterday, on the 1st)
+    const { createDemoInvoicesApi } = await import('../invoices/demoInvoicesApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const { todayIn } = await import('@ledgernest/shared');
+    const today = todayIn('Asia/Kolkata');
+    const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+    const date = today.endsWith('-01') ? yesterday : `${today.slice(0, 8)}01`;
+    const invoices = createDemoInvoicesApi(() => true);
+    const draft = await invoices.create({ contactId: 'c0000000-0000-4000-8000-000000000001', issueDate: date, dueDate: date, lines: [{ description: 'Freight', quantity: '1', unitPrice: 100_000, accountId: sampleId('4100.01') }] });
+    await invoices.issue(draft.id);
+    renderApp('/contacts/c0000000-0000-4000-8000-000000000001');
+    const remind = await screen.findByRole('button', { name: /^Remind about overdue \(\d+\)$/ }, { timeout: 6000 });
+    fireEvent.click(remind);
+    const dialog = await screen.findByRole('dialog', { name: 'Remind Kumar Logistics about overdue invoices?' });
+    expect(dialog).toHaveTextContent('accounts@kumarlogistics.in');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Send reminders' }));
+    expect(await screen.findByText(/^In the demo nothing is really sent; \d+ reminders would go to accounts@kumarlogistics.in$/, {}, { timeout: 4000 })).toBeInTheDocument();
+  });
 });

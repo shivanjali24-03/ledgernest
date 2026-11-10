@@ -1905,7 +1905,14 @@
       "noQuotes": "Aún no hay presupuestos para este cliente",
       "noBills": "Aún no hay facturas de este proveedor",
       "more": "y {{count}} más en Facturas",
-      "limit": "Límite de crédito {{limit}} · {{used}} % usado"
+      "limit": "Límite de crédito {{limit}} · {{used}} % usado",
+      "remindOverdue": "Recordar vencidas ({{count}})",
+      "remindTitle": "¿Recordar a {{name}} sus facturas vencidas?",
+      "remindBody": "Se envía un recordatorio de pago por cada una de las {{count}} facturas vencidas a {{email}}.",
+      "remindNoEmail": "Este cliente no tiene correo electrónico. Añade uno en sus datos primero.",
+      "remindConfirm": "Enviar recordatorios",
+      "reminded": "Se enviaron {{count}} recordatorios a {{email}}",
+      "remindedDemo": "En la demo no se envía nada de verdad; irían {{count}} recordatorios a {{email}}"
     }
   },
   "items": {

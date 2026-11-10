@@ -1905,7 +1905,14 @@
       "noQuotes": "Noch keine Angebote für diesen Kunden",
       "noBills": "Noch keine Rechnungen von diesem Lieferanten",
       "more": "und {{count}} weitere unter Rechnungen",
-      "limit": "Kreditlimit {{limit}} · {{used}} % genutzt"
+      "limit": "Kreditlimit {{limit}} · {{used}} % genutzt",
+      "remindOverdue": "An Überfälliges erinnern ({{count}})",
+      "remindTitle": "{{name}} an überfällige Rechnungen erinnern?",
+      "remindBody": "Für jede der {{count}} überfälligen Rechnungen geht eine Zahlungserinnerung an {{email}}.",
+      "remindNoEmail": "Dieser Kunde hat keine E-Mail-Adresse. Ergänzen Sie zuerst eine in seinen Angaben.",
+      "remindConfirm": "Erinnerungen senden",
+      "reminded": "{{count}} Erinnerungen an {{email}} gesendet",
+      "remindedDemo": "In der Demo wird nichts wirklich gesendet; {{count}} Erinnerungen gingen an {{email}}"
     }
   },
   "items": {

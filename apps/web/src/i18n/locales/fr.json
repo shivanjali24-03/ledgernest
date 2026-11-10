@@ -1905,7 +1905,14 @@
       "noQuotes": "Pas encore de devis pour ce client",
       "noBills": "Pas encore de facture de ce fournisseur",
       "more": "et {{count}} de plus dans Factures",
-      "limit": "Plafond {{limit}} · {{used}} % utilisé"
+      "limit": "Plafond {{limit}} · {{used}} % utilisé",
+      "remindOverdue": "Relancer les retards ({{count}})",
+      "remindTitle": "Relancer {{name}} pour ses factures en retard ?",
+      "remindBody": "Une relance de paiement pour chacune des {{count}} factures en retard part à {{email}}.",
+      "remindNoEmail": "Ce client n’a pas d’adresse e-mail. Ajoutez-en une à sa fiche d’abord.",
+      "remindConfirm": "Envoyer les relances",
+      "reminded": "{{count}} relances envoyées à {{email}}",
+      "remindedDemo": "Dans la démo, rien n’est vraiment envoyé ; {{count}} relances partiraient à {{email}}"
     }
   },
   "items": {

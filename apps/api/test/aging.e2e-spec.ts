@@ -779,4 +779,47 @@ describe('Aging reports (e2e)', () => {
       delete process.env.SMTP_URL;
     }
   });
+
+  it('reminds a customer about all their overdue invoices at once', async () => {
+    await as()
+      .post('/invoices/remind-overdue', { contactId: contact.kumar })
+      .expect(409);
+    process.env.SMTP_URL = 'json';
+    try {
+      const before = app.get(MailService).captured.length;
+      // A and C are still owed and past due (the voided D and paid B aren't)
+      const r = (
+        await as()
+          .post('/invoices/remind-overdue', { contactId: contact.kumar })
+          .expect(200)
+      ).body as { sentTo: string; sent: number; failed: unknown[] };
+      expect(r).toEqual({
+        sentTo: 'accounts@kumar.example',
+        sent: 2,
+        failed: [],
+      });
+      expect(
+        app
+          .get(MailService)
+          .captured.slice(before)
+          .map((m) => m.subject.split(' from ')[0]),
+      ).toEqual([
+        'Payment reminder: invoice INV/2026-27/0001',
+        'Payment reminder: invoice INV/2026-27/0004',
+      ]);
+      // Northwind has no email
+      expect(
+        (
+          await as()
+            .post('/invoices/remind-overdue', { contactId: contact.northwind })
+            .expect(400)
+        ).body.details,
+      ).toMatchObject({ reason: 'no_email' });
+      await as('viewer')
+        .post('/invoices/remind-overdue', { contactId: contact.kumar })
+        .expect(403);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
 });
