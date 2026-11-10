@@ -40,7 +40,8 @@
       "integrations": "Integrations",
       "quotes": "Quotes",
       "recurringBills": "Recurring bills",
-      "debitNotes": "Debit notes"
+      "debitNotes": "Debit notes",
+      "collections": "Collections"
     },
     "soon": "Soon"
   },
@@ -4278,5 +4279,32 @@
       "closed": "This quote can’t be answered any more.",
       "failed": "That didn’t go through. Try again."
     }
+  },
+  "collections": {
+    "title": "Collections",
+    "description": "Customers with something overdue, the most first, to chase in a tap.",
+    "summary_one": "1 customer owes {{amount}} past its due date.",
+    "summary_other": "{{count}} customers owe {{amount}} past their due dates.",
+    "emptyTitle": "Nothing overdue",
+    "emptyBody": "Every customer is paid up or within their terms.",
+    "cols": {
+      "customer": "Customer",
+      "overdue": "Overdue",
+      "chased": "Last chased",
+      "actions": "Chase"
+    },
+    "invoices_one": "1 invoice, {{days}} days late",
+    "invoices_other": "{{count}} invoices, oldest {{days}} days late",
+    "chasedAgo": "Chased {{when}}",
+    "notChased": "Not chased yet",
+    "opened_one": "Opened their link once",
+    "opened_other": "Opened their link {{count}} times",
+    "whatsapp": "Remind {{name}} on WhatsApp",
+    "email": "Email {{name}} a reminder for each overdue invoice",
+    "emailShort": "Email",
+    "emailed_one": "Reminder for 1 invoice sent to {{email}}.",
+    "emailed_other": "Reminders for {{count}} invoices sent to {{email}}.",
+    "message_one": "Dear {{name}}, {{amount}} is overdue with {{organization}} (1 invoice, {{days}} days late). You can see it and pay by UPI here: {{link}}",
+    "message_other": "Dear {{name}}, {{amount}} is overdue with {{organization}} ({{count}} invoices, the oldest {{days}} days late). You can see them and pay the lot by UPI here: {{link}}"
   }
 }

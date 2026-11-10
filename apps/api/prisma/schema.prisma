@@ -685,6 +685,8 @@ model Contact {
   shareToken       String?   @unique @map("share_token")
   shareViews       Int       @default(0) @map("share_views")
   shareViewedAt    DateTime? @map("share_viewed_at")
+  /// When we last chased this customer for what's overdue (WhatsApp or email)
+  lastChasedAt     DateTime? @map("last_chased_at")
   archivedAt       DateTime? @map("archived_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")

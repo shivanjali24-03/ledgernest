@@ -6,7 +6,7 @@ import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
 import RouteError from './pages/RouteError';
-import { AcceptInvite, BalanceConfirmation, LegalPage, PublicQuote, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, BalanceConfirmation, LegalPage, PublicQuote, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team, Collections } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -27,6 +27,7 @@ const BUILT: RouteObject[] = [
   { path: 'invoices', element: page(<Invoices />, 'invoices.view') },
   { path: 'invoices/:id', element: page(<InvoiceEditor />, 'invoices.view') },
   { path: 'quotes', element: page(<Quotes />, 'invoices.view') },
+  { path: 'collections', element: page(<Collections />, 'invoices.view') },
   { path: 'quotes/:id', element: page(<QuoteEditor />, 'invoices.view') },
   { path: 'credit-notes', element: page(<CreditNotes />, 'invoices.view') },
   { path: 'recurring', element: page(<Recurring />, 'invoices.view') },

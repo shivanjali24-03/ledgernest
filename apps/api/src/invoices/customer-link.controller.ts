@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -20,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 import {
   CurrentActor,
   CurrentTenant,
@@ -27,6 +29,7 @@ import {
   RequirePermission,
 } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { CustomerLinkService } from './customer-link.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -57,6 +60,30 @@ export class CustomerLinkController {
     @Req() req: Request,
   ) {
     return this.links.share(contactId, { actor, tenant, req });
+  }
+
+  @Post(':id/chased')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Notes that the customer was chased for what’s overdue, and when',
+  })
+  chased(
+    @Param('id', id) contactId: string,
+    @Body(
+      new ZodValidationPipe(
+        z.object({
+          channel: z.enum(['whatsapp', 'phone']).default('whatsapp'),
+        }),
+      ),
+    )
+    body: { channel: 'whatsapp' | 'phone' },
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.links.chased(contactId, body.channel, { actor, tenant, req });
   }
 
   @Delete(':id/share')

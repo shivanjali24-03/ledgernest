@@ -24,6 +24,8 @@ export interface Contact {
   udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;
+  /** When we last chased this customer for what's overdue */
+  lastChasedAt?: string | null;
   notes: string | null;
   archived: boolean;
   createdAt: string;
@@ -55,4 +57,6 @@ export interface ContactsApi {
   share(id: string): Promise<{ token: string; views: number; lastViewedAt: string | null }>;
   /** Turns the link off; sharing again makes a new one */
   unshare(id: string): Promise<void>;
+  /** Notes that the customer was chased for what's overdue (on WhatsApp or by phone) */
+  chased(id: string, channel: 'whatsapp' | 'phone'): Promise<{ lastChasedAt: string }>;
 }

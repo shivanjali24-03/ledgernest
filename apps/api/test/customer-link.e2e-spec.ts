@@ -276,6 +276,25 @@ describe('Customer account links (e2e)', () => {
     }
   });
 
+  it('remembers when a customer was last chased, on WhatsApp or by email', async () => {
+    await as('viewer').post(`/contacts/${kumar}/chased`).expect(403);
+    const r = (
+      await as()
+        .post(`/contacts/${kumar}/chased`, { channel: 'whatsapp' })
+        .expect(200)
+    ).body as { lastChasedAt: string };
+    const c = (await as().get(`/contacts/${kumar}`).expect(200)).body as {
+      lastChasedAt: string;
+    };
+    expect(c.lastChasedAt).toBe(r.lastChasedAt);
+    await as().post(`/contacts/${vendor}/chased`).expect(400);
+    expect(
+      await prisma.auditLog.count({
+        where: { organizationId: org, action: 'org.contact.chased' },
+      }),
+    ).toBe(1);
+  });
+
   it('turns away made-up links, and stops when turned off', async () => {
     await visitor('x'.repeat(32)).expect(404);
     await visitor('short').expect(404);

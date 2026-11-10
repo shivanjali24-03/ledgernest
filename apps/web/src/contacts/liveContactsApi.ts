@@ -24,6 +24,7 @@ export function createLiveContactsApi(client: AuthClient, organizationId: string
     archive: (id, archive) => r(`/${id}/${archive ? 'archive' : 'restore'}`, { method: 'POST' }),
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
     share: (id) => r(`/${id}/share`, { method: 'POST' }),
+    chased: (id, channel) => r(`/${id}/chased`, { method: 'POST', json: { channel } }),
     unshare: async (id) => {
       await r(`/${id}/share`, { method: 'DELETE' });
     },

@@ -546,6 +546,11 @@ export class InvoiceRemindersService
         failed.push({ id: i.id, reason });
       }
     }
+    if (sent.length)
+      await this.prisma.contact.update({
+        where: { id: contactId },
+        data: { lastChasedAt: new Date() },
+      });
     return { sentTo: contact.email, sent: sent.length, failed };
   }
 }
