@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -136,6 +136,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
                     {l.description}
                   </span>
                   {l.item?.hsnSac && <span className="block text-xs text-ink-500">{t('invoices.hsnSac', { code: l.item.hsnSac })}</span>}
+                  {(l.batches ?? []).map((b) => (
+                    <span key={b.batchNo} className="block text-xs text-ink-500" dir="ltr">
+                      {batchLabel(b)} · {b.quantity}
+                    </span>
+                  ))}
                 </td>
                 <td className="py-2.5 text-end tabular-nums" dir="ltr">
                   {l.quantity}

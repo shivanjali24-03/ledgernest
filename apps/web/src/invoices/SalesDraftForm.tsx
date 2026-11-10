@@ -34,7 +34,7 @@ export interface SalesDraft {
   currency: string | null;
   /** The number series it will be numbered from (invoices) */
   seriesId?: string | null;
-  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null }[];
+  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null }[];
 }
 export interface SalesDraftPayload {
   contactId: string;
@@ -44,7 +44,7 @@ export interface SalesDraftPayload {
   notes: string;
   placeOfSupply: string | null;
   seriesId?: string | null;
-  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null }[];
+  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null }[];
 }
 export interface SalesDraftConfig {
   initial: SalesDraft | null;
@@ -61,13 +61,35 @@ export interface SalesDraftConfig {
   untilHint: (customer: Contact | null) => string | undefined;
   /** Number series to choose from (invoices, when there's more than one) */
   series?: { id: string; name: string; preview: string; isDefault: boolean }[];
+  /** Lines of goods kept in batches choose their batch (invoices) */
+  batches?: boolean;
   /** Warn when this takes the customer over their credit limit (invoices) */
   creditCheck?: boolean;
   labels: { date: string; until: string; save: string; extra: string; delete: string; deleteTitle: string; deleteBody: string; deleted: string };
 }
 
-type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '' });
+type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string; batchId: string };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '', batchId: '' });
+
+/** For goods kept in batches: which batch to sell from, or the earliest expiry first; expired batches can't be chosen */
+function BatchSelect({ itemId, value, onChange, label, disabled }: { itemId: string; value: string; onChange: (v: string) => void; label: string; disabled: boolean }) {
+  const { t } = useTranslation();
+  const session = useSession();
+  const itemsApi = useItemsApi();
+  const batches = useQuery({ queryKey: ['items', session.organizationId, 'batches', itemId], queryFn: () => itemsApi!.batches(itemId), enabled: !!itemsApi });
+  return (
+    <select aria-label={label} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={clsx(inputClass, 'mt-1 h-9 border-ink-200 text-xs dark:border-ink-700')}>
+      <option value="">{t('batches.auto')}</option>
+      {(batches.data ?? [])
+        .filter((b) => b.onHand !== '0' || b.id === value)
+        .map((b) => (
+          <option key={b.id} value={b.id} disabled={b.expired}>
+            {t(b.expired ? 'batches.optionExpired' : 'batches.option', { batch: b.batchNo, expiry: b.expiryDate ?? '—', onHand: b.onHand })}
+          </option>
+        ))}
+    </select>
+  );
+}
 
 /**
  * A sales document being drafted (an invoice or a quote): choose the customer, add lines from items, see GST worked
@@ -107,7 +129,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
-      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '' }))
+      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '' }))
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
@@ -156,7 +178,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null })),
+    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, ...(config.batches ? { batchId: l.batchId || null } : {}) })),
   });
   const save = useMutation({
     mutationFn: (extra: boolean) => config.save(payload(), extra),
@@ -270,6 +292,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
                       <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
+                      {config.batches && l.itemId && items.data?.find((x) => x.id === l.itemId)?.trackBatches && <BatchSelect itemId={l.itemId} value={l.batchId} onChange={(v) => set(l.key, { batchId: v })} label={t('batches.lineBatch', { n: n + 1 })} disabled={!canManage} />}
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />

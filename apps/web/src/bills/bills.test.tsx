@@ -104,8 +104,9 @@ describe('bills', () => {
     await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
     await choose('Account for line 1', '5300 · Office rent');
     await userEvent.click(screen.getByRole('button', { name: 'Record bill' }));
-    const doc = await screen.findByRole('article', {}, { timeout: 6000 });
-    expect(within(doc).getByText('Vendor’s bill date')).toBeInTheDocument();
+    await screen.findByRole('article', {}, { timeout: 6000 });
+    // The page can re-render once recorded: look again each time
+    await waitFor(() => expect(within(screen.getByRole('article')).getByText('Vendor’s bill date')).toBeInTheDocument());
     const { demoStoredBillViews } = await import('./demoBillsApi');
     expect(demoStoredBillViews().find((b) => b.vendorReference === 'SOS/950')).toMatchObject({ vendorBillDate: '2026-10-21', billDate: '2026-10-24', dueDate: '2026-10-28' });
   }, 30_000);

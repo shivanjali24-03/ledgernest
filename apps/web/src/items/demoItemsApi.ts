@@ -104,6 +104,8 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
     if (v.cogsAccountId && type(v.cogsAccountId) !== 'expense') throw refuse(400, 'cogs_account_type', { field: 'cogsAccountId' });
   };
   const api: ItemsApi = {
+    // The demo company keeps no batches
+    batches: () => wait(() => []),
     facets: () =>
       wait(() => {
         const rows = load();

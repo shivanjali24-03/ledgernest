@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { batchLabel } from '../inventory/batches.js';
 import { rateSchema } from '../currencies/index.js';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
 import { isoDaySchema } from '../periods/index.js';
@@ -102,6 +103,8 @@ export const invoiceLineSchema = z.object({
   accountId: z.uuid().nullable().optional().default(null),
   /** The cost centre or project the line belongs to */
   costCentreId: z.uuid().nullable().optional().default(null),
+  /** For goods kept in batches: the batch to sell from; omitted = earliest expiry first */
+  batchId: z.uuid().nullable().optional().default(null),
 });
 export type InvoiceLineInput = z.input<typeof invoiceLineSchema>;
 
@@ -153,7 +156,7 @@ export const invoiceEmailSchema = invoiceReminderSchema;
 
 /** An invoice's lines, tax by rate and totals as rows for the PDF (amounts in major units) */
 export function invoiceRows(
-  i: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
+  i: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null; batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[] }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
   digits: number,
 ): string[][] {
   const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
@@ -161,7 +164,8 @@ export function invoiceRows(
   const total = (label: string, minor: number) => ['', '', '', '', label, '', fmt(minor)];
   return [
     ['Description', 'HSN/SAC', 'Qty', `Price (${i.currency})`, 'Discount', 'Taxable value', 'Tax'],
-    ...i.lines.map((l) => [l.description, l.item?.hsnSac ?? '', l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', fmt(l.amount), fmt(l.taxAmount)]),
+    // Goods from batches: a row under the line for each batch, with its dates and how many came from it
+    ...i.lines.flatMap((l) => [[l.description, l.item?.hsnSac ?? '', l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', fmt(l.amount), fmt(l.taxAmount)], ...(l.batches ?? []).map((b) => [`   ${batchLabel(b)}`, '', b.quantity, '', '', '', ''])]),
     total('Subtotal', i.subtotal),
     ...i.taxBreakdown.map((t) => total(t.name, t.amount)),
     total(`Total (${i.currency})`, i.total),

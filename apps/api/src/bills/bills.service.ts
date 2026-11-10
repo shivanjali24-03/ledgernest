@@ -46,6 +46,10 @@ type LineIn = {
   taxGroupId: string | null;
   accountId: string | null;
   costCentreId?: string | null;
+  /** For goods kept in batches: the batch that came in */
+  batchNo?: string | null;
+  mfgDate?: string | null;
+  expiryDate?: string | null;
 };
 export type DraftIn = {
   contactId: string;
@@ -181,8 +185,19 @@ const select = {
       accountId: true,
       taxGroupId: true,
       costCentreId: true,
+      batchNo: true,
+      mfgDate: true,
+      expiryDate: true,
       costCentre: { select: { id: true, code: true, name: true } },
-      item: { select: { id: true, name: true, hsnSac: true, unit: true } },
+      item: {
+        select: {
+          id: true,
+          name: true,
+          hsnSac: true,
+          unit: true,
+          trackBatches: true,
+        },
+      },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: groupSelect },
     },
@@ -339,6 +354,9 @@ export class BillsService {
           name: l.taxGroup.name,
           supply: l.taxGroup.supply,
         },
+        batchNo: l.batchNo,
+        mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
+        expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
       })),
     };
     return {
@@ -849,6 +867,9 @@ export class BillsService {
         taxGroupId: l.group?.id ?? null,
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
+        batchNo: l.batchNo ?? null,
+        mfgDate: l.mfgDate ? asDate(l.mfgDate) : null,
+        expiryDate: l.expiryDate ? asDate(l.expiryDate) : null,
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1057,6 +1078,9 @@ export class BillsService {
           taxGroupId: l.taxGroupId,
           accountId: l.accountId,
           costCentreId: l.costCentreId,
+          batchNo: l.batchNo,
+          mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
+          expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
         })),
       });
       if (!p.payableAccountId)
@@ -1208,11 +1232,24 @@ export class BillsService {
         await this.inventory.receipts(
           tx,
           organizationId,
-          p.lines.map((l, n) => ({
-            itemId: l.itemId,
-            quantity: l.quantity,
-            value: base(p.amounts.lines[n]!.net),
-          })),
+          (
+            await tx.billLine.findMany({
+              where: { billId: id },
+              orderBy: { lineNo: 'asc' },
+              select: { id: true },
+            })
+          ).map((row, n) => {
+            const l = p.lines[n]!;
+            return {
+              id: row.id,
+              itemId: l.itemId,
+              quantity: l.quantity,
+              value: base(p.amounts.lines[n]!.net),
+              batchNo: l.batchNo ?? null,
+              mfgDate: l.mfgDate ?? null,
+              expiryDate: l.expiryDate ?? null,
+            };
+          }),
         ),
       );
       await tx.bill.update({

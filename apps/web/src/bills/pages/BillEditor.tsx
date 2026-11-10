@@ -49,6 +49,9 @@ type Line = {
   taxGroupId: string;
   accountId: string;
   costCentreId: string;
+  batchNo: string;
+  mfgDate: string;
+  expiryDate: string;
 };
 const blankLine = (): Line => ({
   key: crypto.randomUUID(),
@@ -60,6 +63,9 @@ const blankLine = (): Line => ({
   taxGroupId: '',
   accountId: '',
   costCentreId: '',
+  batchNo: '',
+  mfgDate: '',
+  expiryDate: '',
 });
 
 /** A draft: choose the vendor, add what was bought and where it's booked, see input GST as you type, save or record. */
@@ -93,6 +99,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     queryFn: () => itemsApi!.list({}),
     enabled: !!itemsApi,
   });
+  const batched = (itemId: string) => !!items.data?.find((x) => x.id === itemId)?.trackBatches;
   const taxes = useQuery({
     queryKey: ['taxes', session.organizationId, role],
     queryFn: () => taxesApi!.list(),
@@ -127,6 +134,9 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           taxGroupId: l.taxGroup?.id ?? '',
           accountId: l.account?.id ?? '',
           costCentreId: l.costCentre?.id ?? '',
+          batchNo: l.batchNo ?? '',
+          mfgDate: l.mfgDate ?? '',
+          expiryDate: l.expiryDate ?? '',
         }))
       : [blankLine()],
   );
@@ -219,6 +229,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       taxGroupId: l.group?.id ?? null,
       accountId: l.accountId || null,
       costCentreId: l.costCentreId || null,
+      ...(batched(l.itemId) ? { batchNo: l.batchNo.trim() || null, mfgDate: l.mfgDate || null, expiryDate: l.expiryDate || null } : {}),
     })),
   });
   const save = useMutation({
@@ -369,6 +380,13 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
                       <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
+                      {batched(l.itemId) && (
+                        <div className="mt-1 grid grid-cols-3 gap-1">
+                          <input aria-label={t('batches.lineBatch', { n: n + 1 })} placeholder={t('batches.batchNo')} value={l.batchNo} disabled={!canManage} onChange={(e) => set(l.key, { batchNo: e.target.value })} dir="ltr" className={clsx(cell, 'font-mono', !l.batchNo.trim() && 'border-expense')} />
+                          <input aria-label={t('batches.lineMfg', { n: n + 1 })} title={t('batches.mfgDate')} type="date" value={l.mfgDate} disabled={!canManage} onChange={(e) => set(l.key, { mfgDate: e.target.value })} className={cell} />
+                          <input aria-label={t('batches.lineExpiry', { n: n + 1 })} title={t('batches.expiryDate')} type="date" value={l.expiryDate} min={l.mfgDate || undefined} disabled={!canManage} onChange={(e) => set(l.key, { expiryDate: e.target.value })} className={cell} />
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />

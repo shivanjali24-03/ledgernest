@@ -11,6 +11,7 @@ import {
   parseQuantity,
   type ItemKind,
   type ItemUpdateInput,
+  todayIn,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -34,6 +35,7 @@ type Values = {
   incomeAccountId: string | null;
   expenseAccountId: string | null;
   trackStock: boolean;
+  trackBatches?: boolean;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   reorderLevel: string | null;
@@ -55,6 +57,7 @@ const EDITABLE = [
   'incomeAccountId',
   'expenseAccountId',
   'trackStock',
+  'trackBatches',
   'inventoryAccountId',
   'cogsAccountId',
   'reorderLevel',
@@ -85,6 +88,7 @@ const select = {
   incomeAccountId: true,
   expenseAccountId: true,
   trackStock: true,
+  trackBatches: true,
   inventoryAccountId: true,
   cogsAccountId: true,
   reorderLevel: true,
@@ -114,6 +118,15 @@ export class ItemsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
   ) {}
+
+  /** Today in the organisation's time zone */
+  async today(organizationId: string) {
+    const { timeZone } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { timeZone: true },
+    });
+    return todayIn(timeZone);
+  }
 
   private lock(tx: Tx, organizationId: string) {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'items:' + organizationId}))`;
@@ -445,6 +458,13 @@ export class ItemsService {
       'expense_account_type',
       'Purchases of an item go to an expense or asset account.',
     );
+    if (v.trackBatches && !v.trackStock)
+      throw refuse(
+        BadRequestException,
+        'Only goods whose stock is tracked can be kept in batches.',
+        'batches_need_stock',
+        { field: 'trackBatches' },
+      );
     if (v.trackStock) {
       if (v.kind !== 'goods')
         throw refuse(
@@ -553,9 +573,11 @@ export class ItemsService {
       if (
         current.trackStock &&
         (changed.includes('trackStock') ||
+          changed.includes('trackBatches') ||
           changed.includes('inventoryAccountId') ||
           changed.includes('kind'))
       ) {
+        // Batches start with the item's stock: once it has moved, every movement would need a batch it doesn't have
         const moved = await tx.stockMovement.count({
           where: { organizationId, itemId: id },
         });

@@ -53,6 +53,8 @@ const fields = {
   expenseAccountId: z.uuid().nullable(),
   /** Goods whose quantity on hand is kept: bought into the inventory account, sold at average cost */
   trackStock: z.boolean(),
+  /** Tracked goods kept in batches with manufacturing and expiry dates (medicines, food) */
+  trackBatches: z.boolean(),
   /** The inventory (asset) account the stock sits in */
   inventoryAccountId: z.uuid().nullable(),
   /** The cost of sales account stock goes to as it's sold */
@@ -93,6 +95,7 @@ export const itemCreateSchema = z.object({
   incomeAccountId: fields.incomeAccountId.optional().default(null),
   expenseAccountId: fields.expenseAccountId.optional().default(null),
   trackStock: fields.trackStock.optional().default(false),
+  trackBatches: fields.trackBatches.optional().default(false),
   inventoryAccountId: fields.inventoryAccountId.optional().default(null),
   cogsAccountId: fields.cogsAccountId.optional().default(null),
   reorderLevel: fields.reorderLevel.optional().default(null),

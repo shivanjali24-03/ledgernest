@@ -37,6 +37,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [incomeAccountId, setIncome] = useState(item?.incomeAccountId ?? '');
   const [expenseAccountId, setExpense] = useState(item?.expenseAccountId ?? '');
   const [trackStock, setTrackStock] = useState(item?.trackStock ?? false);
+  const [trackBatches, setTrackBatches] = useState(item?.trackBatches ?? false);
   const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
   const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
   const [reorderLevel, setReorderLevel] = useState(item?.reorderLevel ?? '');
@@ -61,6 +62,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     incomeAccountId: incomeAccountId || null,
     expenseAccountId: expenseAccountId || null,
     trackStock: kind === 'goods' && trackStock,
+    trackBatches: kind === 'goods' && trackStock && trackBatches,
     inventoryAccountId: kind === 'goods' && trackStock ? inventoryAccountId || null : null,
     cogsAccountId: kind === 'goods' && trackStock ? cogsAccountId || null : null,
     reorderLevel: kind === 'goods' && trackStock ? reorderLevel.trim() || null : null,
@@ -209,6 +211,13 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
                   options={[{ value: '', label: t('inventory.chooseAccount') }, ...active.filter((a) => a.type === 'expense' && a.subtype === 'cost_of_sales').concat(active.filter((a) => a.type === 'expense' && a.subtype !== 'cost_of_sales')).map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
                 />
                 <TextField label={t('inventory.fields.reorderLevel')} value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} error={errors.reorderLevel} hint={t('inventory.reorderHint')} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+                <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                  <input type="checkbox" checked={trackBatches} onChange={(e) => setTrackBatches(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+                  <span>
+                    <span className="font-medium">{t('batches.track')}</span>
+                    <span className="block text-xs text-ink-500">{t('batches.trackHint')}</span>
+                  </span>
+                </label>
               </div>
             )}
           </fieldset>

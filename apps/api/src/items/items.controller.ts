@@ -38,6 +38,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { ItemsService } from './items.service.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
 
@@ -51,7 +52,10 @@ const id = new ParseUUIDPipe({ version: '4' });
 })
 @Controller('items')
 export class ItemsController {
-  constructor(private readonly items: ItemsService) {}
+  constructor(
+    private readonly items: ItemsService,
+    private readonly inventory: InventoryService,
+  ) {}
 
   @Get()
   @RequirePermission('invoices.view')
@@ -94,6 +98,24 @@ export class ItemsController {
   @ApiOkResponse({ description: 'The categories and brands in use' })
   facets(@CurrentTenant() tenant: Tenant) {
     return this.items.facets(tenant.organizationId);
+  }
+
+  @Get(':id/batches')
+  @RequirePermission('invoices.view')
+  @ApiOkResponse({
+    description:
+      'The item’s batches: number, manufacturing and expiry dates, what’s on hand, and whether it has expired',
+  })
+  async batches(
+    @Param('id', id) itemId: string,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    await this.items.get(tenant.organizationId, itemId);
+    return this.inventory.batches(
+      tenant.organizationId,
+      itemId,
+      await this.items.today(tenant.organizationId),
+    );
   }
 
   @Get(':id')

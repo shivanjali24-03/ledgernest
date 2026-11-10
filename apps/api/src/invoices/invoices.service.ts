@@ -45,6 +45,8 @@ type LineIn = {
   taxGroupId: string | null;
   accountId: string | null;
   costCentreId?: string | null;
+  /** For goods kept in batches: the batch to sell from; null = earliest expiry first */
+  batchId?: string | null;
 };
 export type DraftIn = {
   contactId: string;
@@ -191,8 +193,17 @@ const select = {
       accountId: true,
       taxGroupId: true,
       costCentreId: true,
+      batchId: true,
       costCentre: { select: { id: true, code: true, name: true } },
-      item: { select: { id: true, name: true, hsnSac: true, unit: true } },
+      item: {
+        select: {
+          id: true,
+          name: true,
+          hsnSac: true,
+          unit: true,
+          trackBatches: true,
+        },
+      },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: groupSelect },
     },
@@ -362,6 +373,14 @@ export class InvoicesService {
           name: l.taxGroup.name,
           supply: l.taxGroup.supply,
         },
+        batchId: l.batchId,
+        /** The batches an issued line's goods came from (goods kept in batches) */
+        batches: [] as {
+          batchNo: string;
+          mfgDate: string | null;
+          expiryDate: string | null;
+          quantity: string;
+        }[],
       })),
     };
     return {
@@ -392,10 +411,40 @@ export class InvoicesService {
   }
 
   async get(organizationId: string, id: string) {
-    return this.view(
+    const v = this.view(
       await this.find(this.prisma, organizationId, id),
       await this.today(organizationId),
     );
+    if (v.status !== 'draft' && v.lines.some((l) => l.item?.trackBatches)) {
+      const moved = await this.prisma.stockMovement.findMany({
+        where: {
+          organizationId,
+          kind: 'invoice',
+          sourceId: id,
+          batchId: { not: null },
+        },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          sourceLineId: true,
+          quantity: true,
+          batch: {
+            select: { batchNo: true, mfgDate: true, expiryDate: true },
+          },
+        },
+      });
+      for (const l of v.lines)
+        l.batches = moved
+          .filter((m) => m.sourceLineId === l.id)
+          .map((m) => ({
+            batchNo: m.batch!.batchNo,
+            mfgDate: m.batch!.mfgDate ? iso(m.batch!.mfgDate) : null,
+            expiryDate: m.batch!.expiryDate ? iso(m.batch!.expiryDate) : null,
+            quantity: formatQuantity(
+              parseQuantity(String(m.quantity).replace(/^-/, ''))!,
+            ),
+          }));
+    }
+    return v;
   }
 
   async list(
@@ -794,6 +843,7 @@ export class InvoicesService {
     invoiceId: string,
     p: Awaited<ReturnType<InvoicesService['prepare']>>,
   ) {
+    await this.inventory.checkChosenBatches(tx, organizationId, p.lines);
     await tx.invoiceLine.deleteMany({ where: { invoiceId } });
     await tx.invoiceLine.createMany({
       data: p.lines.map((l, n) => ({
@@ -808,6 +858,7 @@ export class InvoicesService {
         taxGroupId: l.group?.id ?? null,
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
+        batchId: l.batchId ?? null,
         amount: BigInt(p.amounts.lines[n]!.net),
         taxAmount: BigInt(p.amounts.lines[n]!.tax),
       })),
@@ -1018,6 +1069,7 @@ export class InvoicesService {
           taxGroupId: l.taxGroupId,
           accountId: l.accountId,
           costCentreId: l.costCentreId,
+          batchId: l.batchId,
         })),
       });
       if (!p.receivableAccountId)
@@ -1145,14 +1197,23 @@ export class InvoicesService {
       }
       const contactName = i.contact.name;
       // Tracked goods leave stock at their average cost, to cost of sales
+      // The lines as written at issue, so stock movements point to them
+      const lineIds = await tx.invoiceLine.findMany({
+        where: { invoiceId: id },
+        orderBy: { lineNo: 'asc' },
+        select: { id: true },
+      });
       const cost = await this.inventory.costOfSale(
         tx,
         organizationId,
-        p.lines.map((l) => ({
+        p.lines.map((l, n) => ({
+          id: lineIds[n]?.id,
           itemId: l.itemId,
           quantity: l.quantity,
           costCentreId: l.costCentreId ?? null,
+          batchId: l.batchId ?? null,
         })),
+        issueDate,
       );
       const entry = await this.journals.postEntryInTx(
         tx,
