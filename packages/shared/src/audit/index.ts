@@ -16,7 +16,7 @@ export const AUDIT_ACTION_GROUPS = {
   items: ['org.item.'],
   invoices: ['org.invoice.', 'org.credit_note.', 'org.recurring.', 'org.quote.'],
   payments: ['org.payment.'],
-  bills: ['org.bill.'],
+  bills: ['org.bill.', 'org.recurring_bill.'],
   banking: ['org.banking.'],
   assets: ['org.asset.'],
   budgets: ['org.budget.'],

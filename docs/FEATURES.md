@@ -53,6 +53,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
 | Invoices | Printable (PDF) GST invoices with your terms and bank details at the foot, emailed to the customer as a PDF, numbering, due dates, place of supply; receipts against one or many invoices, with advances and realised exchange differences | ✅ #66, #69 |
 | Quotes | Estimates for customers, priced with the same lines and GST rules as invoices; sent, accepted or declined, expired past their date, emailed to the customer as a PDF, and turned into a draft invoice in one step | ✅ |
+| Recurring bills | Rent, subscriptions and other repeat bills made from a template on a schedule, as drafts or recorded, catching up on missed dates; approvals still apply | ✅ |
 | Credit limits | A most-owed amount per customer, in their currency; the customer page shows how much is used, and an invoice that would go over it shows a warning before saving or issuing | ✅ |
 | Weekly summary | Owners and Admins can get an email every Monday: cash, what's owed either way, profit this year and what needs attention | ✅ |
 | Payment reminders | Email a customer what's still owed on an invoice, when it was due and what's been paid, with an optional note; the invoice shows how many reminders went and when; or automatically for overdue invoices, some days after the due date, then every so many days, up to a limit | ✅ |

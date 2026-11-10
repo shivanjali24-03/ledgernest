@@ -45,7 +45,7 @@ type LineIn = {
   accountId: string | null;
   costCentreId?: string | null;
 };
-type DraftIn = {
+export type DraftIn = {
   contactId: string;
   billDate: string;
   dueDate: string | null;
@@ -55,6 +55,8 @@ type DraftIn = {
   payableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
+  /** Set when a schedule makes it */
+  recurringBillId?: string | null;
 };
 
 const refuse = (
@@ -754,6 +756,7 @@ export class BillsService {
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
           total: BigInt(p.amounts.total),
+          recurringBillId: input.recurringBillId ?? null,
           createdById: ctx.actor.userId,
         },
         select: { id: true },
