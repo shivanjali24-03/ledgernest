@@ -78,6 +78,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Bank and cash accounts | Every account with its balance (in its own currency too) and a statement of what moved; money spent and received that isn't an invoice or bill, with GST | ✅ #90 |
 | Statement import | CSV (layout worked out, correctable, remembered per account) or OFX, previewed first; the same lines never import twice | ✅ #92 |
 | Reconciliation | Bank lines matched to the books with suggestions, missing entries recorded from the bank line, reconciled to a statement balance and locked | ✅ #93 |
+| Receipts from bank lines | Money in that pays an open invoice is spotted while reconciling: by the invoice number a UPI QR payment's note carries (however the bank writes it), or the exact balance from a customer named in the narration; one click records the receipt, dated and referenced as the bank has it, and matches it | ✅ |
 | Transfers | Between bank and cash accounts, across currencies with the exchange difference booked | ✅ #91 |
 
 ## Phase 5: Reports and insights

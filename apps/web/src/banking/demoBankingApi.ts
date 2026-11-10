@@ -1,4 +1,4 @@
-import { bankMoneySchema, bankTransferSchema, currencyDigits, guessMapping, looksLikeOfx, parseCsv, splitTax, statementFingerprints, statementFromCsv, statementFromOfx, statementImportSchema, statementMappingSchema, todayIn, toBase, type StatementMapping } from '@ledgernest/shared';
+import { suggestReceipts, bankMoneySchema, bankTransferSchema, currencyDigits, guessMapping, looksLikeOfx, parseCsv, splitTax, statementFingerprints, statementFromCsv, statementFromOfx, statementImportSchema, statementMappingSchema, todayIn, toBase, type StatementMapping } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi, demoAccountRows } from '../accounts/demoAccountsApi';
@@ -308,6 +308,12 @@ export function createDemoBankingApi(canManage: () => boolean, opts: { approvals
           bankLines,
           bookLines: free,
           suggestions,
+          receipts: suggestReceipts(
+            bankLines.filter((l) => !suggestions.some((x) => x.statementLineId === l.id)),
+            (await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews())
+              .filter((i) => i.status === 'issued' && i.balance > 0 && (i.currency ?? null) === (account.currency ?? null) && i.number)
+              .map((i) => ({ id: i.id, number: i.number!, balance: i.balance, contact: { id: i.contact.id, name: i.contact.name, legalName: i.contact.legalName } })),
+          ),
           hints: bankLines.flatMap((l) => {
             const hit = !suggestions.some((x) => x.statementLineId === l.id) ? st.learned?.[hintKey(l.description, l.amount)] : undefined;
             const a = hit && demoAccountRows().find((x) => x.id === hit.accountId);
@@ -371,6 +377,19 @@ export function createDemoBankingApi(canManage: () => boolean, opts: { approvals
       st.learned = { ...st.learned, [hintKey(line.description, line.amount)]: { accountId: input.accountId, taxGroupId: input.taxGroupId ?? null } };
       saveStatements(st);
       return t;
+    },
+    receiveFromLine: async (statementLineId, invoiceId) => {
+      const line = loadStatements().lines.find((l) => l.id === statementLineId);
+      if (!line) throw new ApiError('not_found', 404);
+      if (line.status !== 'unmatched') throw refuse(409, 'line_not_unmatched');
+      if (line.amount <= 0) throw refuse(400, 'not_money_in');
+      const inv = (await (await import('../invoices/demoInvoicesApi')).demoInvoiceViews()).find((i) => i.id === invoiceId);
+      if (!inv || inv.status !== 'issued') throw refuse(400, 'invoice_not_found');
+      const { createDemoPaymentsApi } = await import('../payments/demoPaymentsApi');
+      const p = await createDemoPaymentsApi(() => true).receive({ contactId: inv.contact.id, date: line.date, bankAccountId: line.bankAccountId, amount: line.amount, reference: (line.reference ?? line.description).slice(0, 64), allocations: [{ invoiceId, amount: Math.min(line.amount, inv.balance) }] });
+      const entry = await journals().get(p.journalEntry.id);
+      await api.match(line.id, [entry.lines.find((l) => l.accountId === line.bankAccountId)!.id]);
+      return { number: p.number };
     },
     reconcile: (input) =>
       wait(async () => {

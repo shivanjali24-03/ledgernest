@@ -289,6 +289,26 @@ export class BankingController {
     return this.reconciling.create(body, { actor, tenant, req });
   }
 
+  @Post('reconcile/receive')
+  @RequirePermission('banking.manage', 'payments.manage')
+  @ApiOkResponse({
+    description:
+      'The customer’s receipt recorded from a bank line against an invoice (any more is an advance), already matched to it',
+  })
+  receiveFromLine(
+    @Body(
+      new ZodValidationPipe(
+        z.object({ statementLineId: z.uuid(), invoiceId: z.uuid() }),
+      ),
+    )
+    body: { statementLineId: string; invoiceId: string },
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reconciling.receive(body, { actor, tenant, req });
+  }
+
   @Post('reconciliations')
   @RequirePermission('banking.reconcile')
   @ApiOkResponse({

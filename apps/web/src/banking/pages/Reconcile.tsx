@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Check, CheckCircle2, EyeOff, Link2, Plus, Undo2 } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, EyeOff, HandCoins, Link2, Plus, Undo2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -40,6 +40,8 @@ export default function Reconcile() {
   const role = session.role ?? session.customRoleName;
   const canReconcile = session.permissions.has('banking.reconcile');
   const canCreate = session.permissions.has('banking.manage');
+  // Recording a customer's receipt from a line needs both banking and payments
+  const canReceive = canCreate && session.permissions.has('payments.manage');
   const [date, setDate] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [typedBalance, setBalance] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -177,6 +179,7 @@ export default function Reconcile() {
                     const s = data!.suggestions.find((x) => x.statementLineId === l.id);
                     const suggested = s ? data!.bookLines.filter((b) => s.journalLineIds.includes(b.id)) : [];
                     const hint = data!.hints?.find((h) => h.statementLineId === l.id);
+                    const receipt = !s ? data!.receipts?.find((r) => r.statementLineId === l.id) : undefined;
                     const isSel = selected === l.id;
                     return (
                       <li key={l.id} className={clsx('space-y-2 p-4', isSel && 'bg-brand-50/60 dark:bg-brand-950/30')}>
@@ -200,6 +203,30 @@ export default function Reconcile() {
                             {canReconcile && (
                               <Button size="sm" icon={<Link2 className="size-4" />} onClick={() => run.mutate(() => api.match(l.id, s!.journalLineIds))}>
                                 {t('banking.rec.match')}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {receipt && (
+                          <div className="ms-7 flex flex-wrap items-center gap-3 rounded-lg border border-income/40 bg-white p-2 text-sm dark:bg-ink-900" data-testid="line-receipt">
+                            <Pill tone="brand">{t(`banking.rec.confidence.${receipt.confidence}`)}</Pill>
+                            <span className="min-w-0 flex-1">
+                              {t('banking.rec.paysInvoice', { number: receipt.invoiceNumber, name: receipt.contact.name, balance: plain(receipt.balance) })}
+                            </span>
+                            {canReceive && (
+                              <Button
+                                size="sm"
+                                icon={<HandCoins className="size-4" />}
+                                disabled={run.isPending}
+                                onClick={() =>
+                                  run.mutate(async () => {
+                                    const p = await api.receiveFromLine(l.id, receipt.invoiceId);
+                                    toast(t('banking.rec.received', { number: p.number, invoice: receipt.invoiceNumber }));
+                                    for (const k of ['invoices', 'payments', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
+                                  })
+                                }
+                              >
+                                {t('banking.rec.recordReceipt')}
                               </Button>
                             )}
                           </div>
