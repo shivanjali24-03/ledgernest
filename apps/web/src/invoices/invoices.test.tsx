@@ -249,10 +249,15 @@ describe('invoices', () => {
     const dialog = await openDialog('Share', /^Share invoice/);
     const link = (await within(dialog).findByLabelText('Invoice link', {}, { timeout: 4000 })) as HTMLInputElement;
     const token = /\/i\/([A-Za-z0-9_-]{32})$/.exec(link.value)![1]!;
+    // The invoice message (a reminder is ready instead once the invoice is overdue)
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Send the invoice' }));
     const wa = within(dialog).getByRole('link', { name: 'Send on WhatsApp' }).getAttribute('href')!;
     // Kumar's number on file is a landline, so WhatsApp asks who to send it to
     expect(wa.startsWith('https://wa.me/?text=')).toBe(true);
     expect(decodeURIComponent(wa.split('text=')[1]!)).toMatch(new RegExp(`^Dear Kumar Logistics, here is invoice INV/.+/0001 from .+ for ₹1,18,000\\.00, due on .+\\. View it, download the PDF or pay by UPI here: ${link.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Payment reminder' }));
+    expect(within(dialog).getByTestId('share-message')).toHaveTextContent(/^Dear Kumar Logistics, a gentle reminder that invoice INV\/.+\/0001 from .+ for ₹1,18,000\.00 was due on /);
+    expect(decodeURIComponent(within(dialog).getByRole('link', { name: 'Send on WhatsApp' }).getAttribute('href')!)).toContain('a gentle reminder');
     expect(within(dialog).getByText('Not opened yet.')).toBeInTheDocument();
     cleanup();
 

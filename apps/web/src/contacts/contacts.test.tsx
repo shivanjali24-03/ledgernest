@@ -150,6 +150,10 @@ describe('customers and vendors', () => {
     await invoices.issue(draft.id);
     renderApp('/contacts/c0000000-0000-4000-8000-000000000001');
     const remind = await screen.findByRole('button', { name: /^Remind about overdue \(\d+\)$/ }, { timeout: 6000 });
+    // Or on WhatsApp: the overdue list and the total, ready to send (Kumar's number on file is a landline, so WhatsApp asks who)
+    const wa = decodeURIComponent((await screen.findByRole('link', { name: 'Remind on WhatsApp' })).getAttribute('href')!);
+    expect(wa).toMatch(/^https:\/\/wa\.me\/\?text=Dear Kumar Logistics, a gentle reminder from .+\. These invoices are overdue:\n• INV\/.+ · ₹1,000\.00 · due /);
+    expect(wa).toMatch(/\nTotal: ₹[\d,.]+\n/);
     fireEvent.click(remind);
     const dialog = await screen.findByRole('dialog', { name: 'Remind Kumar Logistics about overdue invoices?' });
     expect(dialog).toHaveTextContent('accounts@kumarlogistics.in');

@@ -2028,7 +2028,11 @@
       "remindNoEmail": "This customer has no email address. Add one to their details first.",
       "remindConfirm": "Send reminders",
       "reminded": "Sent {{count}} reminders to {{email}}",
-      "remindedDemo": "In the demo nothing is really sent; {{count}} reminders would go to {{email}}"
+      "remindedDemo": "In the demo nothing is really sent; {{count}} reminders would go to {{email}}",
+      "whatsappRemind": "Remind on WhatsApp",
+      "dueOn": "due {{date}}",
+      "whatsappOverdue": "Dear {{name}}, a gentle reminder from {{organization}}. These invoices are overdue:\n{{list}}\nTotal: {{total}}\nIf you’ve already paid, thank you, and please ignore this.",
+      "whatsappOverdueMixed": "Dear {{name}}, a gentle reminder from {{organization}}. These invoices are overdue:\n{{list}}\nIf you’ve already paid, thank you, and please ignore this."
     }
   },
   "items": {
@@ -2288,7 +2292,13 @@
       "turnOff": "Turn off link",
       "turnedOff": "The link no longer works. Share again for a new one.",
       "message": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, due on {{date}}. View it, download the PDF or pay by UPI here: {{link}}",
-      "messagePaid": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, paid in full ({{date}} was the due date). Thank you! View or download it here: {{link}}"
+      "messagePaid": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, paid in full ({{date}} was the due date). Thank you! View or download it here: {{link}}",
+      "messageKind": "Message",
+      "kinds": {
+        "invoice": "Send the invoice",
+        "reminder": "Payment reminder"
+      },
+      "messageReminder": "Dear {{name}}, a gentle reminder that invoice {{number}} from {{organization}} for {{amount}} was due on {{date}}. You can view it or pay by UPI here: {{link}}. If you’ve already paid, thank you, and please ignore this."
     },
     "amountInWords": "Amount in words:"
   },

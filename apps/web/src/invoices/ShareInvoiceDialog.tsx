@@ -8,6 +8,7 @@ import { whatsappLink } from '../lib/whatsapp';
 import { useSession } from '../layout/session';
 import Button from '../ui/Button';
 import { inputClass } from '../ui/Field';
+import { Segmented } from '../ui/Kit';
 import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
 import { invoiceErrorMessage } from './errors';
@@ -27,6 +28,8 @@ export default function ShareInvoiceDialog({ api, invoice, onClose }: { api: Inv
   const toast = useToast();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  // Overdue: a payment reminder is the likelier message, so it's what's ready
+  const [kind, setKind] = useState<'invoice' | 'reminder'>(invoice.state === 'overdue' ? 'reminder' : 'invoice');
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ['invoices', session.organizationId, 'one', invoice.id] });
   const share = useMutation({ mutationFn: () => api.share(invoice.id), onSuccess: refresh, onError: (e) => toast(invoiceErrorMessage(e, t), 'error') });
   const unshare = useMutation({
@@ -43,7 +46,7 @@ export default function ShareInvoiceDialog({ api, invoice, onClose }: { api: Inv
   const link = share.data ? shareUrl(share.data.token) : '';
   const s = share.data;
   const money = (minor: number) => formatMoney(minor, invoice.currency ?? 'INR', locale);
-  const message = t(invoice.balance > 0 ? 'invoices.share.message' : 'invoices.share.messagePaid', { name: invoice.contact.name, number: invoice.number, organization: session.organization, amount: money(invoice.balance > 0 ? invoice.balance : invoice.total), date: formatDate(`${invoice.dueDate}T00:00:00Z`, locale), link });
+  const message = t(invoice.balance <= 0 ? 'invoices.share.messagePaid' : kind === 'reminder' ? 'invoices.share.messageReminder' : 'invoices.share.message', { name: invoice.contact.name, number: invoice.number, organization: session.organization, amount: money(invoice.balance > 0 ? invoice.balance : invoice.total), date: formatDate(`${invoice.dueDate}T00:00:00Z`, locale), link });
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -83,6 +86,20 @@ export default function ShareInvoiceDialog({ api, invoice, onClose }: { api: Inv
               {copied ? t('invoices.share.copied') : t('invoices.share.copy')}
             </Button>
           </div>
+          {invoice.balance > 0 && (
+            <Segmented<'invoice' | 'reminder'>
+              label={t('invoices.share.messageKind')}
+              value={kind}
+              onChange={setKind}
+              options={[
+                { value: 'invoice', label: t('invoices.share.kinds.invoice') },
+                { value: 'reminder', label: t('invoices.share.kinds.reminder') },
+              ]}
+            />
+          )}
+          <p className="whitespace-pre-line rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600 dark:bg-ink-800/60 dark:text-ink-300" data-testid="share-message" dir="auto">
+            {message}
+          </p>
           <a href={whatsappLink(message, invoice.contact.phone)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]">
             <MessageCircle className="size-4" aria-hidden /> {t('invoices.share.whatsapp')}
           </a>
