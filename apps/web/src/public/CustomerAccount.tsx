@@ -9,6 +9,7 @@ import { ApiError } from '../auth/client';
 import { useIntlLocale } from '../i18n';
 import LanguageSwitcher from '../layout/LanguageSwitcher';
 import Logo from '../layout/Logo';
+import LegalLinks from '../legal/LegalLinks';
 import ThemeToggle from '../layout/ThemeToggle';
 import { formatDate, formatMoney } from '../lib/format';
 import { saveBlob } from '../lib/saveBlob';
@@ -132,6 +133,7 @@ export default function CustomerAccount() {
       <footer className="flex items-center justify-center gap-2 pb-6 text-xs text-ink-500">
         <Logo className="size-4" /> {t('publicInvoice.poweredBy')}
       </footer>
+      <LegalLinks className="pb-6 print:hidden" />
     </div>
   );
 }

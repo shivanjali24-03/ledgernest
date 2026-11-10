@@ -4202,5 +4202,12 @@
       "answered": "This has been answered already.",
       "failed": "That didn’t go through. Try again."
     }
+  },
+  "legal": {
+    "privacy": "Privacy notice",
+    "terms": "Terms of use",
+    "nav": "Legal",
+    "updated": "Last updated {{date}}",
+    "english": "This page is in English."
   }
 }
