@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { invoiceLineSchema, MAX_INVOICE_LINES } from '../invoices/index.js';
+import { billLineSchema } from '../bills/index.js';
 import { isoDaySchema } from '../periods/index.js';
 
 export const RECURRING_FREQUENCIES = ['weekly', 'monthly', 'quarterly', 'yearly'] as const;
@@ -66,3 +67,30 @@ export const recurringSchema = z
 export type RecurringInput = z.input<typeof recurringSchema>;
 
 export const upcomingQuerySchema = z.object({ days: z.coerce.number().int().min(1).max(366).default(30) });
+
+/**
+ * A schedule of bills from a vendor (rent, subscriptions): the same timing as recurring invoices; each bill is made
+ * as a draft from the template, and recorded too when asked (an approval rule may still hold it).
+ */
+export const recurringBillSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Name the schedule.').max(120),
+    contactId: z.uuid(),
+    frequency: z.enum(RECURRING_FREQUENCIES),
+    interval: z.number().int().min(1).max(12).optional().default(1),
+    startDate: isoDaySchema,
+    endDate: isoDaySchema.nullable().optional().default(null),
+    maxCount: z.number().int().min(1).max(1000).nullable().optional().default(null),
+    /** Record each bill as it's made, rather than leaving a draft to check */
+    autoRecord: z.boolean().optional().default(false),
+    notes: text(1000),
+    placeOfSupply: z
+      .string()
+      .regex(/^\d{2}$/)
+      .nullable()
+      .optional()
+      .default(null),
+    lines: z.array(billLineSchema).min(1, 'Add at least one line.').max(MAX_INVOICE_LINES),
+  })
+  .refine((v) => !v.endDate || v.endDate >= v.startDate, { path: ['endDate'], message: 'The end date can’t be before the start.' });
+export type RecurringBillInput = z.input<typeof recurringBillSchema>;

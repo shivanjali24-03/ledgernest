@@ -59,6 +59,7 @@ export const TENANT_MODELS = new Set<string>([
   'ReminderPolicy',
   'Quote',
   'QuoteLine',
+  'RecurringBill',
 ]);
 
 /** Models with an organisationId that are deliberately not auto-scoped, and why. */

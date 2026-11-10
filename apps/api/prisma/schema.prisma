@@ -133,6 +133,7 @@ model Organization {
   reminderPolicy      ReminderPolicy?
   quotes              Quote[]
   quoteLines          QuoteLine[]
+  recurringBills      RecurringBill[]
 
   @@map("organizations")
 }
@@ -642,6 +643,7 @@ model Contact {
   creditNotes       CreditNote[]
   recurringInvoices RecurringInvoice[]
   quotes            Quote[]
+  recurringBills    RecurringBill[]
   bankTransactions  BankTransaction[]
 
   payments Payment[]
@@ -879,6 +881,8 @@ model Bill {
   voidEntryId      String?   @map("void_entry_id") @db.Uuid
   createdById      String?   @map("created_by_id") @db.Uuid
   recordedAt       DateTime? @map("recorded_at")
+  /// The schedule that made it
+  recurringBillId  String?   @map("recurring_bill_id") @db.Uuid
   voidedAt         DateTime? @map("voided_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
@@ -892,6 +896,7 @@ model Bill {
   lines          BillLine[]
 
   allocations PaymentAllocation[]
+  recurring   RecurringBill?      @relation(fields: [organizationId, recurringBillId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -1681,4 +1686,39 @@ model QuoteLine {
   @@unique([organizationId, id])
   @@unique([quoteId, lineNo])
   @@map("quote_lines")
+}
+
+/// A schedule that makes bills from a vendor from a template (rent, subscriptions), like recurring invoices.
+model RecurringBill {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  contactId      String    @map("contact_id") @db.Uuid
+  frequency      String /// weekly | monthly | quarterly | yearly
+  interval       Int       @default(1)
+  startDate      DateTime  @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  maxCount       Int?      @map("max_count")
+  /// Bills made so far; the next is the count-th date from the start
+  count          Int       @default(0)
+  /// null once it has ended
+  nextDate       DateTime? @map("next_date") @db.Date
+  autoRecord     Boolean   @default(false) @map("auto_record")
+  status         String    @default("active") /// active | paused | ended
+  /// What each bill is made of: lines, notes, place of supply
+  template       Json
+  lastRunAt      DateTime? @map("last_run_at")
+  /// Why the last attempt failed, until one succeeds
+  lastError      String?   @map("last_error")
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  bills        Bill[]
+
+  @@unique([organizationId, id])
+  @@index([status, nextDate])
+  @@map("recurring_bills")
 }
