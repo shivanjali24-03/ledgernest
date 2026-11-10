@@ -60,7 +60,8 @@ export function ewayProblems(i: EinvoiceInput, t: EwayTransport): EwayProblem[] 
   if (i.number.length > 16) out.push({ code: 'number_too_long' });
   if (!i.placeOfSupply) out.push({ code: 'no_place_of_supply' });
   for (const party of ['seller', 'buyer'] as const) {
-    const p = i[party];
+    // Goods go to the ship-to address when there is one
+    const p = party === 'buyer' && i.shipTo ? { ...i.shipTo, gstin: i.buyer.gstin } : i[party];
     if (party === 'seller' ? !p.gstin || !GSTIN.test(p.gstin) : !!p.gstin && !GSTIN.test(p.gstin)) out.push({ code: 'gstin', party });
     if (!cut(p.address1, 120)) out.push({ code: 'address', party });
     if (cut(p.city, 50).length < 3) out.push({ code: 'city', party });
@@ -95,7 +96,8 @@ export function buildEwayBill(i: EinvoiceInput, t: EwayTransport) {
     docType: 'INV',
     docNo: i.number,
     docDate: ddmmyyyy(i.date),
-    transType: 1,
+    // Bill to one place, ship to another
+    transType: i.shipTo ? 2 : 1,
     fromGstin: seller.gstin!,
     fromTrdName: cut(seller.tradeName ?? seller.legalName, 100),
     fromAddr1: cut(seller.address1, 120),
@@ -107,12 +109,12 @@ export function buildEwayBill(i: EinvoiceInput, t: EwayTransport) {
     // An unregistered buyer is "URP"; the state is where the goods go
     toGstin: buyer.gstin ?? 'URP',
     toTrdName: cut(buyer.tradeName ?? buyer.legalName, 100),
-    toAddr1: cut(buyer.address1, 120),
-    toAddr2: cut(buyer.address2, 120),
-    toPlace: cut(buyer.city, 50),
-    toPincode: pin(buyer.pin!),
+    toAddr1: cut((i.shipTo ?? buyer).address1, 120),
+    toAddr2: cut((i.shipTo ?? buyer).address2, 120),
+    toPlace: cut((i.shipTo ?? buyer).city, 50),
+    toPincode: pin((i.shipTo ?? buyer).pin!),
     toStateCode: buyer.gstin ? Number(buyer.gstin.slice(0, 2)) : pos,
-    actualToStateCode: pos,
+    actualToStateCode: i.shipTo?.stateCode ? Number(i.shipTo.stateCode) : pos,
     totalValue: rupees(sum((l) => l.amount)),
     cgstValue: rupees(sum((l) => l.heads.cgst)),
     sgstValue: rupees(sum((l) => l.heads.sgst)),

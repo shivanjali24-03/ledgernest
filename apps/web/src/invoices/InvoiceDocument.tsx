@@ -97,6 +97,19 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
               {t('invoices.taxId')} <span className="font-mono">{i.contact.taxId}</span>
             </p>
           )}
+          {i.shipTo && (
+            <div className="pt-2" data-testid="invoice-ship-to">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">{t('shipTo.title')}</p>
+              <p className="font-semibold" dir="auto">
+                {i.shipTo.name ?? i.contact.legalName ?? i.contact.name}
+              </p>
+              {address({ ...i.shipTo }).map((l) => (
+                <p key={l} className="text-ink-600 dark:text-ink-300" dir="auto">
+                  {l}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
         <div className="space-y-1 sm:text-end">
           {pos && (

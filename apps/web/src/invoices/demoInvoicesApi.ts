@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -39,6 +39,7 @@ type Stored = {
   /** Paid in instalments */
   instalments?: Instalment[] | null;
   dispatch?: DispatchDetails | null;
+  shipTo?: ShipTo | null;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -329,6 +330,7 @@ function view(i: Stored): Invoice {
     interest: t && accrued ? { ...t, text: interestTermsText(t), accrued: accrued.interest, perDay: accrued.perDay, daysLate: accrued.daysLate, inGrace: accrued.inGrace } : null,
     instalments: plan ? instalmentStatus(plan, i.amountPaid, today()) : null,
     dispatch: i.dispatch ?? null,
+    shipTo: i.shipTo ?? null,
     state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate, instalments: plan }, today()),
   };
 }
@@ -342,7 +344,8 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
   if (!contact) throw refuse(400, 'contact_not_found', { field: 'contactId' });
   if (!contact.isCustomer) throw refuse(400, 'not_customer', { field: 'contactId' });
   if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
-  const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
+  const shipToState = d.shipTo && (d.shipTo.country ?? 'IN') === 'IN' ? (findIndianState(d.shipTo.region)?.code ?? null) : null;
+  const placeOfSupply = d.placeOfSupply ?? shipToState ?? contact.stateCode;
   const supply = supplyFor(ORG_STATE, placeOfSupply);
   const items = demoItemRows();
   const accounts = demoAccountRows();
@@ -358,7 +361,7 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     if (group) group = groupForSupply(group, supply, groups);
     return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {

@@ -135,4 +135,63 @@ describe('Order and dispatch details on invoices (e2e)', () => {
     expect(text).toContain('Dispatched through: VRL Logistics');
     expect(text).toContain('Vehicle: MH12AB1234');
   });
+
+  it('ships to another address: its state becomes the place of supply unless chosen, and it prints', async () => {
+    const shipTo = {
+      name: 'Gupta Warehouse',
+      line1: 'Plot 4, Peenya',
+      city: 'Bengaluru',
+      region: 'Karnataka',
+      postalCode: '560058',
+      country: 'IN',
+    };
+    const d = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-05-10',
+        shipTo,
+        lines: [
+          {
+            description: 'Cement bags',
+            quantity: 10,
+            unitPrice: 400_00,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as { id: string; placeOfSupply: string; shipTo: typeof shipTo };
+    expect(d).toMatchObject({
+      placeOfSupply: '29',
+      shipTo: { name: 'Gupta Warehouse', region: 'Karnataka' },
+    });
+    // Bill to one, ship to a third party: the place of supply can still be chosen
+    const own = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-05-10',
+        shipTo,
+        placeOfSupply: '27',
+        lines: [
+          {
+            description: 'Cement bags',
+            quantity: 10,
+            unitPrice: 400_00,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as { placeOfSupply: string };
+    expect(own.placeOfSupply).toBe('27');
+    await post(`/invoices/${d.id}/issue`).expect(200);
+    const pdf = await get(`/invoices/${d.id}/pdf`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    expect((pdf.body as Buffer).toString('latin1')).toContain(
+      'Ship to: Gupta Warehouse, Plot 4, Peenya',
+    );
+  });
 });
