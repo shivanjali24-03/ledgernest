@@ -33,6 +33,8 @@ import {
   isoDaySchema,
   todayIn,
   type AgingSide,
+  gstr2bRequestSchema,
+  type Gstr2bRequest,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -528,6 +530,25 @@ export class ReportsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.gst.gstr3b(tenant.organizationId, q.from, q.to);
+  }
+
+  @Post('gst/gstr-2b')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'GSTR-2B (the JSON from the GST portal) matched to bills dated in the range: matched, amounts differing, probable matches, filed but not in the books, and in the books but not filed (credit at risk)',
+  })
+  gstr2b(
+    @Body(new ZodValidationPipe(gstr2bRequestSchema)) body: Gstr2bRequest,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.gst.gstr2b(
+      tenant.organizationId,
+      body.content,
+      body.from,
+      body.to,
+    );
   }
 
   @Get('gst/gstr-1')

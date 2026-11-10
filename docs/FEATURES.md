@@ -84,6 +84,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Balance sheet | At any date, current and non-current, unclosed profit in equity, beside another date | ✅ #103 |
 | Cash flow statement | Direct and indirect methods, agreeing with opening and closing cash | ✅ #104 |
 | Tax reports | Tax summary by rate; GSTR-3B with set-off and GSTR-1 (B2B, B2C, exports, credit notes, HSN), JSON for the GST portal | ✅ #106 |
+| GSTR-2B reconciliation | Upload GSTR-2B JSON from the GST portal and match every supplier invoice to the bills: matched (numbers written loosely, rupee rounding allowed), amounts differing (taxable value, tax, or IGST against CGST + SGST), probable matches with the number typed differently, filed but missing from the books, and booked but not filed by the supplier (input credit at risk), with the tax at stake and a CSV. Nothing is stored | ✅ |
 | Export | CSV and Excel (XLSX) for every report, print or PDF with the organisation's details, every download audited | ✅ #107 |
 
 ## Phase 6: Advanced

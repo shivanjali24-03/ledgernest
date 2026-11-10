@@ -1,3 +1,4 @@
+import { gstinCheckChar } from '@ledgernest/shared';
 import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -158,6 +159,59 @@ describe('reports', () => {
     const b2b = await screen.findByRole('table', { name: '4A B2B invoices' }, { timeout: 4000 });
     expect(within(b2b).getByText('Kumar Logistics').closest('tr')!).toHaveTextContent(/INV\/.*18%.*1,00,000\.00/);
     expect(screen.getByText(/^13 Documents issued/)).toBeInTheDocument();
+  });
+
+  it('matches GSTR-2B from the portal with the bills, and downloads the result', { timeout: 20_000 }, async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const billDay = `${today.slice(0, 8)}${String(Math.min(3, Number(today.slice(8)))).padStart(2, '0')}`;
+    const dmy = (d: string) => d.split('-').reverse().join('-');
+    const sharma = `27ABZPS6519M1Z${gstinCheckChar('27ABZPS6519M1Z')}`;
+    const file = new File(
+      [
+        JSON.stringify({
+          data: {
+            gstin: '27AAPFN1234C1Z5',
+            rtnprd: `${today.slice(5, 7)}${today.slice(0, 4)}`,
+            docdata: {
+              b2b: [
+                {
+                  ctin: sharma,
+                  trdnm: 'SHARMA OFFICE SUPPLIES',
+                  inv: [
+                    // The month's rent bill, number written differently
+                    { inum: 'SOS-887', dt: dmy(billDay), val: 53100, rev: 'N', itcavl: 'Y', items: [{ txval: 45000, igst: 0, cgst: 4050, sgst: 4050, cess: 0 }] },
+                    // Filed by Sharma but never booked
+                    { inum: 'SOS/901', dt: dmy(billDay), val: 1180, rev: 'N', itcavl: 'Y', items: [{ txval: 1000, igst: 0, cgst: 90, sgst: 90, cess: 0 }] },
+                  ],
+                },
+              ],
+            },
+          },
+        }),
+      ],
+      'gstr2b.json',
+      { type: 'application/json' },
+    );
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:csv')), revokeObjectURL: vi.fn() });
+    renderApp(`/reports?tab=gst&return=gstr-2b&from=${today.slice(0, 8)}01&to=${today}`);
+    expect(await screen.findByText('Check your input tax credit before you file', {}, { timeout: 4000 })).toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText('GSTR-2B JSON file'), new File(['nope'], 'x.json', { type: 'application/json' }));
+    expect(await screen.findByText(/That file isn’t JSON/, {}, { timeout: 4000 })).toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText('GSTR-2B JSON file'), file);
+    const tiles = await screen.findByRole('group', { name: 'Summary' }, { timeout: 4000 });
+    expect(within(tiles).getByRole('button', { name: /^Matched\s*1/ })).toBeInTheDocument();
+    expect(within(tiles).getByRole('button', { name: /^Not in your books\s*1/ })).toBeInTheDocument();
+    expect(screen.getByText('Every bill with GST in these dates was filed by its supplier.')).toBeInTheDocument();
+    // Only what's missing from the books
+    await userEvent.click(within(tiles).getByRole('button', { name: /^Not in your books/ }));
+    const table = screen.getByRole('table', { name: 'GSTR-2B against the books' });
+    expect(within(table).getAllByRole('row')).toHaveLength(2);
+    expect(within(table).getByText('SOS/901')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Download CSV' }));
+    const text = await saved!.text();
+    expect(text).toContain('"Matched"');
+    expect(text).toContain('"SOS-887"');
   });
 
   it('downloads a report as Excel, and prints it with the organisation at the top', async () => {

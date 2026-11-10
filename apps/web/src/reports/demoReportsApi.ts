@@ -1,4 +1,4 @@
-import { buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,6 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
+import type { Gstr2bReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -370,6 +371,28 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   };
 
   const headOf = (kind: string): keyof GstHeads | null => (kind === 'igst' ? 'igst' : kind === 'cgst' ? 'cgst' : kind === 'sgst' || kind === 'utgst' ? 'sgst' : kind === 'cess' ? 'cess' : null);
+  /** GSTR-2B against the demo's recorded bills, heads read from their tax lines' names */
+  const gstr2b = async (content: string, from: string, to: string): Promise<Gstr2bReport> => {
+    let file;
+    try {
+      file = parseGstr2b(content);
+    } catch (e) {
+      if (e instanceof Gstr2bError) throw new ApiError('validation', 400, undefined, undefined, { reason: e.reason === 'not_json' ? 'not_json' : 'not_gstr2b' });
+      throw e;
+    }
+    const { demoBillViews } = await import('../bills/demoBillsApi');
+    const bills: Gstr2bBill[] = (await demoBillViews())
+      .filter((b) => b.status === 'open' && b.billDate >= from && b.billDate <= to)
+      .map((b) => {
+        const heads = zeroHeads();
+        for (const x of b.taxBreakdown) {
+          const h = /^IGST/i.test(x.name) ? 'igst' : /^CGST/i.test(x.name) ? 'cgst' : /^(SGST|UTGST)/i.test(x.name) ? 'sgst' : /cess/i.test(x.name) ? 'cess' : null;
+          if (h) heads[h] += x.amount;
+        }
+        return { id: b.id, number: b.number, vendorReference: b.vendorReference, vendorName: b.contact.legalName ?? b.contact.name, vendorGstin: b.contact.taxId && isGstin(b.contact.taxId) ? b.contact.taxId : null, date: b.billDate, taxable: b.subtotal, heads, total: b.total };
+      });
+    return { gstin: file.gstin, period: file.period, otherGstin: !!file.gstin && file.gstin !== '27AAPFN1234C1Z5', from, to, ...reconcileGstr2b(file.docs, bills) };
+  };
   /** GSTR-3B from the demo's tax summary, set off as the API does */
   const gstr3b = async (from: string, to: string): Promise<Gstr3b> => {
     const t = await taxSummary(from, to);
@@ -455,6 +478,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   };
   return {
     gstr3b,
+    gstr2b,
     gstr1,
     async exportGstr1(from, to, format) {
       guard();

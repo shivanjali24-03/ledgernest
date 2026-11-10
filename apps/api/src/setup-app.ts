@@ -66,6 +66,13 @@ export function setupApp(app: INestApplication) {
       importJson(req, res, next);
     },
   );
+  // GSTR-2B from the GST portal: JSON files up to 4 MB, sent as text inside JSON (escaping adds a little)
+  app.use(
+    '/api/v1/reports/gst/gstr-2b',
+    function gstr2bBodyParser(req: Request, res: Response, next: NextFunction) {
+      importJson(req, res, next);
+    },
+  );
   // Bank statements: files up to 2 MB, sent as text
   const statementJson = json({ limit: '3mb' });
   app.use(
