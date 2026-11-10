@@ -6,6 +6,18 @@ import nodemailer, { type Transporter } from 'nodemailer';
  * them nothing is sent and callers keep what they made in the app. SMTP_URL=json captures messages
  * instead of sending them (for trying it out and for tests).
  */
+/** The From line: the server's address, under the organisation's name when it sends for one */
+export function senderFor(mailFrom: string, name?: string | null): string {
+  if (!name) return mailFrom;
+  const address = /<([^>]+)>/.exec(mailFrom)?.[1] ?? mailFrom.trim();
+  // Quotes and angle brackets would break the header: keep the name plain
+  const clean = name
+    .replace(/["<>\\\r\n]/g, '')
+    .trim()
+    .slice(0, 80);
+  return clean ? `"${clean} via LedgerNest" <${address}>` : mailFrom;
+}
+
 @Injectable()
 export class MailService {
   private readonly log = new Logger('Mail');
@@ -42,12 +54,17 @@ export class MailService {
     attachments?: { filename: string; content: Buffer; contentType: string }[];
     /** Where replies go: the organisation's own address, for documents sent on its behalf */
     replyTo?: string | null;
+    /** Whose name it goes out under, "<name> via LedgerNest", from the server's own address */
+    fromName?: string | null;
   }) {
     const t = this.transporter;
     if (!t || !m.to.length) return false;
     try {
       await t.sendMail({
-        from: process.env.MAIL_FROM ?? 'LedgerNest <no-reply@ledgernest.local>',
+        from: senderFor(
+          process.env.MAIL_FROM ?? 'LedgerNest <no-reply@ledgernest.local>',
+          m.fromName,
+        ),
         to: m.to,
         subject: m.subject,
         text: m.text,
