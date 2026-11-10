@@ -4123,7 +4123,8 @@
     "invoices": "इनवॉइस",
     "download": "{{number}} PDF के रूप में डाउनलोड करें",
     "msmeInterest": "MSMED अधिनियम, 2006 (धारा 16) के तहत देर से भुगतान का अब तक का ब्याज: {{amount}}",
-    "invoiceInterest": "अब तक MSMED अधिनियम ब्याज: {{amount}}"
+    "invoiceInterest": "अब तक MSMED अधिनियम ब्याज: {{amount}}",
+    "statement": "इस वर्ष का अपना विवरण डाउनलोड करें"
   },
   "twoFactor": {
     "action": "दो-चरणीय साइन-इन",

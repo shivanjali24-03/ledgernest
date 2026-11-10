@@ -4123,7 +4123,8 @@
     "invoices": "बीजके",
     "download": "{{number}} PDF म्हणून डाउनलोड करा",
     "msmeInterest": "MSMED कायदा, 2006 (कलम 16) अंतर्गत उशिरा पेमेंटचे आतापर्यंतचे व्याज: {{amount}}",
-    "invoiceInterest": "आतापर्यंत MSMED कायदा व्याज: {{amount}}"
+    "invoiceInterest": "आतापर्यंत MSMED कायदा व्याज: {{amount}}",
+    "statement": "या वर्षाचे तुमचे विवरण डाउनलोड करा"
   },
   "twoFactor": {
     "action": "द्वि-स्तरीय साइन-इन",

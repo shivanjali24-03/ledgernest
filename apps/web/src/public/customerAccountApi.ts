@@ -1,4 +1,4 @@
-import { currencyDigits, invoiceRows, invoiceState, msmeCovered, msmeLateInterest, pdfTableBytes, todayIn, upiPayUri } from '@ledgernest/shared';
+import { currencyDigits, fiscalYearOf, fiscalYearSpan, invoiceRows, invoiceState, msmeCovered, statementRows, statementTitle, msmeLateInterest, pdfTableBytes, todayIn, upiPayUri } from '@ledgernest/shared';
 import { API_URL, ApiError } from '../auth/client';
 
 /** What GET /public/customers/:token returns: everything a customer still owes, as they see it */
@@ -17,6 +17,8 @@ export interface CustomerAccountSource {
   view: CustomerAccount;
   /** Each invoice's PDF: where it downloads from (live), or the file itself (demo) */
   pdf: (invoiceId: string) => { href: string } | { blob: () => Promise<Blob> };
+  /** Their statement of account for the year so far */
+  statement: { href: string } | { blob: () => Promise<Blob> };
 }
 
 /** The demo's account links, opened in the same browser */
@@ -50,6 +52,14 @@ async function demoAccount(token: string): Promise<CustomerAccountSource | null>
       msme: charges ? { udyamNumber: msme.udyamNumber ?? null, interest: invoices.reduce((s, i) => s + (i.msmeInterest ?? 0), 0) } : null,
       upi: upiId && inr > 0 ? { upiId, amount: inr, link: upiPayUri({ upiId, name: 'Nest Demo Private Limited', amount: inr, note: rupees.length === 1 ? `Invoice ${rupees[0]!.number}` : `Invoices ${rupees.map((i) => i.number).join(', ')}`, reference: rupees.length === 1 ? rupees[0]!.number : null }) } : null,
     },
+    statement: {
+      blob: async () => {
+        const { createDemoReportsApi } = await import('../reports/demoReportsApi');
+        const from = fiscalYearSpan(fiscalYearOf(today, 4), 4).periods[0]!.startDate;
+        const s = await createDemoReportsApi(() => true).statement(c.id, 'receivables', from, today);
+        return new Blob([pdfTableBytes({ title: `${statementTitle(s.side)}: ${s.contact.name}`, subtitle: `Nest Demo Private Limited · ${s.from} to ${s.to}`, footer: 'Nest Demo Private Limited · LedgerNest', rows: statementRows(s) }).buffer as ArrayBuffer], { type: 'application/pdf' });
+      },
+    },
     pdf: (invoiceId) => ({
       blob: async () => {
         const v = views.find((i) => i.id === invoiceId)!;
@@ -75,5 +85,5 @@ export async function loadCustomerAccount(token: string): Promise<CustomerAccoun
     throw new ApiError('network', 0);
   }
   if (!res.ok) throw new ApiError(res.status === 404 ? 'not_found' : res.status === 429 ? 'rate_limited' : 'server', res.status);
-  return { view: (await res.json()) as CustomerAccount, pdf: (invoiceId) => ({ href: `${base}/invoices/${invoiceId}/pdf` }) };
+  return { view: (await res.json()) as CustomerAccount, pdf: (invoiceId) => ({ href: `${base}/invoices/${invoiceId}/pdf` }), statement: { href: `${base}/statement` } };
 }

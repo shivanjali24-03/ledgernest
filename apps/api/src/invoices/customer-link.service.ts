@@ -5,6 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  fiscalYearOf,
+  fiscalYearSpan,
   invoiceNumber,
   invoiceState,
   msmeCovered,
@@ -18,6 +20,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoiceRemindersService } from './invoice-reminders.service.js';
 import { InvoicesService } from './invoices.service.js';
+import { StatementsService } from '../reports/statements.service.js';
 import { SHARE_TOKEN } from './invoice-share.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -33,6 +36,7 @@ export class CustomerLinkService {
     private readonly audit: AuditService,
     private readonly invoices: InvoicesService,
     private readonly documents: InvoiceRemindersService,
+    private readonly statements: StatementsService,
   ) {}
 
   private async customer(organizationId: string, id: string) {
@@ -277,6 +281,28 @@ export class CustomerLinkService {
           }
         : null,
     };
+  }
+
+  /** The customer's statement of account from the start of this financial year to today, from their link */
+  async statementPdf(token: string) {
+    const c = await this.find(token);
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: c.organizationId },
+      select: { timeZone: true, fiscalYearStartMonth: true },
+    });
+    const today = todayIn(org.timeZone);
+    const from = fiscalYearSpan(
+      fiscalYearOf(today, org.fiscalYearStartMonth),
+      org.fiscalYearStartMonth,
+    ).periods[0]!.startDate;
+    const s = await this.statements.statement(
+      c.organizationId,
+      c.id,
+      'receivables',
+      from,
+      today,
+    );
+    return this.statements.file(c.organizationId, s, 'pdf');
   }
 
   /** One of the customer's issued invoices as a PDF, from their link */

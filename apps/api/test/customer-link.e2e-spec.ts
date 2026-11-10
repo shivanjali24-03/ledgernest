@@ -207,6 +207,17 @@ describe('Customer account links (e2e)', () => {
       })
       .expect(200);
     expect(pdf.headers['content-type']).toContain('application/pdf');
+    // Their statement for the year so far
+    const st = await visitor(`${token}/statement`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(st.headers['content-disposition']).toContain('statement-kumar-logistics-');
+    expect((st.body as Buffer).toString('latin1').startsWith('%PDF')).toBe(true);
     expect(
       (
         (await as().get(`/contacts/${kumar}`).expect(200)).body as {

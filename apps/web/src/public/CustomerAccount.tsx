@@ -97,6 +97,17 @@ export default function CustomerAccount() {
                 </>
               )}
             </motion.section>
+            <motion.p variants={fadeUp} className="text-center">
+              {'href' in q.data!.statement ? (
+                <a href={q.data!.statement.href} download="statement.pdf" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  <FileDown className="size-4" aria-hidden /> {t('customerAccount.statement')}
+                </a>
+              ) : (
+                <button type="button" onClick={() => void (q.data!.statement as { blob: () => Promise<Blob> }).blob().then((blob) => saveBlob({ blob, filename: 'statement.pdf' }))} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  <FileDown className="size-4" aria-hidden /> {t('customerAccount.statement')}
+                </button>
+              )}
+            </motion.p>
             {v.invoices.length > 0 && (
               <motion.section variants={fadeUp}>
                 <Card className="overflow-hidden">

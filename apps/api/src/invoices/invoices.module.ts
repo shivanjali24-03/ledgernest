@@ -15,6 +15,8 @@ import { InvoiceShareService } from './invoice-share.service.js';
 import { PublicInvoicesController } from './public-invoices.controller.js';
 import { InvoicesService } from './invoices.service.js';
 import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
+// Stateless: provided here too, for the statement on a customer's account link
+import { StatementsService } from '../reports/statements.service.js';
 
 @Module({
   imports: [JournalsModule, InventoryModule, WebhookEventsModule, MailModule],
@@ -27,6 +29,7 @@ import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
   ],
   providers: [
     InvoicesService,
+    StatementsService,
     InvoiceRemindersService,
     InvoiceShareService,
     EinvoiceService,
