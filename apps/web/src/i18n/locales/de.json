@@ -738,7 +738,8 @@
       "org_scheduled_report_update": "Geplanter Bericht geändert",
       "org_scheduled_report_delete": "Geplanter Bericht entfernt",
       "org_backup_export": "Sicherung heruntergeladen",
-      "org_backup_restore": "Aus einer Sicherung wiederhergestellt"
+      "org_backup_restore": "Aus einer Sicherung wiederhergestellt",
+      "org_statement_email": "Kontoauszug per E-Mail gesendet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -1524,7 +1525,18 @@
         "number": "Nummer",
         "debit": "Soll",
         "credit": "Haben"
-      }
+      },
+      "email": "Per E-Mail senden",
+      "emailTitle": "Kontoauszug an {{name}} senden",
+      "emailBody": "Er geht als PDF, mit dem Endsaldo in der Nachricht.",
+      "emailTo": "Senden an",
+      "badEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+      "note": "Notiz",
+      "noteHint": "Optional: Sie steht oben in der Nachricht.",
+      "send": "Senden",
+      "sent": "Kontoauszug an {{email}} gesendet",
+      "sentDemo": "In der Demo wird nichts wirklich gesendet; er ginge an {{email}}",
+      "mailOff": "E-Mail ist auf diesem Server nicht eingerichtet. Laden Sie das PDF herunter und senden Sie es selbst."
     }
   },
   "taxes": {

@@ -91,6 +91,13 @@ describe('reports', () => {
     expect(within(invoice).getAllByRole('cell').at(-1)).toHaveTextContent('1,18,000.00');
     expect(screen.getByText(/^Balance carried down on/).closest('tr')!).toHaveTextContent('1,18,000.00');
     expect(screen.getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
+    // Emailing it: the contact's address is filled in
+    await userEvent.click(screen.getByRole('button', { name: 'Email' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Email the statement to Kumar Logistics' });
+    expect(within(dialog).getByLabelText('Send to')).toHaveValue('accounts@kumarlogistics.in');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in', {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     // Vendors list the vendors instead
     await userEvent.click(screen.getByRole('radio', { name: 'Vendors' }));
     await waitFor(() => expect(within(screen.getByLabelText('Contact')).getByRole('option', { name: 'Sharma Office Supplies' })).toBeInTheDocument(), { timeout: 4000 });

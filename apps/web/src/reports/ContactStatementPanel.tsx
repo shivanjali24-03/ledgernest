@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { currencyDigits, type AccountStatementLine, type AgingSide } from '@ledgernest/shared';
-import { FileText, Users } from 'lucide-react';
+import { FileText, Mail, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../contacts/useContactsApi';
 import { useIntlLocale } from '../i18n';
@@ -12,6 +13,7 @@ import Button from '../ui/Button';
 import { SelectField, TextField } from '../ui/Field';
 import { Card, EmptyState, ErrorState, Segmented, SkeletonRows } from '../ui/Kit';
 import { useToast } from '../ui/toastContext';
+import EmailStatementDialog from './EmailStatementDialog';
 import type { ReportsApi } from './types';
 
 const th = 'px-4 py-2.5 font-semibold';
@@ -27,6 +29,7 @@ export default function ContactStatementPanel({ api, side, contactId, from, to, 
   const session = useSession();
   const toast = useToast();
   const contactsApi = useContactsApi();
+  const [emailing, setEmailing] = useState(false);
   const contacts = useQuery({
     queryKey: ['contacts', session.organizationId, 'statement', side],
     queryFn: () => contactsApi!.list({ type: side === 'receivables' ? 'customer' : 'vendor', page: 1, pageSize: 500 }),
@@ -103,9 +106,14 @@ export default function ContactStatementPanel({ api, side, contactId, from, to, 
               {t('reports.printRange', { from: day(from), to: day(to) })}
             </p>
             {session.permissions.has('reports.export') && (
-              <Button variant="secondary" size="sm" icon={<FileText className="size-4" />} loading={pdf.isPending} onClick={() => pdf.mutate()} className="print:hidden">
-                {t('reports.statement.pdf')}
-              </Button>
+              <div className="flex gap-2 print:hidden">
+                <Button variant="secondary" size="sm" icon={<Mail className="size-4" />} onClick={() => setEmailing(true)}>
+                  {t('reports.statement.email')}
+                </Button>
+                <Button variant="secondary" size="sm" icon={<FileText className="size-4" />} loading={pdf.isPending} onClick={() => pdf.mutate()}>
+                  {t('reports.statement.pdf')}
+                </Button>
+              </div>
             )}
           </div>
           {statement.data.sections.length === 0 ? (
@@ -207,6 +215,7 @@ export default function ContactStatementPanel({ api, side, contactId, from, to, 
           )}
         </>
       )}
+      {emailing && statement.data && <EmailStatementDialog api={api} contact={statement.data.contact} side={side} from={from} to={to} onClose={() => setEmailing(false)} />}
     </div>
   );
 }

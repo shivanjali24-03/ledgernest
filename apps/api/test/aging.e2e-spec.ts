@@ -4,6 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
+import { MailService } from '../src/mail/mail.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
 
@@ -483,5 +484,61 @@ describe('Aging reports (e2e)', () => {
       orderBy: { createdAt: 'desc' },
     });
     expect(audit?.entityId).toBe('statement');
+  });
+
+  it('emails a statement as a PDF, when email is set up', async () => {
+    const body = {
+      contactId: contact.kumar,
+      side: 'receivables',
+      from: '2026-06-01',
+      to: '2026-07-31',
+    };
+    delete process.env.SMTP_URL;
+    expect(
+      (await as().post('/reports/statement/email', body).expect(409)).body
+        .details,
+    ).toMatchObject({ reason: 'mail_off' });
+    process.env.SMTP_URL = 'json';
+    try {
+      // Kumar has no email on file, so one must be given
+      expect(
+        (await as().post('/reports/statement/email', body).expect(400)).body
+          .details,
+      ).toMatchObject({ reason: 'no_email' });
+      const r = await as()
+        .post('/reports/statement/email', {
+          ...body,
+          email: 'accounts@kumar.example',
+          message: 'Please let us know if anything looks wrong.',
+        })
+        .expect(200);
+      expect(r.body).toEqual({ sentTo: 'accounts@kumar.example' });
+      const mail = app.get(MailService).captured.at(-1)!;
+      expect(mail).toEqual({
+        to: ['accounts@kumar.example'],
+        subject: `Statement of account from Aging ${run}, 2026-06-01 to 2026-07-31`,
+        attachments: ['statement-kumar-logistics-2026-06-01-2026-07-31.pdf'],
+      });
+      const audit = await prisma.auditLog.findFirstOrThrow({
+        where: { organizationId: org, action: 'org.statement.email' },
+      });
+      expect(audit).toMatchObject({
+        entityType: 'contact',
+        entityId: contact.kumar,
+        actorId: users.owner!.id,
+      });
+      // Viewers can read reports but not send them
+      await as('viewer')
+        .post('/reports/statement/email', {
+          ...body,
+          email: 'accounts@kumar.example',
+        })
+        .expect(403);
+      await as()
+        .post('/reports/statement/email', { ...body, email: 'not-an-email' })
+        .expect(400);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
   });
 });

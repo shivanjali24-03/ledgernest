@@ -738,7 +738,8 @@
       "org_scheduled_report_update": "Informe programado modificado",
       "org_scheduled_report_delete": "Informe programado eliminado",
       "org_backup_export": "Copia de seguridad descargada",
-      "org_backup_restore": "Restaurado desde una copia de seguridad"
+      "org_backup_restore": "Restaurado desde una copia de seguridad",
+      "org_statement_email": "Estado de cuenta enviado por correo"
     },
     "entities": {
       "membership": "Miembro",
@@ -1524,7 +1525,18 @@
         "number": "Número",
         "debit": "Debe",
         "credit": "Haber"
-      }
+      },
+      "email": "Enviar por correo",
+      "emailTitle": "Enviar el estado de cuenta a {{name}}",
+      "emailBody": "Se envía en PDF, con el saldo final en el mensaje.",
+      "emailTo": "Enviar a",
+      "badEmail": "Introduce un correo electrónico válido.",
+      "note": "Nota",
+      "noteHint": "Opcional: va al principio del mensaje.",
+      "send": "Enviar",
+      "sent": "Estado de cuenta enviado a {{email}}",
+      "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
+      "mailOff": "El correo no está configurado en este servidor. Descarga el PDF y envíalo tú."
     }
   },
   "taxes": {

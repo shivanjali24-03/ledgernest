@@ -1,4 +1,4 @@
-import { buildStatement, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -475,6 +475,15 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       return { filename: `balance-sheet-${asOf}.csv`, blob: csv(rows) };
     },
     statement,
+    async emailStatement(input) {
+      guard();
+      const q = statementEmailSchema.parse(input);
+      const s = await statement(q.contactId, q.side, q.from, q.to);
+      const to = q.email ?? s.contact.email;
+      if (!to) throw new ApiError('validation', 400, undefined, undefined, { reason: 'no_email' });
+      await new Promise((r) => setTimeout(r, 150));
+      return { sentTo: to };
+    },
     async exportStatement(contactId, side, from, to, format) {
       guard();
       const s = await statement(contactId, side, from, to);
