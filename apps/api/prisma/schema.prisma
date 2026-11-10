@@ -33,6 +33,13 @@ model User {
   failedLoginAttempts Int        @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime?  @map("locked_until")
   lastLoginAt         DateTime?  @map("last_login_at")
+  /// Two-factor sign-in: the authenticator secret (AES-256-GCM encrypted), set when enabled (null while set up)
+  totpSecret          String?    @map("totp_secret")
+  totpEnabledAt       DateTime?  @map("totp_enabled_at")
+  /// The last 30-second step a code was accepted for, so a code can't be used twice
+  totpLastStep        Int?       @map("totp_last_step")
+  /// SHA-256 hashes of unused recovery codes
+  recoveryCodes       String[]   @default([]) @map("recovery_codes")
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
 
@@ -80,66 +87,74 @@ model Organization {
   upiId                String?            @map("upi_id")
   /// Email Owners and Admins a summary every Monday; the day it last went
   weeklySummary        Boolean            @default(false) @map("weekly_summary")
+  /// Every member must sign in with two-factor before using this organisation
+  requireTwoFactor     Boolean            @default(false) @map("require_two_factor")
+  /// The business's own MSME category and Udyam number: micro and small can charge late buyers interest (MSMED Act s.16)
+  msmeCategory         String?            @map("msme_category")
+  udyamNumber          String?            @map("udyam_number")
+  /// The RBI bank rate the interest is three times, in basis points
+  msmeBankRateBp       Int?               @map("msme_bank_rate_bp")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
-  memberships         Membership[]
-  roles               Role[]
-  invitations         Invitation[]
-  auditEntries        AuditLog[]
-  logo                OrganizationLogo?
-  accounts            Account[]
-  fiscalYears         FiscalYear[]
-  periods             Period[]
-  journals            JournalEntry[]
-  journalLines        JournalLine[]
-  journalFiles        JournalAttachment[]
-  taxRates            TaxRate[]
-  taxGroups           TaxGroup[]
-  taxGroupRates       TaxGroupRate[]
-  currencies          OrganizationCurrency[]
-  contacts            Contact[]
-  items               Item[]
-  invoices            Invoice[]
-  invoiceLines        InvoiceLine[]
-  payments            Payment[]
-  allocations         PaymentAllocation[]
-  bills               Bill[]
-  creditNotes         CreditNote[]
-  creditNoteLines     CreditNoteLine[]
-  creditApplications  CreditApplication[]
-  vendorCredits       VendorCredit[]
-  vendorCreditLines   VendorCreditLine[]
-  vendorCreditApps    VendorCreditApplication[]
-  recurringInvoices   RecurringInvoice[]
-  bankTransactions    BankTransaction[]
-  statementImports    BankStatementImport[]
-  statementLines      BankStatementLine[]
-  statementLayouts    BankStatementLayout[]
-  bankMatches         BankMatch[]
-  reconciliations     BankReconciliation[]
-  fixedAssets         FixedAsset[]
-  depreciationRuns    DepreciationRun[]
-  depreciationLines   DepreciationLine[]
-  budgets             Budget[]
-  budgetLines         BudgetLine[]
-  costCentres         CostCentre[]
-  stockMovements      StockMovement[]
-  approvalRules       ApprovalRule[]
-  approvalRequests    ApprovalRequest[]
-  documentAttachments DocumentAttachment[]
-  apiKeys             ApiKey[]
-  billLines           BillLine[]
-  exchangeRates       ExchangeRate[]
-  webhookEndpoints    WebhookEndpoint[]
-  webhookDeliveries   WebhookDelivery[]
-  scheduledReports    ScheduledReport[]
-  reportDeliveries    ReportDelivery[]
-  reminderPolicy      ReminderPolicy?
-  quotes              Quote[]
-  quoteLines          QuoteLine[]
-  recurringBills      RecurringBill[]
+  memberships          Membership[]
+  roles                Role[]
+  invitations          Invitation[]
+  auditEntries         AuditLog[]
+  logo                 OrganizationLogo?
+  accounts             Account[]
+  fiscalYears          FiscalYear[]
+  periods              Period[]
+  journals             JournalEntry[]
+  journalLines         JournalLine[]
+  journalFiles         JournalAttachment[]
+  taxRates             TaxRate[]
+  taxGroups            TaxGroup[]
+  taxGroupRates        TaxGroupRate[]
+  currencies           OrganizationCurrency[]
+  contacts             Contact[]
+  items                Item[]
+  invoices             Invoice[]
+  invoiceLines         InvoiceLine[]
+  payments             Payment[]
+  allocations          PaymentAllocation[]
+  bills                Bill[]
+  creditNotes          CreditNote[]
+  creditNoteLines      CreditNoteLine[]
+  creditApplications   CreditApplication[]
+  vendorCredits        VendorCredit[]
+  vendorCreditLines    VendorCreditLine[]
+  vendorCreditApps     VendorCreditApplication[]
+  recurringInvoices    RecurringInvoice[]
+  bankTransactions     BankTransaction[]
+  statementImports     BankStatementImport[]
+  statementLines       BankStatementLine[]
+  statementLayouts     BankStatementLayout[]
+  bankMatches          BankMatch[]
+  reconciliations      BankReconciliation[]
+  fixedAssets          FixedAsset[]
+  depreciationRuns     DepreciationRun[]
+  depreciationLines    DepreciationLine[]
+  budgets              Budget[]
+  budgetLines          BudgetLine[]
+  costCentres          CostCentre[]
+  stockMovements       StockMovement[]
+  approvalRules        ApprovalRule[]
+  approvalRequests     ApprovalRequest[]
+  documentAttachments  DocumentAttachment[]
+  apiKeys              ApiKey[]
+  billLines            BillLine[]
+  exchangeRates        ExchangeRate[]
+  webhookEndpoints     WebhookEndpoint[]
+  webhookDeliveries    WebhookDelivery[]
+  scheduledReports     ScheduledReport[]
+  reportDeliveries     ReportDelivery[]
+  reminderPolicy       ReminderPolicy?
+  quotes               Quote[]
+  quoteLines           QuoteLine[]
+  balanceConfirmations BalanceConfirmation[]
+  recurringBills       RecurringBill[]
 
   @@map("organizations")
 }
@@ -662,6 +677,9 @@ model Contact {
   paymentTermsDays Int       @default(30) @map("payment_terms_days")
   /// The most a customer may owe us, in their currency's smallest unit; null = no limit
   creditLimit      BigInt?   @map("credit_limit")
+  /// MSME category from the vendor's Udyam certificate (micro, small or medium); null = not an MSME
+  msmeCategory     String?   @map("msme_category")
+  udyamNumber      String?   @map("udyam_number")
   notes            String?
   /// A link the customer opens without signing in: what they owe across invoices, to pay by UPI (random, revocable)
   shareToken       String?   @unique @map("share_token")
@@ -674,13 +692,14 @@ model Contact {
   organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orgCurrency  OrganizationCurrency? @relation(fields: [organizationId, currency], references: [organizationId, code], onDelete: NoAction)
 
-  invoices          Invoice[]
-  creditNotes       CreditNote[]
-  vendorCredits     VendorCredit[]
-  recurringInvoices RecurringInvoice[]
-  quotes            Quote[]
-  recurringBills    RecurringBill[]
-  bankTransactions  BankTransaction[]
+  invoices             Invoice[]
+  creditNotes          CreditNote[]
+  vendorCredits        VendorCredit[]
+  recurringInvoices    RecurringInvoice[]
+  quotes               Quote[]
+  recurringBills       RecurringBill[]
+  bankTransactions     BankTransaction[]
+  balanceConfirmations BalanceConfirmation[]
 
   payments Payment[]
 
@@ -1873,4 +1892,37 @@ model RecurringBill {
   @@unique([organizationId, id])
   @@index([status, nextDate])
   @@map("recurring_bills")
+}
+
+/// A request to a customer or vendor to confirm their balance with us on a date (for the audit), answered from a link
+model BalanceConfirmation {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  contactId      String    @map("contact_id") @db.Uuid
+  /// receivable (they owe us) | payable (we owe them)
+  side           String
+  asOf           DateTime  @map("as_of") @db.Date
+  currency       String    @db.Char(3)
+  /// As our books have it on the day, in the currency's smallest unit (negative: the other way round)
+  balance        BigInt
+  /// Random, for the link the party opens without signing in
+  token          String    @unique
+  /// pending | agreed | disputed
+  status         String    @default("pending")
+  /// The balance as their books have it, when they disagree
+  theirBalance   BigInt?   @map("their_balance")
+  note           String?
+  respondedBy    String?   @map("responded_by")
+  respondedAt    DateTime? @map("responded_at")
+  sentTo         String?   @map("sent_to")
+  views          Int       @default(0)
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([organizationId, contactId, side, asOf])
+  @@index([organizationId, asOf])
+  @@map("balance_confirmations")
 }

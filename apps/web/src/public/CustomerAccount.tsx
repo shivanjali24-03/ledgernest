@@ -9,6 +9,7 @@ import { ApiError } from '../auth/client';
 import { useIntlLocale } from '../i18n';
 import LanguageSwitcher from '../layout/LanguageSwitcher';
 import Logo from '../layout/Logo';
+import LegalLinks from '../legal/LegalLinks';
 import ThemeToggle from '../layout/ThemeToggle';
 import { formatDate, formatMoney } from '../lib/format';
 import { saveBlob } from '../lib/saveBlob';
@@ -72,6 +73,12 @@ export default function CustomerAccount() {
                     </p>
                   ))}
                   {v.overdue > 0 && <p className="mt-1 text-sm font-medium text-expense">{t('customerAccount.overdue', { amount: money(v.overdue, 'INR') })}</p>}
+                  {!!v.msme?.interest && (
+                    <p className="mt-2 text-sm text-ink-600 dark:text-ink-300" data-testid="msme-interest">
+                      {t('customerAccount.msmeInterest', { amount: money(v.msme.interest, 'INR') })}
+                      {v.msme.udyamNumber && <span className="block font-mono text-xs text-ink-500" dir="ltr">Udyam {v.msme.udyamNumber}</span>}
+                    </p>
+                  )}
                   {v.upi && (
                     <div className="mt-5 flex flex-col items-center gap-4 rounded-xl bg-ink-50 p-4 sm:flex-row dark:bg-ink-800/60" data-testid="account-upi">
                       <UpiQr value={v.upi.link} label={t('invoices.upi.qrLabel', { amount: money(v.upi.amount, 'INR'), upiId: v.upi.upiId })} size={160} />
@@ -106,6 +113,7 @@ export default function CustomerAccount() {
                             <span className={clsx('block text-xs', i.state === 'overdue' ? 'text-expense' : 'text-ink-500')}>
                               {i.state === 'overdue' ? t('publicInvoice.overdueSince', { date: day(i.dueDate) }) : t('publicInvoice.dueOn', { date: day(i.dueDate) })}
                             </span>
+                            {!!i.msmeInterest && <span className="block text-xs text-ink-500">{t('customerAccount.invoiceInterest', { amount: money(i.msmeInterest, i.currency) })}</span>}
                           </span>
                           <span className="font-mono font-semibold tabular-nums" dir="ltr">
                             {money(i.balance, i.currency)}
@@ -132,6 +140,7 @@ export default function CustomerAccount() {
       <footer className="flex items-center justify-center gap-2 pb-6 text-xs text-ink-500">
         <Logo className="size-4" /> {t('publicInvoice.poweredBy')}
       </footer>
+      <LegalLinks className="pb-6 print:hidden" />
     </div>
   );
 }

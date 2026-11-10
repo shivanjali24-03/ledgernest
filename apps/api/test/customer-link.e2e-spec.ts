@@ -6,6 +6,8 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { MailService } from '../src/mail/mail.service.js';
+import { msmeLateInterest, todayIn } from '@ledgernest/shared';
 
 type Share = { token: string; views: number; lastViewedAt: string | null };
 type Account = {
@@ -229,6 +231,49 @@ describe('Customer account links (e2e)', () => {
     expect(decodeURIComponent(a.upi!.link)).toContain(
       'am=5000.00&cu=INR&tn=Invoice INV/2026-27/0002&tr=INV/2026-27/0002',
     );
+  });
+
+  it('adds MSMED Act interest on what is late, when the business is a micro or small enterprise', async () => {
+    // Not an MSME: no interest
+    expect((await visitor(token).expect(200)).body.msme).toBeNull();
+    await prisma.organization.update({
+      where: { id: org },
+      data: {
+        msmeCategory: 'micro',
+        udyamNumber: 'UDYAM-MH-26-0012345',
+        msmeBankRateBp: 550,
+      },
+    });
+    const a = (await visitor(token).expect(200)).body as Account & {
+      invoices: { msmeInterest: number }[];
+      msme: { udyamNumber: string; interest: number };
+    };
+    const today = todayIn('Asia/Kolkata');
+    const expected = msmeLateInterest(
+      5_000_00,
+      '2026-06-10',
+      '2026-07-10',
+      today,
+      550,
+    );
+    expect(expected).toBeGreaterThan(0);
+    expect(a.invoices[0]!.msmeInterest).toBe(expected);
+    expect(a.msme).toEqual({
+      udyamNumber: 'UDYAM-MH-26-0012345',
+      interest: expected,
+    });
+    // And the reminder says so
+    process.env.SMTP_URL = 'json';
+    try {
+      await as()
+        .post(`/invoices/${inv[1]}/remind`, { email: 'a@kumar.example' })
+        .expect(200);
+      expect(app.get(MailService).capturedText.at(-1)).toContain(
+        `under section 16 of the MSMED Act, 2006 to interest on payments made after the appointed day. On this invoice it comes to INR ${(expected / 100).toFixed(2)} so far.`,
+      );
+    } finally {
+      delete process.env.SMTP_URL;
+    }
   });
 
   it('turns away made-up links, and stops when turned off', async () => {

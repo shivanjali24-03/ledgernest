@@ -66,3 +66,27 @@ export const LOCKOUT = { maxFailedAttempts: 5, minutes: 15 } as const;
 
 /** Token lifetimes. */
 export const TOKENS = { accessMinutes: 15, refreshDays: 14 } as const;
+
+/** Two-factor sign-in with an authenticator app (TOTP, RFC 6238): 6 digits every 30 seconds */
+export const TOTP = { digits: 6, periodSeconds: 30, issuer: 'LedgerNest', recoveryCodes: 10 } as const;
+
+/** A code from the app (spaces allowed) or a recovery code (xxxx-xxxx) */
+export const twoFactorCodeSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/\s/g, '').toLowerCase())
+  .pipe(z.string().regex(/^(\d{6}|[a-z0-9]{4}-?[a-z0-9]{4})$/, 'Enter the 6-digit code from your app, or a recovery code.'));
+
+/** The second step of signing in, with the short-lived ticket the first step gave */
+export const twoFactorLoginSchema = z.object({ ticket: z.string().min(20).max(2000), code: twoFactorCodeSchema });
+export type TwoFactorLoginInput = z.input<typeof twoFactorLoginSchema>;
+
+export const twoFactorSetupSchema = z.object({ password: z.string().min(1, 'Enter your password.').max(128) });
+export const twoFactorEnableSchema = z.object({ code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code from your app.') });
+export const twoFactorDisableSchema = z.object({ password: z.string().min(1, 'Enter your password.').max(128), code: twoFactorCodeSchema });
+
+/** The link an authenticator app scans (otpauth://), naming the app and the account */
+export function totpUri(secret: string, account: string) {
+  const label = encodeURIComponent(`${TOTP.issuer}:${account}`);
+  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(TOTP.issuer)}&algorithm=SHA1&digits=${TOTP.digits}&period=${TOTP.periodSeconds}`;
+}

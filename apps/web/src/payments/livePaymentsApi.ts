@@ -9,6 +9,11 @@ export function createLivePaymentsApi(client: AuthClient, organizationId: string
       const { blob, filename } = await client.download(`/payments/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
       return { blob, filename: filename ?? 'receipt.pdf' };
     },
+    cheque: async (id, o) => {
+      const q = new URLSearchParams({ offsetX: String(o.offsetX), offsetY: String(o.offsetY), crossed: String(o.crossed) });
+      const { blob, filename } = await client.download(`/payments/${id}/cheque?${q}`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'cheque.pdf' };
+    },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
       if (q.kind) p.set('kind', q.kind);

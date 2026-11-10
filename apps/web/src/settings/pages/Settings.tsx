@@ -77,6 +77,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
     onError: (e) => {
       if (e instanceof ApiError && e.details?.reason === 'locked') toast(t(`settings.locked.${String(e.details.field)}`), 'error');
       else if (e instanceof ApiError && e.details?.reason === 'currency_enabled') toast(t('settings.errors.currencyEnabled'), 'error');
+      else if (e instanceof ApiError && e.details?.reason === 'two_factor_self') toast(t('settings.errors.twoFactorSelf'), 'error');
       else toast(apiErrorMessage(e, t), 'error');
     },
   });
@@ -177,12 +178,30 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
       </Section>
 
+      {v.country === 'IN' && (
+        <Section title={t('settings.msme.title')} description={t('settings.msme.description')}>
+          <SelectField label={t('settings.fields.msmeCategory')} value={v.msmeCategory} onChange={set('msmeCategory')} disabled={!canManage} options={[{ value: '', label: t('contacts.msme.none') }, ...(['micro', 'small', 'medium'] as const).map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
+          {text('udyamNumber', t('settings.fields.udyamNumber'), { dir: 'ltr', placeholder: 'UDYAM-MH-26-0012345', className: 'font-mono uppercase' })}
+          {(v.msmeCategory === 'micro' || v.msmeCategory === 'small') && text('msmeBankRate', t('settings.fields.msmeBankRate'), { dir: 'ltr', inputMode: 'decimal', placeholder: '5.50', hint: t('settings.hints.msmeBankRate') })}
+        </Section>
+      )}
+
       <Section title={t('settings.email.title')} description={t('settings.email.description')}>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <input type="checkbox" checked={v.weeklySummary === 'true'} disabled={!canManage} onChange={(e) => set('weeklySummary')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
           <span>
             <span className="font-medium">{t('settings.fields.weeklySummary')}</span>
             <span className="block text-ink-500">{t('settings.hints.weeklySummary')}</span>
+          </span>
+        </label>
+      </Section>
+
+      <Section title={t('settings.security.title')} description={t('settings.security.description')}>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={v.requireTwoFactor === 'true'} disabled={!canManage} onChange={(e) => set('requireTwoFactor')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
+          <span>
+            <span className="font-medium">{t('settings.fields.requireTwoFactor')}</span>
+            <span className="block text-ink-500">{t('settings.hints.requireTwoFactor')}</span>
           </span>
         </label>
       </Section>

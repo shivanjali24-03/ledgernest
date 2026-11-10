@@ -38,6 +38,10 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 | **GSTR-2B, matched** | Upload the portal's GSTR-2B and see which bills your suppliers haven't filed (credit at risk) before you claim it. |
 | **Know your cash 13 weeks ahead** | The forecast learns how late each customer really pays, and warns you before cash runs short. |
 | **Never miss a due date** | GSTR-1, GSTR-3B (with the tax to pay), GSTR-9, TDS deposits and advance tax on the dashboard, with days left. |
+| **MSME 45-day rule** | Mark vendors as micro or small (Udyam) and see every bill's legal pay-by date, what's late, and what section 43B(h) would disallow at the year end. |
+| **Move from Tally** | Export the List of Accounts from Tally as XML and bring in ledgers, customers, vendors and opening balances in one go. |
+| **Balance confirmations** | Ask every customer and vendor to confirm their year-end balance from a link; they agree or send their figure, and you see who did. |
+| **Cheque printing** | Print a vendor payment straight onto a cheque leaf: date boxes, payee, amount in words and figures, A/c Payee. |
 | **TDS, both ways** | Keep TDS back from contractors and landlords (Form 26Q, challan dates), and record TDS your customers kept back (Form 26AS). |
 | **e-Invoices, e-way bills and a health check** | e-Invoice JSON for the IRP and e-way bill JSON for moving goods, both checked before upload; a GST health check that finds missing HSN codes, states and GSTINs before filing. |
 | **Your CA uses Tally?** | Export ledgers and vouchers as Tally Prime XML, party ledgers and all. |

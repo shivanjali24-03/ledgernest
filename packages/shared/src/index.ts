@@ -48,3 +48,8 @@ export * from './tally/index.js';
 export * from './vendor-credits/index.js';
 export * from './banking/receipts.js';
 export * from './eway/index.js';
+export * from './msme/index.js';
+export * from './cheque/index.js';
+export * from './sessions/index.js';
+export * from './confirmations/index.js';
+export * from './tally/import.js';

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -193,4 +193,29 @@ describe('vendor payments', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in', {}, { timeout: 4000 })).toBeInTheDocument();
   });
+
+  it('tracks a micro supplier’s bills against the 45-day rule, from the Udyam details on the vendor', async () => {
+    renderApp('/contacts?type=vendor');
+    await userEvent.click(await screen.findByRole('link', { name: 'Sharma Office Supplies' }, { timeout: 4000 }));
+    const dialog = await openDialog('Edit', 'Edit Sharma Office Supplies');
+    expect(within(dialog).getByLabelText('MSME (Udyam)')).toHaveDisplayValue('Micro enterprise');
+    const udyam = within(dialog).getByLabelText('Udyam registration number');
+    expect(udyam).toHaveValue('UDYAM-MH-26-0012345');
+    await userEvent.clear(udyam);
+    await userEvent.type(udyam, 'UDYAM-12');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+    expect(await within(dialog).findByText('A Udyam number looks like UDYAM-MH-26-0012345.', {}, { timeout: 4000 })).toBeInTheDocument();
+
+    // Two months after the bill, it's past the deadline
+    cleanup();
+    const today = new Date().toISOString().slice(0, 8);
+    const later = new Date(`${today}03T00:00:00Z`);
+    later.setUTCDate(later.getUTCDate() + 60);
+    renderApp(`/reports?tab=msme&asOf=${later.toISOString().slice(0, 10)}`);
+    const table = await screen.findByRole('table', { name: /Bills from micro and small suppliers/ }, { timeout: 4000 });
+    const row = within(table).getByText('Sharma Office Supplies').closest('tr')!;
+    expect(row).toHaveTextContent('Micro enterprise');
+    expect(row).toHaveTextContent('Overdue');
+    expect(screen.getByText('At risk under 43B(h)')).toBeInTheDocument();
+  }, 30_000);
 });

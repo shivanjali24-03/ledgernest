@@ -40,6 +40,8 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
     resetRequests: [] as string[],
     deleted: false,
     password,
+    /** With two-factor on, the code the second step takes */
+    twoFactorCode: null as string | null,
   };
   /** The only reset link that works */
   const RESET_TOKEN = 'reset-token-0123456789abcdefghijklmnop';
@@ -61,6 +63,13 @@ export function fakeApi({ password = 'Right-Password-1', me = ME, signedIn = fal
         if (state.loginStatus) return json(state.loginStatus.status, state.loginStatus.body ?? { message: 'forced' });
         const body = JSON.parse(String(init.body)) as { email: string; password: string };
         if (body.email !== me.user.email || body.password !== state.password) return json(401, { message: 'Email or password is incorrect.' });
+        if (state.twoFactorCode) return json(200, { twoFactorRequired: true, ticket: 'ticket-0123456789abcdefghij' });
+        return json(200, issue());
+      }
+      case 'POST /auth/login/2fa': {
+        const body = JSON.parse(String(init.body)) as { ticket: string; code: string };
+        if (body.ticket !== 'ticket-0123456789abcdefghij') return json(401, { message: 'expired', details: { reason: 'ticket_expired' } });
+        if (body.code !== state.twoFactorCode) return json(401, { message: 'wrong', details: { reason: 'wrong_code' } });
         return json(200, issue());
       }
       case 'POST /auth/refresh':

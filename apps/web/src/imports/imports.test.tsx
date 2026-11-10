@@ -8,6 +8,7 @@ import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { readSpreadsheet } from '../lib/readSheet';
 import { xlsx } from '../lib/xlsx';
 import { routes } from '../routes';
+import { gstinCheckChar } from '@ledgernest/shared';
 
 function renderApp(path = '/imports') {
   sessionStorage.setItem('ledgernest.demo', 'admin@ledgernest.demo');
@@ -67,4 +68,56 @@ describe('imports', () => {
     expect(await screen.findByRole('link', { name: 'Mehta Traders' }, { timeout: 4000 })).toBeInTheDocument();
     expect(within(screen.getByRole('link', { name: 'Mehta Traders' }).closest('li')!).getByText('Vendor')).toBeInTheDocument();
   }, 40_000);
+});
+
+describe('moving from Tally', () => {
+  const GSTIN = `27AAKCK4821R1Z${gstinCheckChar('27AAKCK4821R1Z')}`;
+  const XML = `<ENVELOPE><BODY><IMPORTDATA><REQUESTDATA>
+<TALLYMESSAGE><LEDGER NAME="Mehta Traders"><PARENT>Sundry Debtors</PARENT><PARTYGSTIN>${GSTIN}</PARTYGSTIN><LEDSTATENAME>Maharashtra</LEDSTATENAME><OPENINGBALANCE>-50,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Gupta Packaging"><PARENT>Sundry Creditors</PARENT><OPENINGBALANCE>20,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Petty Cash Box"><PARENT>Cash-in-Hand</PARENT><OPENINGBALANCE>-5,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Partner Capital"><PARENT>Capital Account</PARENT><OPENINGBALANCE>35,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+</REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>`;
+  // As Tally writes it: UTF-16, little-endian, with a byte-order mark
+  const utf16 = (s: string) => {
+    const b = new Uint8Array(2 + s.length * 2);
+    b[0] = 0xff;
+    b[1] = 0xfe;
+    for (let i = 0; i < s.length; i++) {
+      b[2 + i * 2] = s.charCodeAt(i) & 0xff;
+      b[3 + i * 2] = s.charCodeAt(i) >> 8;
+    }
+    return b;
+  };
+
+  it('turns the List of Accounts into accounts, parties and opening balances', { timeout: 30_000 }, async () => {
+    const router = renderApp();
+    await userEvent.upload(await screen.findByTestId('tally-file', {}, { timeout: 6000 }), new File([utf16(XML)], 'Master.xml', { type: 'text/xml' }));
+    const plan = await screen.findByRole('list', { name: 'What will be imported' }, { timeout: 6000 });
+    expect(plan).toHaveTextContent('2 accounts to add');
+    expect(plan).toHaveTextContent('1 customers and 1 vendors');
+    expect(plan).toHaveTextContent('Opening balances: ₹55,000.00 debit, ₹55,000.00 credit');
+    await userEvent.click(screen.getByRole('button', { name: 'Import from Tally' }));
+    const status = await screen.findByRole('status', {}, { timeout: 8000 });
+    expect(status).toHaveTextContent('Imported from Tally.');
+    await userEvent.click(within(status).getByRole('link', { name: 'Review the opening balances' }));
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/journals\//));
+
+    // The parties are contacts now
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    expect(demoContactRows().find((c) => c.name === 'Mehta Traders')).toMatchObject({ isCustomer: true, taxId: GSTIN });
+    expect(demoContactRows().find((c) => c.name === 'Gupta Packaging')).toMatchObject({ isVendor: true });
+  });
+});
+
+describe('moving from Tally, with a mistake in the file', () => {
+  it('saves nothing when a party wouldn’t import', { timeout: 30_000 }, async () => {
+    const bad = `<ENVELOPE><LEDGER NAME="Bad Party"><PARENT>Sundry Debtors</PARENT><PARTYGSTIN>27AAKCK4821R1Z9</PARTYGSTIN><LEDSTATENAME>Maharashtra</LEDSTATENAME></LEDGER><LEDGER NAME="Petty Cash Box"><PARENT>Cash-in-Hand</PARENT></LEDGER></ENVELOPE>`;
+    renderApp();
+    await userEvent.upload(await screen.findByTestId('tally-file', {}, { timeout: 6000 }), new File([bad], 'Master.xml', { type: 'text/xml' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Import from Tally' }, { timeout: 6000 }));
+    expect(await screen.findByRole('alert', {}, { timeout: 8000 })).toHaveTextContent('Contacts couldn’t be imported:Row 1: This GSTIN isn’t valid');
+    const { createDemoAccountsApi } = await import('../accounts/demoAccountsApi');
+    expect((await createDemoAccountsApi(() => true).list(true)).some((a) => a.name === 'Petty Cash Box')).toBe(false);
+  });
 });

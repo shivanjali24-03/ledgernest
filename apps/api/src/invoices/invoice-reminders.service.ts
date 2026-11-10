@@ -22,6 +22,8 @@ import {
   todayIn,
   type invoiceReminderSchema,
   type ReminderPolicy,
+  msmeCovered,
+  msmeLateInterest,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
@@ -223,6 +225,9 @@ export class InvoiceRemindersService
         baseCurrency: true,
         timeZone: true,
         upiId: true,
+        msmeCategory: true,
+        udyamNumber: true,
+        msmeBankRateBp: true,
       },
     });
     const currency = inv.currency ?? org.baseCurrency;
@@ -232,6 +237,18 @@ export class InvoiceRemindersService
       `${currency} ${(minor / 10 ** digits).toFixed(digits)}`;
     const today = todayIn(org.timeZone, now);
     const late = daysBetween(inv.dueDate, today);
+    const msmeInterest =
+      msmeCovered(org.msmeCategory as 'micro' | 'small' | null) &&
+      org.msmeBankRateBp &&
+      currency === 'INR'
+        ? msmeLateInterest(
+            inv.balance,
+            inv.issueDate,
+            inv.dueDate,
+            today,
+            org.msmeBankRateBp,
+          )
+        : 0;
     const when =
       late > 0
         ? `was due on ${inv.dueDate} (${late} day${late === 1 ? '' : 's'} ago)`
@@ -249,6 +266,11 @@ export class InvoiceRemindersService
         ...(upi
           ? [
               `Pay by UPI to ${org.upiId}: on your phone, open ${upi} and your UPI app fills in the amount.`,
+            ]
+          : []),
+        ...(msmeInterest > 0
+          ? [
+              `As a ${org.msmeCategory} enterprise${org.udyamNumber ? ` (Udyam ${org.udyamNumber})` : ''}, we are entitled under section 16 of the MSMED Act, 2006 to interest on payments made after the appointed day. On this invoice it comes to ${money(msmeInterest)} so far.`,
             ]
           : []),
         'If you’ve already paid, thank you, and please ignore this reminder.',
