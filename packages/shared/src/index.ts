@@ -49,3 +49,4 @@ export * from './vendor-credits/index.js';
 export * from './banking/receipts.js';
 export * from './eway/index.js';
 export * from './msme/index.js';
+export * from './cheque/index.js';

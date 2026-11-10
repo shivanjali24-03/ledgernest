@@ -27,6 +27,8 @@ import {
   vendorPaymentSchema,
   type ReceiptInput,
   type VendorPaymentInput,
+  chequeOptionsSchema,
+  type ChequeOptions,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -111,6 +113,25 @@ export class PaymentsController {
     return new StreamableFile(f.data, {
       type: 'application/pdf',
       disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
+    });
+  }
+
+  /** A vendor payment as a PDF to print onto a cheque leaf (CTS-2010), nudged in millimetres for the printer */
+  @Get(':id/cheque')
+  @RequirePermission('bills.view')
+  @ApiProduces('application/pdf')
+  async cheque(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) paymentId: string,
+    @Query(new ZodValidationPipe(chequeOptionsSchema)) q: ChequeOptions,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.receipts.cheque(tenant.organizationId, paymentId, q);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(f.data, {
+      type: 'application/pdf',
+      disposition: `inline; filename="${f.fileName}"`,
       length: f.data.length,
     });
   }

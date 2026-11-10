@@ -210,3 +210,41 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
   return bytes;
 }
+
+/** Text placed at a point on a page (points from the bottom left), e.g. on a cheque leaf */
+export interface PdfText {
+  x: number;
+  y: number;
+  text: string;
+  size?: number;
+  bold?: boolean;
+  /** Spacing between characters (points), e.g. to fill date boxes */
+  spacing?: number;
+}
+
+/** One page of positioned text and straight lines, any size, for forms printed onto stationery */
+export function pdfPageBytes(page: { width: number; height: number; texts: PdfText[]; lines?: { x1: number; y1: number; x2: number; y2: number; width?: number }[] }): Uint8Array {
+  let s = '0 g 0 G\n';
+  for (const l of page.lines ?? []) s += `${num(l.width ?? 0.8)} w ${num(l.x1)} ${num(l.y1)} m ${num(l.x2)} ${num(l.y2)} l S\n`;
+  for (const t of page.texts) s += `BT /${t.bold ? 'F2' : 'F1'} ${num(t.size ?? 10)} Tf ${num(t.spacing ?? 0)} Tc ${num(t.x)} ${num(t.y)} Td ${literal(encode(t.text))} Tj ET\n`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${num(page.width)} ${num(page.height)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>`,
+    `<< /Length ${s.length} >>\nstream\n${s}endstream`,
+  ];
+  let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
+  const offsets: number[] = [];
+  objects.forEach((o, i) => {
+    offsets.push(out.length);
+    out += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = out.length;
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const bytes = new Uint8Array(out.length);
+  for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
+  return bytes;
+}

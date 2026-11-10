@@ -3,7 +3,12 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { currencyDigits, pdfTableBytes } from '@ledgernest/shared';
+import {
+  chequePdfBytes,
+  currencyDigits,
+  pdfTableBytes,
+  type ChequeOptions,
+} from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -97,6 +102,36 @@ export class PaymentReceiptsService {
     return {
       data: pdf,
       fileName: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+    };
+  }
+
+  /** A vendor payment printed onto a cheque leaf: the payee, date, and what the bank pays (after TDS) */
+  async cheque(organizationId: string, id: string, options: ChequeOptions) {
+    const p = await this.payments.get(organizationId, id);
+    if (p.kind !== 'payment' || p.status !== 'posted')
+      throw new ConflictException({
+        message: 'Only posted payments to vendors can be printed on a cheque.',
+        details: { reason: 'not_payment' },
+      });
+    if (p.currency)
+      throw new ConflictException({
+        message: 'Cheques are in rupees: this payment is in another currency.',
+        details: { reason: 'not_inr' },
+      });
+    const contact = await this.prisma.contact.findFirstOrThrow({
+      where: { id: p.contact.id, organizationId },
+      select: { legalName: true, name: true },
+    });
+    return {
+      data: chequePdfBytes(
+        {
+          payee: contact.legalName ?? contact.name,
+          date: p.date,
+          amount: p.bankAmount,
+        },
+        options,
+      ),
+      fileName: `cheque-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
     };
   }
 
