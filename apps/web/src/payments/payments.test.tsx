@@ -48,6 +48,30 @@ describe('receipts', () => {
     expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeInTheDocument();
   }, 20_000);
 
+  it('records a receipt where the customer kept TDS back: the invoice is paid in full and the TDS is to claim back', async () => {
+    renderApp('/invoices');
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    const dialog = await openDialog('Record payment', 'Record a receipt');
+    await waitFor(() => expect(within(dialog).getByLabelText('Amount (INR)')).toHaveValue('1,18,000.00'));
+    // Kumar paid ₹1,08,000 and kept back 10% of the ₹1,00,000 under 194J
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'Customer deducted TDS' }));
+    await userEvent.selectOptions(within(dialog).getByLabelText('TDS section'), '194J');
+    expect(within(dialog).getByLabelText('TDS on (INR)')).toHaveAttribute('placeholder', '1,00,000.00');
+    expect(within(dialog).getByLabelText('TDS the customer kept back (INR)')).toHaveValue('10,000.00');
+    expect(within(dialog).getByLabelText('Claim back on account')).toHaveDisplayValue('1500 · TDS receivable');
+    expect(within(dialog).getByText(/^INR 1,08,000\.00 reaches the bank; INR 10,000\.00 is TDS the customer pays/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Record receipt' }));
+    expect(await screen.findByText(/^Recorded as RCT\/.*\/0001$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeInTheDocument(), { timeout: 4000 });
+
+    document.body.innerHTML = '';
+    renderApp('/reports?tab=tds&side=receivable');
+    const bySection = await screen.findByRole('table', { name: 'By section' }, { timeout: 4000 });
+    expect(within(bySection).getByText(/^194J/).closest('tr')!).toHaveTextContent(/1,00,000\.00.*10,000\.00/);
+    expect(screen.getByRole('table', { name: 'Payments' })).toHaveTextContent('Kumar Logistics');
+  }, 30_000);
+
   it('records part of what a customer owes, shows their balance, and voids it', async () => {
     renderApp('/payments');
     fireEvent.click(await screen.findByRole('button', { name: 'Record receipt' }));

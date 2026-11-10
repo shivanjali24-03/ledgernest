@@ -254,6 +254,7 @@ export class PaymentsService {
         issueDate: true,
         dueDate: true,
         currency: true,
+        subtotal: true,
         total: true,
         amountPaid: true,
         fiscalYear: { select: { name: true } },
@@ -265,6 +266,7 @@ export class PaymentsService {
       issueDate: iso(i.issueDate),
       dueDate: iso(i.dueDate),
       currency: i.currency,
+      subtotal: Number(i.subtotal),
       total: Number(i.total),
       balance: Number(i.total - i.amountPaid),
     }));
@@ -437,36 +439,39 @@ export class PaymentsService {
           { field: 'bankAccountId' },
         );
 
-      // TDS: on vendor payments in rupees (the base currency), owed on a tax or current liability account
-      const tds = !receipt && input.tds ? input.tds : null;
+      // TDS, in rupees (the base currency): kept back from a vendor and owed on a tax liability, or kept back by a
+      // customer and claimed back from a current asset such as TDS receivable
+      const tds = input.tds ?? null;
       if (tds) {
         if (currency)
           throw refuse(
             BadRequestException,
-            'TDS is for payments in the base currency.',
+            `TDS is for ${receipt ? 'receipts' : 'payments'} in the base currency.`,
             'tds_currency',
             { field: 'tds' },
           );
         if (tds.amount >= input.amount)
           throw refuse(
             BadRequestException,
-            'TDS has to be less than the payment.',
+            `TDS has to be less than the ${receipt ? 'receipt' : 'payment'}.`,
             'tds_too_much',
             { field: 'tds' },
           );
-        const owed = await tx.account.findFirst({
+        const on = await tx.account.findFirst({
           where: { organizationId, id: tds.accountId },
           select: { type: true, subtype: true, archivedAt: true },
         });
-        if (
-          !owed ||
-          owed.type !== 'liability' ||
-          !['tax_payable', 'current_liability'].includes(owed.subtype) ||
-          owed.archivedAt
-        )
+        const fits = receipt
+          ? on?.type === 'asset' &&
+            ['current_asset', 'other_asset'].includes(on.subtype)
+          : on?.type === 'liability' &&
+            ['tax_payable', 'current_liability'].includes(on.subtype);
+        if (!on || !fits || on.archivedAt)
           throw refuse(
             BadRequestException,
-            'Choose an active tax liability account for the TDS, like TDS payable.',
+            receipt
+              ? 'Choose an active current asset account for the TDS, like TDS receivable.'
+              : 'Choose an active tax liability account for the TDS, like TDS payable.',
             'tds_account',
             { field: 'tds' },
           );
@@ -664,11 +669,12 @@ export class PaymentsService {
             label,
             false,
           );
+      // Kept back by us: owed (credit); kept back by the customer: to claim back (debit)
       const tdsLine = tds
         ? [
             line(
               tds.accountId,
-              'credit',
+              receipt ? 'debit' : 'credit',
               kept,
               `TDS ${tds.section} · ${label}`,
               false,
@@ -676,7 +682,7 @@ export class PaymentsService {
           ]
         : [];
       const lines = receipt
-        ? [bankLine, ...docLines]
+        ? [bankLine, ...tdsLine, ...docLines]
         : [...docLines, bankLine, ...tdsLine];
 
       const entry = await this.journals.postEntryInTx(

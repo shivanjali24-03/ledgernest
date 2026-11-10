@@ -39,7 +39,7 @@ export const resetDemoPayments = () => {
   }
 };
 /** Posted vendor payments with TDS, for the TDS report */
-export const demoTdsPayments = () => load().filter((p) => p.kind === 'payment' && p.status === 'posted' && p.tds && p.tds.amount > 0);
+export const demoTdsPayments = (kind: PaymentKind = 'payment') => load().filter((p) => p.kind === kind && p.status === 'posted' && p.tds && p.tds.amount > 0);
 /** What's been received (or paid) and not allocated, per contact, for their balance */
 export const demoAdvances = (contactId: string, kind: PaymentKind = 'receipt') => load().filter((p) => p.contact.id === contactId && p.kind === kind && p.status === 'posted').reduce((s, p) => s + p.unallocated, 0);
 const adjust = (kind: 'invoice' | 'bill', id: string, delta: number, payment?: { id: string; number: string; date: string; amount: number }) => (kind === 'invoice' ? demoAdjustPaid(id, delta, payment) : demoAdjustBillPaid(id, delta, payment));
@@ -64,12 +64,13 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     if (!bank || bank.type !== 'asset' || bank.archivedAt) throw refuse(400, 'bank_invalid');
     if (bank.currency && bank.currency !== currency) throw refuse(400, 'bank_currency');
     // TDS: vendor payments in rupees, owed on a tax or current liability account
-    const tds = !receipt && d.tds ? d.tds : null;
+    const tds = d.tds ?? null;
     const tdsAccount = tds ? demoAccountRows().find((a) => a.id === tds.accountId) : undefined;
     if (tds) {
       if (currency) throw refuse(400, 'tds_currency');
       if (tds.amount >= d.amount) throw refuse(400, 'tds_too_much');
-      if (!tdsAccount || tdsAccount.type !== 'liability' || !['tax_payable', 'current_liability'].includes(tdsAccount.subtype) || tdsAccount.archivedAt) throw refuse(400, 'tds_account');
+      const fits = receipt ? tdsAccount?.type === 'asset' && ['current_asset', 'other_asset'].includes(tdsAccount.subtype) : tdsAccount?.type === 'liability' && ['tax_payable', 'current_liability'].includes(tdsAccount.subtype);
+      if (!tdsAccount || !fits || tdsAccount.archivedAt) throw refuse(400, 'tds_account');
     }
     const docs = receipt
       ? (await demoInvoiceViews()).map((i) => ({ id: i.id, number: i.number, contactId: i.contact.id, open: i.status === 'issued', balance: i.balance, accountId: i.receivableAccount?.id }))
@@ -107,10 +108,10 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     const docLines = [...byAccount].map(([accountId, minor]) => (currency ? { accountId, description: label, currency, rate: rate!, ...(receipt ? { foreignCredit: minor } : { foreignDebit: minor }) } : { accountId, description: label, ...(receipt ? { credit: minor } : { debit: minor }) }));
     const bankLine = bank.currency
       ? { accountId: bank.id, description: label, currency: bank.currency, rate: rate!, ...(receipt ? { foreignDebit: d.amount } : { foreignCredit: d.amount }) }
-      : { accountId: bank.id, description: label, ...(receipt ? { debit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) } : { credit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) - (tds?.amount ?? 0) }) };
-    const tdsLines = tds ? [{ accountId: tds.accountId, description: `TDS ${tds.section} · ${label}`, credit: tds.amount }] : [];
+      : { accountId: bank.id, description: label, ...(receipt ? { debit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) - (tds?.amount ?? 0) } : { credit: [...byAccount.values()].reduce((s, m) => s + inBase(m), 0) - (tds?.amount ?? 0) }) };
+    const tdsLines = tds ? [{ accountId: tds.accountId, description: `TDS ${tds.section} · ${label}`, ...(receipt ? { debit: tds.amount } : { credit: tds.amount }) }] : [];
     const journals = createDemoJournalsApi(() => true);
-    const draft = await journals.create({ date: d.date, memo: `${receipt ? 'Receipt' : 'Payment'} ${label} · ${contact.name}`, reference: d.reference ?? label, lines: receipt ? [bankLine, ...docLines] : [...docLines, bankLine, ...tdsLines] });
+    const draft = await journals.create({ date: d.date, memo: `${receipt ? 'Receipt' : 'Payment'} ${label} · ${contact.name}`, reference: d.reference ?? label, lines: receipt ? [bankLine, ...tdsLines, ...docLines] : [...docLines, bankLine, ...tdsLines] });
     const posted = await journals.post(draft.id).catch(async (e: unknown) => {
       await journals.remove(draft.id);
       throw e;
@@ -163,7 +164,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
         (await demoInvoiceViews())
           .filter((i) => i.contact.id === contactId && i.status === 'issued' && i.balance > 0)
           .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
-          .map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency, total: i.total, balance: i.balance })),
+          .map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency, subtotal: i.subtotal, total: i.total, balance: i.balance })),
       ),
     receive: (input) =>
       wait(() => {

@@ -43,5 +43,10 @@ export const tdsSchema = z
 export type TdsInput = z.output<typeof tdsSchema>;
 
 export const tdsReportQuerySchema = z
-  .object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })
+  .object({
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    /** payable: kept back from vendors, owed to the government; receivable: kept back by customers, to claim back */
+    side: z.enum(['payable', 'receivable']).default('payable'),
+  })
   .refine((v) => v.from <= v.to, { path: ['to'], message: 'The start comes after the end.' });

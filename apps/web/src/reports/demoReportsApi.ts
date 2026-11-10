@@ -382,9 +382,9 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return { ...buildCashForecast({ today: d.asOf, opening: d.kpis.cash.value, items, weeks }), currency: 'INR', lateCustomers: [] };
   };
   /** TDS from the demo's vendor payments */
-  const tds = async (from: string, to: string): Promise<TdsReport> => {
+  const tds = async (from: string, to: string, side: 'payable' | 'receivable' = 'payable'): Promise<TdsReport> => {
     const [{ demoTdsPayments }, { demoContactRows }] = await Promise.all([import('../payments/demoPaymentsApi'), import('../contacts/demoContactsApi')]);
-    const payments = demoTdsPayments()
+    const payments = demoTdsPayments(side === 'payable' ? 'payment' : 'receipt')
       .filter((p) => p.date >= from && p.date <= to)
       .sort((a, b) => a.date.localeCompare(b.date))
       .map((p) => {
@@ -402,6 +402,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     return {
       from,
       to,
+      side,
       total: payments.reduce((s, p) => s + p.tds, 0),
       sections: group((p) => p.section).map(([section, g]) => ({ section, ...g })),
       months: group((p) => p.date.slice(0, 7)).map(([month, g]) => ({ month, due: tdsDepositDue(month), ...g })),

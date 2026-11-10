@@ -93,7 +93,8 @@ export default function Reports() {
   const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare, costCentreId], queryFn: () => api!.profitAndLoss(from, to, compare, costCentreId), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
-  const tdsReport = useQuery({ queryKey: [...key, 'tds', from, to], queryFn: () => api!.tds(from, to), enabled: !!api && tab === 'tds' && from <= to, placeholderData: keepPreviousData });
+  const tdsSide = (params.get('side') as 'payable' | 'receivable' | null) ?? 'payable';
+  const tdsReport = useQuery({ queryKey: [...key, 'tds', from, to, tdsSide], queryFn: () => api!.tds(from, to, tdsSide), enabled: !!api && tab === 'tds' && from <= to, placeholderData: keepPreviousData });
   const forecast = useQuery({ queryKey: [...key, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && tab === 'forecast' });
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
   const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | 'gstr-2b' | null) ?? 'gstr-3b';
@@ -353,9 +354,18 @@ export default function Reports() {
             <div className="w-44">
               <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
             </div>
-            <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.tds.hint')}</p>
+            <Segmented<'payable' | 'receivable'>
+              label={t('reports.tds.side')}
+              value={tdsSide}
+              onChange={(v) => set({ side: v === 'payable' ? null : v })}
+              options={[
+                { value: 'payable', label: t('reports.tds.sides.payable') },
+                { value: 'receivable', label: t('reports.tds.sides.receivable') },
+              ]}
+            />
+            <p className="flex-1 pb-2 text-sm text-ink-500">{t(tdsSide === 'payable' ? 'reports.tds.hint' : 'reports.tds.hintReceivable')}</p>
           </div>
-          <TdsPanel data={tdsReport.data} isPending={tdsReport.isPending} isError={tdsReport.isError} onRetry={() => void tdsReport.refetch()} />
+          <TdsPanel side={tdsSide} data={tdsReport.data} isPending={tdsReport.isPending} isError={tdsReport.isError} onRetry={() => void tdsReport.refetch()} />
         </motion.div>
       ) : tab === 'forecast' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

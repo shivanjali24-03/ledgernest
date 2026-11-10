@@ -533,10 +533,10 @@ export class ReportsController {
   })
   tdsReport(
     @Query(new ZodValidationPipe(tdsReportQuerySchema))
-    q: { from: string; to: string },
+    q: { from: string; to: string; side: 'payable' | 'receivable' },
     @CurrentTenant() tenant: Tenant,
   ) {
-    return this.tds.report(tenant.organizationId, q.from, q.to);
+    return this.tds.report(tenant.organizationId, q.from, q.to, q.side);
   }
 
   @Get('compliance')

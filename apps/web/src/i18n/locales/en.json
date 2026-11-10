@@ -1738,8 +1738,17 @@
         "month": "Month",
         "due": "Pay by",
         "payment": "Payment",
-        "deductee": "Deductee and PAN"
-      }
+        "deductee": "Deductee and PAN",
+        "deductor": "Customer and PAN"
+      },
+      "side": "TDS",
+      "sides": {
+        "payable": "Kept back by us",
+        "receivable": "Kept back by customers"
+      },
+      "hintReceivable": "TDS customers kept back from what they paid you: check it against Form 26AS and claim it in your return.",
+      "emptyBodyReceivable": "When a customer pays less because they kept back TDS, tick Customer deducted TDS on the receipt and it shows here.",
+      "byMonthReceivable": "By month"
     }
   },
   "taxes": {
@@ -2476,7 +2485,12 @@
         "building": "Land, building, furniture",
         "machinery": "Plant or machinery",
         "standard": "Usual rate"
-      }
+      },
+      "deductedByCustomer": "Customer deducted TDS",
+      "amountByCustomer": "TDS the customer kept back ({{currency}})",
+      "accountReceivable": "Claim back on account",
+      "noAccountReceivable": "No current asset account: add TDS receivable",
+      "bankGets": "{{bank}} reaches the bank; {{tds}} is TDS the customer pays the government for you, to claim against Form 26AS. The invoices are settled in full."
     }
   },
   "bills": {

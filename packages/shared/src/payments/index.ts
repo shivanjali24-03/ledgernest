@@ -35,13 +35,16 @@ export const receiptSchema = z
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
     notes: text(500),
+    /** TDS the customer kept back and pays the government for you: claimed back against Form 26AS */
+    tds: tdsSchema,
     allocations: z
       .array(z.object({ invoiceId: z.uuid(), amount }))
       .max(100)
       .default([])
       .refine((a) => new Set(a.map((x) => x.invoiceId)).size === a.length, 'Each invoice can appear once.'),
   })
-  .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was received.' });
+  .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was received.' })
+  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the receipt.' });
 export type ReceiptInput = z.input<typeof receiptSchema>;
 
 /** Money paid to a vendor, allocated to their open bills; the rest is an advance to them */
