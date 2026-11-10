@@ -526,7 +526,12 @@ export class InvoicesService {
           sourceId: id,
           batchId: { not: null },
         },
-        orderBy: { createdAt: 'asc' },
+        // Moved together, so in the order they were taken: earliest expiry first
+        orderBy: [
+          { createdAt: 'asc' },
+          { batch: { expiryDate: { sort: 'asc', nulls: 'last' } } },
+          { batch: { createdAt: 'asc' } },
+        ],
         select: {
           sourceLineId: true,
           quantity: true,
