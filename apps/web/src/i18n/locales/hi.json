@@ -143,7 +143,9 @@
       "overdue_other": "{{count}} दिन देर",
       "toPay": "अब तक लगभग {{amount}} नकद भुगतान करना है",
       "nothingToPay": "अब तक कोई नकद भुगतान नहीं",
-      "tdsToPay": "{{amount}} रोका गया"
+      "tdsToPay": "{{amount}} रोका गया",
+      "lateFee": "अभी तक दाखिल नहीं? अब तक विलंब शुल्क: {{fee}}",
+      "lateFeeInterest": "अभी तक दाखिल नहीं? अब तक विलंब शुल्क: {{fee}}, साथ में {{interest}} ब्याज"
     }
   },
   "comingSoon": {

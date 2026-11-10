@@ -11,6 +11,7 @@ import {
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { GstReturnsService } from '../src/reports/gst-returns.service.js';
 
 const gstin = (first14: string) => `${first14}${gstinCheckChar(first14)}`;
 const SHARMA = gstin('27ABZPS6519M1Z');
@@ -393,5 +394,38 @@ describe('GSTR-2B reconciliation (e2e)', () => {
       else expect(i.amount).toBeUndefined();
     }
     expect(r.items.some((i) => i.kind === 'gstr3b')).toBe(true);
+  });
+
+  it('says what filing a late GST return costs: the late fee, nil or not, and interest on the cash tax', async () => {
+    const gst = app.get(GstReturnsService);
+    type Item = {
+      kind: string;
+      from: string;
+      daysLeft: number;
+      amount?: number;
+      lateFee?: number;
+      interest?: number;
+    };
+    const at = async (iso: string) =>
+      ((await gst.compliance(org, new Date(iso))).items as Item[]).filter(
+        (i) => i.kind === 'gstr3b' || i.kind === 'gstr1',
+      );
+    // October had bills: GSTR-3B due 20 November, five days late on the 25th: ₹50 a day
+    const nov = await at('2026-11-25T06:00:00Z');
+    const oct3b = nov.find(
+      (i) => i.kind === 'gstr3b' && i.from === '2026-10-01',
+    )!;
+    expect(oct3b).toMatchObject({ daysLeft: -5, lateFee: 250_00, interest: 0 });
+    // Not due yet: nothing to pay
+    for (const i of nov.filter((x) => x.daysLeft >= 0))
+      expect(i.lateFee).toBeUndefined();
+    // July had nothing: a nil return, ₹20 a day
+    const aug = await at('2026-08-25T06:00:00Z');
+    expect(
+      aug.find((i) => i.kind === 'gstr3b' && i.from === '2026-07-01'),
+    ).toMatchObject({
+      daysLeft: -5,
+      lateFee: 100_00,
+    });
   });
 });

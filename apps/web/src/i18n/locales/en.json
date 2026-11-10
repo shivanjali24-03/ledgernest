@@ -143,7 +143,9 @@
       "overdue_other": "{{count}} days late",
       "toPay": "about {{amount}} to pay in cash so far",
       "nothingToPay": "nothing to pay in cash so far",
-      "tdsToPay": "{{amount}} kept back"
+      "tdsToPay": "{{amount}} kept back",
+      "lateFee": "Not filed yet? Late fee so far: {{fee}}",
+      "lateFeeInterest": "Not filed yet? Late fee so far: {{fee}}, plus {{interest}} interest"
     }
   },
   "comingSoon": {
