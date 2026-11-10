@@ -1,4 +1,4 @@
-import { Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { Gstr2bReport } from './types';
+import type { CashForecast, Gstr2bReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -371,6 +371,16 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   };
 
   const headOf = (kind: string): keyof GstHeads | null => (kind === 'igst' ? 'igst' : kind === 'cgst' ? 'cgst' : kind === 'sgst' || kind === 'utgst' ? 'sgst' : kind === 'cess' ? 'cess' : null);
+  /** The demo's forecast: cash from the books, unpaid invoices and bills on their due dates (no payment history to learn from) */
+  const cashForecast = async (weeks: number): Promise<CashForecast> => {
+    const d = await dashboard();
+    const [{ demoInvoiceViews }, { demoStoredBillViews }] = await Promise.all([import('../invoices/demoInvoicesApi'), import('../bills/demoBillsApi')]);
+    const items: ForecastItem[] = [
+      ...(await demoInvoiceViews()).filter((i) => i.status === 'issued' && i.balance > 0 && !i.currency).map((i) => ({ kind: 'invoice' as const, id: i.id, label: i.number ?? 'Invoice', contact: { id: i.contact.id, name: i.contact.name }, dueDate: i.dueDate, amount: i.balance, lateDays: 0 })),
+      ...demoStoredBillViews().filter((b) => b.status === 'open' && b.balance > 0 && !b.currency).map((b) => ({ kind: 'bill' as const, id: b.id, label: b.vendorReference ?? b.number ?? 'Bill', contact: { id: b.contact.id, name: b.contact.name }, dueDate: b.dueDate, amount: -b.balance })),
+    ];
+    return { ...buildCashForecast({ today: d.asOf, opening: d.kpis.cash.value, items, weeks }), currency: 'INR', lateCustomers: [] };
+  };
   /** GSTR-2B against the demo's recorded bills, heads read from their tax lines' names */
   const gstr2b = async (content: string, from: string, to: string): Promise<Gstr2bReport> => {
     let file;
@@ -479,6 +489,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
   return {
     gstr3b,
     gstr2b,
+    cashForecast,
     gstr1,
     async exportGstr1(from, to, format) {
       guard();

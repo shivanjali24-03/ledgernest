@@ -18,6 +18,7 @@ import { useOrganizationSettings } from '../../settings/useOrganizationSettings'
 import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import Gstr2bPanel from '../Gstr2bPanel';
+import CashForecastPanel from '../CashForecastPanel';
 import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
@@ -31,7 +32,7 @@ import TaxSummaryPanel from '../TaxSummaryPanel';
 import ScheduledReportsPanel from '../../scheduled-reports/ScheduledReportsPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'gst' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'forecast' | 'gst' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -67,7 +68,7 @@ export default function Reports() {
   const salesSide = (params.get('sside') as SalesReportSide | null) ?? 'sales';
   const salesBy = (params.get('by') as SalesReportBy | null) ?? 'contact';
   const canExport = session.permissions.has('reports.export');
-  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), forecast: t('reports.forecast.title'), gst: t('reports.gst.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -90,6 +91,7 @@ export default function Reports() {
   const pnl = useQuery({ queryKey: [...key, 'pnl', from, to, compare, costCentreId], queryFn: () => api!.profitAndLoss(from, to, compare, costCentreId), enabled: !!api && tab === 'pnl' && from <= to, placeholderData: keepPreviousData });
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
+  const forecast = useQuery({ queryKey: [...key, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && tab === 'forecast' });
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
   const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | 'gstr-2b' | null) ?? 'gstr-3b';
   const india = settings?.country === 'IN';
@@ -140,7 +142,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || (tab === 'gst' && gstReturn === 'gstr-2b')) && 'hidden')}>
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || (tab === 'gst' && gstReturn === 'gstr-2b')) && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={(tab === 'ledger' && !accountId) || (tab === 'statement' && !contactId)}>
                 {t('reports.print')}
               </Button>
@@ -163,7 +165,7 @@ export default function Reports() {
         <p className="text-lg font-semibold">{settings?.legalName ?? settings?.name ?? session.organization}</p>
         {settings?.taxId && <p className="text-sm">{settings.taxId}</p>}
         <p className="mt-2 text-base font-semibold">{reportTitle}</p>
-        <p className="text-sm">{['trial-balance', 'balance-sheet', 'aging'].includes(tab) ? t('reports.printAsOf', { date: day(asOf) }) : t('reports.printRange', { from: day(from), to: day(to) })}</p>
+        <p className="text-sm">{['trial-balance', 'balance-sheet', 'aging', 'forecast'].includes(tab) ? t('reports.printAsOf', { date: day(asOf) }) : t('reports.printRange', { from: day(from), to: day(to) })}</p>
       </div>
       <motion.div variants={fadeUp} className="print:hidden">
         <Tabs<Tab>
@@ -175,6 +177,7 @@ export default function Reports() {
             { value: 'pnl', label: t('reports.statements.pnlTitle') },
             { value: 'balance-sheet', label: t('reports.statements.bsTitle') },
             { value: 'cash-flow', label: t('reports.cashFlow.title') },
+            { value: 'forecast', label: t('reports.forecast.title') },
             ...(india ? [{ value: 'gst' as const, label: t('reports.gst.title') }] : []),
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
@@ -337,6 +340,11 @@ export default function Reports() {
             />
           </div>
           <CashFlowPanel data={cf.data} method={method} isPending={cf.isPending} isError={cf.isError} onRetry={() => void cf.refetch()} onAccount={(id) => set({ tab: 'ledger', account: id })} />
+        </motion.div>
+      ) : tab === 'forecast' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <p className="text-sm text-ink-500 print:hidden">{t('reports.forecast.description')}</p>
+          <CashForecastPanel data={forecast.data} isPending={forecast.isPending} isError={forecast.isError} onRetry={() => void forecast.refetch()} />
         </motion.div>
       ) : tab === 'gst' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

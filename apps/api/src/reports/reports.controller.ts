@@ -35,6 +35,7 @@ import {
   type AgingSide,
   gstr2bRequestSchema,
   type Gstr2bRequest,
+  cashForecastQuerySchema,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -46,6 +47,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { CashForecastService } from './cash-forecast.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
@@ -94,6 +96,7 @@ export class ReportsController {
     private readonly gst: GstReturnsService,
     private readonly statements: StatementsService,
     private readonly sales: SalesReportService,
+    private readonly forecast: CashForecastService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -517,6 +520,19 @@ export class ReportsController {
       c,
       await this.reports.decimals(tenant.organizationId),
     );
+  }
+
+  @Get('cash-forecast')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Cash week by week for the coming weeks: unpaid invoices on the day each customer usually pays, unpaid bills on their due dates, and what repeat invoices and bills will raise; with the lowest week and the first shortfall',
+  })
+  cashForecast(
+    @Query(new ZodValidationPipe(cashForecastQuerySchema)) q: { weeks: number },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.forecast.forecast(tenant.organizationId, q.weeks);
   }
 
   @Get('gst/gstr-3b')

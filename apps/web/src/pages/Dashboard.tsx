@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronRight, Circle } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronRight, Circle, TrendingDown, TrendingUp } from 'lucide-react';
 import clsx from 'clsx';
 import AnimatedNumber from '../motion/AnimatedNumber';
 import { fadeUp, stagger } from '../motion/tokens';
@@ -101,6 +101,7 @@ export default function Dashboard() {
   const canRead = session.permissions.has('reports.view');
   const query = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'dashboard'], queryFn: () => api!.dashboard(), enabled: !!api && canRead });
   const data = query.data;
+  const forecast = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && canRead && !!data });
   const firstName = session.name.split(' ')[0];
   const setup = data ? (['organisation', 'team', 'coa', 'fiscal', 'bank'] as const).map((k) => ({ key: k, done: data.setup[k] })) : [];
   const done = setup.filter((s) => s.done).length;
@@ -175,6 +176,19 @@ export default function Dashboard() {
                     </li>
                   ))}
                 </ul>
+              )}
+              {forecast.data && (
+                <Link to="/reports?tab=forecast" className="mt-3 block rounded-xl border border-ink-100 p-3 text-sm hover:border-brand-300 dark:border-ink-800" data-testid="dashboard-forecast">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    {forecast.data.shortfall ? <TrendingDown className="size-4 text-expense" aria-hidden /> : <TrendingUp className="size-4 text-income" aria-hidden />}
+                    {t('dashboard.forecast.title')}
+                  </span>
+                  <span className={clsx('mt-0.5 block', forecast.data.shortfall ? 'text-expense' : 'text-ink-600 dark:text-ink-300')}>
+                    {forecast.data.shortfall
+                      ? t('dashboard.forecast.shortfall', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${forecast.data.shortfall.start}T00:00:00Z`)), amount: money.format(forecast.data.shortfall.balance) })
+                      : t('dashboard.forecast.fine', { amount: money.format(forecast.data.weeks.at(-1)?.closing ?? forecast.data.opening) })}
+                  </span>
+                </Link>
               )}
             </section>
           </motion.div>

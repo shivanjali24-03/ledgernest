@@ -115,6 +115,11 @@
       "quotes_expiring": "{{count}} quotes expiring this week",
       "recurring_bills_due": "{{count}} recurring bills due",
       "bills_due_soon": "{{count}} bills due this week, {{amount}}"
+    },
+    "forecast": {
+      "title": "Cash in 13 weeks",
+      "shortfall": "Runs short in the week of {{date}}: {{amount}}",
+      "fine": "Stays above zero, ending at {{amount}}"
     }
   },
   "comingSoon": {
@@ -1662,6 +1667,38 @@
       },
       "noItc": "no credit allowed",
       "bill": "Bill"
+    },
+    "forecast": {
+      "title": "Cash forecast",
+      "description": "Cash today, then week by week: customers’ unpaid invoices on the day each one usually pays (learned from the last year), unpaid bills on their due dates, and what repeat invoices and bills will raise.",
+      "cashToday": "Cash today",
+      "comingIn": "Coming in, {{weeks}} weeks",
+      "goingOut": "Going out, {{weeks}} weeks",
+      "lowest": "Lowest, week of {{date}}",
+      "shortfall": "Cash runs short in the week of {{date}}: {{amount}}.",
+      "shortfallHint": "Chase what’s overdue, ask late payers for a date, or move a bill’s payment.",
+      "noShortfall": "Cash stays above zero for the next {{weeks}} weeks, ending at {{amount}}.",
+      "chartTitle": "Cash at the end of each week",
+      "chartHint": "Below the line, cash would run short. Hover a week for what moves in it.",
+      "weekOf": "Week of {{date}}",
+      "endsAt": "Ends at {{amount}}",
+      "tableTitle": "Cash forecast by week",
+      "cols": {
+        "week": "Week",
+        "in": "Coming in",
+        "out": "Going out",
+        "balance": "Cash at the end"
+      },
+      "kinds": {
+        "invoice": "invoice",
+        "bill": "bill",
+        "recurring_invoice": "repeat invoice",
+        "recurring_bill": "repeat bill"
+      },
+      "late_one": "usually 1 day late",
+      "late_other": "usually {{count}} days late",
+      "lateTitle": "Customers who pay late",
+      "lateHint": "From their invoices paid in the last year. The forecast expects their money this much after the due date."
     }
   },
   "taxes": {

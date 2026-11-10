@@ -80,6 +80,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Feature | What it means | Status |
 |---|---|---|
 | Dashboard | Cash, receivables, payables and profit from the books, twelve months of profit, and alerts (overdue, to reconcile, recurring due, months open, drafts) | ✅ #105 |
+| Cash forecast | 13 weeks ahead from today's cash: unpaid invoices on the day each customer usually pays (learned from their last year of paid invoices), unpaid bills on their due dates, and what repeat invoices and bills will raise; the balance at the end of each week as a chart and a table with what moves in it, a warning for the first week cash runs short, and the customers who pay late. On the dashboard too | ✅ |
 | Profit & loss | By period with sub-accounts in their parents, beside the previous period, last year, month by month or cost centre | ✅ #102 |
 | Balance sheet | At any date, current and non-current, unclosed profit in equity, beside another date | ✅ #103 |
 | Cash flow statement | Direct and indirect methods, agreeing with opening and closing cash | ✅ #104 |
