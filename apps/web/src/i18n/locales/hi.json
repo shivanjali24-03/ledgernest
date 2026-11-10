@@ -113,7 +113,8 @@
       "approvals_waiting": "{{count}} आपके अनुमोदन की प्रतीक्षा में",
       "low_stock": "{{count}} वस्तुओं का स्टॉक कम",
       "quotes_expiring": "{{count}} कोटेशन इस सप्ताह समाप्त हो रहे हैं",
-      "recurring_bills_due": "{{count}} आवर्ती बिल देय"
+      "recurring_bills_due": "{{count}} आवर्ती बिल देय",
+      "bills_due_soon": "इस सप्ताह {{count}} बिल देय, {{amount}}"
     }
   },
   "comingSoon": {

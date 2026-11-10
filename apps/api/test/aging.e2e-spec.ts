@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { todayIn } from '@ledgernest/shared';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -967,5 +968,46 @@ describe('Aging reports (e2e)', () => {
       '(Total received) Tj',
     );
     await as('viewer').get(`/invoices/${inv.c}/pdf`).expect(403);
+  });
+
+  it('flags bills falling due in the coming week, with what they come to', async () => {
+    const { timeZone } = await prisma.organization.findUniqueOrThrow({
+      where: { id: org },
+      select: { timeZone: true },
+    });
+    const today = todayIn(timeZone);
+    const inDays = (n: number) => {
+      const d = new Date(`${today}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
+    const bill = (
+      await as()
+        .post('/bills', {
+          contactId: contact.sharma,
+          billDate: today,
+          dueDate: inDays(3),
+          lines: [
+            {
+              description: 'Printer paper',
+              quantity: 1,
+              unitPrice: 4_000,
+              accountId: acc.rent,
+            },
+          ],
+        })
+        .expect(201)
+    ).body;
+    await as().post(`/bills/${bill.id}/record`).expect(200);
+    const alerts = (
+      (await as().get('/reports/dashboard').expect(200)).body as {
+        alerts: { kind: string; count: number; amount?: number }[];
+      }
+    ).alerts;
+    expect(alerts.find((a) => a.kind === 'bills_due_soon')).toEqual({
+      kind: 'bills_due_soon',
+      count: 1,
+      amount: 4_000,
+    });
   });
 });

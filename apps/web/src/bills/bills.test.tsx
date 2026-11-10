@@ -110,6 +110,11 @@ describe('bills', () => {
     await waitFor(() => expect(screen.getByText('Made:')).toBeInTheDocument(), { timeout: 10_000 });
   });
 
+  it('opens with the filter from the address, as the dashboard links it', async () => {
+    renderApp('/bills?state=draft');
+    expect(await screen.findByRole('radio', { name: 'Drafts' }, { timeout: 4000 })).toBeChecked();
+  });
+
   it('is read-only for Auditors', async () => {
     renderApp();
     await screen.findByRole('link', { name: /^BILL\// }, { timeout: 4000 });
