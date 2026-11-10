@@ -35,6 +35,8 @@ export interface SettingsValues {
   interestRate: string;
   interestMethod: string;
   interestGraceDays: string;
+  /** 'true' or 'false' */
+  interestAutoRaise: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -69,6 +71,7 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   interestRate: s.interestRateBp ? String(s.interestRateBp / 100) : '',
   interestMethod: s.interestMethod ?? 'simple',
   interestGraceDays: String(s.interestGraceDays ?? 0),
+  interestAutoRaise: String(!!s.interestAutoRaise),
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -80,7 +83,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     if (k in ADDRESS) address[k] = v[k];
     else if (k === 'fiscalYearStartMonth') out[k] = Number(v[k]);
     else if (k === 'country') out[k] = v[k] || null;
-    else if (k === 'weeklySummary' || k === 'requireTwoFactor') out[k] = v[k] === 'true';
+    else if (k === 'weeklySummary' || k === 'requireTwoFactor' || k === 'interestAutoRaise') out[k] = v[k] === 'true';
     else if (k === 'msmeCategory') out[k] = v[k] || null;
     else if (k === 'compositionRate') out.compositionRateBp = Number(v[k]);
     // A percentage typed as 5.5 or 5.50%: stored in basis points

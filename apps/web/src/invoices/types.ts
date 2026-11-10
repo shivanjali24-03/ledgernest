@@ -112,8 +112,24 @@ export interface InvoiceSummary {
 
 export type InvoiceFilter = InvoiceState | 'unpaid';
 
+/** Interest on late payment on one invoice: accrued, invoiced, waived, left to charge */
+export interface InterestStatus {
+  asOf: string;
+  accrued: number;
+  charged: number;
+  waived: number;
+  chargeable: number;
+  charges: { id: string; number: string | null; status: 'draft' | 'issued'; date: string; interest: number; total: number }[];
+  waivers: { id: string; amount: number; reason: string; date: string }[];
+}
+
 /** Sales invoices. Live and demo both implement it. */
 export interface InvoicesApi {
+  /** Interest on late payment: where it stands, a draft invoice for what's left, waiving some, drafts for everything due */
+  interestStatus(id: string): Promise<InterestStatus>;
+  raiseInterest(id: string): Promise<Invoice>;
+  waiveInterest(id: string, input: { amount?: number; reason: string }): Promise<InterestStatus>;
+  raiseAllInterest(): Promise<{ asOf: string; raised: { invoiceId: string; draftId: string; amount: number }[] }>;
   list(q: { state?: InvoiceFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; summary: { outstanding: number; overdue: number }; items: InvoiceSummary[] }>;
   get(id: string): Promise<Invoice>;
   /** An issued invoice as a PDF file */

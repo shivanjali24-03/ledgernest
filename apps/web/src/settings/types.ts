@@ -34,6 +34,8 @@ export interface OrganizationSettings {
   interestRateBp?: number | null;
   interestMethod?: 'simple' | 'monthly';
   interestGraceDays?: number;
+  /** Draft interest invoices on the 1st of each month */
+  interestAutoRaise?: boolean;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

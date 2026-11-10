@@ -131,6 +131,8 @@ export const organizationSettingsSchema = z
     interestMethod: z.enum(['simple', 'monthly']),
     /** Days after the due date it may be paid without interest */
     interestGraceDays: z.number().int().min(0).max(365),
+    /** On the 1st of each month, draft interest invoices for what's accrued and not yet charged */
+    interestAutoRaise: z.boolean(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

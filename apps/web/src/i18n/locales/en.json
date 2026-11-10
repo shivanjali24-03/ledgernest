@@ -1021,7 +1021,8 @@
       "compositionRate": "Composition rate",
       "interestRate": "Interest, % a year",
       "interestMethod": "Worked out",
-      "interestGraceDays": "Days of grace"
+      "interestGraceDays": "Days of grace",
+      "interestAutoRaise": "Draft interest invoices on the 1st of each month"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1037,7 +1038,8 @@
       "composition": "Invoices become bills of supply with no GST charged, saying you’re a composition taxable person; due dates show CMP-08 each quarter and GSTR-4 each year.",
       "compositionRate": "The tax for each quarter (CMP-08) is your turnover at this rate, shown on the dashboard’s due dates.",
       "interestRate": "Blank for no interest. 18% is common in India.",
-      "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date."
+      "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date.",
+      "interestAutoRaise": "For the interest accrued to the end of the month just gone and not yet charged. You look over and issue them."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -2580,7 +2582,11 @@
       "no_email": "This customer has no email address. Enter one to send it to.",
       "mail_off": "Email isn’t set up on this server, so reminders can’t be sent from here.",
       "mail_failed": "The email couldn’t be sent. Try again later.",
-      "composition_no_tax": "Under the composition scheme no GST is charged: take the tax off the lines."
+      "composition_no_tax": "Under the composition scheme no GST is charged: take the tax off the lines.",
+      "nothing_to_charge": "There's no interest left to charge on this invoice.",
+      "waive_too_much": "Waive no more than the interest left to charge.",
+      "already_charged": "This interest has just been charged.",
+      "no_interest_terms": "Only an issued invoice with interest terms can be charged interest."
     },
     "reminder": {
       "action": "Send reminder",
@@ -2760,7 +2766,21 @@
       "rateField": "Interest, % a year",
       "rateDefault": "Customer’s or organisation’s",
       "rateHint": "Only for this invoice; 0 charges none.",
-      "termsNoGrace": "Interest at {{rate}}% a year ({{method}}) is charged on amounts unpaid after the due date."
+      "termsNoGrace": "Interest at {{rate}}% a year ({{method}}) is charged on amounts unpaid after the due date.",
+      "panelTitle": "Interest on late payment",
+      "raise": "Raise interest invoice for {{amount}}",
+      "raised": "Interest invoice drafted: look it over and issue it",
+      "waive": "Waive",
+      "waiveTitle": "Waive interest",
+      "waiveBody": "{{amount}} is left to charge. Waived interest won't be invoiced; the reason stays on record.",
+      "waiveAmount": "Amount ({{currency}})",
+      "waiveReason": "Why",
+      "waived_msg": "Interest waived",
+      "waiverLine": "Waived {{amount}} on {{date}}: {{reason}}",
+      "panelAccrued": "Accrued to today",
+      "panelCharged": "Invoiced",
+      "panelWaived": "Waived",
+      "panelChargeable": "Left to charge"
     }
   },
   "payments": {
@@ -4539,7 +4559,10 @@
     "emailed_one": "Reminder for 1 invoice sent to {{email}}.",
     "emailed_other": "Reminders for {{count}} invoices sent to {{email}}.",
     "message_one": "Dear {{name}}, {{amount}} is overdue with {{organization}} (1 invoice, {{days}} days late). You can see it and pay by UPI here: {{link}}",
-    "message_other": "Dear {{name}}, {{amount}} is overdue with {{organization}} ({{count}} invoices, the oldest {{days}} days late). You can see them and pay the lot by UPI here: {{link}}"
+    "message_other": "Dear {{name}}, {{amount}} is overdue with {{organization}} ({{count}} invoices, the oldest {{days}} days late). You can see them and pay the lot by UPI here: {{link}}",
+    "raiseInterest": "Raise interest invoices",
+    "interestRaised_one": "1 interest invoice drafted",
+    "interestRaised_other": "{{count}} interest invoices drafted"
   },
   "yearEnd": {
     "title": "Year-end close",

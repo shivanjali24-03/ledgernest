@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accruedInterest, interestTermsFor, interestTermsText } from './index.js';
+import { accruedInterest, interestTermsFor, interestTermsText, splitInterest } from './index.js';
 
 const simple18 = { rateBp: 1800, method: 'simple' as const, graceDays: 0 };
 
@@ -58,5 +58,22 @@ describe('Interest on late payments', () => {
     expect(interestTermsFor({ rateBp: null }, null)).toBeNull();
     expect(interestTermsText({ rateBp: 1800, method: 'simple', graceDays: 7 })).toBe('Interest at 18% a year is charged on any amount unpaid after the due date (no interest if paid within 7 days of it).');
     expect(interestTermsText({ rateBp: 1250, method: 'monthly', graceDays: 0 })).toBe('Interest at 12.50% a year, compounded monthly, is charged on any amount unpaid after the due date.');
+  });
+
+  it('splits interest over the supply’s GST rates by taxable value, the odd paise to the largest', () => {
+    expect(splitInterest(1_000_00, [{ key: 'gst18', value: 60_000_00 }, { key: 'gst5', value: 40_000_00 }])).toEqual([
+      { key: 'gst18', amount: 600_00 },
+      { key: 'gst5', amount: 400_00 },
+    ]);
+    expect(splitInterest(100, [{ key: 'a', value: 1 }, { key: 'b', value: 1 }, { key: 'c', value: 1 }])).toEqual([
+      { key: 'a', amount: 34 },
+      { key: 'b', amount: 33 },
+      { key: 'c', amount: 33 },
+    ]);
+    expect(splitInterest(500, [{ key: null, value: 0 }])).toEqual([{ key: null, amount: 500 }]);
+    expect(splitInterest(1_000, [{ key: 'x', value: 300 }, { key: 'x', value: 700 }, { key: null, value: 1000 }])).toEqual([
+      { key: 'x', amount: 500 },
+      { key: null, amount: 500 },
+    ]);
   });
 });

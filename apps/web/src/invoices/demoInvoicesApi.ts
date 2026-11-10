@@ -1,10 +1,10 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
-import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoSettings } from '../settings/demoSettingsApi';
 import { demoRateOn } from '../currencies/demoCurrenciesApi';
@@ -14,7 +14,7 @@ import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { groupForSupply, supplyFor } from './gst';
 import type { PublicInvoice } from '../public/types';
-import type { EinvoiceBatch, Invoice, InvoicesApi } from './types';
+import type { EinvoiceBatch, InterestStatus, Invoice, InvoicesApi } from './types';
 
 /**
  * Invoices in demo mode for the sample company in Pune (Maharashtra, GST state 27): the month's invoice to
@@ -34,6 +34,10 @@ type Stored = {
   /** A draft's own interest rate; once issued, the terms it was issued with */
   interestRateBp?: number | null;
   interestTerms?: InterestTerms | null;
+  /** For an invoice raised for interest: the invoice it's on */
+  interestOnInvoiceId?: string | null;
+  /** Interest on late payment let off, and why */
+  interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
   contactId: string;
   issueDate: string;
@@ -360,7 +364,58 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
     return i;
   };
   const prepare = demoPrepareSale;
+  /** Interest on one invoice: accrued (to today), charged on interest invoices not voided, waived, left to charge */
+  const interestStatus = async (iid: string): Promise<InterestStatus> => {
+    const rows = await load();
+    const src = find(rows, iid);
+    const accrued = view(src).interest?.accrued ?? 0;
+    const charges = rows.filter((r) => r.interestOnInvoiceId === iid && r.status !== 'void').map((r) => view(r));
+    const charged = charges.reduce((s, c) => s + c.subtotal, 0);
+    const waivers = src.interestWaivers ?? [];
+    const waived = waivers.reduce((s, w) => s + w.amount, 0);
+    return { asOf: today(), accrued, charged, waived, chargeable: Math.max(0, accrued - charged - waived), charges: charges.map((c) => ({ id: c.id, number: c.number, status: c.status as 'draft' | 'issued', date: c.issueDate, interest: c.subtotal, total: c.total })), waivers };
+  };
   const api: InvoicesApi = {
+    interestStatus: (iid) => wait(() => interestStatus(iid)),
+    raiseInterest: (iid) =>
+      wait(async () => {
+        guard();
+        const s = await interestStatus(iid);
+        if (s.chargeable < INTEREST_MIN_CHARGE) throw refuse(409, 'nothing_to_charge');
+        const src = view(find(await load(), iid));
+        const accountId = demoEnsureFxAccount('interest_income');
+        const parts = splitInterest(s.chargeable, src.lines.map((l) => ({ key: l.taxGroup?.id ?? null, value: l.amount })));
+        const d = await api.create({ contactId: src.contact.id, issueDate: today(), dueDate: today(), reference: src.number, notes: `Interest at ${src.interest!.rateBp / 100}% a year on the late payment of invoice ${src.number}, due ${src.dueDate}, to ${today()}.`, placeOfSupply: src.placeOfSupply, interestRateBp: 0, lines: parts.map((p) => ({ description: `Interest on late payment of ${src.number}`, quantity: '1', unitPrice: p.amount, taxGroupId: p.key, accountId })) });
+        const rows = await load();
+        find(rows, d.id).interestOnInvoiceId = iid;
+        save(rows);
+        return view(find(rows, d.id));
+      }),
+    waiveInterest: (iid, input) =>
+      wait(async () => {
+        guard();
+        const s = await interestStatus(iid);
+        const amount = input.amount ?? s.chargeable;
+        if (amount < 1 || amount > s.chargeable) throw refuse(400, 'waive_too_much', { field: 'amount' });
+        if (input.reason.trim().length < 3) throw refuse(400, 'invalid', { field: 'reason' });
+        const rows = await load();
+        const src = find(rows, iid);
+        src.interestWaivers = [...(src.interestWaivers ?? []), { id: crypto.randomUUID(), amount, reason: input.reason.trim(), date: today() }];
+        save(rows);
+        return interestStatus(iid);
+      }),
+    raiseAllInterest: () =>
+      wait(async () => {
+        guard();
+        const raised: { invoiceId: string; draftId: string; amount: number }[] = [];
+        for (const r of (await load()).filter((x) => x.status === 'issued' && x.interestTerms)) {
+          const s = await interestStatus(r.id);
+          if (s.chargeable < INTEREST_MIN_CHARGE) continue;
+          const d = await api.raiseInterest(r.id);
+          raised.push({ invoiceId: r.id, draftId: d.id, amount: s.chargeable });
+        }
+        return { asOf: today(), raised };
+      }),
     pdf: async (iid) => {
       const v = view(find(await load(), iid));
       if (v.status === 'draft') throw refuse(409, 'not_issued');
