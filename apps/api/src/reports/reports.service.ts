@@ -563,6 +563,16 @@ export class ReportsService {
                 id: true,
                 billDate: true,
                 vendorReference: true,
+                // Debit notes take what they credit off bills, as credit notes do off invoices
+                vendorCreditApplications: {
+                  select: {
+                    amount: true,
+                    date: true,
+                    vendorCredit: {
+                      select: { voidEntry: { select: { date: true } } },
+                    },
+                  },
+                },
                 ...common,
               },
             })
@@ -653,7 +663,11 @@ export class ReportsService {
           ? d.credits
               .filter((c) => c.date <= day && live(c.creditNote.voidEntry))
               .reduce((s, c) => s + Number(c.amount), 0)
-          : 0;
+          : 'vendorCreditApplications' in d
+            ? d.vendorCreditApplications
+                .filter((c) => c.date <= day && live(c.vendorCredit.voidEntry))
+                .reduce((s, c) => s + Number(c.amount), 0)
+            : 0;
       const paid =
         d.allocations
           .filter((a) => a.payment.date <= day && live(a.payment.voidEntry))
@@ -681,6 +695,7 @@ export class ReportsService {
         outstanding,
       });
     }
+    // Credit left on credit notes (customers) or debit notes (vendors) sits with the contact like an advance
     const credits =
       side === 'receivables'
         ? await this.prisma.creditNote.findMany({
@@ -694,7 +709,17 @@ export class ReportsService {
               applications: { select: { date: true, amount: true } },
             },
           })
-        : [];
+        : (
+            await this.prisma.vendorCredit.findMany({
+              where: { organizationId, date: { lte: day } },
+              select: {
+                contactId: true,
+                total: true,
+                voidEntry: { select: { date: true } },
+                applications: { select: { date: true, amount: true } },
+              },
+            })
+          ).map((c) => ({ ...c, currency: null, rate: null }));
     const contacts = await this.prisma.contact.findMany({
       where: {
         organizationId,

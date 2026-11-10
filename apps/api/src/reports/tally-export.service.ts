@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   billNumber,
   creditNoteNumber,
+  vendorCreditNumber,
   invoiceNumber,
   journalNumber,
   paymentNumber,
@@ -116,6 +117,11 @@ export class TallyExportService {
           voidedCreditNote: doc,
           payment: { select: { ...doc.select, kind: true } },
           voidedPayment: { select: { ...doc.select, kind: true } },
+          vendorCredit: doc,
+          voidedVendorCredit: doc,
+          // Refunds of credit given: the customer's or vendor's own ledger too
+          creditRefund: { select: { creditNote: doc } },
+          vendorRefund: { select: { vendorCredit: doc } },
         },
       }),
     ]);
@@ -123,7 +129,7 @@ export class TallyExportService {
     const vouchers: TallyVoucher[] = entries.map((e) => {
       // What the entry came from, and its number as the document has it
       const src: {
-        kind: 'invoice' | 'bill' | 'credit_note' | 'payment';
+        kind: 'invoice' | 'bill' | 'credit_note' | 'debit_note' | 'payment';
         number: string;
         contactId: string;
         voided: boolean;
@@ -206,7 +212,34 @@ export class TallyExportService {
                           contactId: e.voidedPayment.contactId,
                           voided: true,
                         }
-                      : null;
+                      : (e.vendorCredit ?? e.voidedVendorCredit)
+                        ? {
+                            kind: 'debit_note',
+                            number: vendorCreditNumber(
+                              (e.vendorCredit ?? e.voidedVendorCredit)!
+                                .fiscalYear.name,
+                              (e.vendorCredit ?? e.voidedVendorCredit)!.number,
+                            ),
+                            contactId: (e.vendorCredit ?? e.voidedVendorCredit)!
+                              .contactId,
+                            voided: !e.vendorCredit,
+                          }
+                        : e.creditRefund?.creditNote
+                          ? {
+                              kind: 'payment',
+                              number: `${creditNoteNumber(e.creditRefund.creditNote.fiscalYear.name, e.creditRefund.creditNote.number)} refund`,
+                              contactId: e.creditRefund.creditNote.contactId,
+                              voided: false,
+                            }
+                          : e.vendorRefund?.vendorCredit
+                            ? {
+                                kind: 'payment',
+                                number: `${vendorCreditNumber(e.vendorRefund.vendorCredit.fiscalYear.name, e.vendorRefund.vendorCredit.number)} refund`,
+                                contactId:
+                                  e.vendorRefund.vendorCredit.contactId,
+                                voided: false,
+                              }
+                            : null;
       const lines = e.lines.map((l) => {
         const a = byId.get(l.accountId)!;
         const party =

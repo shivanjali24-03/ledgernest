@@ -9,7 +9,7 @@ import { AGING_SIDES, type AgingSide } from './index.js';
  * One section per currency the contact has documents in. Voided documents stay, with the void as its own line
  * on the day it was voided, so a statement sent last month still agrees with this one.
  */
-export const ACCOUNT_STATEMENT_KINDS = ['invoice', 'credit_note', 'receipt', 'bill', 'payment', 'void'] as const;
+export const ACCOUNT_STATEMENT_KINDS = ['invoice', 'credit_note', 'receipt', 'bill', 'debit_note', 'payment', 'refund', 'void'] as const;
 export type AccountStatementKind = (typeof ACCOUNT_STATEMENT_KINDS)[number];
 
 export const statementQuerySchema = z
@@ -76,7 +76,7 @@ export interface AccountStatement {
   sections: AccountStatementSection[];
 }
 
-const ORDER: Record<AccountStatementKind, number> = { invoice: 0, bill: 0, credit_note: 1, receipt: 2, payment: 2, void: 3 };
+const ORDER: Record<AccountStatementKind, number> = { invoice: 0, bill: 0, credit_note: 1, debit_note: 1, receipt: 2, payment: 2, refund: 2, void: 3 };
 
 /** Builds the sections from every event up to `to` (earlier ones make the balance brought forward) */
 export function buildStatement(events: AccountStatementEvent[], from: string, to: string, baseCurrency: string): AccountStatementSection[] {
@@ -108,7 +108,7 @@ export function buildStatement(events: AccountStatementEvent[], from: string, to
   return sections.sort((a, b) => (a.currency === baseCurrency ? -1 : b.currency === baseCurrency ? 1 : a.currency.localeCompare(b.currency)));
 }
 
-const LABELS: Record<AccountStatementKind, string> = { invoice: 'Invoice', credit_note: 'Credit note', receipt: 'Receipt', bill: 'Bill', payment: 'Payment', void: 'Void' };
+const LABELS: Record<AccountStatementKind, string> = { invoice: 'Invoice', credit_note: 'Credit note', receipt: 'Receipt', bill: 'Bill', debit_note: 'Debit note', payment: 'Payment', refund: 'Refund', void: 'Void' };
 
 /** The statement as rows for CSV, Excel or PDF (amounts in major units, e.g. rupees) */
 export function statementRows(s: AccountStatement): string[][] {

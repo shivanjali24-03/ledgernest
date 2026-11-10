@@ -913,6 +913,24 @@ export class JournalsService {
           'document_entry',
           { creditNoteId: note.id },
         );
+      const debitNote = await tx.vendorCredit.findFirst({
+        where: {
+          organizationId,
+          OR: [
+            { journalEntryId: id },
+            { voidEntryId: id },
+            { applications: { some: { journalEntryId: id } } },
+          ],
+        },
+        select: { id: true },
+      });
+      if (debitNote)
+        throw refuse(
+          ConflictException,
+          'This entry belongs to a debit note or its refund. Void the debit note instead.',
+          'document_entry',
+          { vendorCreditId: debitNote.id },
+        );
       const asset = await tx.fixedAsset.findFirst({
         where: { organizationId, disposalEntryId: id },
         select: { id: true },

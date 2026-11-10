@@ -20,6 +20,7 @@ describe('Tally export', () => {
     expect(tallyVoucherType([other(118, 0), other(0, 100), other(0, 18)], 'invoice')).toBe('Sales');
     expect(tallyVoucherType([other(100, 0), other(0, 100)], 'bill')).toBe('Purchase');
     expect(tallyVoucherType([other(100, 0), other(0, 100)], 'credit_note')).toBe('Credit Note');
+    expect(tallyVoucherType([other(100, 0), other(0, 100)], 'debit_note')).toBe('Debit Note');
     expect(tallyVoucherType([other(100, 0), other(0, 100)], null)).toBe('Journal');
   });
 

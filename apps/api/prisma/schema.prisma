@@ -109,6 +109,9 @@ model Organization {
   creditNotes         CreditNote[]
   creditNoteLines     CreditNoteLine[]
   creditApplications  CreditApplication[]
+  vendorCredits       VendorCredit[]
+  vendorCreditLines   VendorCreditLine[]
+  vendorCreditApps    VendorCreditApplication[]
   recurringInvoices   RecurringInvoice[]
   bankTransactions    BankTransaction[]
   statementImports    BankStatementImport[]
@@ -185,21 +188,24 @@ model Account {
   taxInputs      TaxRate[]             @relation("TaxInputAccount")
   lines          JournalLine[]
 
-  invoiceReceivables    Invoice[]             @relation("InvoiceReceivable")
-  invoiceIncome         InvoiceLine[]         @relation("InvoiceLineAccount")
-  quoteIncome           QuoteLine[]           @relation("QuoteLineAccount")
-  creditNoteReceivables CreditNote[]          @relation("CreditNoteReceivable")
-  creditNoteIncome      CreditNoteLine[]      @relation("CreditNoteLineAccount")
-  creditRefundBanks     CreditApplication[]   @relation("CreditRefundBank")
-  bankTransactions      BankTransaction[]     @relation("BankTransactionAccount")
-  bankTransfersIn       BankTransaction[]     @relation("BankTransferTo")
+  invoiceReceivables    Invoice[]                 @relation("InvoiceReceivable")
+  invoiceIncome         InvoiceLine[]             @relation("InvoiceLineAccount")
+  quoteIncome           QuoteLine[]               @relation("QuoteLineAccount")
+  creditNoteReceivables CreditNote[]              @relation("CreditNoteReceivable")
+  creditNoteIncome      CreditNoteLine[]          @relation("CreditNoteLineAccount")
+  creditRefundBanks     CreditApplication[]       @relation("CreditRefundBank")
+  vendorCreditPayables  VendorCredit[]            @relation("VendorCreditPayable")
+  vendorCreditExpense   VendorCreditLine[]        @relation("VendorCreditLineAccount")
+  vendorRefundBanks     VendorCreditApplication[] @relation("VendorRefundBank")
+  bankTransactions      BankTransaction[]         @relation("BankTransactionAccount")
+  bankTransfersIn       BankTransaction[]         @relation("BankTransferTo")
   statementImports      BankStatementImport[]
   statementLines        BankStatementLine[]
   statementLayout       BankStatementLayout?
   reconciliations       BankReconciliation[]
-  assetsAt              FixedAsset[]          @relation("AssetCostAccount")
-  assetsDepreciatedIn   FixedAsset[]          @relation("AssetAccumulatedAccount")
-  assetsExpensedTo      FixedAsset[]          @relation("AssetExpenseAccount")
+  assetsAt              FixedAsset[]              @relation("AssetCostAccount")
+  assetsDepreciatedIn   FixedAsset[]              @relation("AssetAccumulatedAccount")
+  assetsExpensedTo      FixedAsset[]              @relation("AssetExpenseAccount")
   budgetLines           BudgetLine[]
 
   paymentBanks Payment[] @relation("PaymentBank")
@@ -232,9 +238,10 @@ model FiscalYear {
   journals     JournalEntry[] @relation("FiscalYearEntries")
   closingEntry JournalEntry?  @relation("YearClosingEntry", fields: [organizationId, closingEntryId], references: [organizationId, id], onDelete: NoAction)
 
-  invoices    Invoice[]
-  creditNotes CreditNote[]
-  budgets     Budget[]
+  invoices      Invoice[]
+  creditNotes   CreditNote[]
+  vendorCredits VendorCredit[]
+  budgets       Budget[]
 
   payments Payment[]
 
@@ -307,14 +314,17 @@ model JournalEntry {
   bill       Bill? @relation("BillEntry")
   voidedBill Bill? @relation("BillVoidEntry")
 
-  creditNote            CreditNote?        @relation("CreditNoteEntry")
-  voidedCreditNote      CreditNote?        @relation("CreditNoteVoidEntry")
-  creditRefund          CreditApplication? @relation("CreditRefundEntry")
-  bankTransaction       BankTransaction?   @relation("BankTransactionEntry")
-  voidedBankTransaction BankTransaction?   @relation("BankTransactionVoidEntry")
-  depreciationRun       DepreciationRun?   @relation("DepreciationEntry")
+  creditNote            CreditNote?              @relation("CreditNoteEntry")
+  voidedCreditNote      CreditNote?              @relation("CreditNoteVoidEntry")
+  creditRefund          CreditApplication?       @relation("CreditRefundEntry")
+  vendorCredit          VendorCredit?            @relation("VendorCreditEntry")
+  voidedVendorCredit    VendorCredit?            @relation("VendorCreditVoidEntry")
+  vendorRefund          VendorCreditApplication? @relation("VendorRefundEntry")
+  bankTransaction       BankTransaction?         @relation("BankTransactionEntry")
+  voidedBankTransaction BankTransaction?         @relation("BankTransactionVoidEntry")
+  depreciationRun       DepreciationRun?         @relation("DepreciationEntry")
   stockMovements        StockMovement[]
-  assetDisposal         FixedAsset?        @relation("AssetDisposalEntry")
+  assetDisposal         FixedAsset?              @relation("AssetDisposalEntry")
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -568,9 +578,10 @@ model TaxGroup {
   lines        JournalLine[]
   items        Item[]
 
-  invoiceLines    InvoiceLine[]
-  quoteLines      QuoteLine[]
-  creditNoteLines CreditNoteLine[]
+  invoiceLines      InvoiceLine[]
+  quoteLines        QuoteLine[]
+  creditNoteLines   CreditNoteLine[]
+  vendorCreditLines VendorCreditLine[]
 
   billLines BillLine[]
 
@@ -661,6 +672,7 @@ model Contact {
 
   invoices          Invoice[]
   creditNotes       CreditNote[]
+  vendorCredits     VendorCredit[]
   recurringInvoices RecurringInvoice[]
   quotes            Quote[]
   recurringBills    RecurringBill[]
@@ -918,13 +930,15 @@ model Bill {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contact        Contact       @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
-  fiscalYear     FiscalYear?   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
-  payableAccount Account?      @relation("BillPayable", fields: [organizationId, payableAccountId], references: [organizationId, id], onDelete: NoAction)
-  journalEntry   JournalEntry? @relation("BillEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
-  voidEntry      JournalEntry? @relation("BillVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
-  lines          BillLine[]
+  organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact                  Contact                   @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  fiscalYear               FiscalYear?               @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  payableAccount           Account?                  @relation("BillPayable", fields: [organizationId, payableAccountId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry             JournalEntry?             @relation("BillEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry                JournalEntry?             @relation("BillVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+  lines                    BillLine[]
+  vendorCredits            VendorCredit[]
+  vendorCreditApplications VendorCreditApplication[]
 
   allocations PaymentAllocation[]
   recurring   RecurringBill?      @relation(fields: [organizationId, recurringBillId], references: [organizationId, id], onDelete: NoAction)
@@ -954,15 +968,118 @@ model BillLine {
   taxAmount      BigInt  @default(0) @map("tax_amount")
   costCentreId   String? @map("cost_centre_id") @db.Uuid
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  costCentre   CostCentre?  @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
-  bill         Bill         @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: Cascade)
-  item         Item?        @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
-  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
-  account      Account?     @relation("BillLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  costCentre   CostCentre?        @relation(fields: [organizationId, costCentreId], references: [organizationId, id], onDelete: NoAction)
+  bill         Bill               @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: Cascade)
+  item         Item?              @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup     TaxGroup?          @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account      Account?           @relation("BillLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+  /// What's been returned or credited of it on debit notes
+  credited     VendorCreditLine[]
 
+  @@unique([organizationId, id])
   @@unique([billId, lineNo])
   @@map("bill_lines")
+}
+
+/// A debit note to a vendor (a purchase return, or a credit the supplier gives): some of a bill's lines back, its input
+/// tax reversed. It comes off the bill; what's left is credit with the vendor, for their other bills or a refund.
+model VendorCredit {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  /// Gap-free per financial year
+  number           Int
+  fiscalYearId     String    @map("fiscal_year_id") @db.Uuid
+  contactId        String    @map("contact_id") @db.Uuid
+  billId           String    @map("bill_id") @db.Uuid
+  date             DateTime  @db.Date
+  status           String    @default("issued") /// issued | void
+  /// The supplier's own credit note number, when they issued one
+  vendorReference  String?   @map("vendor_reference")
+  reason           String?
+  payableAccountId String    @map("payable_account_id") @db.Uuid
+  subtotal         BigInt
+  taxTotal         BigInt    @map("tax_total")
+  total            BigInt
+  /// Applied to bills or refunded
+  applied          BigInt    @default(0)
+  journalEntryId   String    @map("journal_entry_id") @db.Uuid
+  voidEntryId      String?   @map("void_entry_id") @db.Uuid
+  createdById      String?   @map("created_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at")
+  voidedAt         DateTime? @map("voided_at")
+
+  organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fiscalYear     FiscalYear                @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  contact        Contact                   @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  bill           Bill                      @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: NoAction)
+  payableAccount Account                   @relation("VendorCreditPayable", fields: [organizationId, payableAccountId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry   JournalEntry              @relation("VendorCreditEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  voidEntry      JournalEntry?             @relation("VendorCreditVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
+  lines          VendorCreditLine[]
+  applications   VendorCreditApplication[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, journalEntryId])
+  @@unique([organizationId, voidEntryId])
+  @@index([organizationId, contactId])
+  @@index([organizationId, billId])
+  @@map("vendor_credits")
+}
+
+/// A line of a debit note: a quantity of one of the bill's lines, at its price, discount and tax.
+model VendorCreditLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  vendorCreditId String  @map("vendor_credit_id") @db.Uuid
+  lineNo         Int     @map("line_no")
+  billLineId     String  @map("bill_line_id") @db.Uuid
+  description    String
+  quantity       Decimal @db.Decimal(13, 4)
+  unitPrice      BigInt  @map("unit_price")
+  discountPpm    Int     @default(0) @map("discount_ppm")
+  taxGroupId     String? @map("tax_group_id") @db.Uuid
+  accountId      String  @map("account_id") @db.Uuid
+  amount         BigInt
+  taxAmount      BigInt  @default(0) @map("tax_amount")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendorCredit VendorCredit @relation(fields: [organizationId, vendorCreditId], references: [organizationId, id], onDelete: Cascade)
+  billLine     BillLine     @relation(fields: [organizationId, billLineId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup     TaxGroup?    @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account      Account      @relation("VendorCreditLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([vendorCreditId, lineNo])
+  @@index([organizationId, billLineId])
+  @@map("vendor_credit_lines")
+}
+
+/// Where a debit note's credit went: onto a bill of the vendor, or back from the vendor into a bank (a refund, with its entry).
+model VendorCreditApplication {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  vendorCreditId String   @map("vendor_credit_id") @db.Uuid
+  /// Exactly one of a bill or a refund entry
+  billId         String?  @map("bill_id") @db.Uuid
+  journalEntryId String?  @map("journal_entry_id") @db.Uuid
+  bankAccountId  String?  @map("bank_account_id") @db.Uuid
+  date           DateTime @db.Date
+  amount         BigInt
+  reference      String?
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vendorCredit VendorCredit  @relation(fields: [organizationId, vendorCreditId], references: [organizationId, id], onDelete: Cascade)
+  bill         Bill?         @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: NoAction)
+  journalEntry JournalEntry? @relation("VendorRefundEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
+  bankAccount  Account?      @relation("VendorRefundBank", fields: [organizationId, bankAccountId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, journalEntryId])
+  @@index([organizationId, vendorCreditId])
+  @@index([organizationId, billId])
+  @@map("vendor_credit_applications")
 }
 
 /// A correction to an issued invoice: some or all of its lines taken back, tax included. What it credits comes off

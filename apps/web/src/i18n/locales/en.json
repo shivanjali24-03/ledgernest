@@ -39,7 +39,8 @@
       "imports": "Import",
       "integrations": "Integrations",
       "quotes": "Quotes",
-      "recurringBills": "Recurring bills"
+      "recurringBills": "Recurring bills",
+      "debitNotes": "Debit notes"
     },
     "soon": "Soon"
   },
@@ -1589,7 +1590,9 @@
         "credit_note": "Credit note",
         "receipt": "Receipt",
         "bill": "Bill",
-        "payment": "Payment"
+        "payment": "Payment",
+        "debit_note": "Debit note",
+        "refund": "Refund"
       },
       "columns": {
         "date": "Date",
@@ -3830,5 +3833,66 @@
     "masters": "Download ledgers (XML)",
     "vouchers": "Download vouchers (XML)",
     "failed": "The Tally file couldn’t be made. Try again."
+  },
+  "debitNotes": {
+    "title": "Debit notes",
+    "description": "Goods sent back to vendors and credits they gave, against their bills, and where the credit went.",
+    "new": "Debit note",
+    "createTitle": "Debit note for {{number}}",
+    "createBody": "Choose how much of each line goes back. Its input GST comes back off too, and the credit comes off the bill first.",
+    "issue": "Raise debit note",
+    "issued": "Raised {{number}}",
+    "creditLine": "Quantity to send back for {{description}}",
+    "stockLine": "kept in stock: use a stock adjustment",
+    "reasonPlaceholder": "Damaged, wrong item, overcharged…",
+    "fields": {
+      "vendorReference": "Their credit note number",
+      "vendorReferenceHint": "If the supplier sent one; it shows in GSTR-2B.",
+      "bill": "Bill"
+    },
+    "offBill": "All of it comes off what the bill still has to be paid.",
+    "someLeftOver": "{{amount}} is more than the bill has left: it stays as credit with the vendor.",
+    "empty": "No debit notes yet",
+    "emptyBody": "Open a recorded bill and choose Debit note to send goods back or record a credit from the supplier.",
+    "against": "against",
+    "theirNumber": "their {{number}}",
+    "creditLeft": "{{amount}} credit left",
+    "onBill": "{{amount}} on",
+    "refundedTo": "{{amount}} refunded into {{bank}}",
+    "creditedBy": "Credited by",
+    "applyAction": "Apply to a bill",
+    "applyTitle": "Apply {{number}}",
+    "applyBody": "{{amount}} of credit left to put on another of the vendor’s bills.",
+    "apply": "Apply credit",
+    "applied": "{{number}} applied to {{bill}}",
+    "refundAction": "Vendor refunded it",
+    "refundTitle": "Refund of {{number}}",
+    "refundBody": "Record {{name}} paying the remaining credit back.",
+    "refund": "Record refund",
+    "refunded": "Refund of {{number}} recorded",
+    "void": "Void debit note",
+    "voidTitle": "Void {{number}}?",
+    "voidBody": "Its entry is reversed today and the bills it went onto are owed again.",
+    "voided": "{{number}} voided",
+    "statuses": {
+      "void": "void"
+    },
+    "problems": {
+      "amount": "Check the amount: no more than the credit left or the bill’s balance.",
+      "bank": "Choose the account the refund came into.",
+      "bill": "Choose a bill."
+    },
+    "errors": {
+      "over_credited": "That’s more than is left to send back on a line.",
+      "line_not_found": "A line isn’t on this bill.",
+      "before_bill": "A debit note can’t be dated before its bill.",
+      "vendor_credit_void": "This debit note is void.",
+      "over_applied": "That’s more credit than is left on this note.",
+      "has_refunds": "The vendor refunded some of this credit, so it can’t be voided.",
+      "before_vendor_credit": "A refund can’t be dated before its debit note.",
+      "stock_line": "Goods kept in stock go back with a stock adjustment instead.",
+      "bill_currency": "Debit notes are for bills in rupees for now.",
+      "bill_not_open": "Only recorded bills can be credited."
+    }
   }
 }

@@ -12,6 +12,7 @@ import {
   formatQuantity,
   invoiceAmounts,
   billNumber,
+  vendorCreditNumber,
   billState,
   parseQuantity,
   splitTax,
@@ -118,6 +119,31 @@ const select = {
   },
   voidEntry: {
     select: { id: true, number: true, fiscalYear: { select: { name: true } } },
+  },
+  // Debit notes raised against it, and credit from debit notes put onto it
+  vendorCredits: {
+    orderBy: { date: 'asc' as const },
+    select: {
+      id: true,
+      number: true,
+      status: true,
+      total: true,
+      fiscalYear: { select: { name: true } },
+    },
+  },
+  vendorCreditApplications: {
+    where: { vendorCredit: { status: 'issued' } },
+    select: {
+      amount: true,
+      date: true,
+      vendorCredit: {
+        select: {
+          id: true,
+          number: true,
+          fiscalYear: { select: { name: true } },
+        },
+      },
+    },
   },
   allocations: {
     where: { payment: { status: 'posted' } },
@@ -266,6 +292,23 @@ export class BillsService {
         ),
         date: iso(a.payment.date),
         amount: amount(a.amount),
+      })),
+      /** Debit notes raised against it */
+      debitNotes: i.vendorCredits.map((c) => ({
+        id: c.id,
+        number: vendorCreditNumber(c.fiscalYear.name, c.number),
+        status: c.status as 'issued' | 'void',
+        total: amount(c.total),
+      })),
+      /** Credit from debit notes that came off it */
+      credits: i.vendorCreditApplications.map((c) => ({
+        id: c.vendorCredit.id,
+        number: vendorCreditNumber(
+          c.vendorCredit.fiscalYear.name,
+          c.vendorCredit.number,
+        ),
+        date: iso(c.date),
+        amount: amount(c.amount),
       })),
       recordedAt: i.recordedAt,
       voidedAt: i.voidedAt,

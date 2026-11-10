@@ -12,7 +12,7 @@ export interface TallyLedger {
   gstin?: string | null;
 }
 
-export type TallyVoucherType = 'Sales' | 'Purchase' | 'Receipt' | 'Payment' | 'Contra' | 'Journal' | 'Credit Note';
+export type TallyVoucherType = 'Sales' | 'Purchase' | 'Receipt' | 'Payment' | 'Contra' | 'Journal' | 'Credit Note' | 'Debit Note';
 
 export interface TallyVoucher {
   type: TallyVoucherType;
@@ -59,13 +59,14 @@ export function tallyGroup(type: string, subtype: string, opts: { taxAccount?: b
  * The voucher type for an entry: Contra between banks, Receipt or Payment when money moves through a bank, otherwise
  * what the entry came from (an invoice is a sale, a bill a purchase), or a Journal.
  */
-export function tallyVoucherType(lines: { bank: boolean; debit: number; credit: number }[], source: 'invoice' | 'bill' | 'credit_note' | 'payment' | null): TallyVoucherType {
+export function tallyVoucherType(lines: { bank: boolean; debit: number; credit: number }[], source: 'invoice' | 'bill' | 'credit_note' | 'debit_note' | 'payment' | null): TallyVoucherType {
   const bank = lines.filter((l) => l.bank);
   if (bank.length && bank.length === lines.length) return 'Contra';
   if (bank.length) return bank.reduce((s, l) => s + l.debit - l.credit, 0) >= 0 ? 'Receipt' : 'Payment';
   if (source === 'invoice') return 'Sales';
   if (source === 'bill') return 'Purchase';
   if (source === 'credit_note') return 'Credit Note';
+  if (source === 'debit_note') return 'Debit Note';
   return 'Journal';
 }
 

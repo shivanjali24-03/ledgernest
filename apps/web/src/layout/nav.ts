@@ -84,6 +84,7 @@ export const NAV: NavGroup[] = [
       { to: '/credit-notes', labelKey: 'nav.items.creditNotes', icon: FileMinus, permission: 'invoices.view', ready: true, keywords: 'credit note refund return correction cn' },
       { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', ready: true, keywords: 'vendors suppliers payables purchases expenses input gst' },
       { to: '/recurring-bills', labelKey: 'nav.items.recurringBills', icon: Repeat, permission: 'bills.view', ready: true, keywords: 'recurring bills rent subscription standing repeat monthly' },
+      { to: '/debit-notes', labelKey: 'nav.items.debitNotes', icon: FileMinus, permission: 'bills.view', ready: true, keywords: 'debit note purchase return vendor credit supplier credit note dn' },
       { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', ready: true, keywords: 'bank cash reconcile statement transfer spend receive money' },
       { to: '/payments', labelKey: 'nav.items.payments', icon: ArrowLeftRight, permission: 'invoices.view', ready: true, keywords: 'receipts payments money received collections bank' },
     ],

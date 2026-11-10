@@ -22,6 +22,7 @@ import { InvoicesModule } from './invoices/invoices.module.js';
 import { QuotesModule } from './quotes/quotes.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { BillsModule } from './bills/bills.module.js';
+import { VendorCreditsModule } from './vendor-credits/vendor-credits.module.js';
 import { CreditNotesModule } from './credit-notes/credit-notes.module.js';
 import { RecurringModule } from './recurring/recurring.module.js';
 import { BankingModule } from './banking/banking.module.js';
@@ -67,6 +68,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PaymentsModule,
     BillsModule,
     CreditNotesModule,
+    VendorCreditsModule,
     RecurringModule,
     BankingModule,
     AssetsModule,
