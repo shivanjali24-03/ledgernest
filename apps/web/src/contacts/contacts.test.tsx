@@ -155,4 +155,15 @@ describe('customers and vendors', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send reminders' }));
     expect(await screen.findByText(/^In the demo nothing is really sent; \d+ reminders would go to accounts@kumarlogistics.in$/, {}, { timeout: 4000 })).toBeInTheDocument();
   });
+
+  it('finds a contact and their invoice from the command palette', { timeout: 20_000 }, async () => {
+    const router = renderApp('/');
+    await screen.findByRole('navigation', { name: 'Main' }, { timeout: 5000 });
+    await userEvent.keyboard('{Control>}k{/Control}');
+    const dialog = await screen.findByRole('dialog', { name: 'Command palette' });
+    await userEvent.type(within(dialog).getByRole('textbox'), 'Kumar');
+    await waitFor(() => expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(expect.arrayContaining([expect.stringMatching(/^Kumar Logistics.*Contact$/), expect.stringMatching(/^INV\/.*Kumar Logistics.*Invoice$/)])), { timeout: 5000 });
+    fireEvent.click(within(dialog).getAllByRole('option').find((o) => /Contact$/.test(o.textContent ?? ''))!.querySelector('button')!);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/contacts/c0000000-0000-4000-8000-000000000001'));
+  });
 });

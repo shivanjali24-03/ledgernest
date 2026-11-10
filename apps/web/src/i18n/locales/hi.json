@@ -59,7 +59,13 @@
     "title": "कमांड पैलेट",
     "placeholder": "पेज, रिपोर्ट, सेटिंग्स खोजें…",
     "noMatches": "“{{query}}” के लिए कोई परिणाम नहीं",
-    "results": "परिणाम"
+    "results": "परिणाम",
+    "kinds": {
+      "contact": "संपर्क",
+      "invoice": "इनवॉइस",
+      "quote": "कोटेशन",
+      "bill": "बिल"
+    }
   },
   "roles": {
     "super_admin": "सुपर एडमिन",

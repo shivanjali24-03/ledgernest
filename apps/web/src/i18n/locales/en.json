@@ -59,7 +59,13 @@
     "title": "Command palette",
     "placeholder": "Search pages, reports, settings…",
     "noMatches": "No matches for “{{query}}”",
-    "results": "Results"
+    "results": "Results",
+    "kinds": {
+      "contact": "Contact",
+      "invoice": "Invoice",
+      "quote": "Quote",
+      "bill": "Bill"
+    }
   },
   "roles": {
     "super_admin": "Super Admin",

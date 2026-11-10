@@ -59,7 +59,13 @@
     "title": "Palette de commandes",
     "placeholder": "Rechercher des pages, rapports, paramètres…",
     "noMatches": "Aucun résultat pour « {{query}} »",
-    "results": "Résultats"
+    "results": "Résultats",
+    "kinds": {
+      "contact": "Contact",
+      "invoice": "Facture",
+      "quote": "Devis",
+      "bill": "Facture fournisseur"
+    }
   },
   "roles": {
     "super_admin": "Super administrateur",

@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '../lib/queryClient';
 import AppShell from './AppShell';
 import SessionProvider from './SessionProvider';
 import type { BuiltInRoleId } from '@ledgernest/shared';
@@ -8,10 +10,13 @@ import i18n from '../i18n';
 
 function renderShell(role: BuiltInRoleId = 'super_admin') {
   const router = createMemoryRouter([{ path: '/', element: <AppShell />, children: [{ index: true, element: <p>Home page</p> }] }]);
+  // The palette finds documents with queries, as in the app
   return render(
-    <SessionProvider initialRole={role}>
-      <RouterProvider router={router} />
-    </SessionProvider>,
+    <QueryClientProvider client={createQueryClient()}>
+      <SessionProvider initialRole={role}>
+        <RouterProvider router={router} />
+      </SessionProvider>
+    </QueryClientProvider>,
   );
 }
 

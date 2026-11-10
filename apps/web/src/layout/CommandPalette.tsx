@@ -1,13 +1,22 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router';
-import { CornerDownLeft, Search } from 'lucide-react';
+import { Contact as ContactIcon, CornerDownLeft, FileSignature, FileText, Receipt, Search, type LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { scaleIn, fadeIn } from '../motion/tokens';
+import { useBillsApi } from '../bills/useBillsApi';
+import { useContactsApi } from '../contacts/useContactsApi';
+import { useInvoicesApi } from '../invoices/useInvoicesApi';
+import { useQuotesApi } from '../quotes/useQuotesApi';
 import type { NavGroup } from './nav';
+import { useSession } from './session';
 
-/** ⌘/Ctrl+K palette: jump to any page you can access, by name or keyword. */
+type Result = { to: string; label: string; group: string; icon: LucideIcon; sub?: string };
+const PER_KIND = 4;
+
+/** ⌘/Ctrl+K palette: jump to any page you can access, by name or keyword, or find a contact, invoice, quote or bill. */
 export default function CommandPalette({ open, onClose, groups }: { open: boolean; onClose: () => void; groups: NavGroup[] }) {
   return <AnimatePresence>{open && <PaletteBody key="palette" onClose={onClose} groups={groups} />}</AnimatePresence>;
 }
@@ -19,12 +28,37 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const results = useMemo(() => {
+  const pages = useMemo<Result[]>(() => {
     const q = query.trim().toLowerCase();
-    const all = groups.flatMap((g) => g.items.map((i) => ({ ...i, label: t(i.labelKey), group: t(g.labelKey) })));
+    const all = groups.flatMap((g) => g.items.map((i) => ({ to: i.to, icon: i.icon, keywords: i.keywords, label: t(i.labelKey), group: t(g.labelKey) })));
     // Search the translated name, plus English keywords so shortcuts work in any language
     return q ? all.filter((i) => `${i.label} ${i.group} ${i.keywords ?? ''}`.toLowerCase().includes(q)) : all;
   }, [groups, query, t]);
+
+  // Documents too, from two characters on, each kind only for people who can see it
+  const session = useSession();
+  const can = (p: Parameters<typeof session.permissions.has>[0]) => session.permissions.has(p);
+  const deferred = useDeferredValue(query.trim());
+  const searching = deferred.length >= 2 && !!session.organizationId;
+  const contactsApi = useContactsApi();
+  const invoicesApi = useInvoicesApi();
+  const quotesApi = useQuotesApi();
+  const billsApi = useBillsApi();
+  const key = (kind: string) => ['palette', session.organizationId, session.role ?? session.customRoleName, kind, deferred];
+  const contacts = useQuery({ queryKey: key('contacts'), queryFn: () => contactsApi!.list({ search: deferred, page: 1, pageSize: PER_KIND }), enabled: searching && !!contactsApi && can('contacts.view') });
+  const invoices = useQuery({ queryKey: key('invoices'), queryFn: () => invoicesApi!.list({ search: deferred, page: 1, pageSize: PER_KIND }), enabled: searching && !!invoicesApi && can('invoices.view') });
+  const quotes = useQuery({ queryKey: key('quotes'), queryFn: () => quotesApi!.list({ search: deferred, page: 1, pageSize: PER_KIND }), enabled: searching && !!quotesApi && can('invoices.view') });
+  const bills = useQuery({ queryKey: key('bills'), queryFn: () => billsApi!.list({ search: deferred, page: 1, pageSize: PER_KIND }), enabled: searching && !!billsApi && can('bills.view') });
+  const results = useMemo<Result[]>(() => {
+    if (!searching) return pages;
+    const docs: Result[] = [
+      ...(contacts.data?.items ?? []).map((c) => ({ to: `/contacts/${c.id}`, label: c.name, group: t('palette.kinds.contact'), icon: ContactIcon, sub: c.legalName ?? undefined })),
+      ...(invoices.data?.items ?? []).map((i) => ({ to: `/invoices/${i.id}`, label: i.number ?? t('invoices.draft'), group: t('palette.kinds.invoice'), icon: FileText, sub: i.contact.name })),
+      ...(quotes.data?.items ?? []).map((q) => ({ to: `/quotes/${q.id}`, label: q.number, group: t('palette.kinds.quote'), icon: FileSignature, sub: q.contact.name })),
+      ...(bills.data?.items ?? []).map((b) => ({ to: `/bills/${b.id}`, label: b.number ?? t('invoices.draft'), group: t('palette.kinds.bill'), icon: Receipt, sub: b.contact.name })),
+    ];
+    return [...pages, ...docs];
+  }, [searching, pages, contacts.data, invoices.data, quotes.data, bills.data, t]);
 
   const go = (to: string) => {
     onClose();
@@ -81,7 +115,7 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
             <ul className="max-h-80 overflow-y-auto p-2" role="listbox" aria-label={t('palette.results')}>
               {results.length === 0 && <li className="px-3 py-6 text-center text-sm text-ink-500">{t('palette.noMatches', { query })}</li>}
               {results.map((r, i) => (
-                <li key={r.to} role="option" aria-selected={i === active}>
+                <li key={`${r.group}-${r.to}`} role="option" aria-selected={i === active}>
                   <button
                     onMouseEnter={() => setActive(i)}
                     onClick={() => go(r.to)}
@@ -91,7 +125,16 @@ function PaletteBody({ onClose, groups }: { onClose: () => void; groups: NavGrou
                     )}
                   >
                     <r.icon className="size-4 shrink-0 opacity-70" aria-hidden />
-                    <span className="flex-1 font-medium">{r.label}</span>
+                    <span className="flex-1 truncate">
+                      <span className="font-medium" dir="auto">
+                        {r.label}
+                      </span>
+                      {r.sub && (
+                        <span className="ms-2 text-xs text-ink-400" dir="auto">
+                          {r.sub}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-xs text-ink-400">{r.group}</span>
                     {i === active && <CornerDownLeft className="size-3.5 text-ink-400" aria-hidden />}
                   </button>

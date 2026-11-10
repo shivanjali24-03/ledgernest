@@ -59,7 +59,13 @@
     "title": "Paleta de comandos",
     "placeholder": "Buscar páginas, informes, configuración…",
     "noMatches": "No hay resultados para “{{query}}”",
-    "results": "Resultados"
+    "results": "Resultados",
+    "kinds": {
+      "contact": "Contacto",
+      "invoice": "Factura",
+      "quote": "Presupuesto",
+      "bill": "Factura de proveedor"
+    }
   },
   "roles": {
     "super_admin": "Superadministrador",
