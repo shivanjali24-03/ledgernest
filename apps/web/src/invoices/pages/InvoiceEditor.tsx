@@ -49,6 +49,7 @@ function DraftForm({ invoice, template, api }: { invoice: Invoice | null; templa
         path: (id) => `/invoices/${id}`,
         listPath: '/invoices',
         invalidate: ['invoices', 'journals', 'journal', 'reports'],
+        creditCheck: true,
         autoUntil: (date, customer) => (customer ? dueDateFor(date, customer.paymentTermsDays) : ''),
         untilHint: (customer) => (customer ? t('invoices.dueHint', { days: customer.paymentTermsDays }) : undefined),
         labels: { date: t('invoices.fields.issueDate'), until: t('invoices.fields.dueDate'), save: t('invoices.saveDraft'), extra: t('invoices.issue'), delete: t('invoices.deleteDraft'), deleteTitle: t('invoices.deleteTitle'), deleteBody: t('invoices.deleteBody'), deleted: t('invoices.deleted') },

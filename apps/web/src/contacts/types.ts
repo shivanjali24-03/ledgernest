@@ -17,6 +17,8 @@ export interface Contact {
   /** null = the base currency */
   currency: string | null;
   paymentTermsDays: number;
+  /** The most a customer may owe, in their currency's smallest unit; null = no limit */
+  creditLimit?: number | null;
   notes: string | null;
   archived: boolean;
   createdAt: string;

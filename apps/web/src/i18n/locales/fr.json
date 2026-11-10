@@ -1864,11 +1864,14 @@
       "paymentTerms": "Délai de paiement (jours)",
       "notes": "Notes",
       "billingAddress": "Adresse de facturation",
-      "shippingAddress": "Adresse de livraison"
+      "shippingAddress": "Adresse de livraison",
+      "creditLimit": "Plafond de crédit"
     },
     "hints": {
       "gstin": "15 caractères ; l’État est déduit automatiquement.",
-      "paymentTerms": "0 = à réception"
+      "paymentTerms": "0 = à réception",
+      "creditLimit": "Le maximum qu’il peut devoir, en {{currency}}. Laissez vide pour aucun plafond. Les factures au-delà affichent un avertissement.",
+      "badLimit": "Saisissez un montant, comme 50000."
     },
     "address": {
       "line1": "Adresse",
@@ -1901,7 +1904,8 @@
       "noInvoices": "Pas encore de facture pour ce client",
       "noQuotes": "Pas encore de devis pour ce client",
       "noBills": "Pas encore de facture de ce fournisseur",
-      "more": "et {{count}} de plus dans Factures"
+      "more": "et {{count}} de plus dans Factures",
+      "limit": "Plafond {{limit}} · {{used}} % utilisé"
     }
   },
   "items": {
@@ -2143,7 +2147,8 @@
       "send": "Envoyer",
       "sent": "Facture envoyée à {{email}}",
       "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; elle partirait à {{email}}"
-    }
+    },
+    "overLimit": "Avec cette facture, {{name}} devrait {{amount}}, au-delà de son plafond de {{limit}}. Vous pouvez quand même l’enregistrer ou l’émettre."
   },
   "payments": {
     "title": "Paiements",

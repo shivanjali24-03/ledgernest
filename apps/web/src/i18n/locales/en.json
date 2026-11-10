@@ -1864,11 +1864,14 @@
       "paymentTerms": "Payment terms (days)",
       "notes": "Notes",
       "billingAddress": "Billing address",
-      "shippingAddress": "Shipping address"
+      "shippingAddress": "Shipping address",
+      "creditLimit": "Credit limit"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
-      "paymentTerms": "0 = due on receipt"
+      "paymentTerms": "0 = due on receipt",
+      "creditLimit": "The most they may owe, in {{currency}}. Leave blank for no limit. Invoices over it show a warning.",
+      "badLimit": "Enter an amount, like 50000."
     },
     "address": {
       "line1": "Address",
@@ -1901,7 +1904,8 @@
       "noInvoices": "No invoices for this customer yet",
       "noQuotes": "No quotes for this customer yet",
       "noBills": "No bills from this vendor yet",
-      "more": "and {{count}} more under Invoices"
+      "more": "and {{count}} more under Invoices",
+      "limit": "Credit limit {{limit}} · {{used}}% used"
     }
   },
   "items": {
@@ -2143,7 +2147,8 @@
       "send": "Send",
       "sent": "Invoice sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
-    }
+    },
+    "overLimit": "This takes {{name}} to {{amount}}, over their credit limit of {{limit}}. You can still save or issue it."
   },
   "payments": {
     "title": "Payments",

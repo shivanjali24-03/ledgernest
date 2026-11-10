@@ -88,6 +88,18 @@ describe('Customers and vendors (e2e)', () => {
     expect(audit?.before).toMatchObject({ paymentTermsDays: 15 });
   });
 
+  it('keeps a credit limit for a customer, in their currency, or none', async () => {
+    const c = (await as('bookkeeper').post('/contacts', { name: `Limit Co ${run}`, isCustomer: true, isVendor: false, creditLimit: 50_000_000 }).expect(201)).body;
+    expect(c.creditLimit).toBe(50_000_000);
+    expect((await as('bookkeeper').get(`/contacts/${c.id}`).expect(200)).body.creditLimit).toBe(50_000_000);
+    expect((await as('bookkeeper').patch(`/contacts/${c.id}`, { creditLimit: null }).expect(200)).body.creditLimit).toBeNull();
+    await as('bookkeeper').patch(`/contacts/${c.id}`, { creditLimit: -1 }).expect(400);
+    // Large limits survive the trip (₹50 crore in paise is beyond 32 bits)
+    expect((await as('bookkeeper').patch(`/contacts/${c.id}`, { creditLimit: 50_000_000_000 }).expect(200)).body.creditLimit).toBe(50_000_000_000);
+    // Out of the way of the counts below
+    await as('bookkeeper').delete(`/contacts/${c.id}`).expect(204);
+  });
+
   it('lists, searches and filters customers and vendors', async () => {
     // Viewers see the accounts but not who the business trades with
     await as('viewer').get('/contacts').expect(403);

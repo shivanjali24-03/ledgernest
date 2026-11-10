@@ -110,12 +110,29 @@ describe('customers and vendors', () => {
     const router = renderApp();
     await userEvent.click(await screen.findByRole('link', { name: 'Kumar Logistics' }, { timeout: 5000 }));
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/contacts\/[0-9a-f-]{36}$/));
-    expect(await screen.findByRole('heading', { name: 'Kumar Logistics' }, { timeout: 5000 })).toBeInTheDocument();
-    expect(screen.getByText(/^27AAKCK4821R1Z/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Kumar Logistics' })).toBeInTheDocument(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByText(/^27AAKCK4821R1Z/)).toBeInTheDocument());
     expect(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 5000 })).toBeInTheDocument();
-    expect(screen.getByText('No quotes for this customer yet')).toBeInTheDocument();
+    expect(await screen.findByText('No quotes for this customer yet', {}, { timeout: 5000 })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'New invoice' }));
     await waitFor(() => expect(router.state.location.search).toMatch(/^\?contact=/));
     await waitFor(() => expect((screen.getByLabelText('Customer') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe('Kumar Logistics'), { timeout: 5000 });
+  });
+
+  it('warns on an invoice that takes a customer over their credit limit', { timeout: 20_000 }, async () => {
+    const router = renderApp();
+    await userEvent.click(within(await row('Kumar Logistics')).getByRole('button', { name: 'Actions for Kumar Logistics' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
+    const limit = await screen.findByLabelText('Credit limit', {}, { timeout: 4000 });
+    fireEvent.change(limit, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Kumar Logistics saved', {}, { timeout: 4000 })).toBeInTheDocument();
+    // An hour of development with GST is ₹2,950: over a ₹1,000 limit whatever Kumar already owes
+    await router.navigate('/invoices/new?contact=c0000000-0000-4000-8000-000000000001');
+    await waitFor(() => expect((screen.getByLabelText('Customer') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe('Kumar Logistics'), { timeout: 5000 });
+    const item = () => screen.getByLabelText('Item on line 1') as HTMLSelectElement;
+    await waitFor(() => expect(item().options.length).toBeGreaterThan(2));
+    await userEvent.selectOptions(item(), [...item().options].find((o) => o.textContent === 'Software development')!.value);
+    await waitFor(() => expect(screen.getByTestId('credit-limit-warning')).toHaveTextContent(/over their credit limit of INR 1,000\.00/), { timeout: 4000 });
   });
 });
