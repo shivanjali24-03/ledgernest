@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
 import { AlertCircle, ArrowRight, CheckCircle2, Eye, EyeOff, Info, Languages, Loader2, ShieldCheck, Users } from 'lucide-react';
 import clsx from 'clsx';
@@ -211,6 +211,9 @@ export default function SignIn() {
                     {t('auth.capsLock')}
                   </p>
                 )}
+                <Link to="/forgot-password" className="mt-2 inline-block text-xs font-medium text-brand-700 hover:underline dark:text-brand-300">
+                  {t('password.forgot.link')}
+                </Link>
               </div>
 
               <motion.button

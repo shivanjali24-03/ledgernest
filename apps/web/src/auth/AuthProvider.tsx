@@ -133,7 +133,25 @@ export default function AuthProvider({
     if (client) setState({ status: 'signedIn', me: await client.me() });
   }, [client]);
 
-  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload }), [mode, state, signIn, acceptInvitation, signOut, reload]);
+  // In the demo there are no real passwords: these succeed without doing anything
+  const forgotPassword = useCallback(async (email: string) => {
+    if (client) await client.forgotPassword(email);
+  }, [client]);
+  const resetPassword = useCallback(async (token: string, password: string) => {
+    if (client) await client.resetPassword(token, password);
+  }, [client]);
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    if (client) await client.changePassword(currentPassword, newPassword);
+  }, [client]);
+  const signOutEverywhere = useCallback(async () => {
+    if (client) await client.logoutAll().catch(() => {});
+    writeDemo(null);
+    broadcast('signed-out');
+    queryClient.clear();
+    setState({ status: 'signedOut', reason: 'signedOut' });
+  }, [client, queryClient]);
+
+  const auth = useMemo<Auth>(() => ({ mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere }), [mode, state, signIn, acceptInvitation, signOut, reload, forgotPassword, resetPassword, changePassword, signOutEverywhere]);
   const platformApi = useMemo(() => platformApiOverride ?? (client ? createLivePlatformApi(client) : createDemoPlatformApi()), [client, platformApiOverride]);
   const session = useMemo(() => (state.status === 'signedIn' && state.me ? liveSession(state.me, signOut) : null), [state, signOut]);
 

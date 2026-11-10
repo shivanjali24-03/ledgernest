@@ -1,6 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { LogOut } from 'lucide-react';
+import { KeyRound, LogOut, MonitorX } from 'lucide-react';
+import { AuthContext } from '../auth/context';
+import ChangePasswordDialog from '../auth/ChangePasswordDialog';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import { useTranslation } from 'react-i18next';
 import { scaleIn } from '../motion/tokens';
 import { initials, roleLabel, useSession } from './session';
@@ -11,6 +14,9 @@ export default function UserMenu() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const auth = useContext(AuthContext);
+  const [changing, setChanging] = useState(false);
+  const [everywhere, setEverywhere] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
@@ -66,6 +72,28 @@ export default function UserMenu() {
               </p>
             </div>
             <div className="my-1 h-px bg-ink-100 dark:bg-ink-800" />
+            {auth && (
+              <>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    setChanging(true);
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+                >
+                  <KeyRound className="size-4" aria-hidden /> {t('password.change.action')}
+                </button>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    setEverywhere(true);
+                  }}
+                  className="flex h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-200 dark:hover:bg-ink-800"
+                >
+                  <MonitorX className="size-4" aria-hidden /> {t('password.everywhere.action')}
+                </button>
+              </>
+            )}
             <button
               onClick={() => void signOut()}
               disabled={busy}
@@ -76,6 +104,22 @@ export default function UserMenu() {
           </motion.div>
         )}
       </AnimatePresence>
+      {changing && auth && <ChangePasswordDialog auth={auth} onClose={() => setChanging(false)} />}
+      {auth && (
+        <ConfirmDialog
+          open={everywhere}
+          title={t('password.everywhere.title')}
+          body={t('password.everywhere.body')}
+          confirmLabel={t('password.everywhere.confirm')}
+          tone="danger"
+          busy={busy}
+          onConfirm={() => {
+            setBusy(true);
+            void auth.signOutEverywhere();
+          }}
+          onClose={() => setEverywhere(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import i18n from '../i18n';
@@ -145,5 +145,80 @@ describe('sign-in page languages', () => {
     // Email and password stay left-to-right, so they read correctly whatever the page direction
     expect(screen.getByLabelText('ईमेल')).toHaveAttribute('dir', 'ltr');
     expect(screen.getByRole('button', { name: 'पासवर्ड दाखवा' }).parentElement).toHaveAttribute('dir', 'ltr');
+  });
+});
+
+describe('passwords', () => {
+  it('asks for a reset link from sign in, saying the same whatever the address', async () => {
+    const { api, client } = live();
+    renderApp('/sign-in', client);
+    await userEvent.click(await screen.findByRole('link', { name: 'Forgot your password?' }));
+    await screen.findByRole('heading', { name: 'Reset your password' });
+    const email = screen.getByLabelText('Email');
+    await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(await screen.findByText('Enter a valid email address.')).toBeInTheDocument();
+    await userEvent.type(email, 'Asha@Acme.in');
+    await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
+    expect(api.state.resetRequests).toEqual(['asha@acme.in']);
+  });
+
+  it('sets a new password from the link, checking the rules, then signs in with it', async () => {
+    const { api, client } = live();
+    const router = renderApp(`/reset-password?token=${api.RESET_TOKEN}`, client);
+    const next = await screen.findByLabelText('New password');
+    await userEvent.type(next, 'weak');
+    await userEvent.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect(await screen.findByText('Meet every rule below.')).toBeInTheDocument();
+    await userEvent.clear(next);
+    await userEvent.type(next, 'Brand-New-Pass-9');
+    await userEvent.type(screen.getByLabelText('Type it again'), 'Brand-New-Pass-8');
+    await userEvent.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect(await screen.findByText('The two passwords don’t match.')).toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText('Type it again'));
+    await userEvent.type(screen.getByLabelText('Type it again'), 'Brand-New-Pass-9');
+    await userEvent.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect(await screen.findByRole('heading', { name: 'Password changed' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('link', { name: 'Sign in' }));
+    await signIn(ME.user.email, 'Brand-New-Pass-9');
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+  });
+
+  it('says when a reset link has expired or was used', async () => {
+    const { client } = live();
+    renderApp('/reset-password?token=used-token-0123456789abcdefghijklmn', client);
+    await userEvent.type(await screen.findByLabelText('New password'), 'Brand-New-Pass-9');
+    await userEvent.type(screen.getByLabelText('Type it again'), 'Brand-New-Pass-9');
+    await userEvent.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect(await screen.findByRole('heading', { name: 'This link doesn’t work' })).toBeInTheDocument();
+    renderApp('/reset-password', client);
+    expect(await screen.findAllByRole('heading', { name: 'This link doesn’t work' })).toHaveLength(2);
+  });
+
+  it('changes the password from the account menu without signing out, and signs out everywhere', async () => {
+    const { api, client } = live({ signedIn: true });
+    const router = renderApp('/', client);
+    await userEvent.click(await screen.findByRole('button', { name: 'Account' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Change your password' });
+    await userEvent.type(screen.getByLabelText('Current password'), 'Wrong-Password-1');
+    await userEvent.type(screen.getByLabelText('New password'), 'Brand-New-Pass-9');
+    await userEvent.type(screen.getByLabelText('Type it again'), 'Brand-New-Pass-9');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Change password' }));
+    expect(await screen.findByText('Your current password isn’t right.')).toBeInTheDocument();
+    // Still signed in after the wrong password
+    expect(router.state.location.pathname).toBe('/');
+    await userEvent.clear(screen.getByLabelText('Current password'));
+    await userEvent.type(screen.getByLabelText('Current password'), 'Right-Password-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Change password' }));
+    expect(await screen.findByText('Password changed. Other devices have been signed out.')).toBeInTheDocument();
+    expect(api.state.password).toBe('Brand-New-Pass-9');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Account' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+    const confirm = await screen.findByRole('dialog', { name: 'Sign out of every device?' });
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Sign out everywhere' }));
+    expect(await screen.findByRole('heading', { name: 'Sign in to LedgerNest' })).toBeInTheDocument();
+    expect(api.state.cookie).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import RequireAuth, { Splash } from './auth/RequireAuth';
 import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
-import { AcceptInvite, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -61,6 +61,23 @@ export const routes: RouteObject[] = [
     element: (
       <Suspense fallback={<Splash />}>
         <SignIn />
+      </Suspense>
+    ),
+  },
+  {
+    // Public: forgotten passwords
+    path: '/forgot-password',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <ForgotPassword />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <ResetPassword />
       </Suspense>
     ),
   },

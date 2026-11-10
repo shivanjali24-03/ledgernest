@@ -40,6 +40,7 @@ model User {
   invitesSent        Invitation[]      @relation("InvitedBy")
   auditEntries       AuditLog[]
   refreshTokens      RefreshToken[]
+  passwordResets     PasswordReset[]
   periodsClosed      Period[]          @relation("PeriodClosedBy")
   journalsCreated    JournalEntry[]    @relation("JournalCreatedBy")
   journalsPosted     JournalEntry[]    @relation("JournalPostedBy")
@@ -475,6 +476,22 @@ model AuditLog {
 
 /// One refresh token in a rotation chain. Only the SHA-256 hash is stored.
 /// All tokens from one sign-in share a familyId; reusing an old token revokes the whole family.
+/// A password reset link: only the token's hash is kept; it works once, for a short time
+model PasswordReset {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  ip        String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
 model RefreshToken {
   id           String    @id @default(uuid()) @db.Uuid
   userId       String    @map("user_id") @db.Uuid

@@ -3596,5 +3596,50 @@
     "dated": "Dated {{date}}",
     "placeOfSupply": "Place of supply: {{state}}",
     "reference": "Reference: {{reference}}"
+  },
+  "password": {
+    "forgot": {
+      "link": "Forgot your password?",
+      "title": "Reset your password",
+      "body": "Enter the email you sign in with. We’ll send a link to choose a new password.",
+      "send": "Send reset link",
+      "sentTitle": "Check your email",
+      "sentBody": "If {{email}} has a LedgerNest account, a reset link is on its way. It works for {{minutes}} minutes."
+    },
+    "reset": {
+      "title": "Choose a new password",
+      "body": "After this, every device signed in to your account is signed out.",
+      "save": "Set new password",
+      "doneTitle": "Password changed",
+      "doneBody": "Sign in with your new password. Other devices have been signed out.",
+      "badLinkTitle": "This link doesn’t work",
+      "badLinkBody": "Reset links work once, for a short time. Ask for a new one.",
+      "askAgain": "Send a new link"
+    },
+    "change": {
+      "action": "Change password",
+      "title": "Change your password",
+      "description": "Other devices signed in to your account will be signed out; this one stays signed in.",
+      "save": "Change password",
+      "done": "Password changed. Other devices have been signed out."
+    },
+    "everywhere": {
+      "action": "Sign out everywhere",
+      "title": "Sign out of every device?",
+      "body": "Every browser and phone signed in to your account, this one too, will need to sign in again. Use it if you think someone else has your password.",
+      "confirm": "Sign out everywhere"
+    },
+    "newPassword": "New password",
+    "confirm": "Type it again",
+    "current": "Current password",
+    "errors": {
+      "weak": "Meet every rule below.",
+      "mismatch": "The two passwords don’t match.",
+      "current": "Enter your current password.",
+      "same": "Choose a password different from the current one.",
+      "wrongCurrent": "Your current password isn’t right."
+    },
+    "backToSignIn": "Back to sign in",
+    "demo": "In the demo there are no real passwords, so nothing changed and no email was sent."
   }
 }

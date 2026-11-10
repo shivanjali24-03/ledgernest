@@ -31,6 +31,8 @@ export const envSchema = z.object({
   TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
   /** Sign-in attempts allowed per IP per minute */
   LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
+  /** Reset-link requests per minute from one address */
+  PASSWORD_RESET_RATE_LIMIT: z.coerce.number().int().min(1).default(5),
   /** Where the web app lives; used to build links in invitations */
   WEB_APP_URL: z
     .url()

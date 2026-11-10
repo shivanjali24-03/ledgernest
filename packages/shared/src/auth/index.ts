@@ -34,6 +34,29 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/** Asking for a password reset link: only the email (the answer is the same whether it exists or not) */
+export const forgotPasswordSchema = z.object({ email: emailSchema });
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Setting a new password from a reset link */
+export const resetPasswordSchema = z.object({
+  token: z.string().regex(/^[A-Za-z0-9_-]{32,128}$/, 'This reset link isn’t valid.'),
+  password: passwordSchema,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+/** Changing your own password while signed in */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password.').max(128),
+    newPassword: passwordSchema,
+  })
+  .refine((v) => v.currentPassword !== v.newPassword, { message: 'same_password', path: ['newPassword'] });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/** How long a reset link works */
+export const PASSWORD_RESET_MINUTES = 30;
+
 /** Lockout policy shared so the UI can explain it. */
 export const LOCKOUT = { maxFailedAttempts: 5, minutes: 15 } as const;
 

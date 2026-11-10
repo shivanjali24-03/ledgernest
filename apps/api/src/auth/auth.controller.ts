@@ -3,24 +3,27 @@ import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { loginSchema, type LoginInput } from '@ledgernest/shared';
+import { changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, type ChangePasswordInput, type ForgotPasswordInput, type LoginInput, type ResetPasswordInput } from '@ledgernest/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { Env } from '../config/env.js';
 import { AuthService, type IssuedTokens, type RequestContext } from './auth.service.js';
 import { CurrentActor, Public } from '../access/decorators.js';
 import type { Actor } from '../access/types.js';
 import { clearRefreshCookie, setRefreshCookie } from './session-cookie.js';
-import { REFRESH_COOKIE } from './tokens.js';
+import { PasswordService } from './password.service.js';
+import { hashToken, REFRESH_COOKIE } from './tokens.js';
 
 // Read on each request, not at import time: .env is loaded after this file is imported.
 // The value itself is validated at startup in config/env.ts.
 const loginLimit = () => Number(process.env.LOGIN_RATE_LIMIT ?? 10);
+const resetLimit = () => Number(process.env.PASSWORD_RESET_RATE_LIMIT ?? 5);
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
+    private readonly passwords: PasswordService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -60,6 +63,45 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.auth.logout(cookieOf(req), ctxOf(req));
     this.clearRefreshCookie(res);
+  }
+
+  @Post('forgot-password')
+  @Public()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60_000, limit: resetLimit } })
+  @ApiOkResponse({ description: 'A reset link goes to the address if it has an account; the answer is the same either way' })
+  async forgotPassword(@Body(new ZodValidationPipe(forgotPasswordSchema)) body: ForgotPasswordInput, @Req() req: Request) {
+    await this.passwords.forgot(body.email, ctxOf(req));
+  }
+
+  @Post('reset-password')
+  @Public()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'New password set from a reset link; every device is signed out' })
+  async resetPassword(@Body(new ZodValidationPipe(resetPasswordSchema)) body: ResetPasswordInput, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    await this.passwords.reset(body.token, body.password, ctxOf(req));
+    this.clearRefreshCookie(res);
+  }
+
+  @Post('change-password')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'Password changed; other devices are signed out' })
+  async changePassword(@Body(new ZodValidationPipe(changePasswordSchema)) body: ChangePasswordInput, @CurrentActor() actor: Actor, @Req() req: Request) {
+    const raw = cookieOf(req);
+    await this.passwords.change(actor.userId, body.currentPassword, body.newPassword, { ...ctxOf(req), refreshTokenHash: raw ? hashToken(raw) : undefined });
+  }
+
+  @Post('logout-all')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Every device is signed out, this one included' })
+  async logoutAll(@CurrentActor() actor: Actor, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const r = await this.passwords.signOutEverywhere(actor.userId, ctxOf(req));
+    this.clearRefreshCookie(res);
+    return r;
   }
 
   @Get('me')

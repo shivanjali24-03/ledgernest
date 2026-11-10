@@ -22,6 +22,14 @@ export interface Auth {
   signOut: () => Promise<void>;
   /** Re-reads the signed-in user, e.g. after joining an organisation. */
   reload: () => Promise<void>;
+  /** Emails a reset link (the demo sends nothing) */
+  forgotPassword: (email: string) => Promise<void>;
+  /** Sets a new password from a reset link */
+  resetPassword: (token: string, password: string) => Promise<void>;
+  /** Changes the signed-in person's password; other devices are signed out */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  /** Signs out every device, this one included */
+  signOutEverywhere: () => Promise<void>;
 }
 
 export const AuthContext = createContext<Auth | null>(null);
