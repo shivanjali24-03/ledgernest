@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor, type EinvoiceProblem } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
-import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson, Truck } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -29,6 +29,7 @@ import ReminderDialog from '../ReminderDialog';
 import { saveBlob } from '../../lib/saveBlob';
 import ShareInvoiceDialog from '../ShareInvoiceDialog';
 import EinvoiceProblemsDialog from '../EinvoiceProblemsDialog';
+import EwayBillDialog from '../EwayBillDialog';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -88,6 +89,7 @@ export default function InvoiceEditor() {
   const [reminding, setReminding] = useState(false);
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [eway, setEway] = useState(false);
   const [einvoiceProblems, setEinvoiceProblems] = useState<EinvoiceProblem[] | null>(null);
   const india = useOrganizationSettings().data?.country === 'IN';
   const einvoice = useMutation({
@@ -153,6 +155,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && india && invoice.contact.taxId && (
                   <Button variant="ghost" icon={<FileJson className="size-4" />} loading={einvoice.isPending} onClick={() => einvoice.mutate()}>
                     {t('invoices.einvoice.action')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && india && (!invoice.currency || invoice.currency === 'INR') && invoice.lines.some((l) => !l.item?.hsnSac?.startsWith('99')) && (
+                  <Button variant="ghost" icon={<Truck className="size-4" />} onClick={() => setEway(true)}>
+                    {t('invoices.eway.action')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
@@ -290,6 +297,7 @@ export default function InvoiceEditor() {
       </motion.div>
       {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
       {einvoiceProblems && invoice && <EinvoiceProblemsDialog invoice={invoice} problems={einvoiceProblems} onClose={() => setEinvoiceProblems(null)} />}
+      {eway && invoice && api && <EwayBillDialog invoice={invoice} api={api} onClose={() => setEway(false)} />}
       {sharing && invoice && api && <ShareInvoiceDialog api={api} invoice={invoice} onClose={() => setSharing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}

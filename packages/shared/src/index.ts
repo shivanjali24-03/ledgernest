@@ -47,3 +47,4 @@ export * from './tds/index.js';
 export * from './tally/index.js';
 export * from './vendor-credits/index.js';
 export * from './banking/receipts.js';
+export * from './eway/index.js';

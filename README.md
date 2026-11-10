@@ -4,7 +4,7 @@
 
 **Accounting for Indian businesses that want to get paid faster and file GST without the scramble.**
 
-GST invoices with a UPI QR code, shared on WhatsApp, matched against GSTR-2B, with TDS, e-invoices and a Tally export for your CA. In English, हिन्दी and मराठी.
+GST invoices with a UPI QR code, shared on WhatsApp, matched against GSTR-2B, with TDS, e-invoices, e-way bills and a Tally export for your CA. In English, हिन्दी and मराठी.
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -39,7 +39,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 | **Know your cash 13 weeks ahead** | The forecast learns how late each customer really pays, and warns you before cash runs short. |
 | **Never miss a due date** | GSTR-1, GSTR-3B (with the tax to pay), GSTR-9, TDS deposits and advance tax on the dashboard, with days left. |
 | **TDS, both ways** | Keep TDS back from contractors and landlords (Form 26Q, challan dates), and record TDS your customers kept back (Form 26AS). |
-| **e-Invoices and a health check** | e-Invoice JSON for the IRP, checked before upload; a GST health check that finds missing HSN codes, states and GSTINs before filing. |
+| **e-Invoices, e-way bills and a health check** | e-Invoice JSON for the IRP and e-way bill JSON for moving goods, both checked before upload; a GST health check that finds missing HSN codes, states and GSTINs before filing. |
 | **Your CA uses Tally?** | Export ledgers and vouchers as Tally Prime XML, party ledgers and all. |
 | **On your phone** | Install it like an app; amounts in lakh and crore, and in words on invoices. |
 

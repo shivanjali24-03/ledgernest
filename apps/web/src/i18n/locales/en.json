@@ -2445,6 +2445,45 @@
       "skippedBody": "They’re not in the file. Open each to see what the portal needs.",
       "problemCount_one": "1 thing to fix",
       "problemCount_other": "{{count}} things to fix"
+    },
+    "eway": {
+      "action": "E-way bill",
+      "title": "E-way bill for {{number}}",
+      "body": "Goods worth over ₹50,000 need an e-way bill to move. Download the file and upload it on the e-way bill portal (Bulk generation). The vehicle can be added now or later on the portal.",
+      "download": "Download JSON",
+      "done": "E-way bill file downloaded. Upload it on the e-way bill portal.",
+      "fields": {
+        "mode": "Transport by",
+        "distance": "Distance (km)",
+        "distanceHint": "Leave blank to let the portal work it out from the PIN codes.",
+        "vehicle": "Vehicle number",
+        "vehicleHint": "Optional: leave blank to add it on the portal later.",
+        "docNo": "Transport document number",
+        "docDate": "Transport document date",
+        "transporterId": "Transporter GSTIN or ID",
+        "transporterName": "Transporter name"
+      },
+      "modes": {
+        "road": "Road",
+        "rail": "Rail",
+        "air": "Air",
+        "ship": "Ship"
+      },
+      "invalid": {
+        "distanceKm": "Distance is up to 4,000 km.",
+        "vehicleNo": "That isn’t a vehicle number, like MH12AB1234.",
+        "transporterId": "A transporter GSTIN or ID has 15 letters and digits.",
+        "docNo": "The transport document number is up to 15 characters.",
+        "docDate": "Choose the transport document’s date.",
+        "transporterName": "The transporter name is too long.",
+        "mode": "Choose how the goods travel."
+      },
+      "problemsTitle": "The portal would refuse this e-way bill. Fix these, then download again.",
+      "problems": {
+        "gstin_buyer": "The customer’s GSTIN isn’t valid. Correct it, or remove it for an unregistered buyer.",
+        "no_goods": "This invoice has only services: e-way bills are for moving goods.",
+        "transport_doc": "Off the road, the railway receipt, airway bill or bill of lading number is needed."
+      }
     }
   },
   "payments": {
