@@ -1,7 +1,8 @@
 import { useDeferredValue, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, Building2, Contact as ContactIcon, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Building2, Contact as ContactIcon, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { INDIAN_STATES } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +34,8 @@ export default function Contacts() {
   const queryClient = useQueryClient();
   const api = useContactsApi();
   const canManage = session.permissions.has('contacts.manage');
+  const canReport = session.permissions.has('reports.view');
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
@@ -159,15 +162,22 @@ export default function Contacts() {
                     </span>
                   )}
                   <span className="w-24 text-end text-xs text-ink-500">{c.paymentTermsDays ? t('contacts.terms', { days: c.paymentTermsDays }) : t('contacts.onReceipt')}</span>
-                  {canManage && (
+                  {(canManage || canReport) && (
                     <RowMenu
                       label={t('contacts.actionsFor', { name: c.name })}
                       items={[
-                        { key: 'edit', label: t('contacts.edit'), icon: Pencil, onSelect: () => setEditing(c) },
-                        c.archived
-                          ? { key: 'restore', label: t('contacts.restore'), icon: ArchiveRestore, onSelect: () => archive.mutate({ c, on: false }) }
-                          : { key: 'archive', label: t('contacts.archive'), icon: Archive, onSelect: () => archive.mutate({ c, on: true }) },
-                        { key: 'delete', label: t('contacts.delete'), icon: Trash2, danger: true, onSelect: () => setDeleting(c) },
+                        // Their statement of account, in Reports
+                        ...(canReport && c.isCustomer ? [{ key: 'statement-customer', label: t('contacts.customerStatement'), icon: FileText, onSelect: () => navigate(`/reports?tab=statement&contact=${c.id}`) }] : []),
+                        ...(canReport && c.isVendor ? [{ key: 'statement-vendor', label: t('contacts.vendorStatement'), icon: FileText, onSelect: () => navigate(`/reports?tab=statement&side=payables&contact=${c.id}`) }] : []),
+                        ...(canManage
+                          ? [
+                              { key: 'edit', label: t('contacts.edit'), icon: Pencil, onSelect: () => setEditing(c) },
+                              c.archived
+                                ? { key: 'restore', label: t('contacts.restore'), icon: ArchiveRestore, onSelect: () => archive.mutate({ c, on: false }) }
+                                : { key: 'archive', label: t('contacts.archive'), icon: Archive, onSelect: () => archive.mutate({ c, on: true }) },
+                              { key: 'delete', label: t('contacts.delete'), icon: Trash2, danger: true, onSelect: () => setDeleting(c) },
+                            ]
+                          : []),
                       ]}
                     />
                   )}

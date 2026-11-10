@@ -1857,7 +1857,9 @@
     "owes": "Schuldet {{amount}}",
     "inCredit": "Guthaben {{amount}}",
     "weOwe": "Wir schulden {{amount}}",
-    "paidAhead": "Vorausbezahlt {{amount}}"
+    "paidAhead": "Vorausbezahlt {{amount}}",
+    "customerStatement": "Kontoauszug",
+    "vendorStatement": "Lieferantenauszug"
   },
   "items": {
     "title": "Produkte und Leistungen",

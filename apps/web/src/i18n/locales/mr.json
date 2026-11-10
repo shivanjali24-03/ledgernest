@@ -1857,7 +1857,9 @@
     "owes": "{{amount}} येणे",
     "inCredit": "{{amount}} जमा",
     "weOwe": "आपल्याला देणे {{amount}}",
-    "paidAhead": "आगाऊ दिले {{amount}}"
+    "paidAhead": "आगाऊ दिले {{amount}}",
+    "customerStatement": "खाते विवरणपत्र",
+    "vendorStatement": "विक्रेता विवरणपत्र"
   },
   "items": {
     "title": "उत्पादने आणि सेवा",
