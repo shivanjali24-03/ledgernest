@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BellRing, FileSignature, FileText, Pencil, Plus, Receipt } from 'lucide-react';
+import { ArrowLeft, BellRing, FileSignature, FileText, MessageCircle, Pencil, Plus, Receipt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBillsApi } from '../../bills/useBillsApi';
 import { useIntlLocale } from '../../i18n';
@@ -10,6 +10,7 @@ import { stateTone } from '../../invoices/state';
 import { useInvoicesApi } from '../../invoices/useInvoicesApi';
 import { countryName, formatDate, formatMoney } from '../../lib/format';
 import { useMoney } from '../../lib/useMoney';
+import { whatsappLink } from '../../lib/whatsapp';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import { quoteTone } from '../../quotes/tone';
@@ -61,7 +62,7 @@ export default function ContactPage() {
   const role = session.role ?? session.customRoleName;
   const invoices = useQuery({ queryKey: ['invoices', session.organizationId, role, 'contact', id], queryFn: () => invoicesApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!invoicesApi && !!c?.isCustomer && can('invoices.view') });
   const quotes = useQuery({ queryKey: ['quotes', session.organizationId, role, 'contact', id], queryFn: () => quotesApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!quotesApi && !!c?.isCustomer && can('invoices.view') });
-  const overdue = useQuery({ queryKey: ['invoices', session.organizationId, role, 'contact', id, 'overdue'], queryFn: () => invoicesApi!.list({ contactId: id, state: 'overdue', page: 1, pageSize: 1 }), enabled: !!invoicesApi && !!c?.isCustomer && can('invoices.manage') });
+  const overdue = useQuery({ queryKey: ['invoices', session.organizationId, role, 'contact', id, 'overdue'], queryFn: () => invoicesApi!.list({ contactId: id, state: 'overdue', page: 1, pageSize: 50 }), enabled: !!invoicesApi && !!c?.isCustomer && can('invoices.manage') });
   const remind = useMutation({
     mutationFn: () => invoicesApi!.remindOverdue(id!),
     onSuccess: (r) => {
@@ -76,6 +77,14 @@ export default function ContactPage() {
   });
   const bills = useQuery({ queryKey: ['bills', session.organizationId, role, 'contact', id], queryFn: () => billsApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!billsApi && !!c?.isVendor && can('bills.view') });
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
+  /** The customer's overdue invoices as a WhatsApp message, with the total when they're all in one currency */
+  const overdueMessage = (items: { number: string | null; balance: number; currency: string | null; dueDate: string }[]) => {
+    const list = items.map((i) => `• ${i.number} · ${amount(i.balance, i.currency)} · ${t('contacts.page.dueOn', { date: day(i.dueDate) })}`).join('\n');
+    const one = new Set(items.map((i) => i.currency)).size === 1;
+    return one
+      ? t('contacts.page.whatsappOverdue', { name: c!.name, organization: session.organization, list, total: amount(items.reduce((x, i) => x + i.balance, 0), items[0]!.currency) })
+      : t('contacts.page.whatsappOverdueMixed', { name: c!.name, organization: session.organization, list });
+  };
   const amount = (minor: number, currency: string | null) => (currency ? formatMoney(minor, currency, locale) : money.format(minor));
 
   if (query.isError)
@@ -108,6 +117,16 @@ export default function ContactPage() {
                 <Button variant="secondary" icon={<BellRing className="size-4" />} onClick={() => setReminding(true)}>
                   {t('contacts.page.remindOverdue', { count: overdue.data.total })}
                 </Button>
+              )}
+              {c.isCustomer && can('invoices.manage') && !!overdue.data?.items.length && (
+                <a
+                  href={whatsappLink(overdueMessage(overdue.data.items), c.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]"
+                >
+                  <MessageCircle className="size-4" aria-hidden /> {t('contacts.page.whatsappRemind')}
+                </a>
               )}
               {can('contacts.manage') && (
                 <Button variant="ghost" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
