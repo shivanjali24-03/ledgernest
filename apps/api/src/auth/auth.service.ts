@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import argon2 from 'argon2';
 import {
@@ -10,8 +11,10 @@ import {
   isBuiltInRole,
 } from '@ledgernest/shared';
 import { membershipPermissions } from '../access/membership-permissions.js';
+import type { Env } from '../config/env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { hashToken, newRefreshToken } from './tokens.js';
+import { TwoFactorService } from './two-factor.service.js';
 
 export interface RequestContext {
   ip?: string;
@@ -42,9 +45,16 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-  ) {}
+    private readonly twoFactor: TwoFactorService,
+    config: ConfigService<Env, true>,
+  ) {
+    // Its own key, so a sign-in ticket can never pass as an access token
+    this.ticketSecret = `${config.get('JWT_ACCESS_SECRET', { infer: true })}:2fa-ticket`;
+  }
+  private readonly ticketSecret: string;
 
-  async login(email: string, password: string, ctx: RequestContext) {
+  /** Tokens, or (with two-factor on) a ticket for the second step, good for five minutes */
+  async login(email: string, password: string, ctx: RequestContext): Promise<IssuedTokens | { ticket: string }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
@@ -63,15 +73,7 @@ export class AuthService {
     }
 
     if (!(await argon2.verify(user.passwordHash, password))) {
-      const failures = user.failedLoginAttempts + 1;
-      const lock = failures >= LOCKOUT.maxFailedAttempts;
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: lock
-          ? { failedLoginAttempts: 0, lockedUntil: new Date(Date.now() + LOCKOUT.minutes * 60_000) }
-          : { failedLoginAttempts: failures },
-      });
-      await this.audit(lock ? 'auth.lockout' : 'auth.login.failed', { ctx, actorId: user.id, after: { failures } });
+      await this.failed(user, ctx);
       throw new UnauthorizedException(BAD_CREDENTIALS);
     }
 
@@ -81,6 +83,49 @@ export class AuthService {
       throw new ForbiddenException('This account is suspended. Contact your administrator.');
     }
 
+    if (user.totpEnabledAt) {
+      await this.audit('auth.login.second_step', { ctx, actorId: user.id });
+      return { ticket: await this.jwt.signAsync({ sub: user.id, purpose: '2fa' }, { secret: this.ticketSecret, expiresIn: '5m' }) };
+    }
+    return this.succeed(user, ctx);
+  }
+
+  /** The second step: a code from the authenticator app, or a recovery code */
+  async loginTwoFactor(ticket: string, code: string, ctx: RequestContext) {
+    let sub: string;
+    try {
+      const t = await this.jwt.verifyAsync<{ sub: string; purpose: string }>(ticket, { secret: this.ticketSecret });
+      if (t.purpose !== '2fa') throw new Error('wrong purpose');
+      sub = t.sub;
+    } catch {
+      throw new UnauthorizedException({ message: 'That took too long. Sign in again.', details: { reason: 'ticket_expired' } });
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: sub } });
+    if (!user || !user.totpEnabledAt) throw new UnauthorizedException({ message: 'Sign in again.', details: { reason: 'ticket_expired' } });
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutes = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60_000);
+      throw new HttpException({ message: `Too many failed attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`, details: { retryAfterMinutes: minutes } }, HttpStatus.LOCKED);
+    }
+    if (user.status === 'SUSPENDED') throw new ForbiddenException('This account is suspended. Contact your administrator.');
+    if (!(await this.twoFactor.check(user.id, code))) {
+      await this.failed(user, ctx, 'auth.2fa.failed');
+      throw new UnauthorizedException({ message: 'That code isn’t right.', details: { reason: 'wrong_code' } });
+    }
+    return this.succeed(user, ctx);
+  }
+
+  /** A wrong password or code: counted, and five in a row lock the account for a while */
+  private async failed(user: { id: string; failedLoginAttempts: number }, ctx: RequestContext, action = 'auth.login.failed') {
+    const failures = user.failedLoginAttempts + 1;
+    const lock = failures >= LOCKOUT.maxFailedAttempts;
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: lock ? { failedLoginAttempts: 0, lockedUntil: new Date(Date.now() + LOCKOUT.minutes * 60_000) } : { failedLoginAttempts: failures },
+    });
+    await this.audit(lock ? 'auth.lockout' : action, { ctx, actorId: user.id, after: { failures } });
+  }
+
+  private async succeed(user: { id: string; isSuperAdmin: boolean }, ctx: RequestContext) {
     await this.prisma.user.update({
       where: { id: user.id },
       data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },

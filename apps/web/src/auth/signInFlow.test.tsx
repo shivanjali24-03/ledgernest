@@ -68,6 +68,21 @@ describe('signing in (live API)', () => {
     expect(api.calls('/auth/login')).toBe(0);
   });
 
+  it('asks for the authenticator code after the password when two-factor is on', async () => {
+    const { api, client } = live();
+    api.state.twoFactorCode = '492039';
+    const router = renderApp('/reports', client);
+    await signIn(ME.user.email, 'Right-Password-1');
+    const code = await screen.findByLabelText('Authentication code');
+    await userEvent.type(code, '111111');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('That code isn’t right.');
+    await userEvent.type(screen.getByLabelText('Authentication code'), '492039');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/reports'));
+    expect(api.calls('/auth/login/2fa')).toBe(2);
+  });
+
   it('says how long a locked account must wait', async () => {
     const { api, client } = live();
     api.state.loginStatus = { status: 423, body: { message: 'locked', details: { retryAfterMinutes: 9 } } };

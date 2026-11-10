@@ -110,8 +110,19 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
     }
   }
 
-  async function login(email: string, password: string): Promise<void> {
+  /** Signs in; with two-factor on, gives back a ticket for the code instead */
+  async function login(email: string, password: string): Promise<{ ticket: string } | undefined> {
     const res = await send('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    if (!res.ok) throw await toApiError(res, 'login');
+    const body = (await res.json()) as { accessToken?: string; twoFactorRequired?: boolean; ticket?: string };
+    if (body.twoFactorRequired && body.ticket) return { ticket: body.ticket };
+    accessToken = body.accessToken!;
+    return undefined;
+  }
+
+  /** The second step: a code from the authenticator app, or a recovery code */
+  async function loginTwoFactor(ticket: string, code: string): Promise<void> {
+    const res = await send('/auth/login/2fa', { method: 'POST', body: JSON.stringify({ ticket, code }) });
     if (!res.ok) throw await toApiError(res, 'login');
     accessToken = ((await res.json()) as { accessToken: string }).accessToken;
   }
@@ -190,6 +201,14 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
 
   return {
     login,
+    loginTwoFactor,
+    twoFactor: {
+      status: () => request<{ enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number }>('/auth/2fa'),
+      setup: (password: string) => request<{ secret: string; uri: string }>('/auth/2fa/setup', { method: 'POST', json: { password } }),
+      enable: (code: string) => request<{ recoveryCodes: string[] }>('/auth/2fa/enable', { method: 'POST', json: { code } }),
+      disable: (password: string, code: string) => request<void>('/auth/2fa/disable', { method: 'POST', json: { password, code } }),
+      recoveryCodes: (code: string) => request<{ recoveryCodes: string[] }>('/auth/2fa/recovery-codes', { method: 'POST', json: { code } }),
+    },
     acceptInvitation,
     refresh,
     logout,

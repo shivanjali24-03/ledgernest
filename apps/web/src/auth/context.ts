@@ -16,7 +16,10 @@ export type AuthState =
 export interface Auth {
   mode: 'live' | 'demo';
   state: AuthState;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** Signs in; with two-factor on, resolves to a ticket for signInTwoFactor */
+  signIn: (email: string, password: string) => Promise<{ ticket: string } | void>;
+  /** The second step of signing in, with the code from the authenticator app (or a recovery code) */
+  signInTwoFactor: (ticket: string, code: string) => Promise<void>;
   /** A new person accepts an invitation; their account is created and they're signed in. */
   acceptInvitation: (token: string, name: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
