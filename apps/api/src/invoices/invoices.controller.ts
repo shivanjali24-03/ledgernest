@@ -27,7 +27,7 @@ import {
   type InvoiceDraftInput,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
   CurrentActor,
   CurrentTenant,
@@ -68,6 +68,27 @@ export class InvoicesController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.invoices.list(tenant.organizationId, q);
+  }
+
+  @Post('remind-overdue')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      "Emails a payment reminder for each of a customer's overdue invoices; says how many went and which didn't",
+  })
+  remindOverdue(
+    @Body(new ZodValidationPipe(z.object({ contactId: z.uuid() })))
+    body: { contactId: string },
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reminders.remindOverdue(body.contactId, {
+      actor,
+      tenant,
+      req,
+    });
   }
 
   @Get(':id')

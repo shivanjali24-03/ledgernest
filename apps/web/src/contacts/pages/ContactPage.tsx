@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileSignature, FileText, Pencil, Plus, Receipt } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, BellRing, FileSignature, FileText, Pencil, Plus, Receipt } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBillsApi } from '../../bills/useBillsApi';
 import { useIntlLocale } from '../../i18n';
@@ -14,7 +14,10 @@ import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import { quoteTone } from '../../quotes/tone';
 import { useQuotesApi } from '../../quotes/useQuotesApi';
+import { invoiceErrorMessage } from '../../invoices/errors';
 import Button from '../../ui/Button';
+import ConfirmDialog from '../../ui/ConfirmDialog';
+import { useToast } from '../../ui/toastContext';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import ContactDialog from '../ContactDialog';
 import { useContactsApi } from '../useContactsApi';
@@ -48,6 +51,9 @@ export default function ContactPage() {
   const quotesApi = useQuotesApi();
   const billsApi = useBillsApi();
   const [editing, setEditing] = useState(false);
+  const [reminding, setReminding] = useState(false);
+  const toast = useToast();
+  const qc = useQueryClient();
   const can = (p: Parameters<typeof session.permissions.has>[0]) => session.permissions.has(p);
   const key = ['contacts', session.organizationId, 'one', id] as const;
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !!id });
@@ -55,6 +61,19 @@ export default function ContactPage() {
   const role = session.role ?? session.customRoleName;
   const invoices = useQuery({ queryKey: ['invoices', session.organizationId, role, 'contact', id], queryFn: () => invoicesApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!invoicesApi && !!c?.isCustomer && can('invoices.view') });
   const quotes = useQuery({ queryKey: ['quotes', session.organizationId, role, 'contact', id], queryFn: () => quotesApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!quotesApi && !!c?.isCustomer && can('invoices.view') });
+  const overdue = useQuery({ queryKey: ['invoices', session.organizationId, role, 'contact', id, 'overdue'], queryFn: () => invoicesApi!.list({ contactId: id, state: 'overdue', page: 1, pageSize: 1 }), enabled: !!invoicesApi && !!c?.isCustomer && can('invoices.manage') });
+  const remind = useMutation({
+    mutationFn: () => invoicesApi!.remindOverdue(id!),
+    onSuccess: (r) => {
+      setReminding(false);
+      void qc.invalidateQueries({ queryKey: ['invoices'] });
+      toast(t(session.mode === 'demo' ? 'contacts.page.remindedDemo' : 'contacts.page.reminded', { count: r.sent, email: r.sentTo }), r.failed.length ? 'error' : 'success');
+    },
+    onError: (e) => {
+      setReminding(false);
+      toast(invoiceErrorMessage(e, t), 'error');
+    },
+  });
   const bills = useQuery({ queryKey: ['bills', session.organizationId, role, 'contact', id], queryFn: () => billsApi!.list({ contactId: id, page: 1, pageSize: RECENT }), enabled: !!billsApi && !!c?.isVendor && can('bills.view') });
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
   const amount = (minor: number, currency: string | null) => (currency ? formatMoney(minor, currency, locale) : money.format(minor));
@@ -85,6 +104,11 @@ export default function ContactPage() {
             <>
               {c.isCustomer && <Pill tone="brand">{t('contacts.customer')}</Pill>}
               {c.isVendor && <Pill>{t('contacts.vendor')}</Pill>}
+              {c.isCustomer && can('invoices.manage') && !!overdue.data?.total && (
+                <Button variant="secondary" icon={<BellRing className="size-4" />} onClick={() => setReminding(true)}>
+                  {t('contacts.page.remindOverdue', { count: overdue.data.total })}
+                </Button>
+              )}
               {can('contacts.manage') && (
                 <Button variant="ghost" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
                   {t('contacts.edit')}
@@ -219,6 +243,7 @@ export default function ContactPage() {
           </Recent>
         )}
       </motion.div>
+      <ConfirmDialog open={reminding} title={t('contacts.page.remindTitle', { name: c.name })} body={c.email ? t('contacts.page.remindBody', { count: overdue.data?.total ?? 0, email: c.email }) : t('contacts.page.remindNoEmail')} confirmLabel={t('contacts.page.remindConfirm')} busy={remind.isPending} onConfirm={() => remind.mutate()} onClose={() => setReminding(false)} />
       {editing && api && <ContactDialog api={api} contact={c} onClose={() => setEditing(false)} onSaved={() => (setEditing(false), void query.refetch())} />}
     </motion.div>
   );
