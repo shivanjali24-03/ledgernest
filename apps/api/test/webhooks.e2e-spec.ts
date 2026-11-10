@@ -355,6 +355,49 @@ describe('Webhooks (e2e)', () => {
     });
   });
 
+  it('tells the endpoint when a quote is accepted and invoiced', async () => {
+    await as()
+      .patch(`/webhooks/${hook}`, {
+        events: ['quote.accepted', 'quote.invoiced'],
+      })
+      .expect(200);
+    const quote = (
+      await as()
+        .post('/quotes', {
+          contactId: kumar,
+          quoteDate: '2026-05-08',
+          expiryDate: '2026-06-07',
+          lines: [
+            {
+              description: 'Freight',
+              quantity: 2,
+              unitPrice: 5_000_00,
+              accountId: acc.sales,
+            },
+          ],
+        })
+        .expect(201)
+    ).body as { id: string };
+    const before = hits.length;
+    await as()
+      .post(`/quotes/${quote.id}/status`, { status: 'accepted' })
+      .expect(200);
+    await as().post(`/quotes/${quote.id}/convert`, {}).expect(200);
+    const events = () =>
+      hits.slice(before).map((h) => h.headers['x-ledgernest-event']);
+    await until(() => events().includes('quote.invoiced'));
+    expect(events()).toEqual(
+      expect.arrayContaining(['quote.accepted', 'quote.invoiced']),
+    );
+    const invoiced = hits
+      .slice(before)
+      .find((h) => h.headers['x-ledgernest-event'] === 'quote.invoiced')!;
+    expect(JSON.parse(invoiced.body)).toMatchObject({
+      event: 'quote.invoiced',
+      data: { id: quote.id, status: 'invoiced', invoiceId: expect.any(String) },
+    });
+  });
+
   it('keeps finished deliveries for 30 days, and anything still waiting', async () => {
     const old = new Date(Date.now() - 40 * 86_400_000);
     const base = {

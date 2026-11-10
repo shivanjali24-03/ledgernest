@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { InvoicesModule } from '../invoices/invoices.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
 import { QuotesController } from './quotes.controller.js';
 import { QuotesService } from './quotes.service.js';
 
 @Module({
-  imports: [InvoicesModule, MailModule],
+  imports: [InvoicesModule, MailModule, WebhookEventsModule],
   controllers: [QuotesController],
   providers: [QuotesService],
 })

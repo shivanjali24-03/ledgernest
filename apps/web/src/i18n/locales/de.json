@@ -3212,7 +3212,11 @@
       "bill_recorded": "Eingangsrechnung erfasst",
       "bill_voided": "Eingangsrechnung storniert",
       "credit_note_issued": "Gutschrift ausgestellt",
-      "credit_note_voided": "Gutschrift storniert"
+      "credit_note_voided": "Gutschrift storniert",
+      "quote_sent": "Angebot gesendet",
+      "quote_accepted": "Angebot angenommen",
+      "quote_declined": "Angebot abgelehnt",
+      "quote_invoiced": "Angebot abgerechnet"
     },
     "deliveryStatuses": {
       "pending": "wartet auf erneuten Versuch",

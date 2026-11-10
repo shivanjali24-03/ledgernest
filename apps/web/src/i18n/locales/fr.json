@@ -3212,7 +3212,11 @@
       "bill_recorded": "Facture fournisseur enregistrée",
       "bill_voided": "Facture fournisseur annulée",
       "credit_note_issued": "Avoir émis",
-      "credit_note_voided": "Avoir annulé"
+      "credit_note_voided": "Avoir annulé",
+      "quote_sent": "Devis envoyé",
+      "quote_accepted": "Devis accepté",
+      "quote_declined": "Devis refusé",
+      "quote_invoiced": "Devis facturé"
     },
     "deliveryStatuses": {
       "pending": "en attente de nouvel essai",

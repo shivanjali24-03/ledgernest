@@ -3212,7 +3212,11 @@
       "bill_recorded": "تسجيل فاتورة مورد",
       "bill_voided": "إلغاء فاتورة مورد",
       "credit_note_issued": "إصدار إشعار دائن",
-      "credit_note_voided": "إلغاء إشعار دائن"
+      "credit_note_voided": "إلغاء إشعار دائن",
+      "quote_sent": "تم إرسال عرض السعر",
+      "quote_accepted": "تم قبول عرض السعر",
+      "quote_declined": "تم رفض عرض السعر",
+      "quote_invoiced": "تمت فوترة عرض السعر"
     },
     "deliveryStatuses": {
       "pending": "بانتظار إعادة المحاولة",
