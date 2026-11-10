@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type Instalment } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -38,6 +38,7 @@ type Stored = {
   interestOnInvoiceId?: string | null;
   /** Paid in instalments */
   instalments?: Instalment[] | null;
+  dispatch?: DispatchDetails | null;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -327,6 +328,7 @@ function view(i: Stored): Invoice {
     interestRateBp: i.status === 'draft' ? (i.interestRateBp ?? null) : null,
     interest: t && accrued ? { ...t, text: interestTermsText(t), accrued: accrued.interest, perDay: accrued.perDay, daysLate: accrued.daysLate, inGrace: accrued.inGrace } : null,
     instalments: plan ? instalmentStatus(plan, i.amountPaid, today()) : null,
+    dispatch: i.dispatch ?? null,
     state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate, instalments: plan }, today()),
   };
 }
@@ -356,7 +358,7 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     if (group) group = groupForSupply(group, supply, groups);
     return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {

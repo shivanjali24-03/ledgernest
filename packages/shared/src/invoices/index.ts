@@ -114,6 +114,36 @@ export const invoiceLineSchema = z.object({
 });
 export type InvoiceLineInput = z.input<typeof invoiceLineSchema>;
 
+/**
+ * The order and dispatch details a goods invoice usually carries in India: the buyer's order, the delivery note,
+ * how and where the goods went (transporter, LR/RR number, vehicle), and the terms of delivery. All optional.
+ */
+export const dispatchSchema = z.object({
+  buyerOrderNo: text(40),
+  buyerOrderDate: z.preprocess((v) => (v === '' ? null : v), isoDaySchema.nullable().optional().default(null)),
+  deliveryNote: text(40),
+  dispatchDocNo: text(40),
+  dispatchedThrough: text(80),
+  destination: text(80),
+  vehicleNo: z.preprocess((v) => (typeof v === 'string' ? v.replace(/[\s-]/g, '').toUpperCase() || null : v), z.string().regex(/^[A-Z]{2}[0-9A-Z]{4,13}$/, 'Not a vehicle number.').nullable().optional().default(null)),
+  termsOfDelivery: text(200),
+});
+export type DispatchDetails = z.output<typeof dispatchSchema>;
+/** The details as lines for a printed invoice, leaving out what's blank */
+export function dispatchLines(d: Partial<DispatchDetails> | null | undefined): string[] {
+  if (!d) return [];
+  const pairs: [string, string | null | undefined][] = [
+    ["Buyer's order", [d.buyerOrderNo, d.buyerOrderDate && `dated ${d.buyerOrderDate}`].filter(Boolean).join(' ') || null],
+    ['Delivery note', d.deliveryNote],
+    ['Dispatch doc / LR no.', d.dispatchDocNo],
+    ['Dispatched through', d.dispatchedThrough],
+    ['Destination', d.destination],
+    ['Vehicle', d.vehicleNo],
+    ['Terms of delivery', d.termsOfDelivery],
+  ];
+  return pairs.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
+}
+
 export const invoiceDraftSchema = z
   .object({
     contactId: z.uuid(),
@@ -128,6 +158,8 @@ export const invoiceDraftSchema = z
     interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
     reference: text(64),
     notes: text(1000),
+    /** Order and dispatch details (goods) */
+    dispatch: dispatchSchema.nullable().optional().default(null),
     /** GST state code of the place of supply; omitted = the customer's state */
     placeOfSupply: z
       .string()

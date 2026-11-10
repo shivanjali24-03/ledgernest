@@ -28,6 +28,7 @@ import {
   instalmentStatus,
   instalmentsProblem,
   type Instalment,
+  type DispatchDetails,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -71,6 +72,8 @@ export type DraftIn = {
   interestOnInvoiceId?: string | null;
   /** Paid in instalments: each one's day and amount (the last is the due date) */
   instalments?: Instalment[] | null;
+  /** Order and dispatch details */
+  dispatch?: DispatchDetails | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -138,6 +141,7 @@ const select = {
   interestMethod: true,
   interestGraceDays: true,
   instalments: true,
+  dispatch: true,
   contact: {
     select: {
       id: true,
@@ -464,6 +468,8 @@ export class InvoicesService {
         },
         today,
       ),
+      /** Order and dispatch details */
+      dispatch: (i.dispatch as DispatchDetails | null) ?? null,
       /** Paid in instalments: each with what's been paid on it and where it stands today */
       instalments: plan?.length
         ? instalmentStatus(plan, v.amountPaid, today)
@@ -1032,6 +1038,9 @@ export class InvoicesService {
           instalments: input.instalments?.length
             ? (input.instalments as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
+          dispatch: input.dispatch
+            ? (input.dispatch as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -1093,6 +1102,9 @@ export class InvoicesService {
           interestRateBp: input.interestRateBp ?? null,
           instalments: input.instalments?.length
             ? (input.instalments as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
+          dispatch: input.dispatch
+            ? (input.dispatch as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),

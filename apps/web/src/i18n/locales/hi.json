@@ -4795,5 +4795,18 @@
       "due": "देय",
       "overdue": "बकाया"
     }
+  },
+  "dispatch": {
+    "title": "ऑर्डर और डिस्पैच विवरण",
+    "fields": {
+      "buyerOrderNo": "क्रेता का ऑर्डर नं.",
+      "buyerOrderDate": "ऑर्डर की तारीख",
+      "deliveryNote": "डिलीवरी नोट",
+      "dispatchDocNo": "डिस्पैच दस्तावेज़ / LR नं.",
+      "dispatchedThrough": "किसके द्वारा भेजा",
+      "destination": "गंतव्य",
+      "vehicleNo": "वाहन नं.",
+      "termsOfDelivery": "डिलीवरी की शर्तें"
+    }
   }
 }

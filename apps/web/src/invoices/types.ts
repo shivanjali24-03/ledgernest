@@ -1,5 +1,5 @@
 import type { Einvoice, EinvoiceIrnInput, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
-import type { InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
+import type { DispatchDetails, InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
   id: string;
@@ -59,6 +59,8 @@ export interface Invoice {
   interestRateBp?: number | null;
   /** Once issued: its interest terms and what's accrued */
   interest?: InvoiceInterest | null;
+  /** Order and dispatch details */
+  dispatch?: DispatchDetails | null;
   /** Paid in instalments: each one, with (once issued) what's paid on it and where it stands */
   instalments?: { dueDate: string; amount: number; n?: number; paid?: number; balance?: number; state?: 'paid' | 'partly_paid' | 'due' | 'overdue' }[] | null;
   reference: string | null;

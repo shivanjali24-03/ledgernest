@@ -4795,5 +4795,18 @@
       "due": "Due",
       "overdue": "Overdue"
     }
+  },
+  "dispatch": {
+    "title": "Order and dispatch details",
+    "fields": {
+      "buyerOrderNo": "Buyer’s order no.",
+      "buyerOrderDate": "Order date",
+      "deliveryNote": "Delivery note",
+      "dispatchDocNo": "Dispatch doc / LR no.",
+      "dispatchedThrough": "Dispatched through",
+      "destination": "Destination",
+      "vehicleNo": "Vehicle no.",
+      "termsOfDelivery": "Terms of delivery"
+    }
   }
 }

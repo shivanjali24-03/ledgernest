@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -232,6 +232,13 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
         <p className="mt-6 whitespace-pre-line text-xs text-ink-500" dir="auto" data-testid="invoice-terms">
           {org.invoiceTerms}
         </p>
+      )}
+      {i.dispatch && dispatchLines(i.dispatch).length > 0 && (
+        <ul className="mt-4 grid gap-x-6 text-xs text-ink-600 sm:grid-cols-2 dark:text-ink-300" data-testid="invoice-dispatch">
+          {dispatchLines(i.dispatch).map((l) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
       )}
       {i.instalments && i.instalments.length > 0 && (
         <table className="mt-6 text-xs" data-testid="invoice-instalments">
