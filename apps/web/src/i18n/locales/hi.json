@@ -1023,7 +1023,10 @@
       "interestMethod": "गणना",
       "interestGraceDays": "छूट के दिन",
       "interestAutoRaise": "हर महीने की 1 तारीख को ब्याज इनवॉइस का मसौदा बनाएं",
-      "roundInvoiceTotals": "रुपये के इनवॉइस का कुल पूरे रुपये में करें"
+      "roundInvoiceTotals": "रुपये के इनवॉइस का कुल पूरे रुपये में करें",
+      "lutNumber": "LUT ARN",
+      "lutFrom": "LUT मान्य से",
+      "lutTo": "LUT मान्य तक"
     },
     "hints": {
       "legalName": "पंजीकृत नाम, चालान और टैक्स फ़ाइलिंग के लिए।",
@@ -1041,7 +1044,8 @@
       "interestRate": "ब्याज न हो तो खाली छोड़ें। भारत में 18% आम है।",
       "interestGraceDays": "देय तिथि के इतने दिनों में भुगतान हो तो ब्याज नहीं; उसके बाद, देय तिथि से।",
       "interestAutoRaise": "पिछले महीने के अंत तक के ब्याज के लिए जो अभी तक नहीं लिया गया। आप उन्हें देखकर जारी करें।",
-      "roundInvoiceTotals": "अंतर राउंड ऑफ के रूप में दिखता है और अपने खाते में दर्ज होता है।"
+      "roundInvoiceTotals": "अंतर राउंड ऑफ के रूप में दिखता है और अपने खाते में दर्ज होता है।",
+      "lutNumber": "बिना IGST के निर्यात और SEZ आपूर्ति के लिए वचन-पत्र (RFD-11)"
     },
     "locked": {
       "baseCurrency": "प्रविष्टियाँ पोस्ट होने के बाद बदली नहीं जा सकती",
@@ -2571,7 +2575,8 @@
       "reference": "संदर्भ",
       "placeOfSupply": "आपूर्ति का स्थान",
       "notes": "टिप्पणी",
-      "series": "नंबर सीरीज़"
+      "series": "नंबर सीरीज़",
+      "supplyKind": "आपूर्ति का प्रकार"
     },
     "states": {
       "draft": "ड्राफ़्ट",
@@ -2622,7 +2627,8 @@
       "already_charged": "यह ब्याज अभी-अभी लिया जा चुका है।",
       "no_interest_terms": "केवल ब्याज शर्तों वाले जारी इनवॉइस पर ब्याज लिया जा सकता है।",
       "instalments_total": "किस्तों का योग इनवॉइस की कुल राशि के बराबर होना चाहिए।",
-      "instalments_before_issue": "पहली किस्त इनवॉइस की तारीख से पहले देय नहीं हो सकती।"
+      "instalments_before_issue": "पहली किस्त इनवॉइस की तारीख से पहले देय नहीं हो सकती।",
+      "no_lut": "पहले सेटिंग्स में बिल की तारीख को कवर करने वाला वचन-पत्र (LUT) जोड़ें।"
     },
     "reminder": {
       "action": "अनुस्मारक भेजें",
@@ -2833,7 +2839,22 @@
     "discountValue": "छूट",
     "discountIncluded": "छूट (कर योग्य मूल्य में)",
     "hsnSummary": "HSN/SAC सारांश",
-    "taxColumn": "कर"
+    "taxColumn": "कर",
+    "supplyKinds": {
+      "regular": "सामान्य (देशी)",
+      "export_with_igst": "IGST सहित निर्यात",
+      "export_lut": "LUT के तहत निर्यात (बिना IGST)",
+      "sez_with_igst": "IGST सहित SEZ",
+      "sez_lut": "LUT के तहत SEZ (बिना IGST)",
+      "deemed_export": "मानित निर्यात"
+    },
+    "supplyKindLut": "शून्य-दर: कर नहीं लगेगा; आपका LUT बिल की तारीख को कवर करना चाहिए।",
+    "exportFields": {
+      "portCode": "पोर्ट कोड",
+      "shippingBillNo": "शिपिंग बिल नं.",
+      "shippingBillDate": "शिपिंग बिल तारीख",
+      "countryCode": "देश कोड"
+    }
   },
   "payments": {
     "title": "भुगतान",

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type InvoiceDiscount, type ShipTo } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ExportDetails, type InvoiceDiscount, type ShipTo, type SupplyKind, SUPPLY_KINDS, isExport, zeroRatedUnderLut } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +49,8 @@ export interface SalesDraft {
   shipTo?: ShipTo | null;
   pricesIncludeTax?: boolean;
   discount?: InvoiceDiscount | null;
+  supplyKind?: SupplyKind;
+  exportDetails?: Partial<ExportDetails> | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
@@ -65,6 +67,8 @@ export interface SalesDraftPayload {
   shipTo?: ShipTo | null;
   pricesIncludeTax?: boolean;
   discount?: InvoiceDiscount | null;
+  supplyKind?: SupplyKind;
+  exportDetails?: Partial<ExportDetails> | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
@@ -156,6 +160,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [showDispatch, setShowDispatch] = useState(!!invoice?.dispatch);
   const [shipTo, setShipTo] = useState<ShipTo | null>(invoice?.shipTo ?? null);
   const [inclusive, setInclusive] = useState(!!invoice?.pricesIncludeTax);
+  const [supplyKind, setSupplyKind] = useState<SupplyKind>(invoice?.supplyKind ?? 'regular');
+  const [exportDetails, setExportDetails] = useState<Partial<ExportDetails>>(invoice?.exportDetails ?? {});
   const [discKind, setDiscKind] = useState<'percent' | 'amount'>(invoice?.discount?.kind ?? 'percent');
   const [discText, setDiscText] = useState(invoice?.discount ? (invoice.discount.kind === 'percent' ? String(invoice.discount.value / 10_000) : (invoice.discount.value / 100).toFixed(2)) : '');
   const shipToState = shipTo && (shipTo.country ?? 'IN') === 'IN' ? (findIndianState(shipTo.region)?.code ?? null) : null;
@@ -212,7 +218,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount } : {}),
+    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount, supplyKind, exportDetails: isExport(supplyKind) && Object.values(exportDetails).some((x) => x) ? exportDetails : null } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
@@ -267,7 +273,17 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
             options={config.series.map((x) => ({ value: x.id, label: `${x.name} · ${x.preview}` }))}
           />
         )}
-        {india && (
+        {india && config.interest && (
+          <SelectField label={t('invoices.fields.supplyKind')} value={supplyKind} onChange={(e) => setSupplyKind(e.target.value as SupplyKind)} disabled={!canManage} options={SUPPLY_KINDS.map((k) => ({ value: k, label: t(`invoices.supplyKinds.${k}`) }))} hint={zeroRatedUnderLut(supplyKind) ? t('invoices.supplyKindLut') : undefined} />
+        )}
+        {india && config.interest && isExport(supplyKind) && (
+          <>
+            {(['portCode', 'shippingBillNo', 'shippingBillDate', 'countryCode'] as const).map((k) => (
+              <TextField key={k} label={t(`invoices.exportFields.${k}`)} type={k === 'shippingBillDate' ? 'date' : 'text'} value={exportDetails[k] ?? ''} onChange={(e) => setExportDetails((d) => ({ ...d, [k]: e.target.value || null }))} disabled={!canManage} dir="ltr" className={k === 'portCode' || k === 'countryCode' ? 'font-mono uppercase' : undefined} />
+            ))}
+          </>
+        )}
+        {india && !isExport(supplyKind) && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}
             value={placeOfSupply || shipToState || customer?.stateCode || ''}

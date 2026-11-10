@@ -1,5 +1,5 @@
 import type { Einvoice, EinvoiceIrnInput, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
-import type { DispatchDetails, InvoiceCopy, InvoiceDiscount, InvoiceDraftInput, ShipTo, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
+import type { DispatchDetails, ExportDetails, InvoiceCopy, InvoiceDiscount, InvoiceDraftInput, ShipTo, SupplyKind, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
   id: string;
@@ -63,6 +63,9 @@ export interface Invoice {
   roundOff?: number;
   /** Prices include GST */
   pricesIncludeTax?: boolean;
+  /** An ordinary supply, an export or SEZ supply, or a deemed export; and an export's shipping bill */
+  supplyKind?: SupplyKind;
+  exportDetails?: ExportDetails | null;
   /** A discount on the whole invoice, and what it came to */
   discount?: InvoiceDiscount | null;
   discountTotal?: number;

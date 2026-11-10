@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines, hsnSummary } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines, hsnSummary, supplyDeclaration, isExport } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -289,6 +289,16 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           </table>
         ) : null;
       })()}
+      {i.supplyKind && i.supplyKind !== 'regular' && (
+        <div className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="invoice-supply-declaration">
+          <p className="font-semibold">{supplyDeclaration(i.supplyKind, { number: org?.lutNumber ?? null })}</p>
+          {isExport(i.supplyKind) && i.exportDetails && (
+            <p className="mt-1" dir="ltr">
+              {[i.exportDetails.shippingBillNo && `${t('invoices.exportFields.shippingBillNo')}: ${i.exportDetails.shippingBillNo}`, i.exportDetails.shippingBillDate && `${t('invoices.exportFields.shippingBillDate')}: ${i.exportDetails.shippingBillDate}`, i.exportDetails.portCode && `${t('invoices.exportFields.portCode')}: ${i.exportDetails.portCode}`, i.exportDetails.countryCode && `${t('invoices.exportFields.countryCode')}: ${i.exportDetails.countryCode}`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+        </div>
+      )}
       {i.dispatch && dispatchLines(i.dispatch).length > 0 && (
         <ul className="mt-4 grid gap-x-6 text-xs text-ink-600 sm:grid-cols-2 dark:text-ink-300" data-testid="invoice-dispatch">
           {dispatchLines(i.dispatch).map((l) => (

@@ -107,6 +107,10 @@ model Organization {
   interestRaisedFor    String?            @map("interest_raised_for")
   /// Round rupee invoice totals to the nearest rupee
   roundInvoiceTotals   Boolean            @default(false) @map("round_invoice_totals")
+  /// Letter of undertaking for zero-rated supplies without IGST: its ARN and the dates it covers
+  lutNumber            String?            @map("lut_number")
+  lutFrom              DateTime?          @map("lut_from") @db.Date
+  lutTo                DateTime?          @map("lut_to") @db.Date
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
@@ -842,6 +846,10 @@ model Invoice {
   discount            Json?
   /// What that discount came to, spread over the lines before tax
   discountTotal       BigInt    @default(0) @map("discount_total")
+  /// regular | export_with_igst | export_lut | sez_with_igst | sez_lut | deemed_export
+  supplyKind          String    @default("regular") @map("supply_kind")
+  /// For an export: { portCode, shippingBillNo, shippingBillDate, countryCode }
+  exportDetails       Json?     @map("export_details")
   total               BigInt    @default(0)
   amountPaid          BigInt    @default(0) @map("amount_paid")
   journalEntryId      String?   @map("journal_entry_id") @db.Uuid

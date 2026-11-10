@@ -31,6 +31,11 @@ import {
   type DispatchDetails,
   type ShipTo,
   type InvoiceDiscount,
+  type SupplyKind,
+  type ExportDetails,
+  isExport,
+  isSez,
+  zeroRatedUnderLut,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -82,6 +87,10 @@ export type DraftIn = {
   pricesIncludeTax?: boolean;
   /** A discount on the whole invoice, before tax */
   discount?: InvoiceDiscount | null;
+  /** An ordinary supply, an export or SEZ supply (with IGST or under LUT), or a deemed export */
+  supplyKind?: SupplyKind;
+  /** For an export: the shipping bill and where the goods go */
+  exportDetails?: ExportDetails | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -131,6 +140,8 @@ const select = {
   pricesIncludeTax: true,
   discount: true,
   discountTotal: true,
+  supplyKind: true,
+  exportDetails: true,
   total: true,
   amountPaid: true,
   issuedAt: true,
@@ -352,6 +363,9 @@ export class InvoicesService {
       roundOff: amount(i.roundOff),
       /** Prices include GST */
       pricesIncludeTax: i.pricesIncludeTax,
+      /** An ordinary supply, an export or SEZ supply, or a deemed export; and an export's shipping bill */
+      supplyKind: i.supplyKind as SupplyKind,
+      exportDetails: (i.exportDetails as ExportDetails | null) ?? null,
       /** A discount on the whole invoice, and what it came to */
       discount: (i.discount as InvoiceDiscount | null) ?? null,
       discountTotal: amount(i.discountTotal),
@@ -760,6 +774,9 @@ export class InvoicesService {
         region: true,
         gstScheme: true,
         roundInvoiceTotals: true,
+        lutNumber: true,
+        lutFrom: true,
+        lutTo: true,
       },
     });
     // A composition dealer can't charge GST: its sales are bills of supply
@@ -779,14 +796,34 @@ export class InvoicesService {
       input.shipTo && (input.shipTo.country ?? 'IN') === 'IN'
         ? (findIndianState(input.shipTo.region)?.code ?? null)
         : null;
-    const placeOfSupply =
-      input.placeOfSupply ?? shipToState ?? contact.stateCode;
+    const kind: SupplyKind = input.supplyKind ?? 'regular';
+    // An export is supplied outside India; a supply to an SEZ is inter-state wherever the unit is (IGST Act s.16)
+    const placeOfSupply = isExport(kind)
+      ? null
+      : (input.placeOfSupply ?? shipToState ?? contact.stateCode);
     const supply =
-      orgState && placeOfSupply
-        ? orgState === placeOfSupply
-          ? 'intra'
-          : 'inter'
-        : null;
+      isExport(kind) || isSez(kind)
+        ? 'inter'
+        : orgState && placeOfSupply
+          ? orgState === placeOfSupply
+            ? 'intra'
+            : 'inter'
+          : null;
+    // Zero-rated without IGST needs a letter of undertaking covering the invoice's date
+    if (zeroRatedUnderLut(kind)) {
+      const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+      if (
+        !org.lutNumber ||
+        (day(org.lutFrom) ?? '0000') > input.issueDate ||
+        (day(org.lutTo) ?? '9999') < input.issueDate
+      )
+        throw refuse(
+          BadRequestException,
+          'Zero-rated supplies without IGST need a letter of undertaking for the date: add it in Settings.',
+          'no_lut',
+          { field: 'supplyKind' },
+        );
+    }
 
     const itemIds = [
       ...new Set(
@@ -874,7 +911,12 @@ export class InvoicesService {
           { line: n + 1 },
         );
       if (group) group = await forSupply(group);
-      lines.push({ ...l, accountId, group });
+      // Under LUT nothing is taxed
+      lines.push({
+        ...l,
+        accountId,
+        group: zeroRatedUnderLut(kind) ? null : group,
+      });
     }
     await checkCostCentres(tx, organizationId, lines);
     const accountIds = [...new Set(lines.map((l) => l.accountId))];
@@ -976,6 +1018,7 @@ export class InvoicesService {
         );
     }
     return {
+      supplyKind: kind,
       contactId: contact.id,
       currency,
       placeOfSupply,
@@ -1089,6 +1132,10 @@ export class InvoicesService {
           taxTotal: BigInt(p.amounts.tax),
           roundOff: BigInt(p.amounts.roundOff),
           pricesIncludeTax: !!input.pricesIncludeTax,
+          supplyKind: p.supplyKind,
+          exportDetails: input.exportDetails
+            ? (input.exportDetails as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           discount: input.discount
             ? (input.discount as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
@@ -1162,6 +1209,10 @@ export class InvoicesService {
           taxTotal: BigInt(p.amounts.tax),
           roundOff: BigInt(p.amounts.roundOff),
           pricesIncludeTax: !!input.pricesIncludeTax,
+          supplyKind: p.supplyKind,
+          exportDetails: input.exportDetails
+            ? (input.exportDetails as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           discount: input.discount
             ? (input.discount as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
@@ -1251,6 +1302,8 @@ export class InvoicesService {
         shipTo: (i.shipTo as ShipTo | null) ?? null,
         pricesIncludeTax: i.pricesIncludeTax,
         discount: (i.discount as InvoiceDiscount | null) ?? null,
+        supplyKind: i.supplyKind as SupplyKind,
+        exportDetails: (i.exportDetails as ExportDetails | null) ?? null,
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
           description: l.description,
