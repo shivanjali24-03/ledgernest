@@ -13,6 +13,7 @@ import {
   Query,
   Req,
   Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -37,6 +38,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { BillsService } from './bills.service.js';
+import { SelfInvoicePdfService } from './self-invoice-pdf.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
 type Draft = Parameters<BillsService['createDraft']>[0];
@@ -51,7 +53,10 @@ type Draft = Parameters<BillsService['createDraft']>[0];
 })
 @Controller('bills')
 export class BillsController {
-  constructor(private readonly bills: BillsService) {}
+  constructor(
+    private readonly bills: BillsService,
+    private readonly selfInvoices: SelfInvoicePdfService,
+  ) {}
 
   @Get()
   @RequirePermission('bills.view')
@@ -93,6 +98,24 @@ export class BillsController {
   @RequirePermission('bills.view')
   get(@Param('id', id) billId: string, @CurrentTenant() tenant: Tenant) {
     return this.bills.get(tenant.organizationId, billId);
+  }
+
+  /** The self-invoice raised for a purchase under reverse charge from an unregistered supplier, as a PDF */
+  @Get(':id/self-invoice')
+  @RequirePermission('bills.view')
+  @ApiProduces('application/pdf')
+  async selfInvoice(
+    @Param('id', id) billId: string,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.selfInvoices.download(tenant.organizationId, billId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(f.data, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
+    });
   }
 
   @Post()

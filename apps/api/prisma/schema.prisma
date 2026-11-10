@@ -620,7 +620,8 @@ model TaxGroup {
   creditNoteLines   CreditNoteLine[]
   vendorCreditLines VendorCreditLine[]
 
-  billLines BillLine[]
+  billLines    BillLine[]
+  rcmBillLines BillLine[] @relation("BillLineRcmGroup")
 
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])
@@ -1015,37 +1016,41 @@ model PaymentAllocation {
 
 /// A vendor's bill. Drafts change freely; recording it gives it a number and posts its entry.
 model Bill {
-  id               String    @id @default(uuid()) @db.Uuid
-  organizationId   String    @map("organization_id") @db.Uuid
-  contactId        String    @map("contact_id") @db.Uuid
-  number           Int?
-  fiscalYearId     String?   @map("fiscal_year_id") @db.Uuid
-  status           String    @default("draft") /// draft | open | void
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  contactId         String    @map("contact_id") @db.Uuid
+  number            Int?
+  fiscalYearId      String?   @map("fiscal_year_id") @db.Uuid
+  status            String    @default("draft") /// draft | open | void
   /// The vendor's own number for it
-  vendorReference  String?   @map("vendor_reference")
+  vendorReference   String?   @map("vendor_reference")
   /// The date on the vendor's bill (GSTR-2B shows it); null = the bill date
-  vendorBillDate   DateTime? @map("vendor_bill_date") @db.Date
+  vendorBillDate    DateTime? @map("vendor_bill_date") @db.Date
+  /// We pay the GST under reverse charge (CGST Act s.9(3)/(4), IGST Act s.5(3)): the vendor charges none
+  reverseCharge     Boolean   @default(false) @map("reverse_charge")
+  /// Under reverse charge from an unregistered vendor: the self-invoice we raise (CGST Act s.31(3)(f)), numbered SI/<FY>/NNNN
+  selfInvoiceNumber String?   @map("self_invoice_number")
   /// When it's entered in the books
-  billDate         DateTime  @map("bill_date") @db.Date
-  dueDate          DateTime  @map("due_date") @db.Date
-  currency         String?   @db.Char(3)
-  rate             Decimal?  @db.Decimal(20, 10)
-  placeOfSupply    String?   @map("place_of_supply") @db.Char(2)
-  notes            String?
-  payableAccountId String?   @map("payable_account_id") @db.Uuid
-  subtotal         BigInt    @default(0)
-  taxTotal         BigInt    @default(0) @map("tax_total")
-  total            BigInt    @default(0)
-  amountPaid       BigInt    @default(0) @map("amount_paid")
-  journalEntryId   String?   @map("journal_entry_id") @db.Uuid
-  voidEntryId      String?   @map("void_entry_id") @db.Uuid
-  createdById      String?   @map("created_by_id") @db.Uuid
-  recordedAt       DateTime? @map("recorded_at")
+  billDate          DateTime  @map("bill_date") @db.Date
+  dueDate           DateTime  @map("due_date") @db.Date
+  currency          String?   @db.Char(3)
+  rate              Decimal?  @db.Decimal(20, 10)
+  placeOfSupply     String?   @map("place_of_supply") @db.Char(2)
+  notes             String?
+  payableAccountId  String?   @map("payable_account_id") @db.Uuid
+  subtotal          BigInt    @default(0)
+  taxTotal          BigInt    @default(0) @map("tax_total")
+  total             BigInt    @default(0)
+  amountPaid        BigInt    @default(0) @map("amount_paid")
+  journalEntryId    String?   @map("journal_entry_id") @db.Uuid
+  voidEntryId       String?   @map("void_entry_id") @db.Uuid
+  createdById       String?   @map("created_by_id") @db.Uuid
+  recordedAt        DateTime? @map("recorded_at")
   /// The schedule that made it
-  recurringBillId  String?   @map("recurring_bill_id") @db.Uuid
-  voidedAt         DateTime? @map("voided_at")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  recurringBillId   String?   @map("recurring_bill_id") @db.Uuid
+  voidedAt          DateTime? @map("voided_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   organization             Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact                  Contact                   @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
@@ -1064,6 +1069,7 @@ model Bill {
   @@unique([organizationId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
+  @@unique([organizationId, selfInvoiceNumber])
   @@index([organizationId, contactId])
   @@index([organizationId, status, dueDate])
   @@map("bills")
@@ -1088,6 +1094,8 @@ model BillLine {
   unitPrice      BigInt    @map("unit_price")
   discountPpm    Int       @default(0) @map("discount_ppm")
   taxGroupId     String?   @map("tax_group_id") @db.Uuid
+  /// Under reverse charge: the GST we pay on the line (the vendor charges none)
+  rcmTaxGroupId  String?   @map("rcm_tax_group_id") @db.Uuid
   accountId      String?   @map("account_id") @db.Uuid
   amount         BigInt
   taxAmount      BigInt    @default(0) @map("tax_amount")
@@ -1098,6 +1106,7 @@ model BillLine {
   bill         Bill               @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: Cascade)
   item         Item?              @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
   taxGroup     TaxGroup?          @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  rcmTaxGroup  TaxGroup?          @relation("BillLineRcmGroup", fields: [organizationId, rcmTaxGroupId], references: [organizationId, id], onDelete: NoAction)
   account      Account?           @relation("BillLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
   /// What's been returned or credited of it on debit notes
   credited     VendorCreditLine[]

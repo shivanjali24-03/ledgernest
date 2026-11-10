@@ -4,6 +4,7 @@ import { InventoryModule } from '../inventory/inventory.module.js';
 import { JournalsModule } from '../journals/journals.module.js';
 import { BillsController } from './bills.controller.js';
 import { BillsService } from './bills.service.js';
+import { SelfInvoicePdfService } from './self-invoice-pdf.service.js';
 import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
 
 @Module({
@@ -14,7 +15,7 @@ import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
     WebhookEventsModule,
   ],
   controllers: [BillsController],
-  providers: [BillsService],
+  providers: [BillsService, SelfInvoicePdfService],
   exports: [BillsService],
 })
 export class BillsModule {}

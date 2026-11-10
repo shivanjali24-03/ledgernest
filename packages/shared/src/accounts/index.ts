@@ -130,12 +130,15 @@ export const FX_ACCOUNTS = {
   interest_income: { code: '4970', type: 'income', subtype: 'other_income' },
   /** Invoice totals rounded to the rupee: the differences */
   round_off: { code: '4980', type: 'income', subtype: 'other_income' },
+  /** GST we owe on purchases under reverse charge, paid in cash with the return */
+  rcm_payable: { code: '2170', type: 'liability', subtype: 'tax_payable' },
 } as const satisfies Record<string, { code: string; type: AccountType; subtype: AccountSubtype }>;
 export type FxAccountKey = keyof typeof FX_ACCOUNTS;
 export const FX_ACCOUNT_NAMES: Record<FxAccountKey, { en: string } & Record<string, string>> = {
   fx_realised: { en: 'Realised exchange gain or loss', hi: 'प्राप्त विनिमय लाभ या हानि', mr: 'प्राप्त विनिमय नफा किंवा तोटा', es: 'Diferencias de cambio realizadas', fr: 'Écarts de change réalisés', de: 'Realisierte Kursgewinne und -verluste', ar: 'أرباح أو خسائر الصرف المحققة' },
   interest_income: { en: 'Interest on late payment', hi: 'देर से भुगतान पर ब्याज', mr: 'उशिरा भरण्यावरील व्याज' },
   round_off: { en: 'Round off', hi: 'राउंड ऑफ', mr: 'राउंड ऑफ' },
+  rcm_payable: { en: 'GST payable under reverse charge', hi: 'रिवर्स चार्ज के तहत देय GST', mr: 'रिव्हर्स चार्ज अंतर्गत देय GST' },
   fx_unrealised: { en: 'Unrealised exchange gain or loss', hi: 'अप्राप्त विनिमय लाभ या हानि', mr: 'अप्राप्त विनिमय नफा किंवा तोटा', es: 'Diferencias de cambio no realizadas', fr: 'Écarts de change latents', de: 'Unrealisierte Kursgewinne und -verluste', ar: 'أرباح أو خسائر الصرف غير المحققة' },
 };
 

@@ -157,6 +157,17 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
           </>
         )}
       </dl>
+      {b.reverseCharge && (
+        <div className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="bill-reverse-charge">
+          <p className="font-semibold">{t('bills.reverseCharge.note')}</p>
+          {!!b.reverseChargeTax?.length && (
+            <p className="mt-1">
+              {t('bills.reverseCharge.wePay')}: <span dir="ltr">{b.reverseChargeTax.map((x) => `${x.name} ${plain(x.amount)}`).join(', ')}</span>
+            </p>
+          )}
+          {b.selfInvoiceNumber && <p className="mt-1">{t('bills.reverseCharge.selfInvoiceNo', { number: b.selfInvoiceNumber })}</p>}
+        </div>
+      )}
       {b.notes && (
         <p className="mt-4 border-t border-ink-100 pt-4 text-ink-600 dark:border-ink-800 dark:text-ink-300" dir="auto">
           {b.notes}

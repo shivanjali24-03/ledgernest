@@ -70,6 +70,13 @@ export function Gstr3bPanel({ data, ...state }: { data: Gstr3b | undefined; isPe
           <td className={num} dir="ltr">{money.plain(data.outwardUntaxed)}</td>
           {heads({ igst: 0, cgst: 0, sgst: 0, cess: 0 })}
         </tr>
+        {data.inwardReverseCharge && (
+          <tr>
+            <td className="px-3 py-1.5">{k('r3b.reverseCharge')}</td>
+            <td className={num} dir="ltr">{money.plain(data.inwardReverseCharge.taxable)}</td>
+            {heads(data.inwardReverseCharge)}
+          </tr>
+        )}
       </Block>
       <Block title={k('r3b.itcTitle')} head={<tr><th scope="col" className={`${th} text-start`}>{k('details')}</th><th scope="col" className={`${th} text-end`}>{k('taxable')}</th>{headCols}</tr>}>
         <tr>
@@ -82,7 +89,7 @@ export function Gstr3bPanel({ data, ...state }: { data: Gstr3b | undefined; isPe
         {HEADS.map((h) => (
           <tr key={h}>
             <th scope="row" className="px-3 py-1.5 text-start font-normal">{k(`heads.${h}`)}</th>
-            <td className={num} dir="ltr">{money.plain(data.outward[h])}</td>
+            <td className={num} dir="ltr">{money.plain(data.outward[h] + (data.inwardReverseCharge?.[h] ?? 0))}</td>
             {(['igst', 'cgst', 'sgst'] as const).map((from) => (
               <td key={from} className={num} dir="ltr">{data.setOff.used[from][h] ? money.plain(data.setOff.used[from][h]) : '–'}</td>
             ))}

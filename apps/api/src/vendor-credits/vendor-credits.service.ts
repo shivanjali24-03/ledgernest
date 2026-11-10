@@ -333,6 +333,7 @@ export class VendorCreditsService {
           status: true,
           billDate: true,
           currency: true,
+          reverseCharge: true,
           total: true,
           amountPaid: true,
           payableAccountId: true,
@@ -386,6 +387,13 @@ export class VendorCreditsService {
           BadRequestException,
           'Debit notes are for bills in the base currency for now.',
           'bill_currency',
+        );
+      // Its GST was ours to pay: putting it right means a journal for the tax as well
+      if (bill.reverseCharge)
+        throw refuse(
+          BadRequestException,
+          'Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again.',
+          'bill_reverse_charge',
         );
       if (input.date < iso(bill.billDate))
         throw refuse(

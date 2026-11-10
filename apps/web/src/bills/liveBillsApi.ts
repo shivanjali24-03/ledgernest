@@ -9,6 +9,10 @@ export function createLiveBillsApi(client: AuthClient, organizationId: string): 
       headers: { 'X-Organization-Id': organizationId },
     });
   return {
+    selfInvoice: async (id) => {
+      const { blob, filename } = await client.download(`/bills/${id}/self-invoice`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'self-invoice.pdf' };
+    },
     exportList: async (q) => {
       const p = new URLSearchParams();
       if (q.state) p.set('state', q.state);

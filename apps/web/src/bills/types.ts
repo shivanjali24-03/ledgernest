@@ -17,6 +17,10 @@ export interface Bill {
   vendorReference: string | null;
   /** The date on the vendor's bill; null = the bill date */
   vendorBillDate?: string | null;
+  /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
+  reverseCharge?: boolean;
+  reverseChargeTax?: { name: string; amount: number }[];
+  selfInvoiceNumber?: string | null;
   notes: string | null;
   contact: {
     id: string;
@@ -84,6 +88,8 @@ export interface BillsApi {
   /** Other bills from the same vendor that may be this one entered twice */
   duplicates(id: string): Promise<BillDuplicate[]>;
   void(id: string, input: { date?: string; reason?: string }): Promise<Bill>;
+  /** The self-invoice for a purchase under reverse charge from an unregistered supplier */
+  selfInvoice(id: string): Promise<{ blob: Blob; filename: string }>;
 }
 
 export interface BillDuplicate {

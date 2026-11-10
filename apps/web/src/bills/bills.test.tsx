@@ -173,4 +173,51 @@ describe('bills', () => {
     await previewAs('auditor');
     await waitFor(() => expect(screen.queryByRole('button', { name: 'New bill' })).not.toBeInTheDocument());
   });
+
+  it('pays GST itself under reverse charge: none to the vendor, a self invoice when they aren’t registered', async () => {
+    const { createDemoBillsApi } = await import('./demoBillsApi');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const { demoTaxState } = await import('../taxes/demoTaxesApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const api = createDemoBillsApi(() => true);
+    const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')!.id;
+    const line = { description: 'Design tool subscription', quantity: '1', unitPrice: 100_00, taxGroupId: gst18, accountId: sampleId('5300') };
+    const { createDemoContactsApi } = await import('../contacts/demoContactsApi');
+    const lawyer = await createDemoContactsApi(() => true).create({ name: 'Adv. R. Kulkarni', isCustomer: false, isVendor: true, billingAddress: { line1: null, line2: null, city: 'Pune', region: 'Maharashtra', postalCode: null, country: 'IN' } });
+    const today = new Date().toISOString().slice(0, 10);
+    const d = await api.create({ contactId: lawyer.id, billDate: today, reverseCharge: true, vendorReference: 'RK-1', lines: [line] });
+    // The vendor charges none; we pay CGST + SGST ourselves
+    expect(d).toMatchObject({ reverseCharge: true, taxTotal: 0, total: 100_00 });
+    expect(d.lines[0]!.taxGroup).toBeNull();
+    expect(d.lines[0]!.rcmTaxGroup?.name).toBe('GST 18%');
+    expect(d.reverseChargeTax).toEqual([
+      { name: 'CGST 9%', amount: 9_00 },
+      { name: 'SGST 9%', amount: 9_00 },
+    ]);
+    const rec = await api.record(d.id);
+    expect(rec.selfInvoiceNumber).toMatch(/^SI\/\d{4}-\d{2}\/0001$/);
+    const pdf = await api.selfInvoice(d.id);
+    expect(pdf.filename).toMatch(/^self-invoice-si-/);
+    const sharma = demoContactRows().find((c) => c.name === 'Sharma Office Supplies')!;
+    const local = await api.record((await api.create({ contactId: sharma.id, billDate: today, reverseCharge: true, vendorReference: 'SOS-RCM', lines: [line] })).id);
+    // A registered vendor issues its own invoice
+    expect(local.selfInvoiceNumber).toBeNull();
+    expect(local.reverseChargeTax).toEqual([
+      { name: 'CGST 9%', amount: 9_00 },
+      { name: 'SGST 9%', amount: 9_00 },
+    ]);
+  }, 30_000);
+
+  it('shows the GST paid under reverse charge apart from the total', async () => {
+    renderApp('/bills/new');
+    await screen.findByRole('heading', { name: 'New bill' });
+    await choose('Vendor', 'Sharma Office Supplies');
+    await userEvent.type(screen.getByLabelText('Description on line 1'), 'Transport');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
+    await choose('Tax on line 1', 'GST 18%');
+    await userEvent.click(screen.getByRole('checkbox', { name: /We pay GST/ }));
+    await waitFor(() => expect(totals()).toHaveTextContent('GST we pay under reverse charge'));
+    expect(totals()).toHaveTextContent('INR 1,000.00');
+    expect(totals()).not.toHaveTextContent('CGST 9%');
+  }, 20_000);
 });

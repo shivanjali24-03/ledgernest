@@ -36,6 +36,8 @@ export const billDraftSchema = z
     vendorReference: text(64),
     /** The date printed on the vendor's bill (GSTR-2B shows it); omitted = the bill date */
     vendorBillDate: isoDaySchema.nullable().optional().default(null),
+    /** We pay the GST under reverse charge (e.g. transport from a GTA, legal services, or services bought from abroad): the vendor charges none */
+    reverseCharge: z.boolean().optional().default(false),
     /** When the bill is entered in the books */
     billDate: isoDaySchema,
     /** Omitted = the bill date plus the vendor's payment terms */
