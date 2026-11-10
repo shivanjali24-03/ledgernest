@@ -42,10 +42,15 @@ describe('language switching', () => {
     expect(document.documentElement.dir).toBe('ltr');
   });
 
-  it('uses right-to-left layout for Arabic', async () => {
+  it('offers English, Hindi and Marathi only, for India', () => {
+    expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'hi', 'mr']);
+  });
+
+  it('falls back to English for a language no longer offered', async () => {
     await i18n.changeLanguage('ar');
-    expect(document.documentElement.dir).toBe('rtl');
-    expect(i18n.t('nav.items.dashboard')).toBe('لوحة التحكم');
+    expect(i18n.t('nav.items.dashboard')).toBe('Dashboard');
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.documentElement.dir).toBe('ltr');
   });
 
   it('fills in placeholders', () => {

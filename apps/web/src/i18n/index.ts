@@ -1,26 +1,25 @@
 import i18n from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
-import ar from './locales/ar.json';
-import de from './locales/de.json';
 import en from './locales/en.json';
-import es from './locales/es.json';
-import fr from './locales/fr.json';
 import hi from './locales/hi.json';
 import mr from './locales/mr.json';
 
-/** Supported languages: `name` is shown in its own script; `locale` drives number, money and date formats. */
+/**
+ * The languages offered: LedgerNest is for India for now, so English, Hindi and Marathi.
+ * `name` is shown in its own script; `locale` drives number, money and date formats.
+ *
+ * Spanish, French, German and Arabic (right-to-left) translations stay in ./locales for when the app
+ * goes beyond India; they are neither offered nor bundled. To bring one back, import its file, add it
+ * here (Arabic with dir 'rtl') and to RESOURCES, and fill in any keys added since.
+ */
 export const LANGUAGES = [
   { code: 'en', name: 'English', dir: 'ltr', locale: 'en-IN' },
   { code: 'hi', name: 'हिन्दी', dir: 'ltr', locale: 'hi-IN' },
   { code: 'mr', name: 'मराठी', dir: 'ltr', locale: 'mr-IN' },
-  { code: 'es', name: 'Español', dir: 'ltr', locale: 'es-ES' },
-  { code: 'fr', name: 'Français', dir: 'ltr', locale: 'fr-FR' },
-  { code: 'de', name: 'Deutsch', dir: 'ltr', locale: 'de-DE' },
-  { code: 'ar', name: 'العربية', dir: 'rtl', locale: 'ar' },
-] as const;
+] as const satisfies readonly { code: string; name: string; dir: 'ltr' | 'rtl'; locale: string }[];
 
 export type LanguageCode = (typeof LANGUAGES)[number]['code'];
-export const RESOURCES = { en, hi, mr, es, fr, de, ar } satisfies Record<LanguageCode, unknown>;
+export const RESOURCES = { en, hi, mr } satisfies Record<LanguageCode, unknown>;
 
 const KEY = 'ledgernest.lang';
 const isSupported = (c: string | null | undefined): c is LanguageCode => !!c && LANGUAGES.some((l) => l.code === c);
