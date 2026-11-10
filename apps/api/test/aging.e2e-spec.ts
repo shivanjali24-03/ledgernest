@@ -889,4 +889,52 @@ describe('Aging reports (e2e)', () => {
       delete process.env.SMTP_URL;
     }
   });
+
+  it('downloads the invoice and bill lists as CSV, with their filters', async () => {
+    const lines = (text: string) =>
+      text
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .split('\r\n')
+        .map((l) => l.replaceAll('"', ''));
+    const all = await as().get('/invoices/export').expect(200);
+    expect(all.headers['content-disposition']).toContain('invoices.csv');
+    const rows = lines(all.text);
+    expect(rows[0]).toBe(
+      'number,state,issue_date,due_date,customer,reference,currency,total,paid,balance',
+    );
+    // Kumar's four and Northwind's one
+    expect(rows).toHaveLength(6);
+    expect(rows).toContain(
+      'INV/2026-27/0002,void,2026-05-01,2026-05-01,Kumar Logistics,,INR,200.00,,',
+    );
+    expect(rows.some((r) => r.includes('Northwind Inc.,,USD,500.00'))).toBe(
+      true,
+    );
+    const kumar = lines(
+      (
+        await as()
+          .get(`/invoices/export?contactId=${contact.kumar}&state=void`)
+          .expect(200)
+      ).text,
+    );
+    expect(kumar).toHaveLength(2);
+    const bills = lines((await as().get('/bills/export').expect(200)).text);
+    expect(bills[0]).toBe(
+      'number,state,bill_date,due_date,vendor,vendor_reference,currency,total,paid,balance',
+    );
+    expect(bills[1]).toMatch(
+      /^BILL\/2026-27\/0001,overdue,2026-04-01,2026-04-01,Sharma Supplies,,INR,250.00,0.00,250.00$/,
+    );
+    expect(
+      await prisma.auditLog.count({
+        where: {
+          organizationId: org,
+          action: 'org.report.export',
+          entityId: { in: ['invoices', 'bills'] },
+        },
+      }),
+    ).toBe(3);
+    await as('viewer').get('/invoices/export').expect(403);
+  });
 });

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -160,6 +161,18 @@ describe('invoices', () => {
       { timeout: 8000 },
     );
     await waitFor(() => expect(screen.getByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in')).toBeInTheDocument(), { timeout: 4000 });
+  });
+
+  it('downloads the list as CSV, with the filter in use', async () => {
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:csv')), revokeObjectURL: vi.fn() });
+    renderApp();
+    await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+    await waitFor(() => expect(saved).toBeDefined(), { timeout: 4000 });
+    const text = await saved!.text();
+    expect(text.replace(/^\uFEFF/, '').split('\r\n')[0]).toBe('"number","state","issue_date","due_date","customer","reference","currency","total","paid","balance"');
+    expect(text).toMatch(/"INV\/[^"]+\/0001","[a-z_]+","[\d-]+","[\d-]+","Kumar Logistics","PO-4471","INR","1180\d\d\.00"/);
   });
 
   it('is read-only for Auditors', async () => {

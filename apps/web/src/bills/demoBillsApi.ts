@@ -1,6 +1,7 @@
 import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
+import { csvBlob, major } from '../lib/listCsv';
 import { demoCheckUndo, demoInventoryAccountOf, demoSaveMovements, demoStockReceipts, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
@@ -363,7 +364,12 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
       lines,
     };
   };
-  return {
+  const api: BillsApi = {
+    exportList: async (q) => {
+      const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
+      const rows = [['number', 'state', 'bill_date', 'due_date', 'vendor', 'vendor_reference', 'currency', 'total', 'paid', 'balance'], ...all.map((b) => { const cur = b.currency ?? 'INR'; return [b.number ?? 'Draft', b.state, b.billDate, b.dueDate, b.contact.name, b.vendorReference ?? '', cur, major(b.total, cur), b.status === 'open' ? major(b.amountPaid, cur) : '', b.status === 'open' ? major(b.balance, cur) : '']; })];
+      return { blob: csvBlob(rows), filename: 'bills.csv' };
+    },
     list: (q) =>
       wait(async () => {
         const all = (await load()).map(view);
@@ -528,4 +534,5 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
         return view(i);
       }),
   };
+  return api;
 }

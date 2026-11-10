@@ -24,6 +24,7 @@ import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { AuditService } from '../audit/audit.service.js';
+import { allPages, major, toCsv } from '../common/list-export.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
@@ -466,6 +467,60 @@ export class InvoicesService {
         };
       }),
     };
+  }
+
+  /** The list as CSV, with the same filters, every page; recorded as an export */
+  async exportCsv(
+    organizationId: string,
+    q: Omit<Parameters<InvoicesService['list']>[1], 'page' | 'pageSize'>,
+    ctx: Ctx,
+  ) {
+    const { baseCurrency } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { baseCurrency: true },
+    });
+    const rows = await allPages((page) =>
+      this.list(organizationId, { ...q, page, pageSize: 100 }),
+    );
+    await this.audit.record({
+      action: 'org.report.export',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'report',
+      entityId: 'invoices',
+      after: { report: 'invoices', ...q, rows: rows.length },
+      req: ctx.req,
+    });
+    return toCsv([
+      [
+        'number',
+        'state',
+        'issue_date',
+        'due_date',
+        'customer',
+        'reference',
+        'currency',
+        'total',
+        'paid',
+        'balance',
+      ],
+      ...rows.map((i) => {
+        const cur = i.currency ?? baseCurrency;
+        return [
+          i.number ?? 'Draft',
+          i.state,
+          i.issueDate,
+          i.dueDate,
+          i.contact.name,
+          i.reference ?? '',
+          cur,
+          major(i.total, cur),
+          // What's paid and owed only means something once issued
+          i.status === 'issued' ? major(i.amountPaid, cur) : '',
+          i.status === 'issued' ? major(i.balance, cur) : '',
+        ];
+      }),
+    ]);
   }
 
   /**
