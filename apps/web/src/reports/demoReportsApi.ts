@@ -198,7 +198,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       r.baseTotal += base;
       totals.buckets[bucket] += base;
       totals.total += base;
-      r.documents.push({ id: d.id, number: d.number, vendorReference: d.vendorReference, date: d.date, dueDate: d.dueDate, daysOverdue: Math.max(0, daysBetween(d.dueDate, asOf)), bucket, total: d.total, outstanding });
+      r.documents.push({ id: d.id, number: d.number, vendorReference: d.vendorReference, date: d.date, dueDate: d.dueDate, daysOverdue: Math.max(0, daysBetween(d.dueDate, asOf)), bucket, total: d.total, outstanding, interest: ('interest' in d ? d.interest?.accrued : 0) ?? 0 });
+      r.interest = (r.interest ?? 0) + (('interest' in d ? d.interest?.accrued : 0) ?? 0);
     }
     for (const p of payments.filter((x) => x.unallocated > 0)) {
       const r = rowFor(p.contact, p.currency);

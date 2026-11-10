@@ -26,6 +26,7 @@ import type { Request } from 'express';
 import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { InterestService } from '../interest/interest.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { organizationSender } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -39,6 +40,7 @@ export class StatementsService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly audit: AuditService,
+    private readonly interest: InterestService,
   ) {}
 
   async statement(
@@ -234,7 +236,41 @@ export class StatementsService {
       to,
       baseCurrency,
       sections: buildStatement(events, from, to, baseCurrency),
+      // A customer's interest on late payment to the end date, under each invoice's terms, per currency
+      interest:
+        side === 'receivables'
+          ? await this.interestByCurrency(
+              organizationId,
+              contactId,
+              to,
+              baseCurrency,
+            )
+          : [],
     };
+  }
+
+  private async interestByCurrency(
+    organizationId: string,
+    contactId: string,
+    to: string,
+    baseCurrency: string,
+  ) {
+    const each = await this.interest.forInvoices(
+      organizationId,
+      { contactId },
+      to,
+    );
+    const by = new Map<string, { accrued: number; perDay: number }>();
+    for (const i of each.values()) {
+      if (!i.accrued) continue;
+      const c = i.currency ?? baseCurrency;
+      const x = by.get(c) ?? { accrued: 0, perDay: 0 };
+      by.set(c, {
+        accrued: x.accrued + i.accrued,
+        perDay: x.perDay + i.perDay,
+      });
+    }
+    return [...by].map(([currency, x]) => ({ currency, ...x }));
   }
 
   /** The statement as a PDF file, named for the contact and dates */
@@ -268,6 +304,10 @@ export class StatementsService {
           subtitle: `${name} · ${s.from} to ${s.to}`,
           footer: `${name} · LedgerNest`,
           rows: statementRows(s),
+          after: (s.interest ?? []).map(
+            (x) =>
+              `Interest on late payment to ${s.to}, not included above: ${x.currency} ${(x.accrued / 10 ** currencyDigits(x.currency)).toFixed(currencyDigits(x.currency))}`,
+          ),
         }),
       ),
     };

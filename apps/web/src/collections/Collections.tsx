@@ -81,6 +81,8 @@ export default function Collections() {
     onError: (e) => toast(apiErrorMessage(e, t), 'error'),
   });
   const total = rows.reduce((s, r) => s + r.overdue, 0);
+  // Interest on late payment, when any customer's invoices carry it
+  const withInterest = rows.some((r) => !!r.a.interest);
   return (
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>
@@ -101,6 +103,7 @@ export default function Collections() {
                 <tr>
                   <th scope="col" className="px-4 py-2 text-start font-semibold">{t('collections.cols.customer')}</th>
                   <th scope="col" className="px-4 py-2 text-end font-semibold">{t('collections.cols.overdue')}</th>
+                  {withInterest && <th scope="col" className="px-4 py-2 text-end font-semibold">{t('collections.cols.interest')}</th>}
                   <th scope="col" className="px-4 py-2 text-start font-semibold">{t('collections.cols.chased')}</th>
                   <th scope="col" className="px-4 py-2 font-semibold"><span className="sr-only">{t('collections.cols.actions')}</span></th>
                 </tr>
@@ -115,6 +118,11 @@ export default function Collections() {
                       <span className="block text-xs text-ink-500">{t('collections.invoices', { count: r.count, days: r.oldest })}</span>
                     </th>
                     <td className="px-4 py-2.5 text-end font-mono font-semibold tabular-nums text-expense" dir="ltr">{money.format(r.overdue)}</td>
+                    {withInterest && (
+                      <td className="px-4 py-2.5 text-end font-mono tabular-nums text-ink-600 dark:text-ink-300" dir="ltr">
+                        {r.a.interest ? money.format(r.a.interest) : '–'}
+                      </td>
+                    )}
                     <td className="px-4 py-2.5 text-xs text-ink-500">
                       {r.contact?.lastChasedAt ? t('collections.chasedAgo', { when: formatRelative(r.contact.lastChasedAt, locale) }) : t('collections.notChased')}
                       {!!r.contact?.share?.views && <span className="block">{t('collections.opened', { count: r.contact.share.views })}</span>}

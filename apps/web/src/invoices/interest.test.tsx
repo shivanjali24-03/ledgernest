@@ -54,4 +54,16 @@ describe('interest on late payment', () => {
     expect(note.textContent).toContain(`₹${(expected.interest / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
     expect(within(await screen.findByRole('article')).getByTestId('invoice-interest-terms')).toHaveTextContent('Interest at 18% a year (simple)');
   }, 30_000);
+
+  it('shows each customer’s interest so far beside what they owe in Collections', async () => {
+    await createDemoSettingsApi(() => true).update({ interestRateBp: 1800, interestMethod: 'simple', interestGraceDays: 0 });
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const d = await api.create({ contactId: kumar.id, issueDate: daysAgo(40), dueDate: daysAgo(30), lines: [{ description: 'Freight', quantity: '1', unitPrice: 1_00_000_00, accountId: sampleId('4100.01') }] });
+    await api.issue(d.id);
+    renderApp('/collections');
+    expect(await screen.findByRole('columnheader', { name: 'Interest so far' }, { timeout: 10_000 })).toBeInTheDocument();
+    const row = (await screen.findByRole('rowheader', { name: /Kumar Logistics/ })).closest('tr')!;
+    expect(within(row).getAllByRole('cell')[1]!.textContent).toMatch(/₹[\d,]+\.\d{2}/);
+  }, 30_000);
 });

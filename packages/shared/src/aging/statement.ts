@@ -74,6 +74,8 @@ export interface AccountStatement {
   from: string;
   to: string;
   sections: AccountStatementSection[];
+  /** Interest on late payment accrued to the end date under the invoices' terms, per currency (not in the balance) */
+  interest?: { currency: string; accrued: number; perDay: number }[];
 }
 
 const ORDER: Record<AccountStatementKind, number> = { invoice: 0, bill: 0, credit_note: 1, debit_note: 1, receipt: 2, payment: 2, refund: 2, void: 3 };

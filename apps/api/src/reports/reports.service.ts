@@ -29,6 +29,7 @@ import {
   type PnlSection,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { InterestService } from '../interest/interest.service.js';
 
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -39,7 +40,10 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
  */
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly interest: InterestService,
+  ) {}
 
   /** Every account's debits, credits and balance up to a day. Debits always equal credits. */
   async trialBalance(organizationId: string, asOf: string) {
@@ -635,7 +639,11 @@ export class ReportsService {
         bucket: AgingBucket;
         total: number;
         outstanding: number;
+        /** Interest on late payment accrued to the day (customers' invoices with interest terms) */
+        interest: number;
       }[];
+      /** The documents' interest, together */
+      interest: number;
     };
     const rows = new Map<string, Row>();
     const rowFor = (
@@ -653,6 +661,7 @@ export class ReportsService {
           baseTotal: 0,
           baseAdvance: 0,
           documents: [],
+          interest: 0,
         });
       return rows.get(key)!;
     };
@@ -694,7 +703,23 @@ export class ReportsService {
         bucket,
         total: Number(d.total),
         outstanding,
+        interest: 0,
       });
+    }
+    // Customers' interest on late payment, invoice by invoice, to the day
+    if (side === 'receivables') {
+      const interest = await this.interest.forInvoices(
+        organizationId,
+        {
+          ids: [...rows.values()].flatMap((r) => r.documents.map((d) => d.id)),
+        },
+        asOf,
+      );
+      for (const r of rows.values())
+        for (const d of r.documents) {
+          d.interest = interest.get(d.id)?.accrued ?? 0;
+          r.interest += d.interest;
+        }
     }
     // Credit left on credit notes (customers) or debit notes (vendors) sits with the contact like an advance
     const credits =
