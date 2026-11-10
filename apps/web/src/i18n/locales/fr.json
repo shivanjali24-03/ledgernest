@@ -759,7 +759,8 @@
       "org_quote_reopen": "Devis rouvert",
       "org_quote_invoice": "Devis facturé",
       "org_quote_email": "Devis envoyé par e-mail",
-      "org_invoice_email": "Facture envoyée par e-mail"
+      "org_invoice_email": "Facture envoyée par e-mail",
+      "org_payment_email": "Reçu envoyé par e-mail"
     },
     "entities": {
       "membership": "Membre",
@@ -2231,7 +2232,16 @@
       "payment": "Décaissés"
     },
     "voidPayment": "Annuler le paiement",
-    "voidPaymentBody": "Son écriture est contrepassée aujourd’hui et les factures qu’il a payées sont de nouveau dues."
+    "voidPaymentBody": "Son écriture est contrepassée aujourd’hui et les factures qu’il a payées sont de nouveau dues.",
+    "emailReceipt": {
+      "action": "Envoyer le reçu",
+      "title": "Envoyer le reçu {{number}}",
+      "body": "Un PDF de ce qui a été encaissé et des factures réglées.",
+      "blankHint": "Laissez vide pour l’envoyer à l’adresse enregistrée du client.",
+      "sent": "Reçu envoyé à {{email}}",
+      "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}",
+      "noEmail": "Ce client n’a pas d’adresse e-mail. Saisissez-en une pour l’envoyer."
+    }
   },
   "bills": {
     "title": "Factures fournisseurs",
@@ -3423,5 +3433,12 @@
       "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}"
     },
     "duplicate": "Dupliquer"
+  },
+  "emailDialog": {
+    "send": "Envoyer",
+    "to": "Envoyer à",
+    "badEmail": "Saisissez une adresse e-mail valide.",
+    "note": "Note",
+    "noteHint": "Facultatif : elle figure en haut de l’e-mail."
   }
 }

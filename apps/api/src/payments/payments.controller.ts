@@ -17,6 +17,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  invoiceEmailSchema,
   PAYMENT_KINDS,
   paymentVoidSchema,
   receiptSchema,
@@ -33,6 +34,7 @@ import {
 } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { PaymentReceiptsService } from './payment-receipts.service.js';
 import { PaymentsService } from './payments.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -53,7 +55,10 @@ const listQuery = z.object({
 })
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    private readonly receipts: PaymentReceiptsService,
+  ) {}
 
   @Get()
   @RequirePermission('invoices.view')
@@ -129,6 +134,24 @@ export class PaymentsController {
       tenant,
       req,
     });
+  }
+
+  @Post(':id/email')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('payments.manage')
+  @ApiOkResponse({
+    description:
+      'Emails a posted receipt to the customer as a PDF: what came in and which invoices it settled',
+  })
+  email(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) paymentId: string,
+    @Body(new ZodValidationPipe(invoiceEmailSchema))
+    body: z.output<typeof invoiceEmailSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.receipts.email(paymentId, body, { actor, tenant, req });
   }
 
   @Post(':id/void')

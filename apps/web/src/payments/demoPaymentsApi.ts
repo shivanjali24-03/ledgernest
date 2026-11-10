@@ -166,6 +166,16 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
         if (opts.approvalsAs && vendor) demoApprovalCheck('payment', { documentId: null, amount: p.data.amount, summary: `Payment to ${vendor.name}${p.data.reference ? ` · ${p.data.reference}` : ''}`, payload: input }, opts.approvalsAs);
         return settle('payment', { ...p.data, allocations: p.data.allocations.map((x) => ({ documentId: x.billId, amount: x.amount })) });
       }),
+    email: (id, input) =>
+      wait(() => {
+        guard();
+        const p = load().find((x) => x.id === id);
+        if (!p) throw new ApiError('not_found', 404);
+        if (p.kind !== 'receipt' || p.status !== 'posted') throw refuse(409, 'not_receipt');
+        const to = input.email ?? demoContactRows().find((c) => c.id === p.contact.id)?.email;
+        if (!to) throw refuse(400, 'no_email');
+        return { sentTo: to };
+      }),
     void: (id, reason) =>
       wait(async () => {
         guard();

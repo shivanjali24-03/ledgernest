@@ -117,4 +117,25 @@ describe('vendor payments', () => {
     const sharma = (await screen.findByRole('link', { name: 'Sharma Office Supplies' }, { timeout: 4000 })).closest('li')!;
     await waitFor(() => expect(sharma).toHaveTextContent('We owe ₹53,100.00'));
   }, 20_000);
+
+  it('emails a customer a receipt for what they paid', { timeout: 20_000 }, async () => {
+    // An advance from Kumar into the HDFC account, today
+    const { createDemoPaymentsApi } = await import('./demoPaymentsApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const { todayIn } = await import('@ledgernest/shared');
+    const r = await createDemoPaymentsApi(() => true).receive({ contactId: 'c0000000-0000-4000-8000-000000000001', date: todayIn('Asia/Kolkata'), bankAccountId: sampleId('1100.01'), amount: 50_000_00, allocations: [] });
+    renderApp('/payments');
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('menu')) fireEvent.click(screen.getByRole('button', { name: `Actions for ${r.number}` }));
+        expect(screen.getByRole('menuitem', { name: 'Email receipt' })).toBeInTheDocument();
+      },
+      { timeout: 6000 },
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Email receipt' }));
+    const dialog = await screen.findByRole('dialog', { name: `Email receipt ${r.number}` });
+    // Blank: their email on file
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in', {}, { timeout: 4000 })).toBeInTheDocument();
+  });
 });

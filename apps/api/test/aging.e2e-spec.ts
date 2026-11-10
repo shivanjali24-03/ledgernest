@@ -858,4 +858,35 @@ describe('Aging reports (e2e)', () => {
       delete process.env.SMTP_URL;
     }
   });
+
+  it('emails a customer a receipt for what they paid', async () => {
+    const receipts = (
+      await as()
+        .get(
+          `/payments?kind=receipt&contactId=${contact.kumar}&page=1&pageSize=10`,
+        )
+        .expect(200)
+    ).body.items as { id: string; number: string }[];
+    const first = receipts.find((r) => r.number === 'RCT/2026-27/0001')!;
+    await as().post(`/payments/${first.id}/email`, {}).expect(409); // email isn't set up
+    process.env.SMTP_URL = 'json';
+    try {
+      expect(
+        (await as().post(`/payments/${first.id}/email`, {}).expect(200)).body,
+      ).toEqual({ sentTo: 'accounts@kumar.example' });
+      expect(app.get(MailService).captured.at(-1)).toEqual({
+        to: ['accounts@kumar.example'],
+        subject: `Payment receipt RCT/2026-27/0001 from Aging ${run}`,
+        attachments: ['receipt-rct-2026-27-0001.pdf'],
+      });
+      expect(
+        await prisma.auditLog.count({
+          where: { organizationId: org, action: 'org.payment.email' },
+        }),
+      ).toBe(1);
+      await as('viewer').post(`/payments/${first.id}/email`, {}).expect(403);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
 });

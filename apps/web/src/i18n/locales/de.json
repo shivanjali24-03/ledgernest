@@ -759,7 +759,8 @@
       "org_quote_reopen": "Angebot wieder geöffnet",
       "org_quote_invoice": "Angebot abgerechnet",
       "org_quote_email": "Angebot per E-Mail gesendet",
-      "org_invoice_email": "Rechnung per E-Mail gesendet"
+      "org_invoice_email": "Rechnung per E-Mail gesendet",
+      "org_payment_email": "Quittung per E-Mail gesendet"
     },
     "entities": {
       "membership": "Mitglied",
@@ -2231,7 +2232,16 @@
       "payment": "Ausgänge"
     },
     "voidPayment": "Zahlung stornieren",
-    "voidPaymentBody": "Die Buchung wird heute storniert und die bezahlten Rechnungen sind wieder offen."
+    "voidPaymentBody": "Die Buchung wird heute storniert und die bezahlten Rechnungen sind wieder offen.",
+    "emailReceipt": {
+      "action": "Quittung senden",
+      "title": "Quittung {{number}} senden",
+      "body": "Ein PDF des Zahlungseingangs und der damit beglichenen Rechnungen.",
+      "blankHint": "Leer lassen, um sie an die hinterlegte E-Mail des Kunden zu senden.",
+      "sent": "Quittung an {{email}} gesendet",
+      "sentDemo": "In der Demo wird nichts wirklich gesendet; sie ginge an {{email}}",
+      "noEmail": "Dieser Kunde hat keine E-Mail-Adresse. Geben Sie eine ein, um sie zu senden."
+    }
   },
   "bills": {
     "title": "Eingangsrechnungen",
@@ -3423,5 +3433,12 @@
       "sentDemo": "In der Demo wird nichts wirklich gesendet; es ginge an {{email}}"
     },
     "duplicate": "Duplizieren"
+  },
+  "emailDialog": {
+    "send": "Senden",
+    "to": "Senden an",
+    "badEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+    "note": "Notiz",
+    "noteHint": "Optional: Sie steht oben in der E-Mail."
   }
 }

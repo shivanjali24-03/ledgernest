@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, HandCoins, Paperclip, Plus, Send } from 'lucide-react';
+import { Ban, Building2, HandCoins, Mail, Paperclip, Plus, Send } from 'lucide-react';
 import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,8 @@ import type { Payment } from '../types';
 import { usePaymentsApi } from '../usePaymentsApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 import Modal from '../../ui/Modal';
+import EmailDialog from '../../ui/EmailDialog';
+import { apiErrorMessage } from '../../platform/errors';
 
 const PAGE_SIZE = 25;
 
@@ -40,6 +42,7 @@ export default function Payments() {
   const [recording, setRecording] = useState<PaymentKind | null>(null);
   const [voiding, setVoiding] = useState<Payment | null>(null);
   const [files, setFiles] = useState<Payment | null>(null);
+  const [emailing, setEmailing] = useState<Payment | null>(null);
   const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, kind, page], queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ p, reason }: { p: Payment; reason?: string }) => api!.void(p.id, reason),
@@ -142,7 +145,7 @@ export default function Payments() {
                   </span>
                   <RowMenu
                     label={t('payments.actionsFor', { number: p.number })}
-                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
                   />
                 </li>
               ))}
@@ -167,6 +170,19 @@ export default function Payments() {
         <Modal open onClose={() => setFiles(null)} title={t('attachments.titleFor', { what: files.number })}>
           <DocumentAttachments documentType="payment" documentId={files.id} bare />
         </Modal>
+      )}
+      {emailing && api && (
+        <EmailDialog
+          title={t('payments.emailReceipt.title', { number: emailing.number })}
+          description={t('payments.emailReceipt.body')}
+          defaultEmail={null}
+          blankHint={t('payments.emailReceipt.blankHint')}
+          send={(input) => api.email(emailing.id, input)}
+          sentMessage={(email) => t('payments.emailReceipt.sent', { email })}
+          demoMessage={(email) => t('payments.emailReceipt.sentDemo', { email })}
+          errorMessage={(e) => (e instanceof Error && 'details' in e && (e as { details?: { reason?: string } }).details?.reason === 'no_email' ? t('payments.emailReceipt.noEmail') : apiErrorMessage(e, t))}
+          onClose={() => setEmailing(null)}
+        />
       )}
     </motion.div>
   );

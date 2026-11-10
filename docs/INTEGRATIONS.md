@@ -117,7 +117,7 @@ Scheduled reports (**Reports → Scheduled**) are always kept in the app, to dow
 
 Reports come as Excel, CSV or PDF. PDFs use the standard PDF fonts, which cover Western European text: the rupee sign is written "Rs", and names in other scripts (Devanagari, Arabic) show as "?", so choose Excel or CSV for those.
 
-The same server also sends **invoices** and **quotes** as PDFs (their **Email** button), **payment reminders**, by hand (an invoice's **Send reminder**) or automatically for overdue invoices (**Settings → Payment reminders**: days after the due date, how often, at most how many), and **statements of account** (**Reports → Statements → Email**): a PDF to the customer or vendor, recorded in the audit trail. Without SMTP, download the PDF and send it yourself.
+The same server also sends **invoices**, **quotes** and **payment receipts** as PDFs (their **Email** actions), **payment reminders**, by hand (an invoice's **Send reminder**) or automatically for overdue invoices (**Settings → Payment reminders**: days after the due date, how often, at most how many), and **statements of account** (**Reports → Statements → Email**): a PDF to the customer or vendor, recorded in the audit trail. Without SMTP, download the PDF and send it yourself.
 
 With **Settings → Email → Weekly summary** on, Owners and Admins get the dashboard's figures and what needs attention every Monday morning (the organisation's time zone).
 
