@@ -33,6 +33,8 @@ describe('dashboard', () => {
     expect(within(figures).getByRole('article', { name: 'Receivables' })).toHaveTextContent(/1\.18|1,18/);
     expect(screen.getByRole('table', { name: 'Profit by month' }).querySelectorAll('tr')).toHaveLength(12);
     const attention = screen.getByRole('region', { name: 'Needs attention' });
+    // About ₹24 lakh in the bank never runs short
+    expect(await within(attention).findByRole('link', { name: /^Cash in 13 weeks\s*Stays above zero, ending at ₹/ }, { timeout: 4000 })).toHaveAttribute('href', '/reports?tab=forecast');
     const draft = within(attention).getByRole('link', { name: /1 draft entries not posted/ });
     await userEvent.click(draft);
     await waitFor(() => expect(router.state.location.pathname).toBe('/journals'));

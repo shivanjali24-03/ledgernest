@@ -44,6 +44,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 - **Purchases:** bills, recurring bills, vendor payments, approvals for spending above a limit.
 - **Banking:** statement import, suggested matches and accounts learned from earlier lines, reconciliation.
 - **Stock and assets:** inventory at weighted average cost with reorder levels, fixed assets with depreciation.
+- **Cash forecast:** 13 weeks ahead, expecting each customer to pay as late as they usually do, with a warning before cash runs short.
 - **Reports:** trial balance, profit and loss (by cost centre, against budget), balance sheet, cash flow, aging, sales and purchases by customer, vendor or item, scheduled reports and a weekly summary email.
 - **Documents:** invoices, quotes, receipts and statements as PDFs to download or email, with your terms and bank details; attachments on any document.
 - **Data in and out:** spreadsheet imports, CSV and Excel exports that import back, whole-organisation backups, API keys and signed webhooks ([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)).

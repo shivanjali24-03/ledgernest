@@ -1,4 +1,4 @@
-import type { Gstr2bResult } from '@ledgernest/shared';
+import type { CashForecast as SharedCashForecast, Gstr2bResult } from '@ledgernest/shared';
 import type { AccountStatement, AccountType, SalesReportBy, SalesReportRow, SalesReportSide, StatementEmailInput, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
@@ -218,6 +218,8 @@ export interface ReportsApi {
   gstr1(from: string, to: string): Promise<Gstr1>;
   /** GSTR-2B (the portal's JSON) matched to bills dated in the range */
   gstr2b(content: string, from: string, to: string): Promise<Gstr2bReport>;
+  /** Cash week by week for the coming weeks */
+  cashForecast(weeks: number): Promise<CashForecast>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
@@ -234,3 +236,6 @@ export interface SalesReport {
 
 /** What POST /reports/gst/gstr-2b returns */
 export type Gstr2bReport = Gstr2bResult & { gstin: string | null; period: string | null; otherGstin: boolean; from: string; to: string };
+
+/** What GET /reports/cash-forecast returns */
+export type CashForecast = SharedCashForecast & { currency: string; lateCustomers: { contact: { id: string; name: string }; days: number }[] };

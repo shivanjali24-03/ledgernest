@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
 import { resetDemoAccounts } from '../accounts/demoAccountsApi';
-import { resetDemoBills } from '../bills/demoBillsApi';
+import { demoBillViews, resetDemoBills } from '../bills/demoBillsApi';
 import { resetDemoInvoices } from '../invoices/demoInvoicesApi';
 import { resetDemoPayments } from '../payments/demoPaymentsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
@@ -212,6 +212,21 @@ describe('reports', () => {
     const text = await saved!.text();
     expect(text).toContain('"Matched"');
     expect(text).toContain('"SOS-887"');
+  });
+
+  it('forecasts cash for 13 weeks from unpaid invoices and bills, week by week', { timeout: 20_000 }, async () => {
+    // The month's rent bill, recorded as opening Bills would
+    await demoBillViews();
+    renderApp('/reports?tab=forecast');
+    const table = await screen.findByRole('table', { name: 'Cash forecast by week' }, { timeout: 6000 });
+    expect(within(table).getAllByRole('row')).toHaveLength(14);
+    // Kumar's invoice comes in and the month's rent goes out
+    expect(screen.getByText('Coming in, 13 weeks').closest('div')!.parentElement!).toHaveTextContent('₹1,18,000.00');
+    expect(screen.getByText('Going out, 13 weeks').closest('div')!.parentElement!).toHaveTextContent('-₹53,100.00');
+    // Open the weeks that hold something, and find the invoice in one of them
+    for (const b of within(table).getAllByRole('button', { expanded: false })) fireEvent.click(b);
+    expect(await within(table).findByRole('link', { name: /^INV\/.*\/0001$/ })).toHaveAttribute('href', expect.stringMatching(/^\/invoices\//));
+    expect(within(table).getByRole('link', { name: 'SOS/887' })).toHaveAttribute('href', expect.stringMatching(/^\/bills\//));
   });
 
   it('downloads a report as Excel, and prints it with the organisation at the top', async () => {
