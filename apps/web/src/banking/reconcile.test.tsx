@@ -71,6 +71,20 @@ describe('reconciliation', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument(), { timeout: 4000 });
   }, 45_000);
 
+  it('suggests the account a line like it went to last time', async () => {
+    const csv = ['Date,Narration,Withdrawal,Deposit', `${dmy(today)},CHARGES INCL GST 0525,118.00,`, `${dmy(today)},CHARGES INCL GST 0625,236.00,`].join('\n');
+    const api = createDemoBankingApi(() => true);
+    await api.importStatement({ bankAccountId: HDFC, fileName: 'hdfc.csv', content: csv });
+    const ws = await api.reconcileWorkspace(HDFC, today);
+    const first = ws.bankLines.find((l) => l.description.endsWith('0525'))!;
+    await api.createFromLine({ statementLineId: first.id, accountId: sampleId('5900'), taxGroupId: null, description: null });
+    renderApp(`/banking/reconcile/${HDFC}`);
+    const line = (await screen.findByText('CHARGES INCL GST 0625', {}, { timeout: 4000 })).closest('li')!;
+    expect(within(line).getByTestId('line-hint')).toHaveTextContent('Last time a line like this went to 5900 · Bank charges');
+    await userEvent.click(within(line).getByRole('button', { name: 'Record it' }));
+    expect((within(line).getByLabelText('Account for the new entry') as HTMLSelectElement).value).toBe(sampleId('5900'));
+  }, 20_000);
+
   it('is read-only without the right to reconcile', async () => {
     const csv = ['Date,Narration,Withdrawal,Deposit', `${dmy(rentDay)},OFFICE RENT RENT-NOV,"85,000.00",`].join('\n');
     await createDemoBankingApi(() => true).importStatement({ bankAccountId: HDFC, fileName: 'hdfc.csv', content: csv });

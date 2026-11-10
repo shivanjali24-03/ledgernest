@@ -2655,7 +2655,8 @@
       "historyLine": "Saldo {{balance}} · {{matches}} Zuordnungen",
       "undo": "Rückgängig",
       "undoTitle": "Abgleich bis {{date}} rückgängig machen?",
-      "undoBody": "Seine Zuordnungen werden freigegeben und lassen sich wieder ändern."
+      "undoBody": "Seine Zuordnungen werden freigegeben und lassen sich wieder ändern.",
+      "lastTime": "Beim letzten Mal ging eine solche Zeile auf {{account}}"
     }
   },
   "assets": {

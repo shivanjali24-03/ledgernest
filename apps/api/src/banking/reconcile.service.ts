@@ -340,6 +340,11 @@ export class ReconcileService {
         journalLineIds: [x.journalLineId],
         confidence: x.score >= 120 ? ('high' as const) : ('medium' as const),
       }));
+    const hints = await this.hints(
+      organizationId,
+      account.id,
+      bankLines.filter((l) => !usedS.has(l.id)),
+    );
     return {
       account: {
         id: account.id,
@@ -351,6 +356,7 @@ export class ReconcileService {
       bankLines,
       bookLines,
       suggestions,
+      hints,
       matched: matched.map((m) => ({
         id: m.id,
         date: iso(m.date),
@@ -856,6 +862,87 @@ export class ReconcileService {
         },
         tx,
       );
+    });
+  }
+
+  /**
+   * What the books were told last time: for lines with no match in the books, the account (and tax) used when a line
+   * like it (the same first words, money the same way) was recorded from the statement before. Only a hint.
+   */
+  private async hints(
+    organizationId: string,
+    bankAccountId: string,
+    lines: { id: string; description: string; amount: number }[],
+  ) {
+    if (!lines.length) return [];
+    const key = (description: string, amount: number) =>
+      `${amount < 0 ? 'out' : 'in'}:${description
+        .toLowerCase()
+        .replace(/[^a-z\s]+/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 1)
+        .slice(0, 3)
+        .join(' ')}`;
+    const history = await this.prisma.bankStatementLine.findMany({
+      where: { organizationId, bankAccountId, status: 'matched' },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      take: 500,
+      select: {
+        description: true,
+        amount: true,
+        matches: {
+          take: 1,
+          select: {
+            journalLine: {
+              select: {
+                entry: {
+                  select: {
+                    lines: {
+                      where: { taxRateId: null, fxSourceLine: null },
+                      select: {
+                        accountId: true,
+                        taxGroupId: true,
+                        debit: true,
+                        credit: true,
+                        account: { select: { code: true, name: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const learned = new Map<
+      string,
+      {
+        accountId: string;
+        taxGroupId: string | null;
+        account: { code: string; name: string };
+      }
+    >();
+    for (const h of history) {
+      const k = key(h.description, Number(h.amount));
+      if (learned.has(k) || k.endsWith(':')) continue;
+      const other = (h.matches[0]?.journalLine.entry.lines ?? [])
+        .filter((l) => l.accountId !== bankAccountId)
+        .sort(
+          (a, b) =>
+            Number(!!b.taxGroupId) - Number(!!a.taxGroupId) ||
+            Number(b.debit + b.credit - (a.debit + a.credit)),
+        )[0];
+      if (other)
+        learned.set(k, {
+          accountId: other.accountId,
+          taxGroupId: other.taxGroupId,
+          account: other.account,
+        });
+    }
+    return lines.flatMap((l) => {
+      const hit = learned.get(key(l.description, l.amount));
+      return hit ? [{ statementLineId: l.id, ...hit }] : [];
     });
   }
 }

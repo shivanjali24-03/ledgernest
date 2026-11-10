@@ -2655,7 +2655,8 @@
       "historyLine": "Balance {{balance}} · {{matches}} matches",
       "undo": "Undo",
       "undoTitle": "Undo the reconciliation to {{date}}?",
-      "undoBody": "Its matches are unlocked, so they can be changed again."
+      "undoBody": "Its matches are unlocked, so they can be changed again.",
+      "lastTime": "Last time a line like this went to {{account}}"
     }
   },
   "assets": {

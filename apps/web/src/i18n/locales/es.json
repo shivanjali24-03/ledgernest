@@ -2655,7 +2655,8 @@
       "historyLine": "Saldo {{balance}} · {{matches}} coincidencias",
       "undo": "Deshacer",
       "undoTitle": "¿Deshacer la conciliación al {{date}}?",
-      "undoBody": "Sus coincidencias se desbloquean para poder cambiarlas."
+      "undoBody": "Sus coincidencias se desbloquean para poder cambiarlas.",
+      "lastTime": "La última vez, una línea como esta fue a {{account}}"
     }
   },
   "assets": {
