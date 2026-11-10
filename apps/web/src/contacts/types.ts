@@ -39,6 +39,8 @@ export interface ContactQuery {
 /** Customers and vendors. Live and demo both implement it. */
 export interface ContactsApi {
   list(q: ContactQuery): Promise<{ total: number; page: number; pageSize: number; items: Contact[] }>;
+  /** As CSV, in the columns the contacts import reads */
+  exportList(q: Omit<ContactQuery, 'page' | 'pageSize'>): Promise<{ blob: Blob; filename: string }>;
   get(id: string): Promise<Contact>;
   create(input: ContactCreateInput): Promise<Contact>;
   update(id: string, input: ContactUpdateInput): Promise<Contact>;

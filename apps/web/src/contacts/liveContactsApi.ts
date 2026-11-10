@@ -5,6 +5,12 @@ import type { ContactsApi } from './types';
 export function createLiveContactsApi(client: AuthClient, organizationId: string): ContactsApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/contacts${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
+    exportList: async (q) => {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') p.set(k, String(v));
+      const { blob, filename } = await client.download(`/contacts/export?${p}`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'contacts.csv' };
+    },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
       if (q.search) p.set('search', q.search);

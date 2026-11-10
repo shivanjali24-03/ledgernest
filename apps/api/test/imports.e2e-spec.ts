@@ -310,4 +310,11 @@ describe('Imports (e2e)', () => {
       ]),
     );
   });
+
+  it('takes off the apostrophe exports put before + = - @, so an export imports back', async () => {
+    const r = await preview('contacts', [
+      { name: `Guarded ${run}`, kind: 'customer', phone: "'+91 98220 31144" },
+    ]);
+    expect(r.results[0]).toMatchObject({ ok: true, errors: [] });
+  });
 });

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -11,11 +12,13 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
   ApiOkResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -25,7 +28,7 @@ import {
   type ItemCreateInput,
   type ItemUpdateInput,
 } from '@ledgernest/shared';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import {
   CurrentActor,
@@ -62,6 +65,28 @@ export class ItemsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.items.list(tenant.organizationId, q);
+  }
+
+  @Get('export')
+  @RequirePermission('reports.export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Cache-Control', 'no-store')
+  @ApiProduces('text/csv')
+  async exportCsv(
+    @Query(new ZodValidationPipe(itemListQuerySchema))
+    q: z.output<typeof itemListQuerySchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const filters = q;
+    res.setHeader('Content-Disposition', `attachment; filename="items.csv"`);
+    return this.items.exportCsv(tenant.organizationId, filters, {
+      actor,
+      tenant,
+      req,
+    });
   }
 
   @Get(':id')

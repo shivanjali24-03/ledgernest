@@ -86,10 +86,20 @@ export class ImportsService {
 
   async run(
     kind: ImportKind,
-    rows: Row[],
+    input: Row[],
     ctx: Ctx,
     opts: { commit: boolean; date?: string },
   ) {
+    // Our own exports (and many spreadsheets) guard cells starting with = + - @ with an apostrophe: take it off
+    const rows = input.map(
+      (r) =>
+        Object.fromEntries(
+          Object.entries(r).map(([k, v]) => [
+            k,
+            typeof v === 'string' ? v.replace(/^'(?=[=+\-@])/, '') : v,
+          ]),
+        ) as Row,
+    );
     const need = IMPORT_PERMISSIONS[kind];
     if (!ctx.tenant.permissions.has(need))
       throw new ForbiddenException({

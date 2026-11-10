@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -165,5 +166,19 @@ describe('customers and vendors', () => {
     await waitFor(() => expect(within(dialog).getAllByRole('option').map((o) => o.textContent)).toEqual(expect.arrayContaining([expect.stringMatching(/^Kumar Logistics.*Contact$/), expect.stringMatching(/^INV\/.*Kumar Logistics.*Invoice$/)])), { timeout: 5000 });
     fireEvent.click(within(dialog).getAllByRole('option').find((o) => /Contact$/.test(o.textContent ?? ''))!.querySelector('button')!);
     await waitFor(() => expect(router.state.location.pathname).toBe('/contacts/c0000000-0000-4000-8000-000000000001'));
+  });
+
+  it('downloads customers and vendors as CSV, ready to import elsewhere', async () => {
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:csv')), revokeObjectURL: vi.fn() });
+    renderApp();
+    await row('Kumar Logistics');
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+    await waitFor(() => expect(saved).toBeDefined(), { timeout: 4000 });
+    const lines = (await saved!.text()).replace(/^\uFEFF/, '').trim().split('\r\n').map((l) => l.replaceAll('"', ''));
+    expect(lines[0]).toBe('name,kind,legal name,gstin,email,phone,address,city,state,pin code,country,currency,payment terms,credit limit,notes');
+    // A leading + is guarded with an apostrophe so spreadsheets don't read it as a formula
+    expect(lines.find((l) => l.startsWith('Kumar Logistics,'))).toMatch(/^Kumar Logistics,customer,Kumar Logistics Private Limited,27AAKCK4821R1Z.,accounts@kumarlogistics.in,'\+91 20 4011 2200,Plot 18, Hinjewadi Phase 2,Pune,Maharashtra,411057,IN,,15,,$/);
+    expect(lines.find((l) => l.startsWith('Gulf Traders LLC,'))).toContain(',both,');
   });
 });

@@ -1,5 +1,6 @@
 import { contactCreateSchema, contactStateCode, contactUpdateSchema, gstinCheckChar, type ContactAddress } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { csvBlob } from '../lib/listCsv';
 import { demoEnabledCurrencies, DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
 import type { Contact, ContactsApi } from './types';
 
@@ -74,7 +75,12 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
     if (!whole.success) throw new ApiError('validation', 400, whole.error.issues[0]!.message, undefined, { reason: 'invalid', field: whole.error.issues[0]!.path.join('.') });
     return { ...whole.data, currency, stateCode: contactStateCode(whole.data) };
   };
-  return {
+  const api: ContactsApi = {
+    exportList: async (q) => {
+      const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
+      const rows = [['name', 'kind', 'legal name', 'gstin', 'email', 'phone', 'address', 'city', 'state', 'pin code', 'country', 'currency', 'payment terms', 'credit limit', 'notes'], ...all.map((c) => [c.name, c.isCustomer && c.isVendor ? 'both' : c.isCustomer ? 'customer' : 'vendor', c.legalName ?? '', c.taxId ?? '', c.email ?? '', c.phone ?? '', c.billingAddress.line1 ?? '', c.billingAddress.city ?? '', c.billingAddress.region ?? '', c.billingAddress.postalCode ?? '', c.billingAddress.country ?? '', c.currency ?? '', c.paymentTermsDays, c.creditLimit ?? '', c.notes ?? ''])];
+      return { blob: csvBlob(rows), filename: 'contacts.csv' };
+    },
     list: (q) =>
       wait(async () => {
         // What each customer owes and each vendor is owed: unpaid documents less advances (loaded on demand: invoices use contacts too)
@@ -137,4 +143,5 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
         save(rows.filter((r) => r.id !== cid));
       }),
   };
+  return api;
 }

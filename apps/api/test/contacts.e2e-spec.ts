@@ -122,4 +122,17 @@ describe('Customers and vendors (e2e)', () => {
     const actions = (await prisma.auditLog.findMany({ where: { organizationId: orgA, action: { startsWith: 'org.contact.' } }, select: { action: true } })).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(['org.contact.create', 'org.contact.update', 'org.contact.archive', 'org.contact.restore', 'org.contact.delete']));
   });
+
+  it('downloads customers and vendors as CSV, in the columns the import reads', async () => {
+    const res = await as('owner').get('/contacts/export?type=customer').expect(200);
+    expect(res.headers['content-disposition']).toContain('contacts.csv');
+    const lines = res.text.replace(/^\uFEFF/, '').trim().split('\r\n').map((l) => l.replaceAll('"', ''));
+    expect(lines[0]).toBe('name,kind,legal name,gstin,email,phone,address,city,state,pin code,country,currency,payment terms,credit limit,notes');
+    // Earlier tests leave Acme Inc. as the one customer: a vendor too, in USD
+    expect(lines.slice(1)).toEqual(['Acme Inc.,both,,US-12-3456789,,,,Austin,Texas,,US,USD,30,,']);
+    expect(lines.some((l) => l.includes(',vendor,'))).toBe(false);
+    await as('viewer').get('/contacts/export').expect(403);
+    // Another organisation's owner sees only their own
+    expect((await as('ownerB', orgB).get('/contacts/export').expect(200)).text).not.toContain('Acme Inc.');
+  });
 });

@@ -33,6 +33,8 @@ export interface Item {
 /** Products and services. Live and demo both implement it. */
 export interface ItemsApi {
   list(q: { search?: string; kind?: ItemKind; archived?: boolean }): Promise<Item[]>;
+  /** As CSV, in the columns the items import reads */
+  exportList(q: { search?: string; kind?: ItemKind; archived?: boolean }): Promise<{ blob: Blob; filename: string }>;
   create(input: ItemCreateInput): Promise<Item>;
   update(id: string, input: ItemUpdateInput): Promise<Item>;
   archive(id: string, archive: boolean): Promise<Item>;
