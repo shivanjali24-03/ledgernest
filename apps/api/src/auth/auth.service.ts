@@ -182,13 +182,14 @@ export class AuthService {
         status: m.organization.status,
         baseCurrency: m.organization.baseCurrency,
         locale: m.organization.locale,
+        requireTwoFactor: m.organization.requireTwoFactor,
         role: builtIn ? { type: 'built_in' as const, key: builtIn.id } : { type: 'custom' as const, key: m.customRoleId, name: m.customRole?.name },
         permissions,
       };
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, locale: user.locale, isSuperAdmin: user.isSuperAdmin },
+      user: { id: user.id, email: user.email, name: user.name, locale: user.locale, isSuperAdmin: user.isSuperAdmin, twoFactorEnabled: !!user.totpEnabledAt },
       platformPermissions: user.isSuperAdmin ? ALL_PERMISSIONS.filter((p) => p.startsWith('platform.')) : [],
       organizations,
     };

@@ -2,7 +2,7 @@ import type { BuiltInRoleId, Permission } from '@ledgernest/shared';
 
 /** What GET /auth/me returns. */
 export interface MeResponse {
-  user: { id: string; email: string; name: string; locale: string; isSuperAdmin: boolean };
+  user: { id: string; email: string; name: string; locale: string; isSuperAdmin: boolean; twoFactorEnabled?: boolean };
   platformPermissions: Permission[];
   organizations: {
     id: string;
@@ -11,6 +11,8 @@ export interface MeResponse {
     status: string;
     baseCurrency: string;
     locale: string;
+    /** Every member must use two-factor sign-in */
+    requireTwoFactor?: boolean;
     role: { type: 'built_in'; key: BuiltInRoleId } | { type: 'custom'; key: string | null; name?: string };
     permissions: Permission[];
   }[];
@@ -202,6 +204,10 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
   return {
     login,
     loginTwoFactor,
+    sessions: {
+      list: () => request<{ id: string; current: boolean; startedAt: string; lastUsedAt: string; ip: string | null; device: { browser: string | null; os: string | null; mobile: boolean } }[]>('/auth/sessions'),
+      revoke: (id: string) => request<void>(`/auth/sessions/${id}`, { method: 'DELETE' }),
+    },
     twoFactor: {
       status: () => request<{ enabled: boolean; enabledAt: string | null; recoveryCodesLeft: number }>('/auth/2fa'),
       setup: (password: string) => request<{ secret: string; uri: string }>('/auth/2fa/setup', { method: 'POST', json: { password } }),

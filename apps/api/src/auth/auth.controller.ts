@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -13,6 +13,7 @@ import { clearRefreshCookie, setRefreshCookie } from './session-cookie.js';
 import { AccountService } from './account.service.js';
 import { PasswordService } from './password.service.js';
 import { TwoFactorService } from './two-factor.service.js';
+import { SessionsService } from './sessions.service.js';
 import { z } from 'zod';
 import { hashToken, REFRESH_COOKIE } from './tokens.js';
 
@@ -29,6 +30,7 @@ export class AuthController {
     private readonly passwords: PasswordService,
     private readonly accounts: AccountService,
     private readonly twoFactor: TwoFactorService,
+    private readonly sessions: SessionsService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -153,6 +155,21 @@ export class AuthController {
   async changePassword(@Body(new ZodValidationPipe(changePasswordSchema)) body: ChangePasswordInput, @CurrentActor() actor: Actor, @Req() req: Request) {
     const raw = cookieOf(req);
     await this.passwords.change(actor.userId, body.currentPassword, body.newPassword, { ...ctxOf(req), refreshTokenHash: raw ? hashToken(raw) : undefined });
+  }
+
+  @Get('sessions')
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Where you are signed in: device, address and when it was last used; this one first' })
+  listSessions(@CurrentActor() actor: Actor, @Req() req: Request) {
+    return this.sessions.list(actor.userId, cookieOf(req));
+  }
+
+  @Delete('sessions/:id')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOkResponse({ description: 'That device is signed out (within the access token’s 15 minutes)' })
+  async revokeSession(@Param('id', new ParseUUIDPipe()) id: string, @CurrentActor() actor: Actor, @Req() req: Request) {
+    await this.sessions.revoke(actor.userId, id, ctxOf(req));
   }
 
   @Post('logout-all')
