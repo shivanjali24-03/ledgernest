@@ -29,6 +29,8 @@ export interface SettingsValues {
   /** The bank rate as a percentage, like 5.50 */
   msmeBankRate: string;
   gstScheme: string;
+  /** '100', '500' or '600' (basis points) */
+  compositionRate: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -59,6 +61,7 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   udyamNumber: s.udyamNumber ?? '',
   msmeBankRate: s.msmeBankRateBp ? (s.msmeBankRateBp / 100).toFixed(2) : '',
   gstScheme: s.gstScheme ?? 'regular',
+  compositionRate: String(s.compositionRateBp ?? 100),
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -72,6 +75,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     else if (k === 'country') out[k] = v[k] || null;
     else if (k === 'weeklySummary' || k === 'requireTwoFactor') out[k] = v[k] === 'true';
     else if (k === 'msmeCategory') out[k] = v[k] || null;
+    else if (k === 'compositionRate') out.compositionRateBp = Number(v[k]);
     // A percentage typed as 5.5 or 5.50%: stored in basis points
     else if (k === 'msmeBankRate') out.msmeBankRateBp = v[k].trim() ? Math.round(Number(v[k].replace('%', '').trim()) * 100) : null;
     else out[k] = v[k];

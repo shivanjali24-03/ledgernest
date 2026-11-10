@@ -198,3 +198,12 @@ describe('MSME settings', () => {
     expect(changes(saved, { ...saved, msmeCategory: '', msmeBankRate: '' })).toEqual({ msmeCategory: null, msmeBankRateBp: null });
   });
 });
+
+describe('GST scheme settings', () => {
+  it('saves the composition scheme and its rate in basis points', async () => {
+    const { changes, toValues } = await import('./form');
+    const before = toValues({ id: 'o', name: 'Nest', slug: 'nest', status: 'ACTIVE', baseCurrency: 'INR', locale: 'en-IN', timeZone: 'Asia/Kolkata', country: 'IN', fiscalYearStartMonth: 4, legalName: null, taxId: null, email: null, phone: null, address: { line1: null, line2: null, city: null, region: null, postalCode: null }, logo: null, locks: { baseCurrency: false, fiscalYearStartMonth: false } });
+    expect(before).toMatchObject({ gstScheme: 'regular', compositionRate: '100' });
+    expect(changes(before, { ...before, gstScheme: 'composition', compositionRate: '600' })).toEqual({ gstScheme: 'composition', compositionRateBp: 600 });
+  });
+});

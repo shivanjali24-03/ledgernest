@@ -181,6 +181,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
       {v.country === 'IN' && (
         <Section title={t('settings.gst.title')} description={t('settings.gst.description')}>
           <SelectField label={t('settings.fields.gstScheme')} value={v.gstScheme} onChange={set('gstScheme')} disabled={!canManage} hint={v.gstScheme === 'composition' ? t('settings.hints.composition') : undefined} options={[{ value: 'regular', label: t('settings.gstSchemes.regular') }, { value: 'composition', label: t('settings.gstSchemes.composition') }]} />
+          {v.gstScheme === 'composition' && <SelectField label={t('settings.fields.compositionRate')} value={v.compositionRate} onChange={set('compositionRate')} disabled={!canManage} hint={t('settings.hints.compositionRate')} options={[{ value: '100', label: t('settings.compositionRates.100') }, { value: '500', label: t('settings.compositionRates.500') }, { value: '600', label: t('settings.compositionRates.600') }]} />}
         </Section>
       )}
 

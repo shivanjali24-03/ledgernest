@@ -866,7 +866,16 @@ export class GstReturnsService {
   /** Taxable value invoiced in the previous financial year (April to March), in the base currency */
   private async turnover(organizationId: string, today: string) {
     const y = Number(today.slice(0, 4)) - (today.slice(5) < '04-01' ? 1 : 0);
-    const range = { gte: asDate(`${y - 1}-04-01`), lte: asDate(`${y}-03-31`) };
+    return this.turnoverBetween(organizationId, `${y - 1}-04-01`, `${y}-03-31`);
+  }
+
+  /** Taxable value invoiced between two days (inclusive), in the base currency */
+  private async turnoverBetween(
+    organizationId: string,
+    from: string,
+    to: string,
+  ) {
+    const range = { gte: asDate(from), lte: asDate(to) };
     const [base, foreign] = await Promise.all([
       this.prisma.invoice.aggregate({
         where: {
@@ -903,7 +912,13 @@ export class GstReturnsService {
   async compliance(organizationId: string, now = new Date()) {
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { country: true, taxId: true, timeZone: true, gstScheme: true },
+      select: {
+        country: true,
+        taxId: true,
+        timeZone: true,
+        gstScheme: true,
+        compositionRateBp: true,
+      },
     });
     if (org.country !== 'IN') return { today: null, items: [] };
     const today = todayIn(org.timeZone, now);
@@ -964,6 +979,13 @@ export class GstReturnsService {
         items.map(async (i) => {
           let amount: number | undefined;
           if (i.kind === 'tds') amount = tdsAmounts.get(i.from);
+          // Composition tax for the quarter: its turnover at the composition rate
+          if (i.kind === 'cmp08')
+            amount = Math.round(
+              ((await this.turnoverBetween(organizationId, i.from, i.to)) *
+                org.compositionRateBp) /
+                10_000,
+            );
           if (i.kind === 'gstr3b') {
             const r = await this.gstr3b(organizationId, i.from, i.to);
             amount =

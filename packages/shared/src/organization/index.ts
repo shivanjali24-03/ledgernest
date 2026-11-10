@@ -123,6 +123,8 @@ export const organizationSettingsSchema = z
     msmeBankRateBp: z.number().int().min(1).max(2000).nullable(),
     /** Regular GST, or the composition scheme (no GST charged; bills of supply; CMP-08 and GSTR-4) */
     gstScheme: z.enum(['regular', 'composition']),
+    /** The composition rate in basis points: 1% traders and manufacturers, 5% restaurants, 6% services */
+    compositionRateBp: z.union([z.literal(100), z.literal(500), z.literal(600)]),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
