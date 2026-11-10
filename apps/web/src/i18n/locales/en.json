@@ -1751,6 +1751,45 @@
       "hintReceivable": "TDS customers kept back from what they paid you: check it against Form 26AS and claim it in your return.",
       "emptyBodyReceivable": "When a customer pays less because they kept back TDS, tick Customer deducted TDS on the receipt and it shows here.",
       "byMonthReceivable": "By month"
+    },
+    "gstHealth": {
+      "tab": "Health check",
+      "title": "GST health check",
+      "fix": "Fix",
+      "more_one": "and 1 more",
+      "more_other": "and {{count}} more",
+      "allClear": "Ready for filing",
+      "allClearBody": "Your GSTIN and address, items’ HSN codes, customers’ states and vendors’ GSTINs are all in place.",
+      "kinds": {
+        "org_gstin": {
+          "title": "Your GSTIN is missing or not valid",
+          "why": "Every tax invoice, GSTR-1 and e-invoice needs it. Add it in Settings."
+        },
+        "org_address": {
+          "title": "Your address or PIN code is incomplete",
+          "why": "Tax invoices and e-invoices need your address with a 6-digit PIN code."
+        },
+        "items_hsn": {
+          "title_one": "1 item has no HSN or SAC code",
+          "title_other": "{{count}} items have no HSN or SAC code",
+          "why": "GSTR-1’s HSN summary and e-invoices need a 4 to 8 digit code on everything you sell."
+        },
+        "customers_state": {
+          "title_one": "1 customer has no state",
+          "title_other": "{{count}} customers have no state",
+          "why": "The place of supply decides CGST + SGST or IGST. Add a GSTIN or a billing address with the state."
+        },
+        "customers_einvoice": {
+          "title_one": "1 registered customer is missing e-invoice details",
+          "title_other": "{{count}} registered customers are missing e-invoice details",
+          "why": "e-Invoices need the buyer’s address, city and 6-digit PIN code."
+        },
+        "vendors_gstin": {
+          "title_one": "1 vendor charges GST without a GSTIN on file",
+          "title_other": "{{count}} vendors charge GST without a GSTIN on file",
+          "why": "Without their GSTIN, their bills can’t be matched in GSTR-2B and the input credit is at risk."
+        }
+      }
     }
   },
   "taxes": {

@@ -1,6 +1,6 @@
 import { gstinCheckChar } from '@ledgernest/shared';
 import { vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -227,6 +227,21 @@ describe('reports', () => {
     for (const b of within(table).getAllByRole('button', { expanded: false })) fireEvent.click(b);
     expect(await within(table).findByRole('link', { name: /^INV\/.*\/0001$/ })).toHaveAttribute('href', expect.stringMatching(/^\/invoices\//));
     expect(within(table).getByRole('link', { name: 'SOS/887' })).toHaveAttribute('href', expect.stringMatching(/^\/bills\//));
+  });
+
+  it('runs a GST health check, with links to fix what it finds', async () => {
+    renderApp('/reports?tab=gst&return=health');
+    // The demo is in order (customers abroad are exports, not missing a state)
+    expect(await screen.findByText('Ready for filing', {}, { timeout: 4000 })).toBeInTheDocument();
+    cleanup();
+    // An item added without an HSN code is found, with the way to fix it
+    const { createDemoItemsApi } = await import('../items/demoItemsApi');
+    await createDemoItemsApi(() => true).create({ name: 'Packing material', kind: 'goods', salePrice: 50_00 });
+    renderApp('/reports?tab=gst&return=health');
+    const list = await screen.findByRole('list', { name: 'GST health check' }, { timeout: 4000 });
+    const item = within(list).getByText('1 item has no HSN or SAC code').closest('li')!;
+    expect(item).toHaveTextContent('Packing material');
+    expect(within(item).getByRole('link', { name: 'Fix' })).toHaveAttribute('href', '/items');
   });
 
   it('downloads a report as Excel, and prints it with the organisation at the top', async () => {

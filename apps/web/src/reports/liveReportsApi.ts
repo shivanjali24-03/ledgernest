@@ -28,6 +28,7 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     gstr1: (from, to) => r(`/gst/gstr-1?from=${from}&to=${to}`),
     cashForecast: (weeks) => r(`/cash-forecast?weeks=${weeks}`),
     compliance: () => r('/compliance'),
+    gstHealth: () => r('/gst/health'),
     tds: (from, to, side = 'payable') => r(`/tds?from=${from}&to=${to}&side=${side}`),
     tally: (part, from, to) => file(`/tally/export?part=${part}${part === 'vouchers' ? `&from=${from}&to=${to}` : ''}`, `tally-${part}.xml`),
     gstr2b: (content, from, to) => client.request('/reports/gst/gstr-2b', { method: 'POST', json: { content, from, to }, headers }),

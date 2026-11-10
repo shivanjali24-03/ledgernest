@@ -49,6 +49,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CashForecastService } from './cash-forecast.service.js';
+import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
 import { TdsReportService } from './tds-report.service.js';
 import { DashboardService } from './dashboard.service.js';
@@ -100,6 +101,7 @@ export class ReportsController {
     private readonly statements: StatementsService,
     private readonly sales: SalesReportService,
     private readonly forecast: CashForecastService,
+    private readonly gstHealth: GstHealthService,
     private readonly tally: TallyExportService,
     private readonly tds: TdsReportService,
   ) {}
@@ -602,6 +604,16 @@ export class ReportsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.forecast.forecast(tenant.organizationId, q.weeks);
+  }
+
+  @Get('gst/health')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'What would go wrong when filing GST: the organisation’s GSTIN and address, items without HSN, customers without a state, registered customers missing e-invoice details, vendors charging GST without a GSTIN',
+  })
+  gstHealthCheck(@CurrentTenant() tenant: Tenant) {
+    return this.gstHealth.check(tenant.organizationId);
   }
 
   @Get('gst/gstr-3b')
