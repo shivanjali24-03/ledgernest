@@ -68,6 +68,10 @@ export class AccountService {
         data: {
           name: 'Deleted user',
           email: `deleted-${userId}@deleted.invalid`,
+          totpSecret: null,
+          totpEnabledAt: null,
+          totpLastStep: null,
+          recoveryCodes: [],
           passwordHash: await argon2.hash(randomBytes(32).toString('hex'), {
             type: argon2.argon2id,
           }),

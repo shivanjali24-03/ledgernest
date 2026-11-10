@@ -1,14 +1,16 @@
-import { currencyDigits, invoiceRows, invoiceState, pdfTableBytes, todayIn, upiPayUri } from '@ledgernest/shared';
+import { currencyDigits, invoiceRows, invoiceState, msmeCovered, msmeLateInterest, pdfTableBytes, todayIn, upiPayUri } from '@ledgernest/shared';
 import { API_URL, ApiError } from '../auth/client';
 
 /** What GET /public/customers/:token returns: everything a customer still owes, as they see it */
 export interface CustomerAccount {
   organization: { name: string; taxId: string | null; email: string | null; phone: string | null };
   customer: { name: string };
-  invoices: { id: string; number: string; issueDate: string; dueDate: string; currency: string; total: number; balance: number; state: string }[];
+  /** msmeInterest: what the business may charge for paying late (MSMED Act s.16), when it is a micro or small enterprise */
+  invoices: { id: string; number: string; issueDate: string; dueDate: string; currency: string; total: number; balance: number; state: string; msmeInterest?: number }[];
   totals: { currency: string; balance: number }[];
   overdue: number;
   upi: { upiId: string; amount: number; link: string } | null;
+  msme?: { udyamNumber: string | null; interest: number } | null;
 }
 
 export interface CustomerAccountSource {
@@ -23,14 +25,18 @@ async function demoAccount(token: string): Promise<CustomerAccountSource | null>
   const c = demoCustomerByToken(token);
   if (!c) return null;
   let upiId: string | null = null;
+  let msme: { msmeCategory?: 'micro' | 'small' | 'medium' | null; udyamNumber?: string | null; msmeBankRateBp?: number | null } = {};
   try {
-    upiId = (JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: { upiId?: string | null } } | null)?.settings?.upiId ?? null;
+    const saved = (JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: { upiId?: string | null } & typeof msme } | null)?.settings;
+    upiId = saved?.upiId ?? null;
+    msme = saved ?? {};
   } catch {
     /* no saved settings */
   }
+  const charges = msmeCovered(msme.msmeCategory) && !!msme.msmeBankRateBp;
   const today = todayIn('Asia/Kolkata');
   const views = (await demoInvoiceViews()).filter((i) => i.contact.id === c.id && i.status === 'issued' && i.balance > 0);
-  const invoices = views.map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency ?? 'INR', total: i.total, balance: i.balance, state: invoiceState({ status: 'issued', total: i.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today) }));
+  const invoices = views.map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency ?? 'INR', total: i.total, balance: i.balance, state: invoiceState({ status: 'issued', total: i.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today), msmeInterest: charges && !i.currency ? msmeLateInterest(i.balance, i.issueDate, i.dueDate, today, msme.msmeBankRateBp!) : 0 }));
   const totals = [...new Set(invoices.map((i) => i.currency))].map((currency) => ({ currency, balance: invoices.filter((i) => i.currency === currency).reduce((s, i) => s + i.balance, 0) }));
   const rupees = invoices.filter((i) => i.currency === 'INR');
   const inr = rupees.reduce((s, i) => s + i.balance, 0);
@@ -41,6 +47,7 @@ async function demoAccount(token: string): Promise<CustomerAccountSource | null>
       invoices,
       totals,
       overdue: rupees.filter((i) => i.state === 'overdue').reduce((s, i) => s + i.balance, 0),
+      msme: charges ? { udyamNumber: msme.udyamNumber ?? null, interest: invoices.reduce((s, i) => s + (i.msmeInterest ?? 0), 0) } : null,
       upi: upiId && inr > 0 ? { upiId, amount: inr, link: upiPayUri({ upiId, name: 'Nest Demo Private Limited', amount: inr, note: rupees.length === 1 ? `Invoice ${rupees[0]!.number}` : `Invoices ${rupees.map((i) => i.number).join(', ')}`, reference: rupees.length === 1 ? rupees[0]!.number : null }) } : null,
     },
     pdf: (invoiceId) => ({

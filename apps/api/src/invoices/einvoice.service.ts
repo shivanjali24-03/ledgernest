@@ -5,11 +5,15 @@ import {
 } from '@nestjs/common';
 import {
   buildEinvoice,
+  buildEwayBill,
   einvoiceProblems,
+  ewayBillFile,
+  ewayProblems,
   invoiceNumber,
   splitTax,
   zeroHeads,
   type EinvoiceInput,
+  type EwayTransport,
   type GstHeads,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -200,6 +204,36 @@ export class EinvoiceService {
     return {
       json: buildEinvoice(input),
       fileName: `e-invoice-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
+    };
+  }
+
+  /** One issued invoice's goods as an e-way bill for the portal's bulk upload, or what has to be fixed first */
+  async ewayBill(organizationId: string, id: string, transport: EwayTransport) {
+    const i = await this.prisma.invoice.findFirst({
+      where: { id, organizationId },
+      select: invoiceSelect,
+    });
+    if (!i)
+      throw new NotFoundException({
+        message: 'Invoice not found.',
+        details: { reason: 'not_found' },
+      });
+    if (i.status !== 'issued')
+      throw new ConflictException({
+        message: 'Only issued invoices have an e-way bill.',
+        details: { reason: 'not_issued' },
+      });
+    const input = this.input(i, await this.seller(organizationId));
+    const problems = ewayProblems(input, transport);
+    if (problems.length)
+      throw new ConflictException({
+        message:
+          'Some details the e-way bill portal needs are missing. Fix them and download again.',
+        details: { reason: 'eway_incomplete', problems },
+      });
+    return {
+      json: ewayBillFile([buildEwayBill(input, transport)]),
+      fileName: `e-way-bill-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`,
     };
   }
 

@@ -108,6 +108,19 @@ export const organizationSettingsSchema = z
       .nullable(),
     /** Email Owners and Admins a summary every Monday morning */
     weeklySummary: z.boolean(),
+    /** Every member must use two-factor sign-in to open this organisation */
+    requireTwoFactor: z.boolean(),
+    /** This business's own MSME category (Udyam): micro and small may charge buyers interest for paying late */
+    msmeCategory: z.enum(['micro', 'small', 'medium']).nullable(),
+    udyamNumber: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .regex(/^$|^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/, 'A Udyam number looks like UDYAM-MH-26-0012345.')
+      .transform((v) => v || null)
+      .nullable(),
+    /** The RBI bank rate in basis points (550 = 5.50%), for MSMED Act interest at three times it */
+    msmeBankRateBp: z.number().int().min(1).max(2000).nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

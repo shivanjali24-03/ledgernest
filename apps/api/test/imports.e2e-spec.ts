@@ -6,6 +6,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { parseTallyXml, tallyImportPlan } from '@ledgernest/shared';
 
 type Result = {
   saved: boolean;
@@ -316,5 +317,43 @@ describe('Imports (e2e)', () => {
       { name: `Guarded ${run}`, kind: 'customer', phone: "'+91 98220 31144" },
     ]);
     expect(r.results[0]).toMatchObject({ ok: true, errors: [] });
+  });
+
+  it('takes a Tally List of Accounts through the same imports: accounts, parties, then balanced opening balances', async () => {
+    const xml = `<ENVELOPE><BODY><IMPORTDATA><REQUESTDATA>
+<TALLYMESSAGE><GROUP NAME="Mumbai Parties ${run}"><PARENT>Sundry Debtors</PARENT></GROUP></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Tally Customer ${run}"><PARENT>Mumbai Parties ${run}</PARENT><LEDSTATENAME>Maharashtra</LEDSTATENAME><PINCODE>400001</PINCODE><BILLCREDITPERIOD>15 Days</BILLCREDITPERIOD><OPENINGBALANCE>-30,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Tally Vendor ${run}"><PARENT>Sundry Creditors</PARENT><OPENINGBALANCE>10,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Tally Cash ${run}"><PARENT>Cash-in-Hand</PARENT><OPENINGBALANCE>-5,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+<TALLYMESSAGE><LEDGER NAME="Tally Capital ${run}"><PARENT>Capital Account</PARENT><OPENINGBALANCE>25,000.00</OPENINGBALANCE></LEDGER></TALLYMESSAGE>
+</REQUESTDATA></IMPORTDATA></BODY></ENVELOPE>`;
+    const existing = (
+      (await as().get('/accounts?includeArchived=true').expect(200)).body as {
+        code: string;
+        name: string;
+        type: string;
+        subtype: string;
+      }[]
+    ).map(({ code, name, type, subtype }) => ({ code, name, type, subtype }));
+    const plan = tallyImportPlan(parseTallyXml(xml), existing);
+    expect((await commit('accounts', plan.accounts)).saved).toBe(true);
+    const parties = await commit('contacts', plan.contacts);
+    expect(parties.saved).toBe(true);
+    const done = await commit('opening_balances', plan.openings, {
+      date: '2026-04-01',
+    });
+    expect(done.summary).toEqual({
+      debit: 3_500_000,
+      credit: 3_500_000,
+      difference: 0,
+    });
+    const customer = await prisma.contact.findFirstOrThrow({
+      where: { organizationId: org, name: `Tally Customer ${run}` },
+    });
+    expect(customer).toMatchObject({
+      isCustomer: true,
+      paymentTermsDays: 15,
+      stateCode: '27',
+    });
   });
 });

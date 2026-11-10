@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { dueDateFor, type EinvoiceProblem } from '@ledgernest/shared';
+import { dueDateFor, msmeCovered, msmeLateInterest, todayIn, type EinvoiceProblem } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
-import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson, Truck } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -15,7 +15,7 @@ import ReceiptDialog from '../../payments/ReceiptDialog';
 import { usePaymentsApi } from '../../payments/usePaymentsApi';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
-import { formatDate } from '../../lib/format';
+import { formatDate, formatMoney } from '../../lib/format';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
@@ -29,6 +29,7 @@ import ReminderDialog from '../ReminderDialog';
 import { saveBlob } from '../../lib/saveBlob';
 import ShareInvoiceDialog from '../ShareInvoiceDialog';
 import EinvoiceProblemsDialog from '../EinvoiceProblemsDialog';
+import EwayBillDialog from '../EwayBillDialog';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -88,8 +89,15 @@ export default function InvoiceEditor() {
   const [reminding, setReminding] = useState(false);
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [eway, setEway] = useState(false);
   const [einvoiceProblems, setEinvoiceProblems] = useState<EinvoiceProblem[] | null>(null);
-  const india = useOrganizationSettings().data?.country === 'IN';
+  const orgSettings = useOrganizationSettings().data;
+  const india = orgSettings?.country === 'IN';
+  // A micro or small business may charge interest on what's paid late (MSMED Act s.16)
+  const msmeInterest =
+    invoice && invoice.status === 'issued' && invoice.balance > 0 && !invoice.currency && msmeCovered(orgSettings?.msmeCategory) && orgSettings?.msmeBankRateBp
+      ? msmeLateInterest(invoice.balance, invoice.issueDate, invoice.dueDate, todayIn(orgSettings.timeZone ?? 'Asia/Kolkata'), orgSettings.msmeBankRateBp)
+      : 0;
   const einvoice = useMutation({
     mutationFn: () => api!.einvoice(invoice!.id),
     onSuccess: (f) => saveBlob(f),
@@ -153,6 +161,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && india && invoice.contact.taxId && (
                   <Button variant="ghost" icon={<FileJson className="size-4" />} loading={einvoice.isPending} onClick={() => einvoice.mutate()}>
                     {t('invoices.einvoice.action')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && india && (!invoice.currency || invoice.currency === 'INR') && invoice.lines.some((l) => !l.item?.hsnSac?.startsWith('99')) && (
+                  <Button variant="ghost" icon={<Truck className="size-4" />} onClick={() => setEway(true)}>
+                    {t('invoices.eway.action')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
@@ -220,6 +233,11 @@ export default function InvoiceEditor() {
           <DraftForm key={invoice!.id} invoice={invoice!} api={api} />
         ) : (
           <>
+            {msmeInterest > 0 && (
+              <p role="note" className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 print:hidden dark:bg-amber-950/40 dark:text-amber-200">
+                {t('invoices.msmeInterest', { amount: formatMoney(msmeInterest, 'INR', locale) })}
+              </p>
+            )}
             <InvoiceDocument invoice={invoice!} />
             <p className="text-sm text-ink-500 print:hidden">
               {invoice!.journalEntry && (
@@ -290,6 +308,7 @@ export default function InvoiceEditor() {
       </motion.div>
       {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
       {einvoiceProblems && invoice && <EinvoiceProblemsDialog invoice={invoice} problems={einvoiceProblems} onClose={() => setEinvoiceProblems(null)} />}
+      {eway && invoice && api && <EwayBillDialog invoice={invoice} api={api} onClose={() => setEway(false)} />}
       {sharing && invoice && api && <ShareInvoiceDialog api={api} invoice={invoice} onClose={() => setSharing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}

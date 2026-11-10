@@ -117,7 +117,9 @@
       "low_stock": "{{count}} items low on stock",
       "quotes_expiring": "{{count}} quotes expiring this week",
       "recurring_bills_due": "{{count}} recurring bills due",
-      "bills_due_soon": "{{count}} bills due this week, {{amount}}"
+      "bills_due_soon": "{{count}} bills due this week, {{amount}}",
+      "msme_due_one": "1 bill from an MSME supplier to pay within the 45-day limit, {{amount}}",
+      "msme_due_other": "{{count}} bills from MSME suppliers to pay within the 45-day limit, {{amount}}"
     },
     "forecast": {
       "title": "Cash in 13 weeks",
@@ -141,7 +143,9 @@
       "overdue_other": "{{count}} days late",
       "toPay": "about {{amount}} to pay in cash so far",
       "nothingToPay": "nothing to pay in cash so far",
-      "tdsToPay": "{{amount}} kept back"
+      "tdsToPay": "{{amount}} kept back",
+      "lateFee": "Not filed yet? Late fee so far: {{fee}}",
+      "lateFeeInterest": "Not filed yet? Late fee so far: {{fee}}, plus {{interest}} interest"
     }
   },
   "comingSoon": {
@@ -188,7 +192,18 @@
       "server": "Something went wrong on our side. Please try again.",
       "expired": "Your session has ended. Please sign in again."
     },
-    "waking": "Waking up the server… Free hosting pauses it when nobody is using it, so this can take up to a minute."
+    "waking": "Waking up the server… Free hosting pauses it when nobody is using it, so this can take up to a minute.",
+    "twoFactor": {
+      "title": "Two-factor sign-in",
+      "body": "Enter the 6-digit code from your authenticator app.",
+      "code": "Authentication code",
+      "recoveryHint": "Lost your phone? Enter one of your recovery codes instead.",
+      "verify": "Verify and sign in",
+      "back": "Use a different account",
+      "required": "Enter the code from your app.",
+      "wrong": "That code isn’t right. Try the newest code from your app.",
+      "expired": "That took too long. Enter your password again."
+    }
   },
   "common": {
     "all": "All",
@@ -953,7 +968,11 @@
       "timeZone": "Time zone",
       "invoiceTerms": "Terms and bank details",
       "weeklySummary": "Weekly summary",
-      "upiId": "UPI ID"
+      "upiId": "UPI ID",
+      "requireTwoFactor": "Require two-factor sign-in for everyone",
+      "msmeCategory": "Your MSME category",
+      "udyamNumber": "Your Udyam registration number",
+      "msmeBankRate": "RBI bank rate (%)"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -963,7 +982,9 @@
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
       "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
       "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
-      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free."
+      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free.",
+      "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first.",
+      "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -977,7 +998,10 @@
       "timeZone": "Choose a time zone from the list.",
       "invalid": "Check this value.",
       "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first.",
-      "upiId": "Enter a UPI ID like yourname@okhdfcbank."
+      "upiId": "Enter a UPI ID like yourname@okhdfcbank.",
+      "twoFactorSelf": "Turn on two-factor sign-in for yourself first (in the menu under your name).",
+      "msmeBankRate": "Enter the rate as a percentage, like 5.50.",
+      "udyamNumber": "A Udyam number looks like UDYAM-MH-26-0012345."
     },
     "leave": {
       "title": "Leave without saving?",
@@ -1019,6 +1043,14 @@
       "confirm": "Delete it all",
       "mismatch": "That isn’t the organisation’s name.",
       "done": "{{name}} was deleted."
+    },
+    "security": {
+      "title": "Security",
+      "description": "How people sign in to this organisation."
+    },
+    "msme": {
+      "title": "MSME (Udyam)",
+      "description": "If your business is registered as a micro or small enterprise, buyers who pay after 45 days owe you interest at three times the RBI bank rate (MSMED Act, section 16). LedgerNest works it out on overdue invoices, account links and reminders."
     }
   },
   "accounts": {
@@ -1804,6 +1836,41 @@
           "why": "Without their GSTIN, their bills can’t be matched in GSTR-2B and the input credit is at risk."
         }
       }
+    },
+    "msme": {
+      "title": "MSME payments",
+      "hint": "Bills from micro and small suppliers must be paid by the agreed date, at most 45 days from the bill (15 days with no agreement).",
+      "emptyTitle": "No bills from MSME suppliers",
+      "emptyBody": "Mark vendors as micro or small enterprises (from their Udyam certificate) to track the 45-day rule here.",
+      "markVendors": "Open vendors",
+      "csv": "Download CSV",
+      "bills": "Bills from micro and small suppliers",
+      "totals": {
+        "overdue": "Overdue",
+        "dueSoon": "Due within 7 days",
+        "disallowed": "At risk under 43B(h)",
+        "paidLate": "Paid late this year"
+      },
+      "disallowedHint": "At risk: the taxable value of bills dated {{from}} to {{to}} still unpaid past their deadline. If still unpaid on {{to}}, it is not deductible this year, only in the year it is paid. Interest is also due to the supplier under section 16 of the MSMED Act.",
+      "cols": {
+        "bill": "Bill",
+        "vendor": "Vendor",
+        "deadline": "Pay by",
+        "owed": "Still owed",
+        "state": "State",
+        "disallowed": "At risk"
+      },
+      "states": {
+        "overdue": "Overdue",
+        "due_soon": "Due soon",
+        "open": "Within time",
+        "paid_late": "Paid late",
+        "paid_on_time": "Paid on time"
+      },
+      "daysLate_one": "1 day late",
+      "daysLate_other": "{{count}} days late",
+      "daysLeft_one": "1 day left",
+      "daysLeft_other": "{{count}} days left"
     }
   },
   "taxes": {
@@ -2086,13 +2153,16 @@
       "notes": "Notes",
       "billingAddress": "Billing address",
       "shippingAddress": "Shipping address",
-      "creditLimit": "Credit limit"
+      "creditLimit": "Credit limit",
+      "msme": "MSME (Udyam)",
+      "udyam": "Udyam registration number"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
       "paymentTerms": "0 = due on receipt",
       "creditLimit": "The most they may owe, in {{currency}}. Leave blank for no limit. Invoices over it show a warning.",
-      "badLimit": "Enter an amount, like 50000."
+      "badLimit": "Enter an amount, like 50000.",
+      "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h)."
     },
     "address": {
       "line1": "Address",
@@ -2147,6 +2217,12 @@
       "link": "Account link",
       "message": "Dear {{name}}, here is your account with {{organization}}: {{amount}} due. See each invoice, download the PDFs or pay it all by UPI here: {{link}}",
       "messageNothing": "Dear {{name}}, here is your account with {{organization}}, where you can see and download your invoices: {{link}}"
+    },
+    "msme": {
+      "none": "Not an MSME",
+      "micro": "Micro enterprise",
+      "small": "Small enterprise",
+      "medium": "Medium enterprise"
     }
   },
   "items": {
@@ -2445,7 +2521,47 @@
       "skippedBody": "They’re not in the file. Open each to see what the portal needs.",
       "problemCount_one": "1 thing to fix",
       "problemCount_other": "{{count}} things to fix"
-    }
+    },
+    "eway": {
+      "action": "E-way bill",
+      "title": "E-way bill for {{number}}",
+      "body": "Goods worth over ₹50,000 need an e-way bill to move. Download the file and upload it on the e-way bill portal (Bulk generation). The vehicle can be added now or later on the portal.",
+      "download": "Download JSON",
+      "done": "E-way bill file downloaded. Upload it on the e-way bill portal.",
+      "fields": {
+        "mode": "Transport by",
+        "distance": "Distance (km)",
+        "distanceHint": "Leave blank to let the portal work it out from the PIN codes.",
+        "vehicle": "Vehicle number",
+        "vehicleHint": "Optional: leave blank to add it on the portal later.",
+        "docNo": "Transport document number",
+        "docDate": "Transport document date",
+        "transporterId": "Transporter GSTIN or ID",
+        "transporterName": "Transporter name"
+      },
+      "modes": {
+        "road": "Road",
+        "rail": "Rail",
+        "air": "Air",
+        "ship": "Ship"
+      },
+      "invalid": {
+        "distanceKm": "Distance is up to 4,000 km.",
+        "vehicleNo": "That isn’t a vehicle number, like MH12AB1234.",
+        "transporterId": "A transporter GSTIN or ID has 15 letters and digits.",
+        "docNo": "The transport document number is up to 15 characters.",
+        "docDate": "Choose the transport document’s date.",
+        "transporterName": "The transporter name is too long.",
+        "mode": "Choose how the goods travel."
+      },
+      "problemsTitle": "The portal would refuse this e-way bill. Fix these, then download again.",
+      "problems": {
+        "gstin_buyer": "The customer’s GSTIN isn’t valid. Correct it, or remove it for an unregistered buyer.",
+        "no_goods": "This invoice has only services: e-way bills are for moving goods.",
+        "transport_doc": "Off the road, the railway receipt, airway bill or bill of lading number is needed."
+      }
+    },
+    "msmeInterest": "Paid late: as a micro or small enterprise you can claim interest of {{amount}} so far on this invoice (MSMED Act, section 16). It shows on the customer’s account link and in reminders."
   },
   "payments": {
     "title": "Payments",
@@ -2555,6 +2671,17 @@
       "accountReceivable": "Claim back on account",
       "noAccountReceivable": "No current asset account: add TDS receivable",
       "bankGets": "{{bank}} reaches the bank; {{tds}} is TDS the customer pays the government for you, to claim against Form 26AS. The invoices are settled in full."
+    },
+    "cheque": {
+      "action": "Print cheque",
+      "title": "Cheque for {{number}}",
+      "body": "To {{name}}, for what the bank pays (after any TDS). Laid out for standard CTS-2010 cheque leaves.",
+      "download": "Download cheque PDF",
+      "right": "Move right (mm)",
+      "down": "Move down (mm)",
+      "range": "Between -30 and 30 mm.",
+      "crossed": "Cross it “A/c Payee” (paid only into the payee’s account)",
+      "tip": "Print at actual size (100%), with the leaf fed as your printer takes envelopes. Try plain paper held over a cheque first; adjust the moves until it lines up. They are remembered on this device."
     }
   },
   "bills": {
@@ -2614,6 +2741,15 @@
       "bill_not_open": "Only recorded bills can be paid.",
       "bill_currency": "That bill is in a different currency.",
       "bill_not_found": "That bill belongs to another vendor."
+    },
+    "duplicates": {
+      "title": "This may be a bill you’ve entered already:",
+      "draft": "Draft",
+      "reference": "same bill number",
+      "amount": "same amount, within 3 days",
+      "confirmTitle": "Record this bill again?",
+      "confirmBody": "The vendor’s bill {{reference}} is recorded already as {{number}}. Recording it twice doubles the cost and the input GST.",
+      "recordAnyway": "Record anyway"
     }
   },
   "creditNotes": {
@@ -3472,7 +3608,30 @@
     "notSaved": "Nothing was saved: some rows need fixing.",
     "done": "{{count}} rows imported",
     "openingDone": "Opening balances saved as a draft entry",
-    "noPermission": "You don’t have permission to import anything here."
+    "noPermission": "You don’t have permission to import anything here.",
+    "tally": {
+      "title": "Move from Tally",
+      "body": "In Tally, open Display More Reports › List of Accounts, export it as XML, and choose the file here. Your ledgers become accounts, Sundry Debtors and Creditors become customers and vendors (with GSTIN, address and credit days), and the opening balances go into a draft entry to check.",
+      "choose": "Choose Tally XML",
+      "noLedgers": "No ledgers were found in that file. Export the List of Accounts as XML from Tally.",
+      "planLabel": "What will be imported",
+      "accounts_one": "1 account to add",
+      "accounts_other": "{{count}} accounts to add",
+      "matched_one": "1 already in your chart",
+      "matched_other": "{{count}} already in your chart",
+      "parties": "{{customers}} customers and {{vendors}} vendors",
+      "openings": "Opening balances: {{debit}} debit, {{credit}} credit",
+      "skipped": "Left out: {{names}}",
+      "partyNote": "Customer and vendor balances go to the Debtors and Creditors accounts as totals; any difference goes to Opening balance equity. Check the draft entry before posting it.",
+      "date": "Opening balances on",
+      "import": "Import from Tally",
+      "stopped": "The import stopped: fix the file and try again.",
+      "failedStep": "{{step}} couldn’t be imported:",
+      "rowError": "Row {{row}}: {{message}}",
+      "done": "Imported from Tally.",
+      "finished": "Imported from Tally.",
+      "review": "Review the opening balances"
+    }
   },
   "integrations": {
     "title": "Integrations",
@@ -3937,6 +4096,140 @@
     "overdue": "{{amount}} of it is overdue",
     "payAll": "Pay it all by UPI",
     "invoices": "Invoices",
-    "download": "Download {{number}} as PDF"
+    "download": "Download {{number}} as PDF",
+    "msmeInterest": "Interest for late payment under the MSMED Act, 2006 (section 16) so far: {{amount}}",
+    "invoiceInterest": "MSMED Act interest so far: {{amount}}"
+  },
+  "twoFactor": {
+    "action": "Two-factor sign-in",
+    "title": "Two-factor sign-in",
+    "body": "Ask for a code from an authenticator app (Google Authenticator, Microsoft Authenticator, Authy…) as well as the password, so a stolen password isn’t enough.",
+    "isOn": "Two-factor sign-in is on.",
+    "isOff": "Two-factor sign-in is off. Turn it on to protect your books.",
+    "codesLeft_one": "1 recovery code left.",
+    "codesLeft_other": "{{count}} recovery codes left.",
+    "setUp": "Set up",
+    "continue": "Continue",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "newCodes": "New recovery codes",
+    "makeCodes": "Make new codes",
+    "password": "Your password",
+    "codeFromApp": "Code from the app",
+    "codeOrRecovery": "Code from the app, or a recovery code",
+    "scan": "Scan this QR code with your authenticator app, then enter the 6-digit code it shows.",
+    "manual": "Can’t scan it? Type this key into the app instead:",
+    "qrLabel": "QR code to add LedgerNest to an authenticator app",
+    "codesBody": "Keep these recovery codes somewhere safe. Each one signs you in once if you lose your phone. They won’t be shown again.",
+    "codesLabel": "Recovery codes",
+    "codesFileTitle": "LedgerNest recovery codes (each works once)",
+    "copy": "Copy",
+    "copied": "Recovery codes copied.",
+    "download": "Download",
+    "saved": "I’ve saved them",
+    "enabled": "Two-factor sign-in is on.",
+    "disabled": "Two-factor sign-in is off.",
+    "errors": {
+      "password": "That password isn’t right.",
+      "code": "That code isn’t right. Try the newest code from your app."
+    },
+    "gate": {
+      "title": "Turn on two-factor sign-in",
+      "body": "{{organization}} asks everyone to sign in with a code from an authenticator app as well as their password. Set it up to continue.",
+      "signOut": "Sign out"
+    }
+  },
+  "sessions": {
+    "action": "Where you’re signed in",
+    "title": "Where you’re signed in",
+    "body": "Each device or browser signed in to your account. Sign out any you don’t recognise, then change your password.",
+    "on": "{{browser}} on {{os}}",
+    "unknown": "Unknown device",
+    "thisDevice": "This device",
+    "lastUsed": "Last used {{when}}",
+    "signOut": "Sign out",
+    "revoked": "That device is signed out."
+  },
+  "confirmations": {
+    "title": "Balance confirmations",
+    "side": "Ask",
+    "sides": {
+      "receivable": "Customers",
+      "payable": "Vendors"
+    },
+    "hint": "For the audit: ask customers or vendors to confirm their balance with you on a date, usually the year end.",
+    "summary": "{{agreed}} agreed · {{disputed}} disputed · {{pending}} waiting",
+    "ask": "Ask for confirmation",
+    "askTitle": "Ask for balance confirmation",
+    "askNow": "Ask now",
+    "askBodyReceivable": "Every customer with a balance on {{date}} gets a link to agree or dispute it. Ask again later and the same links are used.",
+    "askBodyPayable": "Every vendor with a balance on {{date}} gets a link to agree or dispute it. Ask again later and the same links are used.",
+    "email": "Email each one the link",
+    "emailHint": "Those without an email address (or if email isn’t set up): share the link on WhatsApp from the list.",
+    "asked_one": "Asked 1 party ({{emailed}} by email).",
+    "asked_other": "Asked {{count}} parties ({{emailed}} by email).",
+    "nobody": "No one on that side had a balance on that day.",
+    "emptyTitle": "No confirmations asked for this day",
+    "emptyBody": "Ask for confirmation to send each party their balance.",
+    "cols": {
+      "party": "Party",
+      "ours": "Our books",
+      "status": "Answer",
+      "theirs": "Their books",
+      "share": "Share"
+    },
+    "states": {
+      "pending": "Waiting",
+      "agreed": "Agreed",
+      "disputed": "Disputed"
+    },
+    "by": "by {{name}}",
+    "opened_one": "Opened once",
+    "opened_other": "Opened {{count}} times",
+    "emailedTo": "Emailed to {{email}}",
+    "notOpened": "Not opened yet",
+    "copy": "Copy the link for {{name}}",
+    "copied": "Link copied.",
+    "whatsapp": "Send {{name}} the link on WhatsApp",
+    "whatsappReceivable": "Dear {{name}}, for our audit please confirm your balance with us as on {{date}}: {{amount}}. Agree or tell us your figure here: {{url}}",
+    "whatsappPayable": "Dear {{name}}, for our audit please confirm our balance with you as on {{date}}: {{amount}}. Agree or tell us your figure here: {{url}}"
+  },
+  "confirmation": {
+    "pageTitle": "Balance confirmation",
+    "title": "Balance confirmation",
+    "dear": "Dear {{name}}, for the audit of {{organization}}, please confirm your balance with us.",
+    "asOf": "As per our books on {{date}}",
+    "youOwe": "You owe us {{amount}}",
+    "weOwe": "We owe you {{amount}}",
+    "nothing": "Nothing is outstanding",
+    "statement": "Download the statement",
+    "formLabel": "Your answer",
+    "question": "Does this match your books?",
+    "agree": "Yes, it matches",
+    "dispute": "No, it differs",
+    "theirs": "The balance in your books ({{currency}})",
+    "theirsHint": "As the amount above shows it; leave blank if you’d rather explain.",
+    "why": "What differs (payments, invoices or notes not shown)",
+    "noteOptional": "Anything to add (optional)",
+    "name": "Your name",
+    "sendAgree": "Confirm the balance",
+    "sendDispute": "Send my figure",
+    "thanksAgreed": "Thank you. {{name}} confirmed this balance.",
+    "thanksDisputed": "Thank you. {{name}} told us the balance differs; we’ll look into it.",
+    "yourFigure": "Your figure: {{figure}}",
+    "errors": {
+      "name": "Enter your name.",
+      "amount": "Enter the amount as a number, like 1,00,000.",
+      "why": "Tell us your balance, or what differs.",
+      "answered": "This has been answered already.",
+      "failed": "That didn’t go through. Try again."
+    }
+  },
+  "legal": {
+    "privacy": "Privacy notice",
+    "terms": "Terms of use",
+    "nav": "Legal",
+    "updated": "Last updated {{date}}",
+    "english": "This page is in English."
   }
 }

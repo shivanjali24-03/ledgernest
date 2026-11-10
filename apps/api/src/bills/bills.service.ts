@@ -12,6 +12,7 @@ import {
   formatQuantity,
   invoiceAmounts,
   billNumber,
+  possibleDuplicateBills,
   vendorCreditNumber,
   billState,
   parseQuantity,
@@ -357,6 +358,62 @@ export class BillsService {
     });
     if (!i) throw new NotFoundException('Bill not found.');
     return i;
+  }
+
+  /** Other bills from the same vendor that may be this one entered twice: the same bill number, or the same total within three days */
+  async duplicates(organizationId: string, id: string) {
+    const b = await this.prisma.bill.findFirst({
+      where: { organizationId, id },
+      select: {
+        id: true,
+        contactId: true,
+        vendorReference: true,
+        billDate: true,
+        total: true,
+      },
+    });
+    if (!b) throw refuse(NotFoundException, 'Bill not found.', 'not_found');
+    const others = await this.prisma.bill.findMany({
+      where: {
+        organizationId,
+        contactId: b.contactId,
+        id: { not: id },
+        status: { not: 'void' },
+      },
+      orderBy: { billDate: 'desc' },
+      take: 500,
+      select: {
+        id: true,
+        number: true,
+        status: true,
+        vendorReference: true,
+        billDate: true,
+        total: true,
+        fiscalYear: { select: { name: true } },
+      },
+    });
+    const shape = (o: {
+      id: string;
+      vendorReference: string | null;
+      billDate: Date;
+      total: bigint;
+    }) => ({
+      id: o.id,
+      vendorReference: o.vendorReference,
+      billDate: iso(o.billDate),
+      total: Number(o.total),
+    });
+    return possibleDuplicateBills(
+      shape(b),
+      others.map((o) => ({
+        ...shape(o),
+        status: o.status,
+        number:
+          o.number && o.fiscalYear
+            ? billNumber(o.fiscalYear.name, o.number)
+            : null,
+      })),
+    );
   }
 
   async get(organizationId: string, id: string) {
@@ -910,9 +967,26 @@ export class BillsService {
    * gives it the next number in its financial year and posts its entry, which must fall in an open month.
    */
   /** Records a draft. Bills an approval rule covers are held for an approver first (opts.approved: the approver recording it). */
-  async record(id: string, ctx: Ctx, opts: { approved?: boolean } = {}) {
+  async record(
+    id: string,
+    ctx: Ctx,
+    opts: { approved?: boolean; allowDuplicate?: boolean } = {},
+  ) {
     const organizationId = ctx.tenant.organizationId;
     const draft = await this.get(organizationId, id);
+    // The same vendor bill number recorded already: almost always the same bill entered twice
+    if (draft.status === 'draft' && !opts.approved && !opts.allowDuplicate) {
+      const same = (await this.duplicates(organizationId, id)).filter(
+        (d) => d.reason === 'reference' && d.status !== 'draft',
+      );
+      if (same.length)
+        throw refuse(
+          ConflictException,
+          `${draft.contact.name}’s bill ${draft.vendorReference} is recorded already as ${same[0]!.number}.`,
+          'duplicate_bill',
+          { duplicates: same },
+        );
+    }
     if (draft.status === 'draft')
       await this.approvals.check(
         'bill',

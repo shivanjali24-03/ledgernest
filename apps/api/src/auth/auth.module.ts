@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { PasswordService } from './password.service.js';
 import { AccountService } from './account.service.js';
+import { TwoFactorService } from './two-factor.service.js';
+import { SessionsService } from './sessions.service.js';
 import { MailModule } from '../mail/mail.module.js';
 
 @Module({
@@ -22,7 +24,7 @@ import { MailModule } from '../mail/mail.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, AccountService],
+  providers: [AuthService, PasswordService, AccountService, TwoFactorService, SessionsService],
   exports: [AuthService],
 })
 export class AuthModule {}

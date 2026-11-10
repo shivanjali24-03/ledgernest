@@ -10,6 +10,7 @@ import CommandPalette from './CommandPalette';
 import Logo from './Logo';
 import { visibleNav } from './nav';
 import LanguageSwitcher from './LanguageSwitcher';
+import TwoFactorGate from './TwoFactorGate';
 import { roleLabel, useSession } from './session';
 import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
@@ -187,7 +188,7 @@ export default function AppShell() {
         <main className="min-h-0 flex-1 overflow-y-auto print:overflow-visible">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={location.pathname} variants={page} initial="hidden" animate="show" exit="exit" className="mx-auto max-w-7xl p-4 lg:p-8">
-              <Outlet />
+              {session.twoFactorRequired ? <TwoFactorGate organization={session.organization} /> : <Outlet />}
             </motion.div>
           </AnimatePresence>
         </main>

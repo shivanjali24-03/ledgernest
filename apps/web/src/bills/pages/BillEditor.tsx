@@ -1,5 +1,7 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { formatDate } from '../../lib/format';
+import { ApiError } from '../../auth/client';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
@@ -27,7 +29,7 @@ import { groupForSupply, supplyFor } from '../../invoices/gst';
 import { stateTone } from '../../invoices/state';
 import BillDocument from '../BillDocument';
 import { billErrorMessage } from '../errors';
-import type { Bill, BillsApi } from '../types';
+import type { Bill, BillDuplicate, BillsApi } from '../types';
 import { useBillsApi } from '../useBillsApi';
 import CostCentreSelect from '../../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../../cost-centres/useCostCentresApi';
@@ -128,6 +130,13 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
+  // The vendor's bill number is recorded already: ask before recording it again
+  const [dupes, setDupes] = useState<BillDuplicate[] | null>(null);
+  const allowDuplicate = useRef(false);
+  // A new bill is saved before it's recorded: a retry updates that draft rather than making another
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const draftId = invoice?.id ?? savedId;
+  const likely = useQuery({ queryKey: ['bills', 'duplicates', draftId], queryFn: () => api.duplicates(draftId!), enabled: !!draftId });
 
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
@@ -212,10 +221,13 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   });
   const save = useMutation({
     mutationFn: async (andIssue: boolean) => {
-      const saved = invoice ? await api.update(invoice.id, payload()) : await api.create(payload());
+      const saved = draftId ? await api.update(draftId, payload()) : await api.create(payload());
+      if (!invoice) setSavedId(saved.id);
       if (!andIssue) return { i: saved, held: null };
       // Held for approval: it stays a draft, saved, with the request sent
-      return api.record(saved.id).then(
+      const allow = allowDuplicate.current;
+      allowDuplicate.current = false;
+      return api.record(saved.id, allow ? { allowDuplicate: true } : undefined).then(
         (i) => ({ i, held: null }),
         (err: unknown) => {
           if (heldForApproval(err)) return { i: saved, held: err };
@@ -228,7 +240,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       toast(held ? heldMessage(held, t) : andIssue ? t('bills.recorded', { number: i.number }) : t('invoices.saved'));
       navigate(`/bills/${i.id}`, { replace: true });
     },
-    onError: (e) => toast(billErrorMessage(e, t), 'error'),
+    onError: (e) => (e instanceof ApiError && e.details?.reason === 'duplicate_bill' ? setDupes(e.details.duplicates as BillDuplicate[]) : toast(billErrorMessage(e, t), 'error')),
   });
   const remove = useMutation({
     mutationFn: () => api.remove(invoice!.id),
@@ -248,6 +260,21 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
+      {!!likely.data?.length && (
+        <div role="note" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-medium">{t('bills.duplicates.title')}</p>
+          <ul className="mt-1 space-y-0.5">
+            {likely.data.map((d) => (
+              <li key={d.id}>
+                <Link to={`/bills/${d.id}`} className="underline">
+                  {d.number ?? t('bills.duplicates.draft')}
+                </Link>{' '}
+                · {d.vendorReference ?? '–'} · {formatDate(`${d.billDate}T00:00:00Z`, locale)} · {t(`bills.duplicates.${d.reason}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2">
           <SelectField
@@ -434,6 +461,23 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           </Button>
         </div>
       )}
+      <ConfirmDialog
+        open={!!dupes}
+        title={t('bills.duplicates.confirmTitle')}
+        body={dupes?.length ? t('bills.duplicates.confirmBody', { reference, number: dupes[0]!.number ?? '' }) : ''}
+        confirmLabel={t('bills.duplicates.recordAnyway')}
+        busy={save.isPending}
+        onConfirm={() => {
+          allowDuplicate.current = true;
+          setDupes(null);
+          save.mutate(true);
+        }}
+        onClose={() => {
+          setDupes(null);
+          // Not recorded: show the saved draft
+          if (!invoice && savedId) navigate(`/bills/${savedId}`, { replace: true });
+        }}
+      />
       <ConfirmDialog open={deleting} title={t('bills.deleteTitle')} body={t('invoices.deleteBody')} confirmLabel={t('invoices.deleteDraft')} tone="danger" busy={remove.isPending} onConfirm={() => remove.mutate()} onClose={() => setDeleting(false)} />
     </form>
   );

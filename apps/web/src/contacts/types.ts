@@ -1,4 +1,4 @@
-import type { ContactAddress, ContactCreateInput, ContactUpdateInput } from '@ledgernest/shared';
+import type { ContactAddress, ContactCreateInput, ContactUpdateInput, MsmeCategory } from '@ledgernest/shared';
 
 export interface Contact {
   id: string;
@@ -19,6 +19,9 @@ export interface Contact {
   paymentTermsDays: number;
   /** The most a customer may owe, in their currency's smallest unit; null = no limit */
   creditLimit?: number | null;
+  /** The vendor's MSME category from its Udyam certificate: micro and small must be paid within 45 days */
+  msmeCategory?: MsmeCategory | null;
+  udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;
   notes: string | null;

@@ -38,6 +38,10 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
       return { blob, filename: filename ?? 'e-invoice.json' };
     },
     einvoices: (from, to) => r(`/e-invoice?from=${from}&to=${to}`),
+    ewayBill: async (id, transport) => {
+      const { blob, filename } = await client.download(`/invoices/${id}/e-way-bill`, { method: 'POST', body: JSON.stringify(transport), headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'e-way-bill.json' };
+    },
     unshare: async (id) => {
       await r(`/${id}/share`, { method: 'DELETE' });
     },

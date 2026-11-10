@@ -186,3 +186,15 @@ describe('logo', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent("That file isn't the image type its name says.");
   });
 });
+
+describe('MSME settings', () => {
+  it('saves the business’s MSME category and the bank rate as basis points', async () => {
+    const { changes, toValues } = await import('./form');
+    const before = toValues({ id: 'o', name: 'Nest', slug: 'nest', status: 'ACTIVE', baseCurrency: 'INR', locale: 'en-IN', timeZone: 'Asia/Kolkata', country: 'IN', fiscalYearStartMonth: 4, legalName: null, taxId: null, email: null, phone: null, address: { line1: null, line2: null, city: null, region: null, postalCode: null }, logo: null, locks: { baseCurrency: false, fiscalYearStartMonth: false } });
+    expect(before).toMatchObject({ msmeCategory: '', udyamNumber: '', msmeBankRate: '' });
+    expect(changes(before, { ...before, msmeCategory: 'micro', udyamNumber: 'udyam-mh-26-0012345', msmeBankRate: '5.5' })).toEqual({ msmeCategory: 'micro', udyamNumber: 'udyam-mh-26-0012345', msmeBankRateBp: 550 });
+    const saved = toValues({ id: 'o', name: 'Nest', slug: 'nest', status: 'ACTIVE', baseCurrency: 'INR', locale: 'en-IN', timeZone: 'Asia/Kolkata', country: 'IN', fiscalYearStartMonth: 4, legalName: null, taxId: null, email: null, phone: null, address: { line1: null, line2: null, city: null, region: null, postalCode: null }, logo: null, locks: { baseCurrency: false, fiscalYearStartMonth: false }, msmeCategory: 'small', msmeBankRateBp: 625 });
+    expect(saved).toMatchObject({ msmeCategory: 'small', msmeBankRate: '6.25' });
+    expect(changes(saved, { ...saved, msmeCategory: '', msmeBankRate: '' })).toEqual({ msmeCategory: null, msmeBankRateBp: null });
+  });
+});

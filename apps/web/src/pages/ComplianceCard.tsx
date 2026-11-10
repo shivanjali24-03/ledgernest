@@ -32,6 +32,7 @@ export default function ComplianceCard({ data }: { data: Compliance }) {
                 <span className="block text-xs text-ink-500">
                   {i.daysLeft < 0 ? t('dashboard.compliance.overdue', { count: -i.daysLeft }) : i.daysLeft === 0 ? t('dashboard.compliance.today') : t('dashboard.compliance.daysLeft', { count: i.daysLeft })}
                   {i.amount !== undefined && ` · ${i.kind === 'tds' ? t('dashboard.compliance.tdsToPay', { amount: money.format(i.amount) }) : i.amount > 0 ? t('dashboard.compliance.toPay', { amount: money.format(i.amount) }) : t('dashboard.compliance.nothingToPay')}`}
+                  {!!i.lateFee && <span className="block text-expense">{i.interest ? t('dashboard.compliance.lateFeeInterest', { fee: money.format(i.lateFee), interest: money.format(i.interest) }) : t('dashboard.compliance.lateFee', { fee: money.format(i.lateFee) })}</span>}
                 </span>
               </span>
               <ChevronRight className="size-4 text-ink-400 rtl:-scale-x-100" aria-hidden />
