@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor } from '@ledgernest/shared';
-import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2 } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -25,6 +25,7 @@ import { invoiceErrorMessage } from '../errors';
 import SalesDraftForm, { type SalesDraftPayload } from '../SalesDraftForm';
 import ReminderDialog from '../ReminderDialog';
 import { saveBlob } from '../../lib/saveBlob';
+import ShareInvoiceDialog from '../ShareInvoiceDialog';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -83,6 +84,7 @@ export default function InvoiceEditor() {
   const [repeating, setRepeating] = useState(false);
   const [reminding, setReminding] = useState(false);
   const [emailing, setEmailing] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const download = useMutation({
     mutationFn: () => api!.pdf(invoice!.id),
     onSuccess: (f) => saveBlob(f),
@@ -141,6 +143,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && canManage && (
+                  <Button variant="secondary" icon={<Share2 className="size-4" />} onClick={() => setSharing(true)}>
+                    {invoice.share?.views ? t('invoices.share.actionOpened', { count: invoice.share.views }) : t('invoices.share.action')}
                   </Button>
                 )}
                 {invoice.status === 'issued' && canManage && (
@@ -267,6 +274,7 @@ export default function InvoiceEditor() {
         {invoice && <DocumentAttachments documentType="invoice" documentId={invoice.id} />}
       </motion.div>
       {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
+      {sharing && invoice && api && <ShareInvoiceDialog api={api} invoice={invoice} onClose={() => setSharing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       {crediting && invoice && creditNotesApi && (

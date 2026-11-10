@@ -11,6 +11,7 @@ import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { createDemoPeriodsApi } from '../periods/demoPeriodsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { groupForSupply, supplyFor } from './gst';
+import type { PublicInvoice } from '../public/types';
 import type { Invoice, InvoicesApi } from './types';
 
 /**
@@ -45,6 +46,7 @@ type Stored = {
   creditNotes?: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
   lastRemindedAt?: string | null;
   reminders?: number;
+  share?: { token: string; views: number; lastViewedAt: string | null } | null;
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -151,6 +153,46 @@ const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new Ap
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
 
 /** A group with its rates, from the demo's taxes */
+/** The demo's shared links, opened in the same browser: the invoice as its customer sees it */
+export async function demoPublicInvoice(token: string): Promise<{ view: PublicInvoice; pdf: () => Blob } | null> {
+  const rows = await load();
+  const i = rows.find((r) => r.share?.token === token);
+  if (!i || i.status === 'void') return null;
+  i.share = { ...i.share!, views: i.share!.views + 1, lastViewedAt: new Date().toISOString() };
+  save(rows);
+  const v = view(i);
+  let upiId: string | null = null;
+  try {
+    upiId = (JSON.parse(localStorage.getItem('ledgernest.demo.settings') ?? 'null') as { settings?: { upiId?: string | null } } | null)?.settings?.upiId ?? null;
+  } catch {
+    /* no saved settings */
+  }
+  const upi = upiId && !v.currency && v.balance > 0 && v.number ? upiPayUri({ upiId, name: 'Nest Demo Private Limited', amount: v.balance, note: `Invoice ${v.number}`, reference: v.number }) : null;
+  return {
+    view: {
+      organization: { name: 'Nest Demo Private Limited', taxId: '27AAPFN1234C1Z5', email: 'accounts@nestdemo.in', phone: '+91 20 4000 1234', address: { line1: '4th Floor, Riverside Business Bay', line2: 'Baner Road', city: 'Pune', region: 'Maharashtra', postalCode: '411045' }, terms: null, hasLogo: false },
+      invoice: {
+        number: v.number!,
+        state: v.state,
+        issueDate: v.issueDate,
+        dueDate: v.dueDate,
+        currency: v.currency ?? 'INR',
+        placeOfSupply: v.placeOfSupply,
+        reference: v.reference,
+        customer: { name: v.contact.legalName ?? v.contact.name, taxId: v.contact.taxId },
+        lines: v.lines.map((l) => ({ description: l.description, hsnSac: l.item?.hsnSac ?? null, quantity: l.quantity, unitPrice: l.unitPrice, discount: l.discount, amount: l.amount, taxAmount: l.taxAmount })),
+        subtotal: v.subtotal,
+        taxBreakdown: v.taxBreakdown,
+        total: v.total,
+        amountPaid: v.amountPaid,
+        balance: v.balance,
+      },
+      upi: upi && upiId ? { link: upi, upiId } : null,
+    },
+    pdf: () => new Blob([pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')), qr: upi ? { modules: qrMatrix(upi), caption: ['Scan to pay with any UPI app', `Rs ${(v.balance / 100).toFixed(2)} to ${upiId}`] } : undefined }).buffer as ArrayBuffer], { type: 'application/pdf' }),
+  };
+}
+
 export function groupOf(id: string | null) {
   if (!id) return null;
   const tax = demoTaxState();
@@ -187,7 +229,7 @@ function view(i: Stored): Invoice {
     placeOfSupply: i.placeOfSupply,
     reference: i.reference,
     notes: i.notes,
-    contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
+    contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, phone: contact.phone ?? null, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
     receivableAccount: receivable ? { id: receivable.id, code: receivable.code, name: receivable.name } : null,
     subtotal: a.subtotal,
     taxTotal: a.tax,
@@ -201,6 +243,7 @@ function view(i: Stored): Invoice {
     creditNotes: i.creditNotes ?? [],
     lastRemindedAt: i.lastRemindedAt ?? null,
     reminders: i.reminders ?? 0,
+    share: i.share ?? null,
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
@@ -380,6 +423,28 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         Object.assign(i, { status: 'void', voidEntryId: r.id, voidNumber: r.number });
         save(rows);
         return view(i);
+      }),
+    share: (iid) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        if (i.status !== 'issued') throw refuse(409, 'not_issued');
+        if (!i.share) {
+          const bytes = crypto.getRandomValues(new Uint8Array(24));
+          const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          i.share = { token, views: 0, lastViewedAt: null };
+          save(rows);
+        }
+        return { ...i.share };
+      }),
+    unshare: (iid) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        i.share = null;
+        save(rows);
       }),
     remind: (iid, input) =>
       wait(async () => {

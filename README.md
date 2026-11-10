@@ -38,6 +38,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 
 - **Books:** chart of accounts with industry templates, journals that must balance, financial years with month and year-end close, multiple currencies with exchange differences.
 - **Get paid by UPI:** set your UPI ID once and every rupee invoice carries a QR code for what's still owed (on screen, in the PDF, in emails and reminders). Customers scan it with any UPI app; no gateway, no fees.
+- **Share on WhatsApp:** send an invoice link the customer opens without an account, to see what's owed, download the PDF or pay by UPI, and see when they opened it.
 - **India GST:** CGST + SGST within a state, IGST between states, GST slabs managed by the platform, GSTR-1 and GSTR-3B, HSN/SAC on invoices.
 - **Sales:** quotes that become invoices, invoices and credit notes, receipts, recurring invoices, payment reminders (by hand or automatic), credit limits, statements of account.
 - **Purchases:** bills, recurring bills, vendor payments, approvals for spending above a limit.

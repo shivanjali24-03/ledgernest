@@ -738,6 +738,10 @@ model Invoice {
   /// When a payment reminder last went to the customer, and how many have
   lastRemindedAt      DateTime? @map("last_reminded_at")
   reminders           Int       @default(0)
+  /// A link the customer opens without signing in (random, revocable), and how often it was opened
+  shareToken          String?   @unique @map("share_token")
+  shareViews          Int       @default(0) @map("share_views")
+  shareViewedAt       DateTime? @map("share_viewed_at")
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 

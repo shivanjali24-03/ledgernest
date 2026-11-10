@@ -12,6 +12,7 @@ import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoInvoices } from './demoInvoicesApi';
+import { openDialog } from '../test/openDialog';
 
 function renderApp(path = '/invoices') {
   sessionStorage.setItem('ledgernest.demo', 'admin@ledgernest.demo');
@@ -22,6 +23,15 @@ function renderApp(path = '/invoices') {
     </AppProviders>,
   );
   return router;
+}
+/** Signed out, as a customer would be */
+function renderPath(path: string) {
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  render(
+    <AppProviders client={null}>
+      <RouterProvider router={router} />
+    </AppProviders>,
+  );
 }
 const previewAs = (role: string) => userEvent.selectOptions(screen.getByLabelText('Preview the app as a role'), role);
 const totals = () => screen.getByRole('status', { name: 'Totals' });
@@ -222,6 +232,40 @@ describe('invoices', () => {
     const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
     expect(text).toContain('(Rs 118000.00 to nestdemo@okhdfcbank) Tj');
     localStorage.removeItem('ledgernest.demo.settings');
+  });
+
+  it('shares an invoice by link and WhatsApp; the customer opens it without signing in, and the link can be turned off', { timeout: 30_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    const dialog = await openDialog('Share', /^Share invoice/);
+    const link = (await within(dialog).findByLabelText('Invoice link', {}, { timeout: 4000 })) as HTMLInputElement;
+    const token = /\/i\/([A-Za-z0-9_-]{32})$/.exec(link.value)![1]!;
+    const wa = within(dialog).getByRole('link', { name: 'Send on WhatsApp' }).getAttribute('href')!;
+    // Kumar's number on file is a landline, so WhatsApp asks who to send it to
+    expect(wa.startsWith('https://wa.me/?text=')).toBe(true);
+    expect(decodeURIComponent(wa.split('text=')[1]!)).toMatch(new RegExp(`^Dear Kumar Logistics, here is invoice INV/.+/0001 from .+ for ₹1,18,000\\.00, due on .+\\. View it, download the PDF or pay by UPI here: ${link.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
+    expect(within(dialog).getByText('Not opened yet.')).toBeInTheDocument();
+    cleanup();
+
+    // The customer, signed out, opens the link
+    sessionStorage.clear();
+    renderPath(`/i/${token}`);
+    expect(await screen.findByText('Amount due', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getAllByText('₹1,18,000.00').length).toBeGreaterThan(0);
+    expect(screen.getByRole('article', { name: /^Invoice INV\// })).toHaveTextContent('Software development, sprint 14');
+    expect(screen.getByRole('button', { name: 'Download PDF' })).toBeInTheDocument();
+    cleanup();
+
+    // The business sees it was opened, and turns the link off
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    const again = await openDialog('Share · opened 1×', /^Share invoice/);
+    expect(await within(again).findByText(/^Opened once, /, {}, { timeout: 4000 })).toBeInTheDocument();
+    fireEvent.click(within(again).getByRole('button', { name: 'Turn off link' }));
+    expect(await screen.findByRole('button', { name: 'Share' }, { timeout: 4000 })).toBeInTheDocument();
+    cleanup();
+    renderPath(`/i/${token}`);
+    expect(await screen.findByText('This invoice link doesn’t work', {}, { timeout: 4000 })).toBeInTheDocument();
   });
 
   it('is read-only for Auditors', async () => {

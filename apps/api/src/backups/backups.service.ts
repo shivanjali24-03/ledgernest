@@ -321,15 +321,13 @@ export class BackupsService {
         const own = fk.columns.filter((c) => c !== 'organization_id');
         if (fk.refTable === t) defer(t, own);
         else if (present.includes(fk.refTable))
-          needs
-            .get(t)!
-            .push({
-              table: fk.refTable,
-              columns: own,
-              nullable: own.every(
-                (c) => cols.find((x) => x.name === c)?.nullable,
-              ),
-            });
+          needs.get(t)!.push({
+            table: fk.refTable,
+            columns: own,
+            nullable: own.every(
+              (c) => cols.find((x) => x.name === c)?.nullable,
+            ),
+          });
       }
     }
     const order: string[] = [];
@@ -403,6 +401,10 @@ export class BackupsService {
                   ['closed_at', 'closed_by_id'].includes(c.name)
                 )
                   v = null;
+                // Customer links belong to the original: the copy starts with none (and tokens are unique)
+                if (t === 'invoices' && c.name === 'share_token') v = null;
+                if (t === 'invoices' && c.name === 'share_views') v = 0;
+                if (t === 'invoices' && c.name === 'share_viewed_at') v = null;
                 params.push(this.param(v, c));
                 return this.placeholder(params.length, c);
               });

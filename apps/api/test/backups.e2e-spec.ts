@@ -174,6 +174,8 @@ describe('Backups (e2e)', () => {
         .expect(201)
     ).body.id;
     await as().post(`/invoices/${inv}/issue`).expect(200);
+    // Shared with the customer: the link stays with this organisation
+    await as().post(`/invoices/${inv}/share`).expect(200);
     // A quote that became that invoice, and the reminder policy
     const quote = (
       await as()
@@ -315,6 +317,18 @@ describe('Backups (e2e)', () => {
         ).body as Tb
       ).rows.map((x) => [x.code, x.balanceDebit, x.balanceCredit]);
     expect(await tb(restored)).toEqual(await tb(org));
+    const links = await prisma.invoice.findMany({
+      where: { organizationId: { in: [org, restored] } },
+      select: { organizationId: true, shareToken: true },
+    });
+    expect(
+      links.find((l) => l.organizationId === org)!.shareToken,
+    ).toBeTruthy();
+    expect(
+      links
+        .filter((l) => l.organizationId === restored)
+        .map((l) => l.shareToken),
+    ).toEqual([null]);
     const ids = await prisma.account.findMany({
       where: { organizationId: restored },
       select: { id: true, code: true, parent: { select: { code: true } } },
