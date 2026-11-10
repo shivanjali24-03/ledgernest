@@ -2138,6 +2138,15 @@
       "dueOn": "due {{date}}",
       "whatsappOverdue": "Dear {{name}}, a gentle reminder from {{organization}}. These invoices are overdue:\n{{list}}\nTotal: {{total}}\nIf you’ve already paid, thank you, and please ignore this.",
       "whatsappOverdueMixed": "Dear {{name}}, a gentle reminder from {{organization}}. These invoices are overdue:\n{{list}}\nIf you’ve already paid, thank you, and please ignore this."
+    },
+    "account": {
+      "action": "Share account",
+      "actionOpened": "Share account · opened {{count}}×",
+      "title": "Account link for {{name}}",
+      "description": "One link to everything this customer still owes: each invoice with its PDF, and a UPI QR code to pay the total. No sign-in needed; turn it off at any time.",
+      "link": "Account link",
+      "message": "Dear {{name}}, here is your account with {{organization}}: {{amount}} due. See each invoice, download the PDFs or pay it all by UPI here: {{link}}",
+      "messageNothing": "Dear {{name}}, here is your account with {{organization}}, where you can see and download your invoices: {{link}}"
     }
   },
   "items": {
@@ -3918,5 +3927,16 @@
       "soleOwner": "You’re the only Owner of {{names}}. Make someone else Owner, or delete the organisation, first.",
       "lastSuperAdmin": "You’re the only Super Admin. Make someone else Super Admin first."
     }
+  },
+  "customerAccount": {
+    "pageTitle": "Your account",
+    "for": "Account of {{name}}",
+    "allPaid": "All paid up. Thank you!",
+    "owed_one": "Due on 1 invoice",
+    "owed_other": "Due on {{count}} invoices",
+    "overdue": "{{amount}} of it is overdue",
+    "payAll": "Pay it all by UPI",
+    "invoices": "Invoices",
+    "download": "Download {{number}} as PDF"
   }
 }

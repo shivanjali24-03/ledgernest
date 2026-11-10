@@ -23,5 +23,9 @@ export function createLiveContactsApi(client: AuthClient, organizationId: string
     update: (id, input) => r(`/${id}`, { method: 'PATCH', json: input }),
     archive: (id, archive) => r(`/${id}/${archive ? 'archive' : 'restore'}`, { method: 'POST' }),
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
+    share: (id) => r(`/${id}/share`, { method: 'POST' }),
+    unshare: async (id) => {
+      await r(`/${id}/share`, { method: 'DELETE' });
+    },
   };
 }

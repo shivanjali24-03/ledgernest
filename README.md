@@ -34,6 +34,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 |---|---|
 | **Get paid by UPI** | Every rupee invoice carries a UPI QR code for what's still owed: on screen, in the PDF, in emails and reminders. Any UPI app pays straight into your bank. No gateway, no fees. |
 | **Send it on WhatsApp** | Share an invoice as a link your customer opens without an account, to pay by UPI or download the PDF. See when they opened it. Chase overdue invoices on WhatsApp in one tap. |
+| **One link per customer** | Send a customer their own account link: every invoice they owe, each PDF, and one UPI code that pays the lot. |
 | **GSTR-2B, matched** | Upload the portal's GSTR-2B and see which bills your suppliers haven't filed (credit at risk) before you claim it. |
 | **Know your cash 13 weeks ahead** | The forecast learns how late each customer really pays, and warns you before cash runs short. |
 | **Never miss a due date** | GSTR-1, GSTR-3B (with the tax to pay), GSTR-9, TDS deposits and advance tax on the dashboard, with days left. |
@@ -55,6 +56,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 - **Books:** chart of accounts with industry templates, journals that must balance, financial years with month and year-end close, multiple currencies with exchange differences.
 - **Get paid by UPI:** set your UPI ID once and every rupee invoice carries a QR code for what's still owed (on screen, in the PDF, in emails and reminders). Customers scan it with any UPI app; no gateway, no fees.
 - **Share on WhatsApp:** send an invoice link the customer opens without an account, to see what's owed, download the PDF or pay by UPI, and see when they opened it.
+- **Customer account links:** give each customer one link to everything they owe, with a single UPI QR code for the total.
 - **India GST:** CGST + SGST within a state, IGST between states, GST slabs managed by the platform, GSTR-1 and GSTR-3B, HSN/SAC on invoices, and **GSTR-2B reconciliation**: upload the portal's JSON to see which bills your suppliers haven't filed (input credit at risk) before you claim it.
 - **Sales:** quotes that become invoices, invoices and credit notes, receipts, recurring invoices, payment reminders (by hand or automatic), credit limits, statements of account.
 - **Purchases:** bills, debit notes for purchase returns, recurring bills, vendor payments with TDS kept back (194C, 194J, 194I…) and a TDS report for Form 26Q, approvals for spending above a limit.

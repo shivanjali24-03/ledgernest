@@ -19,6 +19,8 @@ export interface Contact {
   paymentTermsDays: number;
   /** The most a customer may owe, in their currency's smallest unit; null = no limit */
   creditLimit?: number | null;
+  /** The customer's account link (opened without signing in), how often it was opened and when last */
+  share?: { token: string; views: number; lastViewedAt: string | null } | null;
   notes: string | null;
   archived: boolean;
   createdAt: string;
@@ -46,4 +48,8 @@ export interface ContactsApi {
   update(id: string, input: ContactUpdateInput): Promise<Contact>;
   archive(id: string, archive: boolean): Promise<Contact>;
   remove(id: string): Promise<void>;
+  /** A customer's account link: made the first time, the same after that */
+  share(id: string): Promise<{ token: string; views: number; lastViewedAt: string | null }>;
+  /** Turns the link off; sharing again makes a new one */
+  unshare(id: string): Promise<void>;
 }

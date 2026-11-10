@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BellRing, FileSignature, FileText, MessageCircle, Pencil, Plus, Receipt } from 'lucide-react';
+import { ArrowLeft, BellRing, FileSignature, FileText, MessageCircle, Pencil, Plus, Receipt, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useBillsApi } from '../../bills/useBillsApi';
 import { useIntlLocale } from '../../i18n';
@@ -21,6 +21,7 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import { useToast } from '../../ui/toastContext';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import ContactDialog from '../ContactDialog';
+import ShareAccountDialog from '../ShareAccountDialog';
 import { useContactsApi } from '../useContactsApi';
 
 const RECENT = 8;
@@ -53,6 +54,7 @@ export default function ContactPage() {
   const billsApi = useBillsApi();
   const [editing, setEditing] = useState(false);
   const [reminding, setReminding] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const toast = useToast();
   const qc = useQueryClient();
   const can = (p: Parameters<typeof session.permissions.has>[0]) => session.permissions.has(p);
@@ -127,6 +129,11 @@ export default function ContactPage() {
                 >
                   <MessageCircle className="size-4" aria-hidden /> {t('contacts.page.whatsappRemind')}
                 </a>
+              )}
+              {c.isCustomer && can('invoices.manage') && (
+                <Button variant="secondary" icon={<Share2 className="size-4" />} onClick={() => setSharing(true)}>
+                  {c.share?.views ? t('contacts.account.actionOpened', { count: c.share.views }) : t('contacts.account.action')}
+                </Button>
               )}
               {can('contacts.manage') && (
                 <Button variant="ghost" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
@@ -262,6 +269,7 @@ export default function ContactPage() {
           </Recent>
         )}
       </motion.div>
+      {sharing && api && <ShareAccountDialog api={api} contact={c} onClose={() => setSharing(false)} />}
       <ConfirmDialog open={reminding} title={t('contacts.page.remindTitle', { name: c.name })} body={c.email ? t('contacts.page.remindBody', { count: overdue.data?.total ?? 0, email: c.email }) : t('contacts.page.remindNoEmail')} confirmLabel={t('contacts.page.remindConfirm')} busy={remind.isPending} onConfirm={() => remind.mutate()} onClose={() => setReminding(false)} />
       {editing && api && <ContactDialog api={api} contact={c} onClose={() => setEditing(false)} onSaved={() => (setEditing(false), void query.refetch())} />}
     </motion.div>

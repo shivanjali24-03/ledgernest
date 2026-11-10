@@ -405,6 +405,9 @@ export class BackupsService {
                 if (t === 'invoices' && c.name === 'share_token') v = null;
                 if (t === 'invoices' && c.name === 'share_views') v = 0;
                 if (t === 'invoices' && c.name === 'share_viewed_at') v = null;
+                if (t === 'contacts' && c.name === 'share_token') v = null;
+                if (t === 'contacts' && c.name === 'share_views') v = 0;
+                if (t === 'contacts' && c.name === 'share_viewed_at') v = null;
                 params.push(this.param(v, c));
                 return this.placeholder(params.length, c);
               });
