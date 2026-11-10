@@ -5,8 +5,8 @@ import type { InvoicesApi } from './types';
 export function createLiveInvoicesApi(client: AuthClient, organizationId: string): InvoicesApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/invoices${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
-    pdf: async (id) => {
-      const { blob, filename } = await client.download(`/invoices/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
+    pdf: async (id, copy) => {
+      const { blob, filename } = await client.download(`/invoices/${id}/pdf${copy ? `?copy=${copy}` : ''}`, { headers: { 'X-Organization-Id': organizationId } });
       return { blob, filename: filename ?? 'invoice.pdf' };
     },
     exportList: async (q) => {

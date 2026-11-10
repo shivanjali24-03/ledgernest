@@ -35,6 +35,8 @@ import {
   einvoiceIrnSchema,
   type EwayTransport,
   interestRaiseSchema,
+  invoiceCopyQuerySchema,
+  type InvoiceCopy,
   interestWaiverSchema,
   todayIn,
 } from '@ledgernest/shared';
@@ -232,10 +234,16 @@ export class InvoicesController {
   @ApiProduces('application/pdf')
   async pdf(
     @Param('id', new ParseUUIDPipe({ version: '4' })) invoiceId: string,
+    @Query(new ZodValidationPipe(invoiceCopyQuerySchema))
+    q: { copy?: InvoiceCopy },
     @CurrentTenant() tenant: Tenant,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const f = await this.reminders.download(tenant.organizationId, invoiceId);
+    const f = await this.reminders.download(
+      tenant.organizationId,
+      invoiceId,
+      q.copy,
+    );
     res.setHeader('Cache-Control', 'private, no-store');
     return new StreamableFile(f.data, {
       type: 'application/pdf',

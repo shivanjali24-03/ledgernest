@@ -51,6 +51,8 @@ export interface EinvoiceInput {
   buyer: EinvoiceParty;
   /** Where the goods go, when not the buyer's billing address */
   shipTo?: EinvoiceParty | null;
+  /** The total rounded to the rupee: the difference (paise) */
+  roundOff?: number;
   lines: EinvoiceLine[];
 }
 
@@ -160,8 +162,8 @@ export function buildEinvoice(i: EinvoiceInput) {
       CesVal: rupees(sum((l) => l.heads.cess)),
       Discount: 0,
       OthChrg: 0,
-      RndOffAmt: 0,
-      TotInvVal: rupees(total),
+      RndOffAmt: rupees(i.roundOff ?? 0),
+      TotInvVal: rupees(total + (i.roundOff ?? 0)),
     },
   };
 }

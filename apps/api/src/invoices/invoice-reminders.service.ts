@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import {
   currencyDigits,
+  INVOICE_COPIES,
+  type InvoiceCopy,
   dispatchLines,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
@@ -345,6 +347,8 @@ export class InvoiceRemindersService
   async invoicePdf(
     organizationId: string,
     inv: Awaited<ReturnType<InvoicesService['get']>>,
+    /** Which copy (CGST rule 48): marked at the top */
+    copy?: InvoiceCopy,
   ) {
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
@@ -398,7 +402,7 @@ export class InvoiceRemindersService
       pdfTableBytes({
         logo,
         title: `${composition ? 'Bill of supply' : org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
-        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
+        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}${copy ? ` · ${INVOICE_COPIES[copy]}` : ''}`,
         info: [
           // What a composition dealer's bill must say at the top
           ...(composition
@@ -500,14 +504,14 @@ export class InvoiceRemindersService
   }
 
   /** The PDF of an issued (or voided) invoice, to download */
-  async download(organizationId: string, id: string) {
+  async download(organizationId: string, id: string, copy?: InvoiceCopy) {
     const inv = await this.invoices.get(organizationId, id);
     if (inv.status === 'draft')
       throw new ConflictException({
         message: 'Issue the invoice first: drafts have no number yet.',
         details: { reason: 'not_issued' },
       });
-    const { pdf, fileName } = await this.invoicePdf(organizationId, inv);
+    const { pdf, fileName } = await this.invoicePdf(organizationId, inv, copy);
     return { data: pdf, fileName };
   }
 

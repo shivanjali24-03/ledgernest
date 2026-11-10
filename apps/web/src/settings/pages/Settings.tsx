@@ -188,6 +188,13 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
             {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={v.invoiceTerms} onChange={set('invoiceTerms')} disabled={!canManage} maxLength={1000} rows={4} dir="auto" className={`${inputClass} h-auto border-ink-200 py-2 dark:border-ink-700`} />}
           </Field>
         </div>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={v.roundInvoiceTotals === 'true'} disabled={!canManage} onChange={(e) => set('roundInvoiceTotals')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
+          <span>
+            <span className="font-medium">{t('settings.fields.roundInvoiceTotals')}</span>
+            <span className="block text-xs text-ink-500">{t('settings.hints.roundInvoiceTotals')}</span>
+          </span>
+        </label>
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
       </Section>
 

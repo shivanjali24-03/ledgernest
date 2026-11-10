@@ -194,4 +194,68 @@ describe('Order and dispatch details on invoices (e2e)', () => {
       'Ship to: Gupta Warehouse, Plot 4, Peenya',
     );
   });
+
+  it('rounds rupee totals to the rupee when asked, booking the difference to Round off, and marks the copies', async () => {
+    const patch = (p: string, body: object) =>
+      auth(http().patch(`/api/v1${p}`)).send(body);
+    const gst18 = (
+      (await post('/taxes/gst-setup').expect(200)).body.groups as {
+        id: string;
+        name: string;
+      }[]
+    ).find((g) => g.name === 'GST 18%')!.id;
+    await patch('/organization', { roundInvoiceTotals: true }).expect(200);
+    const d = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-05-10',
+        lines: [
+          {
+            description: 'Cement bag',
+            quantity: 1,
+            unitPrice: 1_000_30,
+            taxGroupId: gst18,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as {
+      id: string;
+      subtotal: number;
+      taxTotal: number;
+      roundOff: number;
+      total: number;
+    };
+    expect(d).toMatchObject({
+      subtotal: 1_000_30,
+      roundOff: -36, // CGST 9% + SGST 9%, each ₹90.03
+      total: 1_180_00,
+    });
+    const inv = (await post(`/invoices/${d.id}/issue`).expect(200)).body as {
+      journalEntry: { id: string };
+    };
+    const entry = (await get(`/journals/${inv.journalEntry.id}`).expect(200))
+      .body as {
+      lines: { account: { code: string }; debit: number; credit: number }[];
+    };
+    expect(entry.lines.find((l) => l.account.code === '4980')).toMatchObject({
+      debit: 36,
+      credit: 0,
+    });
+    expect(entry.lines.reduce((s, l) => s + l.debit, 0)).toBe(
+      entry.lines.reduce((s, l) => s + l.credit, 0),
+    );
+    const pdf = await get(`/invoices/${d.id}/pdf?copy=duplicate`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('DUPLICATE FOR TRANSPORTER');
+    expect(text).toContain('Round off');
+    await get(`/invoices/${d.id}/pdf?copy=fifth`).expect(400);
+    await patch('/organization', { roundInvoiceTotals: false }).expect(200);
+  });
 });

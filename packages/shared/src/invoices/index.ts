@@ -51,7 +51,11 @@ export interface InvoiceLineAmounts {
 }
 
 /** Each line's net and tax, and the invoice's subtotal, tax and total. */
-export function invoiceAmounts(lines: readonly { quantity: string; unitPrice: number; discountPpm: number; rates: readonly TaxComponent[] }[]) {
+/**
+ * Line amounts, subtotal, tax and total. With `roundTo` (e.g. 100 paise), the total is rounded to the nearest whole
+ * rupee, half up, and the difference kept as the round-off, as Indian invoices usually show.
+ */
+export function invoiceAmounts(lines: readonly { quantity: string; unitPrice: number; discountPpm: number; rates: readonly TaxComponent[] }[], opts: { roundTo?: number } = {}) {
   const out: InvoiceLineAmounts[] = lines.map((l) => {
     const net = lineNet(l.quantity, l.unitPrice, l.discountPpm);
     const { taxes } = splitTax(net, false, l.rates);
@@ -59,7 +63,10 @@ export function invoiceAmounts(lines: readonly { quantity: string; unitPrice: nu
   });
   const subtotal = out.reduce((s, l) => s + l.net, 0);
   const tax = out.reduce((s, l) => s + l.tax, 0);
-  return { lines: out, subtotal, tax, total: subtotal + tax };
+  const raw = subtotal + tax;
+  const step = opts.roundTo && opts.roundTo > 1 ? opts.roundTo : 0;
+  const total = step ? Math.floor((raw + step / 2) / step) * step : raw;
+  return { lines: out, subtotal, tax, roundOff: total - raw, total };
 }
 
 const text = (max: number) =>
@@ -214,7 +221,7 @@ export const invoiceEmailSchema = invoiceReminderSchema;
 const chunk = <T>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
 export function invoiceRows(
-  i: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null; batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[]; serials?: string[] }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
+  i: { currency: string; roundOff?: number; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null; batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[]; serials?: string[] }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
   digits: number,
 ): string[][] {
   const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
@@ -226,6 +233,7 @@ export function invoiceRows(
     ...i.lines.flatMap((l) => [[l.description, l.item?.hsnSac ?? '', l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', fmt(l.amount), fmt(l.taxAmount)], ...(l.batches ?? []).map((b) => [`   ${batchLabel(b)}`, '', b.quantity, '', '', '', '']), ...chunk(l.serials ?? [], 3).map((c) => [`   S/N ${c.join(', ')}`, '', '', '', '', '', ''])]),
     total('Subtotal', i.subtotal),
     ...i.taxBreakdown.map((t) => total(t.name, t.amount)),
+    ...(i.roundOff ? [total('Round off', i.roundOff)] : []),
     total(`Total (${i.currency})`, i.total),
     ...(i.amountPaid ? [total('Paid', i.amountPaid), total('Balance due', i.balance)] : []),
   ];
@@ -287,3 +295,12 @@ export function invoiceState(i: { status: InvoiceStatus; total: number; amountPa
   return i.amountPaid > 0 ? 'partly_paid' : 'issued';
 }
 export * from './instalments.js';
+
+/** The copies of a goods invoice (CGST Rules, rule 48): marked at the top of each */
+export const INVOICE_COPIES = {
+  original: 'ORIGINAL FOR RECIPIENT',
+  duplicate: 'DUPLICATE FOR TRANSPORTER',
+  triplicate: 'TRIPLICATE FOR SUPPLIER',
+} as const;
+export type InvoiceCopy = keyof typeof INVOICE_COPIES;
+export const invoiceCopyQuerySchema = z.object({ copy: z.enum(['original', 'duplicate', 'triplicate']).optional() });
