@@ -59,7 +59,13 @@
     "title": "Befehlspalette",
     "placeholder": "Seiten, Berichte, Einstellungen suchen…",
     "noMatches": "Keine Treffer für „{{query}}“",
-    "results": "Ergebnisse"
+    "results": "Ergebnisse",
+    "kinds": {
+      "contact": "Kontakt",
+      "invoice": "Rechnung",
+      "quote": "Angebot",
+      "bill": "Eingangsrechnung"
+    }
   },
   "roles": {
     "super_admin": "Super-Admin",

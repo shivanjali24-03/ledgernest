@@ -59,7 +59,13 @@
     "title": "कमांड पॅलेट",
     "placeholder": "पाने, अहवाल, सेटिंग्ज शोधा…",
     "noMatches": "“{{query}}” साठी काहीही सापडले नाही",
-    "results": "निकाल"
+    "results": "निकाल",
+    "kinds": {
+      "contact": "संपर्क",
+      "invoice": "बीजक",
+      "quote": "कोटेशन",
+      "bill": "बिल"
+    }
   },
   "roles": {
     "super_admin": "सुपर अ‍ॅडमिन",
