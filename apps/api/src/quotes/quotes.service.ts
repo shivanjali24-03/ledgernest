@@ -28,6 +28,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { InvoicesService, type DraftIn } from '../invoices/invoices.service.js';
+import { organizationLogo } from '../common/pdf-logo.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -567,8 +568,10 @@ export class QuotesService {
       select: { name: true, baseCurrency: true, invoiceTerms: true },
     });
     const currency = q.currency ?? org.baseCurrency;
+    const logo = await organizationLogo(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
+        logo,
         title: `Quote ${q.number}`,
         subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
         after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,

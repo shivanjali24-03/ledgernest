@@ -85,3 +85,26 @@ describe('pdfTableBytes after-text', () => {
     expect(headerY).toBeLessThan(842 - 40 - 88 - 18);
   });
 });
+
+describe('Logos in PDFs', () => {
+  // Just enough of a JPEG for its frame header: 64 x 32, three colours
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x4a, 0x46, 0xff, 0xc0, 0x00, 0x11, 0x08, 0x00, 0x20, 0x00, 0x40, 0x03, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1, 0xff, 0xd9]);
+
+  it('reads a JPEG’s size and colours, and refuses what isn’t one', async () => {
+    const { jpegImage } = await import('./index.js');
+    expect(jpegImage(jpeg)).toMatchObject({ width: 64, height: 32, filter: 'DCTDecode', colorSpace: 'DeviceRGB' });
+    expect(jpegImage(new Uint8Array([0x89, 0x50, 0x4e, 0x47]))).toBeNull();
+  });
+
+  it('places the logo at the top left of the first page and embeds it once', async () => {
+    const { jpegImage, pdfTableBytes } = await import('./index.js');
+    const text = String.fromCharCode(...pdfTableBytes({ title: 'Tax invoice INV/2026-27/0001', rows: [['Item', 'Amount'], ['Freight', '100.00']], logo: jpegImage(jpeg) }));
+    expect(text).toContain('/XObject << /Im1 7 0 R >>');
+    // 64 x 32 fits 120 x 40 as 80 x 40
+    expect(text).toContain('q 80 0 0 40 40 762 cm /Im1 Do Q');
+    expect(text).toContain('/Subtype /Image /Width 64 /Height 32 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode');
+    // The heading moves under it
+    expect(text).toMatch(/BT \/F2 14 Tf 40 738 Td \(Tax invoice INV\/2026-27\/0001\) Tj ET/);
+    expect(text.trimEnd().endsWith('%%EOF')).toBe(true);
+  });
+});

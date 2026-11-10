@@ -8,7 +8,9 @@ import {
   currencyDigits,
   pdfTableBytes,
   type ChequeOptions,
+  type PdfImage,
 } from '@ledgernest/shared';
+import { organizationLogo } from '../common/pdf-logo.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -37,6 +39,7 @@ export class PaymentReceiptsService {
       taxId: string | null;
       baseCurrency: string;
     },
+    logo: PdfImage | null = null,
   ) {
     const currency = p.currency ?? org.baseCurrency;
     const digits = currencyDigits(currency);
@@ -66,6 +69,7 @@ export class PaymentReceiptsService {
       ];
       const pdf = Buffer.from(
         pdfTableBytes({
+          logo,
           title: `Payment advice ${p.number}`,
           subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
           info: [
@@ -103,6 +107,7 @@ export class PaymentReceiptsService {
     ];
     const pdf = Buffer.from(
       pdfTableBytes({
+        logo,
         title: `Payment receipt ${p.number}`,
         subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
         info: [
@@ -134,7 +139,12 @@ export class PaymentReceiptsService {
         },
       }),
     ]);
-    const { pdf } = this.pdf(p, contact, org);
+    const { pdf } = this.pdf(
+      p,
+      contact,
+      org,
+      await organizationLogo(this.prisma, organizationId),
+    );
     return {
       data: pdf,
       fileName: `${p.kind === 'payment' ? 'payment-advice' : 'receipt'}-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
@@ -211,7 +221,12 @@ export class PaymentReceiptsService {
         message: `This ${advice ? 'vendor' : 'customer'} has no email address. Enter one to send it to.`,
         details: { reason: 'no_email' },
       });
-    const { pdf, currency, fmt } = this.pdf(p, contact, org);
+    const { pdf, currency, fmt } = this.pdf(
+      p,
+      contact,
+      org,
+      await organizationLogo(this.prisma, organizationId),
+    );
     const sent = await this.mail.send({
       to: [to],
       subject: advice
