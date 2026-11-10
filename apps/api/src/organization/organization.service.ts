@@ -32,6 +32,7 @@ const select = {
   region: true,
   postalCode: true,
   invoiceTerms: true,
+  weeklySummary: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -55,6 +56,7 @@ type Columns = Partial<{
   region: string | null;
   postalCode: string | null;
   invoiceTerms: string | null;
+  weeklySummary: boolean;
 }>;
 
 const ADDRESS_COLUMNS = { line1: 'addressLine1', line2: 'addressLine2', city: 'city', region: 'region', postalCode: 'postalCode' } as const;

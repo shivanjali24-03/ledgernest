@@ -80,6 +80,16 @@ describe('organisation settings', () => {
     expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.invoiceTerms).toBe('Payment within 15 days.\nHDFC Bank · IFSC HDFC0001234');
   });
 
+  it('turns on the weekly summary email', async () => {
+    renderApp();
+    const box = await screen.findByRole('checkbox', { name: /^Weekly summary/ }, { timeout: 4000 });
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Settings saved')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.weeklySummary).toBe(true);
+  });
+
   it('shows problems next to the field, with the same rules as the API, and discards changes', async () => {
     renderApp();
     const tax = await field('Tax ID');

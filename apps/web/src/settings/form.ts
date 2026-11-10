@@ -19,6 +19,8 @@ export interface SettingsValues {
   timeZone: string;
   fiscalYearStartMonth: string;
   invoiceTerms: string;
+  /** 'true' or 'false' (form values are strings) */
+  weeklySummary: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -42,6 +44,7 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   timeZone: s.timeZone,
   fiscalYearStartMonth: String(s.fiscalYearStartMonth),
   invoiceTerms: s.invoiceTerms ?? '',
+  weeklySummary: String(!!s.weeklySummary),
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -53,6 +56,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     if (k in ADDRESS) address[k] = v[k];
     else if (k === 'fiscalYearStartMonth') out[k] = Number(v[k]);
     else if (k === 'country') out[k] = v[k] || null;
+    else if (k === 'weeklySummary') out[k] = v[k] === 'true';
     else out[k] = v[k];
   }
   if (Object.keys(address).length) out.address = address;
@@ -62,7 +66,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms'].includes(key) ? (key as SettingsField) : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'weeklySummary'].includes(key) ? (key as SettingsField) : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */

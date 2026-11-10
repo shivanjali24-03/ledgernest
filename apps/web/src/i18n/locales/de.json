@@ -913,7 +913,8 @@
       "fiscalYearStartMonth": "Geschäftsjahr beginnt im",
       "locale": "Zahlen- und Datumsformat",
       "timeZone": "Zeitzone",
-      "invoiceTerms": "Bedingungen und Bankverbindung"
+      "invoiceTerms": "Bedingungen und Bankverbindung",
+      "weeklySummary": "Wochenübersicht"
     },
     "hints": {
       "legalName": "Wie eingetragen, für Rechnungen und Steuererklärungen.",
@@ -921,7 +922,8 @@
       "baseCurrency": "Ihre Bücher werden in dieser Währung geführt.",
       "fiscalYear": "Ihr Geschäftsjahr läuft {{span}}.",
       "timeZone": "Dort ist es jetzt {{time}}. Bestimmt, auf welchen Tag eine Buchung fällt.",
-      "invoiceTerms": "Steht am Fuß von Rechnungen und Angeboten, auf dem Bildschirm und in versendeten PDFs: Zahlungsbedingungen, Bankverbindung, ein Dankeschön. Bis zu 1.000 Zeichen."
+      "invoiceTerms": "Steht am Fuß von Rechnungen und Angeboten, auf dem Bildschirm und in versendeten PDFs: Zahlungsbedingungen, Bankverbindung, ein Dankeschön. Bis zu 1.000 Zeichen.",
+      "weeklySummary": "Jeden Montagmorgen erhalten Inhaber und Admins Liquidität, offene Forderungen und Verbindlichkeiten, den Gewinn im Geschäftsjahr und was Aufmerksamkeit braucht. Erfordert eingerichtete E-Mail auf dem Server."
     },
     "locked": {
       "baseCurrency": "Nach dem Buchen von Einträgen nicht mehr änderbar",
@@ -961,6 +963,10 @@
     "documents": {
       "title": "Rechnungen und Angebote",
       "description": "Was am Fuß jeder Rechnung und jedes Angebots steht."
+    },
+    "email": {
+      "title": "E-Mail",
+      "description": "Was LedgerNest Ihrem Team per E-Mail schickt."
     }
   },
   "accounts": {

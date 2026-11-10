@@ -6,6 +6,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { InvoiceRemindersService } from '../src/invoices/invoice-reminders.service.js';
 import { MailService } from '../src/mail/mail.service.js';
+import { WeeklySummaryService } from '../src/reports/weekly-summary.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
 
@@ -56,6 +57,8 @@ describe('Aging reports (e2e)', () => {
         auth(http().post(`/api/v1${p}`)).send(body),
       put: (p: string, body: object) =>
         auth(http().put(`/api/v1${p}`)).send(body),
+      patch: (p: string, body: object) =>
+        auth(http().patch(`/api/v1${p}`)).send(body),
     };
   };
   const issue = async (
@@ -817,6 +820,39 @@ describe('Aging reports (e2e)', () => {
       ).toMatchObject({ reason: 'no_email' });
       await as('viewer')
         .post('/invoices/remind-overdue', { contactId: contact.kumar })
+        .expect(403);
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
+
+  it('emails Owners and Admins a weekly summary on Mondays, once, when turned on', async () => {
+    const svc = app.get(WeeklySummaryService);
+    const monday = new Date('2026-11-16T06:00:00Z');
+    process.env.SMTP_URL = 'json';
+    try {
+      const captured = app.get(MailService).captured;
+      const mine = () =>
+        captured.filter((m) => m.subject.startsWith(`Aging ${run}:`));
+      await svc.runDue(monday);
+      expect(mine()).toHaveLength(0); // not turned on yet
+      await as().patch('/organization', { weeklySummary: true }).expect(200);
+      await svc.runDue(monday);
+      expect(mine()).toHaveLength(1);
+      expect(mine()[0]).toMatchObject({
+        to: [`owner-${run}@test.ledgernest.local`],
+        subject: expect.stringMatching(
+          new RegExp(`^Aging ${run}: weekly summary, \\d{4}-\\d{2}-\\d{2}$`),
+        ),
+      });
+      // Once per Monday, and only on Mondays
+      await svc.runDue(new Date('2026-11-16T10:00:00Z'));
+      await svc.runDue(new Date('2026-11-17T06:00:00Z'));
+      expect(mine()).toHaveLength(1);
+      await svc.runDue(new Date('2026-11-23T06:00:00Z'));
+      expect(mine()).toHaveLength(2);
+      await as('viewer')
+        .patch('/organization', { weeklySummary: false })
         .expect(403);
     } finally {
       delete process.env.SMTP_URL;
