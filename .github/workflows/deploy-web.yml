@@ -45,6 +45,9 @@ jobs:
           API_URL_PRODUCTION: ${{ vars.API_URL_PRODUCTION }}
           API_URL_STAGING: ${{ vars.API_URL_STAGING }}
           API_URL_DEV: ${{ vars.API_URL_DEV }}
+          # Shown on the privacy notice and terms (optional)
+          OPERATOR_NAME: ${{ vars.OPERATOR_NAME }}
+          CONTACT_EMAIL: ${{ vars.CONTACT_EMAIL }}
         run: |
           set -euo pipefail
           SITE="$PWD/_site"
@@ -63,7 +66,7 @@ jobs:
               cd "$tree"
               npm ci --no-audit --no-fund
               npm run build -w @ledgernest/shared
-              BASE_PATH="/ledgernest/${dir:+$dir/}" VITE_API_URL="$api" npm run build -w @ledgernest/web
+              BASE_PATH="/ledgernest/${dir:+$dir/}" VITE_API_URL="$api" VITE_OPERATOR_NAME="$OPERATOR_NAME" VITE_CONTACT_EMAIL="$CONTACT_EMAIL" npm run build -w @ledgernest/web
             )
             cp -R "$tree/apps/web/dist/." "$SITE/$dir"
             echo "Built $branch → /ledgernest/${dir:+$dir/} (${api:-demo})"
