@@ -83,12 +83,13 @@ describe('GSTR-2B', () => {
     expect(by('matched').map((x) => x.bill!.number)).toEqual(['BILL/0001']);
     expect(by('mismatch')).toEqual([expect.objectContaining({ bill: expect.objectContaining({ number: 'BILL/0002' }), diff: { taxable: 1000_00, tax: 180_00 }, problems: ['taxable', 'tax'] })]);
     expect(by('probable')).toEqual([expect.objectContaining({ bill: expect.objectContaining({ number: 'BILL/0003' }), problems: ['number'] })]);
-    expect(by('missing_in_books').map((x) => x.doc!.number)).toEqual(['SOS/44/26-27']);
+    // The supplier's credit note isn't in the books either: input credit to give back
+    expect(by('missing_in_books').map((x) => x.doc!.number)).toEqual(['SOS/44/26-27', 'CN-3']);
     expect(by('missing_in_2b').map((x) => x.bill!.number)).toEqual(['BILL/0004']);
-    expect(by('note').map((x) => x.doc!.number)).toEqual(['CN-3']);
+    expect(by('note')).toEqual([]);
     // Worst first
-    expect(r.rows.map((x) => x.status)).toEqual(['mismatch', 'missing_in_2b', 'missing_in_books', 'probable', 'matched', 'note']);
-    expect(r.summary).toMatchObject({ matched: { count: 1, tax: 1800_00 }, missing_in_2b: { count: 1, tax: 180_00 }, missing_in_books: { count: 1, tax: 360_00 }, note: { count: 1, tax: -180_00 } });
+    expect(r.rows.map((x) => x.status)).toEqual(['mismatch', 'missing_in_2b', 'missing_in_books', 'missing_in_books', 'probable', 'matched']);
+    expect(r.summary).toMatchObject({ matched: { count: 1, tax: 1800_00 }, missing_in_2b: { count: 1, tax: 180_00 }, missing_in_books: { count: 2, tax: 180_00 }, note: { count: 0, tax: 0 } });
   });
 
   it('sees IGST against CGST + SGST as a wrong place of supply, allows rupee rounding, and notes a date only', () => {
@@ -106,5 +107,15 @@ describe('GSTR-2B', () => {
     expect(rows[1]).toEqual(['Not in the books', KARNATAKA, 'BLUEWAVE CLOUD', 'BW-7781', '2026-10-01', '30000.42', '5400.08', '', '', '', '', '', '', '', '']);
     expect(gstr2bRequestSchema.safeParse({ content: '{}', from: '2026-10-31', to: '2026-10-01' }).success).toBe(false);
     expect(gstr2bRequestSchema.safeParse({ content: '{}', from: '2026-10-01', to: '2026-10-31' }).success).toBe(true);
+  });
+
+  it('matches the supplier’s credit notes to debit notes carrying their number, and flags the ones not in the books', () => {
+    const f = parseGstr2b(JSON.stringify(portal));
+    const note = (over: Partial<Gstr2bBill>): Gstr2bBill => bill({ kind: 'debit_note', number: 'DN/2026-27/0001', ...over });
+    // Sharma's CN-3: ₹1,000 + ₹180 GST
+    const matched = reconcileGstr2b(f.docs, [], 100, [note({ vendorReference: 'cn 3', date: '2026-10-25', taxable: 1000_00, heads: { igst: 0, cgst: 90_00, sgst: 90_00, cess: 0 }, total: 1180_00 })]);
+    expect(matched.rows.find((r) => r.doc?.kind === 'credit_note')).toMatchObject({ status: 'matched', bill: { kind: 'debit_note', number: 'DN/2026-27/0001' } });
+    const missing = reconcileGstr2b(f.docs, [], 100, []);
+    expect(missing.rows.find((r) => r.doc?.kind === 'credit_note')).toMatchObject({ status: 'missing_in_books', bill: null });
   });
 });

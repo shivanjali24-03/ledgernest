@@ -136,6 +136,8 @@ export function docKey(number: string): string {
 /** A bill as the books have it, in the base currency (paise) */
 export interface Gstr2bBill {
   id: string;
+  /** A bill, or one of our debit notes (matched to the supplier's credit note) */
+  kind?: 'bill' | 'debit_note';
   /** Our own number, e.g. BILL/2026-27/0004 */
   number: string | null;
   /** The supplier's invoice number */
@@ -178,7 +180,7 @@ const daysApart = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`
  * left, by supplier, total and a date within a week (a probable match with the number typed differently). Amounts
  * within the tolerance (₹1 by default, for rounding) count as equal. Credit and debit notes are listed as they are.
  */
-export function reconcileGstr2b(docs: Gstr2bDoc[], bills: Gstr2bBill[], tolerance = 100): Gstr2bResult {
+export function reconcileGstr2b(docs: Gstr2bDoc[], bills: Gstr2bBill[], tolerance = 100, debitNotes: Gstr2bBill[] = []): Gstr2bResult {
   const rows: Gstr2bRow[] = [];
   const usable = bills.filter((b) => b.vendorGstin && taxOf(b.heads) !== 0);
   const skipped = bills.length - usable.length;
@@ -200,8 +202,19 @@ export function reconcileGstr2b(docs: Gstr2bDoc[], bills: Gstr2bBill[], toleranc
     return { diff, problems };
   };
 
+  const notesLeft = new Set(debitNotes.filter((n) => n.vendorGstin));
   const unmatched: Gstr2bDoc[] = [];
   for (const d of docs) {
+    if (d.kind === 'credit_note') {
+      // A supplier's credit note: matched to the debit note carrying its number, or input credit to give back
+      const n = [...notesLeft].find((x) => x.vendorGstin?.toUpperCase() === d.supplierGstin && !!x.vendorReference && docKey(x.vendorReference) === docKey(d.number));
+      if (n) {
+        notesLeft.delete(n);
+        const { diff, problems } = compare(d, n);
+        rows.push({ status: problems.some((p) => p !== 'date') ? 'mismatch' : 'matched', supplierGstin: d.supplierGstin, supplierName: d.supplierName ?? n.vendorName, doc: d, bill: n, diff, problems });
+      } else rows.push({ status: 'missing_in_books', supplierGstin: d.supplierGstin, supplierName: d.supplierName, doc: d, bill: null, diff: null, problems: [] });
+      continue;
+    }
     if (d.kind !== 'invoice') {
       rows.push({ status: 'note', supplierGstin: d.supplierGstin, supplierName: d.supplierName, doc: d, bill: null, diff: null, problems: [] });
       continue;

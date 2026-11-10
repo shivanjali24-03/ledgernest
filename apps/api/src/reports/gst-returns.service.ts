@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   B2CL_THRESHOLD,
   billNumber,
+  vendorCreditNumber,
   complianceDueDates,
   tdsDepositDue,
   type ComplianceItem,
@@ -785,7 +786,69 @@ export class GstReturnsService {
           total: inBase(Number(b.total), b.currency, b.rate),
         };
       });
-    const result = reconcileGstr2b(file.docs, bills);
+    // Our debit notes, to match the suppliers' credit notes in the file by the number they carry
+    const notes = await this.prisma.vendorCredit.findMany({
+      where: {
+        organizationId,
+        status: 'issued',
+        date: { gte: asDate(from), lte: asDate(to) },
+      },
+      select: {
+        id: true,
+        number: true,
+        date: true,
+        vendorReference: true,
+        total: true,
+        fiscalYear: { select: { name: true } },
+        contact: { select: { name: true, legalName: true, taxId: true } },
+        lines: {
+          select: {
+            amount: true,
+            taxGroup: {
+              select: {
+                rates: {
+                  select: {
+                    rate: { select: { id: true, kind: true, ratePpm: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const debitNotes: Gstr2bBill[] = notes.map((n) => {
+      const heads = zeroHeads();
+      let taxable = 0;
+      for (const l of n.lines) {
+        const rates = l.taxGroup?.rates ?? [];
+        taxable += Number(l.amount);
+        splitTax(
+          Number(l.amount),
+          false,
+          rates.map((r) => ({ rateId: r.rate.id, ratePpm: r.rate.ratePpm })),
+        ).taxes.forEach((t, k) => {
+          const h = head(rates[k]!.rate.kind);
+          if (h) heads[h] += t.amount;
+        });
+      }
+      return {
+        id: n.id,
+        kind: 'debit_note',
+        number: vendorCreditNumber(n.fiscalYear.name, n.number),
+        vendorReference: n.vendorReference,
+        vendorName: n.contact.legalName ?? n.contact.name,
+        vendorGstin:
+          n.contact.taxId && isGstin(n.contact.taxId)
+            ? n.contact.taxId.toUpperCase()
+            : null,
+        date: iso(n.date),
+        taxable,
+        heads,
+        total: Number(n.total),
+      };
+    });
+    const result = reconcileGstr2b(file.docs, bills, 100, debitNotes);
     return {
       gstin: file.gstin,
       period: file.period,

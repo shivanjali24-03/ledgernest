@@ -28,6 +28,8 @@ function save(rows: Stored[]) {
     /* private mode */
   }
 }
+/** Live debit notes, for matching suppliers' credit notes in GSTR-2B */
+export const demoDebitNoteRows = (): DebitNote[] => load().filter((n) => n.status === 'issued');
 export const resetDemoDebitNotes = () => {
   try {
     localStorage.removeItem(KEY);
