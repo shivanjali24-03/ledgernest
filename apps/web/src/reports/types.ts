@@ -236,6 +236,8 @@ export interface ReportsApi {
   tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
   /** Bills from micro and small suppliers against the 45-day rule, and what section 43B(h) takes out of the year */
   msme(date?: string): Promise<MsmeReportView>;
+  /** Interest on late payment across the books on a day */
+  interest(date?: string): Promise<InterestReport>;
   /** Balance confirmations asked for the day and side, with their answers */
   confirmations(asOf: string, side: 'receivable' | 'payable'): Promise<ConfirmationRow[]>;
   /** Asks everyone on that side with a balance on the day (or just those given) to confirm it, by email where possible */
@@ -302,4 +304,11 @@ export interface ConfirmationRow {
   sentTo: string | null;
   views: number;
   token: string;
+}
+
+/** Interest on late payment: each invoice with interest accrued, invoiced, waived and left to charge */
+export interface InterestReport {
+  asOf: string;
+  rows: { invoiceId: string; number: string | null; contact: { id: string; name: string }; currency: string | null; dueDate: string; daysLate: number; rateBp: number; balance: number; accrued: number; perDay: number; charged: number; waived: number; chargeable: number }[];
+  totals: { accrued: number; charged: number; waived: number; chargeable: number; perDay: number };
 }

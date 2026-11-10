@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Compliance, GstHealth, Gstr2bReport, MsmeReportView, TdsReport } from './types';
+import type { CashForecast, Compliance, GstHealth, Gstr2bReport, MsmeReportView, TdsReport, InterestReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -675,6 +675,20 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     gstHealth,
     tds,
     msme,
+    // Interest to today on the demo's invoices with interest terms
+    interest: async () => {
+      const { demoInvoiceViews, createDemoInvoicesApi } = await import('../invoices/demoInvoicesApi');
+      const api = createDemoInvoicesApi(() => true);
+      const rows: InterestReport['rows'] = [];
+      for (const i of (await demoInvoiceViews()).filter((x) => x.status === 'issued' && x.interest)) {
+        const s = await api.interestStatus(i.id);
+        if (!s.accrued && !s.charged && !s.waived) continue;
+        rows.push({ invoiceId: i.id, number: i.number, contact: { id: i.contact.id, name: i.contact.name }, currency: i.currency, dueDate: i.dueDate, daysLate: i.interest!.daysLate, rateBp: i.interest!.rateBp, balance: i.balance, accrued: s.accrued, perDay: i.interest!.perDay, charged: s.charged, waived: s.waived, chargeable: s.chargeable });
+      }
+      rows.sort((x, y) => x.contact.name.localeCompare(y.contact.name) || x.dueDate.localeCompare(y.dueDate));
+      const sum = (k: 'accrued' | 'charged' | 'waived' | 'chargeable' | 'perDay') => rows.filter((r) => !r.currency).reduce((t, r) => t + r[k], 0);
+      return { asOf: todayIn('Asia/Kolkata'), rows, totals: { accrued: sum('accrued'), charged: sum('charged'), waived: sum('waived'), chargeable: sum('chargeable'), perDay: sum('perDay') } };
+    },
     confirmations,
     requestConfirmations,
     tally,

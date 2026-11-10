@@ -224,4 +224,45 @@ describe('Interest invoices and waivers (e2e)', () => {
     const s = await status(source);
     expect(s.charges.filter((c) => c.status === 'draft')).toHaveLength(2);
   });
+
+  it('reports interest across the books: accrued, invoiced, waived and left, by invoice and in total', async () => {
+    const r = (await get('/reports/interest?date=2030-12-31').expect(200))
+      .body as {
+      rows: {
+        invoiceId: string;
+        contact: { name: string };
+        rateBp: number;
+        accrued: number;
+        charged: number;
+        waived: number;
+        chargeable: number;
+      }[];
+      totals: {
+        accrued: number;
+        charged: number;
+        waived: number;
+        chargeable: number;
+      };
+    };
+    const row = r.rows.find((x) => x.invoiceId === source)!;
+    expect(row).toMatchObject({
+      contact: { name: 'Kumar Traders' },
+      rateBp: 1800,
+      waived: 500_00,
+    });
+    expect(row.accrued).toBe(
+      Math.round(
+        (1_12_800_00 * 0.18 * (Date.UTC(2030, 11, 31) - Date.UTC(2026, 5, 1))) /
+          86_400_000 /
+          365,
+      ),
+    );
+    expect(row.chargeable).toBe(
+      Math.max(0, row.accrued - row.charged - row.waived),
+    );
+    expect(r.totals.accrued).toBe(r.rows.reduce((s, x) => s + x.accrued, 0));
+    await auth(http().get('/api/v1/reports/interest'))
+      .set('X-Organization-Id', org)
+      .expect(200);
+  });
 });
