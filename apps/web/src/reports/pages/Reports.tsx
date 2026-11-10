@@ -22,6 +22,7 @@ import GstHealthPanel from '../GstHealthPanel';
 import CashForecastPanel from '../CashForecastPanel';
 import TdsPanel from '../TdsPanel';
 import MsmePanel from '../MsmePanel';
+import ConfirmationsPanel from '../ConfirmationsPanel';
 import EinvoiceBatchButton from '../EinvoiceBatchButton';
 import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
@@ -36,7 +37,7 @@ import TaxSummaryPanel from '../TaxSummaryPanel';
 import ScheduledReportsPanel from '../../scheduled-reports/ScheduledReportsPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'forecast' | 'gst' | 'tds' | 'msme' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'forecast' | 'gst' | 'tds' | 'msme' | 'confirmations' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -63,7 +64,10 @@ export default function Reports() {
   const tab = (params.get('tab') as Tab | null) ?? 'trial-balance';
   const today = todayIn(settings?.timeZone ?? 'Asia/Kolkata');
   const year = fiscalYearSpan(fiscalYearOf(today, settings?.fiscalYearStartMonth ?? 4), settings?.fiscalYearStartMonth ?? 4);
-  const asOf = params.get('asOf') ?? today;
+  // Balance confirmations are usually for the last year end
+  const lastYearEnd = new Date(Date.parse(`${year.startDate}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  const asOf = params.get('asOf') ?? (tab === 'confirmations' ? lastYearEnd : today);
+  const confirmSide = (params.get('cside') as 'receivable' | 'payable' | null) ?? 'receivable';
   // Tax is filed monthly, so its default range is this month
   const from = params.get('from') ?? (tab === 'tax' || tab === 'gst' || tab === 'tds' ? `${today.slice(0, 8)}01` : year.startDate);
   const to = params.get('to') ?? today;
@@ -72,7 +76,7 @@ export default function Reports() {
   const salesSide = (params.get('sside') as SalesReportSide | null) ?? 'sales';
   const salesBy = (params.get('by') as SalesReportBy | null) ?? 'contact';
   const canExport = session.permissions.has('reports.export');
-  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), forecast: t('reports.forecast.title'), gst: t('reports.gst.title'), tds: t('reports.tds.title'), msme: t('reports.msme.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), forecast: t('reports.forecast.title'), gst: t('reports.gst.title'), tds: t('reports.tds.title'), msme: t('reports.msme.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), confirmations: t('confirmations.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -150,7 +154,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health'))) && 'hidden')}>
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || tab === 'confirmations' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health'))) && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={(tab === 'ledger' && !accountId) || (tab === 'statement' && !contactId)}>
                 {t('reports.print')}
               </Button>
@@ -191,6 +195,7 @@ export default function Reports() {
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
             { value: 'statement', label: t('reports.statement.title') },
+            { value: 'confirmations', label: t('confirmations.title') },
             { value: 'sales', label: t('reports.sales.title') },
             { value: 'scheduled', label: t('scheduledReports.tab') },
           ]}
@@ -422,6 +427,24 @@ export default function Reports() {
       ) : tab === 'statement' ? (
         <motion.div variants={fadeUp} role="tabpanel">
           <ContactStatementPanel api={api} side={side} contactId={contactId} from={from} to={to} set={set} onSave={saveBlob} />
+        </motion.div>
+      ) : tab === 'confirmations' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
+            <div className="w-44">
+              <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
+            </div>
+            <Segmented<'receivable' | 'payable'>
+              label={t('confirmations.side')}
+              value={confirmSide}
+              onChange={(v) => set({ cside: v === 'receivable' ? null : v })}
+              options={[
+                { value: 'receivable', label: t('confirmations.sides.receivable') },
+                { value: 'payable', label: t('confirmations.sides.payable') },
+              ]}
+            />
+          </div>
+          <ConfirmationsPanel api={api!} asOf={asOf} side={confirmSide} canRequest={session.permissions.has('contacts.manage')} queryKey={key} />
         </motion.div>
       ) : tab === 'aging' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

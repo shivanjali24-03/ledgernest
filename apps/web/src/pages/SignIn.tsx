@@ -11,6 +11,7 @@ import { DEMO_EMAIL, DEMO_PASSWORD, useAuth } from '../auth/context';
 import { safeNext } from '../auth/liveSession';
 import LanguageSwitcher from '../layout/LanguageSwitcher';
 import Logo from '../layout/Logo';
+import LegalLinks from '../legal/LegalLinks';
 import { useTakingLong } from '../lib/useTakingLong';
 import ThemeToggle from '../layout/ThemeToggle';
 import { fadeUp, spring, stagger } from '../motion/tokens';
@@ -303,6 +304,7 @@ export default function SignIn() {
               )}
             </motion.form>
             )}
+            <LegalLinks className="mt-8" />
           </motion.div>
         </div>
       </main>

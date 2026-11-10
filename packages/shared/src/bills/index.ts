@@ -66,3 +66,36 @@ export function billState(b: { status: BillStatus; total: number; amountPaid: nu
   if (b.dueDate < today) return 'overdue';
   return b.amountPaid > 0 ? 'partly_paid' : 'open';
 }
+
+/**
+ * A vendor's bill number reduced to what identifies it, so "SOS/887", "sos 887" and "SOS-0887" are the same bill:
+ * letters and digits only, lower case, without leading zeros in numbers.
+ */
+export const billReferenceKey = (ref: string | null | undefined) =>
+  (ref ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/(?<!\d)0+(?=\d)/g, '');
+
+export interface BillLike {
+  id: string;
+  vendorReference: string | null;
+  billDate: string;
+  total: number;
+}
+
+/**
+ * Other bills from the same vendor that may be this one entered twice: the same bill number (sure), or no number to go
+ * by but the same total within three days (likely).
+ */
+export function possibleDuplicateBills<T extends BillLike>(bill: BillLike, others: readonly T[]): (T & { reason: 'reference' | 'amount' })[] {
+  const key = billReferenceKey(bill.vendorReference);
+  const near = (a: string, b: string) => Math.abs(Date.parse(`${a}T00:00:00Z`) - Date.parse(`${b}T00:00:00Z`)) <= 3 * 86_400_000;
+  return others
+    .filter((o) => o.id !== bill.id)
+    .flatMap((o): (T & { reason: 'reference' | 'amount' })[] => {
+      const theirs = billReferenceKey(o.vendorReference);
+      if (key && theirs) return key === theirs ? [{ ...o, reason: 'reference' as const }] : [];
+      return o.total === bill.total && near(o.billDate, bill.billDate) ? [{ ...o, reason: 'amount' as const }] : [];
+    });
+}

@@ -4,6 +4,8 @@ import {
   billNumber,
   vendorCreditNumber,
   complianceDueDates,
+  gstInterest,
+  gstLateFee,
   tdsDepositDue,
   type ComplianceItem,
   todayIn,
@@ -861,6 +863,39 @@ export class GstReturnsService {
     };
   }
 
+  /** Taxable value invoiced in the previous financial year (April to March), in the base currency */
+  private async turnover(organizationId: string, today: string) {
+    const y = Number(today.slice(0, 4)) - (today.slice(5) < '04-01' ? 1 : 0);
+    const range = { gte: asDate(`${y - 1}-04-01`), lte: asDate(`${y}-03-31`) };
+    const [base, foreign] = await Promise.all([
+      this.prisma.invoice.aggregate({
+        where: {
+          organizationId,
+          status: 'issued',
+          currency: null,
+          issueDate: range,
+        },
+        _sum: { subtotal: true },
+      }),
+      this.prisma.invoice.findMany({
+        where: {
+          organizationId,
+          status: 'issued',
+          currency: { not: null },
+          issueDate: range,
+        },
+        select: { subtotal: true, rate: true },
+      }),
+    ]);
+    return (
+      Number(base._sum.subtotal ?? 0) +
+      foreign.reduce(
+        (s, i) => s + Math.round(Number(i.subtotal) * Number(i.rate ?? 1)),
+        0,
+      )
+    );
+  }
+
   /**
    * The statutory due dates coming up (and just missed), each with days left; GSTR-3B with the tax it would put
    * in cash from the books so far. Organisations outside India have none.
@@ -904,6 +939,24 @@ export class GstReturnsService {
         (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
           86_400_000,
       );
+    // Last year's turnover sets the cap on GST late fees
+    const turnover = items.some(
+      (i) => (i.kind === 'gstr1' || i.kind === 'gstr3b') && days(i.due) < 0,
+    )
+      ? await this.turnover(organizationId, today)
+      : 0;
+    const anything = async (from: string, to: string, bills: boolean) => {
+      const range = { gte: asDate(from), lte: asDate(to) };
+      const invoices = await this.prisma.invoice.count({
+        where: { organizationId, status: 'issued', issueDate: range },
+      });
+      if (invoices || !bills) return invoices > 0;
+      return (
+        (await this.prisma.bill.count({
+          where: { organizationId, status: 'open', billDate: range },
+        })) > 0
+      );
+    };
     return {
       today,
       items: await Promise.all(
@@ -915,10 +968,24 @@ export class GstReturnsService {
             amount =
               r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess;
           }
+          const late = -days(i.due);
+          // If it hasn't been filed yet: what filing today costs
+          const penalty =
+            late > 0 && (i.kind === 'gstr1' || i.kind === 'gstr3b')
+              ? {
+                  lateFee: gstLateFee(late, {
+                    nil: !(await anything(i.from, i.to, i.kind === 'gstr3b')),
+                    turnover,
+                  }),
+                  interest:
+                    i.kind === 'gstr3b' ? gstInterest(amount ?? 0, late) : 0,
+                }
+              : {};
           return {
             ...i,
             daysLeft: days(i.due),
             ...(amount === undefined ? {} : { amount }),
+            ...penalty,
           };
         }),
       ),

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -45,10 +45,11 @@ describe('E-way bill dialog', () => {
     });
     show(ewayBill);
     const dialog = await screen.findByRole('dialog', {}, { timeout: 4000 });
-    await userEvent.type(within(dialog).getByLabelText(/^Vehicle number/), '12');
+    fireEvent.change(within(dialog).getByLabelText(/^Vehicle number/), { target: { value: '12' } });
     expect(await within(dialog).findByText('That isn’t a vehicle number, like MH12AB1234.', {}, { timeout: 4000 })).toBeInTheDocument();
-    await userEvent.clear(within(dialog).getByLabelText(/^Vehicle number/));
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Download JSON' }));
+    fireEvent.change(within(dialog).getByLabelText(/^Vehicle number/), { target: { value: '' } });
+    await waitFor(() => expect(within(dialog).queryByText('That isn’t a vehicle number, like MH12AB1234.')).not.toBeInTheDocument(), { timeout: 4000 });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Download JSON' }));
     const alert = await within(dialog).findByRole('alert', {}, { timeout: 8000 });
     expect(within(alert).getByText('The customer’s PIN code is missing or not 6 digits.')).toBeInTheDocument();
     expect(within(alert).getByText(/Line 2 \(Laptop bags\) needs an HSN/)).toBeInTheDocument();

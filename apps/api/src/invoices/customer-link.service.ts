@@ -7,6 +7,8 @@ import {
 import {
   invoiceNumber,
   invoiceState,
+  msmeCovered,
+  msmeLateInterest,
   todayIn,
   upiPayUri,
 } from '@ledgernest/shared';
@@ -143,6 +145,9 @@ export class CustomerLinkService {
         baseCurrency: true,
         timeZone: true,
         upiId: true,
+        msmeCategory: true,
+        udyamNumber: true,
+        msmeBankRateBp: true,
       },
     });
     const rows = await this.prisma.invoice.findMany({
@@ -170,6 +175,10 @@ export class CustomerLinkService {
     });
     const today = todayIn(org.timeZone, now);
     const iso = (d: Date) => d.toISOString().slice(0, 10);
+    // A micro or small supplier may charge interest for paying late (MSMED Act s.16)
+    const charges =
+      msmeCovered(org.msmeCategory as 'micro' | 'small' | null) &&
+      !!org.msmeBankRateBp;
     const invoices = rows.map((i) => ({
       id: i.id,
       number: invoiceNumber(i.fiscalYear!.name, i.number!),
@@ -187,6 +196,16 @@ export class CustomerLinkService {
         },
         today,
       ),
+      msmeInterest:
+        charges && (i.currency ?? org.baseCurrency) === 'INR'
+          ? msmeLateInterest(
+              Number(i.total - i.amountPaid),
+              iso(i.issueDate),
+              iso(i.dueDate),
+              today,
+              org.msmeBankRateBp!,
+            )
+          : 0,
     }));
     const totals = [...new Set(invoices.map((i) => i.currency))].map(
       (currency) => ({
@@ -230,6 +249,12 @@ export class CustomerLinkService {
         .filter((i) => i.state === 'overdue' && i.currency === 'INR')
         .reduce((s, i) => s + i.balance, 0),
       upi,
+      msme: charges
+        ? {
+            udyamNumber: org.udyamNumber,
+            interest: invoices.reduce((s, i) => s + i.msmeInterest, 0),
+          }
+        : null,
     };
   }
 

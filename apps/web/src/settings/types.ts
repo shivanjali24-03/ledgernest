@@ -22,6 +22,10 @@ export interface OrganizationSettings {
   weeklySummary?: boolean;
   /** Every member must use two-factor sign-in */
   requireTwoFactor?: boolean;
+  /** This business's own MSME category and Udyam number, and the RBI bank rate (basis points) for MSMED Act interest */
+  msmeCategory?: 'micro' | 'small' | 'medium' | null;
+  udyamNumber?: string | null;
+  msmeBankRateBp?: number | null;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

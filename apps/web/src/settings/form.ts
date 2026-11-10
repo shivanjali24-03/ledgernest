@@ -24,6 +24,10 @@ export interface SettingsValues {
   weeklySummary: string;
   /** 'true' or 'false' */
   requireTwoFactor: string;
+  msmeCategory: string;
+  udyamNumber: string;
+  /** The bank rate as a percentage, like 5.50 */
+  msmeBankRate: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -50,6 +54,9 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   upiId: s.upiId ?? '',
   weeklySummary: String(!!s.weeklySummary),
   requireTwoFactor: String(!!s.requireTwoFactor),
+  msmeCategory: s.msmeCategory ?? '',
+  udyamNumber: s.udyamNumber ?? '',
+  msmeBankRate: s.msmeBankRateBp ? (s.msmeBankRateBp / 100).toFixed(2) : '',
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -62,6 +69,9 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     else if (k === 'fiscalYearStartMonth') out[k] = Number(v[k]);
     else if (k === 'country') out[k] = v[k] || null;
     else if (k === 'weeklySummary' || k === 'requireTwoFactor') out[k] = v[k] === 'true';
+    else if (k === 'msmeCategory') out[k] = v[k] || null;
+    // A percentage typed as 5.5 or 5.50%: stored in basis points
+    else if (k === 'msmeBankRate') out.msmeBankRateBp = v[k].trim() ? Math.round(Number(v[k].replace('%', '').trim()) * 100) : null;
     else out[k] = v[k];
   }
   if (Object.keys(address).length) out.address = address;
@@ -71,7 +81,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor'].includes(key) ? (key as SettingsField) : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */
