@@ -104,7 +104,8 @@
       "open_periods": "{{count}} मागील महिने अजून उघडे",
       "draft_entries": "{{count}} मसुदा नोंदी पोस्ट नाहीत",
       "approvals_waiting": "{{count}} तुमच्या मंजुरीच्या प्रतीक्षेत",
-      "low_stock": "{{count}} वस्तूंचा साठा कमी"
+      "low_stock": "{{count}} वस्तूंचा साठा कमी",
+      "quotes_expiring": "{{count}} कोटेशनची मुदत या आठवड्यात संपत आहे"
     }
   },
   "comingSoon": {

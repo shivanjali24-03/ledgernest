@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Building2, FileSignature, Plus } from 'lucide-react';
@@ -27,7 +27,9 @@ export default function Quotes() {
   const navigate = useNavigate();
   const api = useQuotesApi();
   const canManage = session.permissions.has('invoices.manage');
-  const [filter, setFilter] = useState<Filter>('all');
+  const [params] = useSearchParams();
+  const FILTERS = ['all', 'open', 'accepted', 'expired', 'invoiced', 'declined'] as const;
+  const [filter, setFilter] = useState<Filter>(FILTERS.find((f) => f === params.get('state')) ?? 'all');
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
   const [page, setPage] = useState(1);
@@ -67,7 +69,7 @@ export default function Quotes() {
           label={t('quotes.filter')}
           value={filter}
           onChange={(v) => (setFilter(v), setPage(1))}
-          options={(['all', 'open', 'accepted', 'expired', 'invoiced', 'declined'] as const).map((v) => ({ value: v, label: t(`quotes.filters.${v}`) }))}
+          options={FILTERS.map((v) => ({ value: v, label: t(`quotes.filters.${v}`) }))}
         />
         <div className="min-w-56 flex-1">
           <SearchInput value={search} onChange={(v) => (setSearch(v), setPage(1))} label={t('quotes.search')} />

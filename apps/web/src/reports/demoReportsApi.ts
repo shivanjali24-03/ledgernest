@@ -292,6 +292,11 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     if (waiting) alerts.push({ kind: 'approvals_waiting', count: waiting });
     const low = (await import('../items/demoItemsApi')).demoItemRows().filter((i) => i.stock?.low && !i.archived).length;
     if (low) alerts.push({ kind: 'low_stock', count: low });
+    const weekOn = new Date(`${today}T00:00:00Z`);
+    weekOn.setUTCDate(weekOn.getUTCDate() + 7);
+    const { createDemoQuotesApi } = await import('../quotes/demoQuotesApi');
+    const expiring = (await createDemoQuotesApi(() => true).list({ state: 'open', page: 1, pageSize: 1000 })).items.filter((q) => q.expiryDate <= weekOn.toISOString().slice(0, 10)).length;
+    if (expiring) alerts.push({ kind: 'quotes_expiring', count: expiring });
     return { asOf: today, baseCurrency: 'INR', kpis: { cash: kpi('cash'), receivables: kpi('receivables'), payables: kpi('payables'), profit: { value: ytd(thisMonth), previous: thisMonth === yearStart ? 0 : ytd(months[10]!), trend: monthly.map((m) => m.profit), since: `${yearStart}-01` } }, monthly, alerts, setup: { organisation: true, team: true, coa: true, fiscal: true, bank: true } };
   };
 

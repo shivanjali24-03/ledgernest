@@ -104,7 +104,8 @@
       "open_periods": "{{count}} vergangene Monate noch offen",
       "draft_entries": "{{count}} Buchungsentwürfe nicht gebucht",
       "approvals_waiting": "{{count}} warten auf Ihre Freigabe",
-      "low_stock": "{{count}} Artikel mit niedrigem Bestand"
+      "low_stock": "{{count}} Artikel mit niedrigem Bestand",
+      "quotes_expiring": "{{count}} Angebote laufen diese Woche ab"
     }
   },
   "comingSoon": {

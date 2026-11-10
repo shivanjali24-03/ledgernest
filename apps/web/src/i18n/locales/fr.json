@@ -104,7 +104,8 @@
       "open_periods": "{{count}} mois passés encore ouverts",
       "draft_entries": "{{count}} écritures en brouillon non comptabilisées",
       "approvals_waiting": "{{count}} en attente de votre approbation",
-      "low_stock": "{{count}} articles en stock bas"
+      "low_stock": "{{count}} articles en stock bas",
+      "quotes_expiring": "{{count}} devis expirent cette semaine"
     }
   },
   "comingSoon": {

@@ -229,6 +229,17 @@ export class DashboardService {
           AND coalesce((SELECT sum(m.quantity) FROM stock_movements m WHERE m.item_id = i.id), 0) <= i.reorder_level`;
       if (low && Number(low.n))
         alerts.push({ kind: 'low_stock', count: Number(low.n) });
+      // Open quotes running out within the week
+      const weekOn = asDate(today);
+      weekOn.setUTCDate(weekOn.getUTCDate() + 7);
+      const expiring = await this.prisma.quote.count({
+        where: {
+          organizationId,
+          status: { in: ['draft', 'sent'] },
+          expiryDate: { gte: asDate(today), lte: weekOn },
+        },
+      });
+      if (expiring) alerts.push({ kind: 'quotes_expiring', count: expiring });
     }
     if (permissions.has('approvals.approve')) {
       const waiting = await this.prisma.approvalRequest.count({

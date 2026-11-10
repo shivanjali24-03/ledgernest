@@ -104,7 +104,8 @@
       "open_periods": "{{count}} past months still open",
       "draft_entries": "{{count}} draft entries not posted",
       "approvals_waiting": "{{count}} waiting for your approval",
-      "low_stock": "{{count}} items low on stock"
+      "low_stock": "{{count}} items low on stock",
+      "quotes_expiring": "{{count}} quotes expiring this week"
     }
   },
   "comingSoon": {
