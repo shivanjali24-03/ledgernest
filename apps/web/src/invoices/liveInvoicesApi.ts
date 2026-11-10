@@ -32,6 +32,10 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
     void: (id, input) => r(`/${id}/void`, { method: 'POST', json: input }),
     remind: (id, input) => r(`/${id}/remind`, { method: 'POST', json: input }),
     email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
+    share: (id) => r(`/${id}/share`, { method: 'POST' }),
+    unshare: async (id) => {
+      await r(`/${id}/share`, { method: 'DELETE' });
+    },
     remindOverdue: (contactId) => r('/remind-overdue', { method: 'POST', json: { contactId } }),
     reminderPolicy: () => client.request('/reminder-policy', { headers: { 'X-Organization-Id': organizationId } }),
     setReminderPolicy: (policy) => client.request('/reminder-policy', { method: 'PUT', json: policy, headers: { 'X-Organization-Id': organizationId } }),

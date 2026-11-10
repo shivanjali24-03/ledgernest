@@ -97,6 +97,9 @@ const select = {
   issuedAt: true,
   voidedAt: true,
   lastRemindedAt: true,
+  shareToken: true,
+  shareViews: true,
+  shareViewedAt: true,
   reminders: true,
   createdAt: true,
   updatedAt: true,
@@ -109,6 +112,7 @@ const select = {
       legalName: true,
       taxId: true,
       email: true,
+      phone: true,
       billingAddress: true,
       shippingAddress: true,
       stateCode: true,
@@ -317,6 +321,14 @@ export class InvoicesService {
       /** When a payment reminder last went, and how many have */
       lastRemindedAt: i.lastRemindedAt,
       reminders: i.reminders,
+      /** The customer's link (token only: the web app builds the address), how often it was opened and when last */
+      share: i.shareToken
+        ? {
+            token: i.shareToken,
+            views: i.shareViews,
+            lastViewedAt: i.shareViewedAt,
+          }
+        : null,
       createdAt: i.createdAt,
       lines: i.lines.map((l) => ({
         id: l.id,

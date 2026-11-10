@@ -29,7 +29,7 @@ export interface Invoice {
   placeOfSupply: string | null;
   reference: string | null;
   notes: string | null;
-  contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };
+  contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; phone?: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };
   receivableAccount: { id: string; code: string; name: string } | null;
   subtotal: number;
   taxTotal: number;
@@ -50,7 +50,15 @@ export interface Invoice {
   /** When a payment reminder last went to the customer, and how many have */
   lastRemindedAt: string | null;
   reminders: number;
+  /** The customer's link (opened without signing in), how often it was opened and when last */
+  share?: InvoiceShare | null;
   lines: InvoiceLine[];
+}
+
+export interface InvoiceShare {
+  token: string;
+  views: number;
+  lastViewedAt: string | null;
 }
 
 export interface InvoiceSummary {
@@ -89,6 +97,10 @@ export interface InvoicesApi {
   remindOverdue(contactId: string): Promise<{ sentTo: string; sent: number; failed: { id: string; reason: string }[] }>;
   /** Emails an issued invoice as a PDF; the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
+  /** The customer's link for an issued invoice: made the first time, the same after that */
+  share(id: string): Promise<InvoiceShare>;
+  /** Turns the link off; sharing again makes a new one */
+  unshare(id: string): Promise<void>;
   /** Automatic reminders for overdue invoices */
   reminderPolicy(): Promise<ReminderPolicy>;
   setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;

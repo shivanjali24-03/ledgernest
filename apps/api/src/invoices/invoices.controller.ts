@@ -40,6 +40,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { InvoiceRemindersService } from './invoice-reminders.service.js';
+import { InvoiceShareService } from './invoice-share.service.js';
 import { InvoicesService } from './invoices.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -58,6 +59,7 @@ export class InvoicesController {
   constructor(
     private readonly invoices: InvoicesService,
     private readonly reminders: InvoiceRemindersService,
+    private readonly sharing: InvoiceShareService,
   ) {}
 
   @Get()
@@ -132,6 +134,30 @@ export class InvoicesController {
       disposition: `attachment; filename="${f.fileName}"`,
       length: f.data.length,
     });
+  }
+
+  /** A link the customer opens without signing in; the same link each time until it is turned off */
+  @Post(':id/share')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  share(
+    @Param('id', id) invoiceId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.sharing.share(invoiceId, { actor, tenant, req });
+  }
+
+  @Delete(':id/share')
+  @RequirePermission('invoices.manage')
+  unshare(
+    @Param('id', id) invoiceId: string,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.sharing.unshare(invoiceId, { actor, tenant, req });
   }
 
   @Get(':id')

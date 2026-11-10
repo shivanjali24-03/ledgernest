@@ -4,6 +4,7 @@ import { lazy } from 'react';
 export const Dashboard = lazy(() => import('./Dashboard'));
 export const SignIn = lazy(() => import('./SignIn'));
 export const AcceptInvite = lazy(() => import('./AcceptInvite'));
+export const PublicInvoice = lazy(() => import('../public/PublicInvoice'));
 export const PlatformOverview = lazy(() => import('../platform/pages/PlatformOverview'));
 export const Organizations = lazy(() => import('../platform/pages/Organizations'));
 export const OrganizationDetail = lazy(() => import('../platform/pages/OrganizationDetail'));

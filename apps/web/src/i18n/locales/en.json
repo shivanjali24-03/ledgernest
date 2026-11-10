@@ -936,7 +936,7 @@
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
       "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
       "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
-      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what's still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free."
+      "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -2170,9 +2170,30 @@
     "overLimit": "This takes {{name}} to {{amount}}, over their credit limit of {{limit}}. You can still save or issue it.",
     "upi": {
       "title": "Pay by UPI",
-      "body": "Scan with any UPI app: Google Pay, PhonePe, Paytm, BHIM or your bank's.",
+      "body": "Scan with any UPI app: Google Pay, PhonePe, Paytm, BHIM or your bank’s.",
       "qrLabel": "QR code to pay {{amount}} to {{upiId}} by UPI",
       "open": "Pay with a UPI app"
+    },
+    "share": {
+      "action": "Share",
+      "actionOpened": "Share · opened {{count}}×",
+      "title": "Share invoice {{number}}",
+      "description": "Anyone with this link can see the invoice, download it and pay by UPI, without signing in. Turn it off at any time.",
+      "making": "Making the link…",
+      "failed": "The link couldn’t be made. Close this and try again.",
+      "link": "Invoice link",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Couldn’t copy. Select the link and copy it yourself.",
+      "whatsapp": "Send on WhatsApp",
+      "whatsappHint": "Opens WhatsApp with a message and the link ready to send: to the customer’s mobile number when one is on file, otherwise you choose the chat.",
+      "opened_one": "Opened once, {{when}}",
+      "opened_other": "Opened {{count}} times, last {{when}}",
+      "notOpened": "Not opened yet.",
+      "turnOff": "Turn off link",
+      "turnedOff": "The link no longer works. Share again for a new one.",
+      "message": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, due on {{date}}. View it, download the PDF or pay by UPI here: {{link}}",
+      "messagePaid": "Dear {{name}}, here is invoice {{number}} from {{organization}} for {{amount}}, paid in full ({{date}} was the due date). Thank you! View or download it here: {{link}}"
     }
   },
   "payments": {
@@ -3458,5 +3479,27 @@
     "ran": "Made {{made}} bills",
     "ranWithFailures": "Made {{made}} bills; {{failed}} couldn’t be made",
     "deleteBody": "It goes for good. Schedules that have made bills can only be paused."
+  },
+  "publicInvoice": {
+    "pageTitle": "Invoice {{number}}",
+    "notFound": "This invoice link doesn’t work",
+    "voided": "This invoice was cancelled",
+    "failed": "The invoice couldn’t be loaded",
+    "askBusiness": "Ask the business that sent it for a new link.",
+    "tryAgain": "Check your connection and try again.",
+    "poweredBy": "Sent with LedgerNest",
+    "billedTo": "For {{name}}",
+    "paid": "Paid",
+    "overdueSince": "Overdue since {{date}}",
+    "dueOn": "Due on {{date}}",
+    "totalPaid": "Total paid",
+    "amountDue": "Amount due",
+    "paidSoFar": "{{paid}} of {{total}} paid so far",
+    "upiBody": "Scan with any UPI app, or tap the button on your phone. The amount and invoice number are filled in.",
+    "payNow": "Pay {{amount}} by UPI",
+    "upiAfter": "The money goes straight to the business’s bank account. It can take them a little while to mark the invoice paid.",
+    "dated": "Dated {{date}}",
+    "placeOfSupply": "Place of supply: {{state}}",
+    "reference": "Reference: {{reference}}"
   }
 }
