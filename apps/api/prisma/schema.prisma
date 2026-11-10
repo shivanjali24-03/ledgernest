@@ -89,6 +89,11 @@ model Organization {
   weeklySummary        Boolean            @default(false) @map("weekly_summary")
   /// Every member must sign in with two-factor before using this organisation
   requireTwoFactor     Boolean            @default(false) @map("require_two_factor")
+  /// The business's own MSME category and Udyam number: micro and small can charge late buyers interest (MSMED Act s.16)
+  msmeCategory         String?            @map("msme_category")
+  udyamNumber          String?            @map("udyam_number")
+  /// The RBI bank rate the interest is three times, in basis points
+  msmeBankRateBp       Int?               @map("msme_bank_rate_bp")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")

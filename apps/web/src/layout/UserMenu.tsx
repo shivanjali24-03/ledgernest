@@ -4,6 +4,7 @@ import { KeyRound, LaptopMinimal, LogOut, MonitorX, ShieldCheck, UserX } from 'l
 import { AuthContext } from '../auth/context';
 import ChangePasswordDialog from '../auth/ChangePasswordDialog';
 import TwoFactorDialog from '../auth/TwoFactorDialog';
+import LegalLinks from '../legal/LegalLinks';
 import SessionsDialog from '../auth/SessionsDialog';
 import { ApiClientContext } from '../auth/apiClientContext';
 import DeleteAccountDialog from '../auth/DeleteAccountDialog';
@@ -140,6 +141,7 @@ export default function UserMenu() {
             >
               <LogOut className="size-4 rtl:-scale-x-100" aria-hidden /> {t('auth.signOut')}
             </button>
+            <LegalLinks className="mt-1 border-t border-ink-100 pt-2 dark:border-ink-800" />
           </motion.div>
         )}
       </AnimatePresence>

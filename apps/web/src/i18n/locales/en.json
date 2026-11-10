@@ -143,7 +143,9 @@
       "overdue_other": "{{count}} days late",
       "toPay": "about {{amount}} to pay in cash so far",
       "nothingToPay": "nothing to pay in cash so far",
-      "tdsToPay": "{{amount}} kept back"
+      "tdsToPay": "{{amount}} kept back",
+      "lateFee": "Not filed yet? Late fee so far: {{fee}}",
+      "lateFeeInterest": "Not filed yet? Late fee so far: {{fee}}, plus {{interest}} interest"
     }
   },
   "comingSoon": {
@@ -967,7 +969,10 @@
       "invoiceTerms": "Terms and bank details",
       "weeklySummary": "Weekly summary",
       "upiId": "UPI ID",
-      "requireTwoFactor": "Require two-factor sign-in for everyone"
+      "requireTwoFactor": "Require two-factor sign-in for everyone",
+      "msmeCategory": "Your MSME category",
+      "udyamNumber": "Your Udyam registration number",
+      "msmeBankRate": "RBI bank rate (%)"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -978,7 +983,8 @@
       "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
       "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server.",
       "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free.",
-      "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first."
+      "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first.",
+      "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -993,7 +999,9 @@
       "invalid": "Check this value.",
       "currencyEnabled": "That currency is enabled as a foreign currency. Remove it under Currencies first.",
       "upiId": "Enter a UPI ID like yourname@okhdfcbank.",
-      "twoFactorSelf": "Turn on two-factor sign-in for yourself first (in the menu under your name)."
+      "twoFactorSelf": "Turn on two-factor sign-in for yourself first (in the menu under your name).",
+      "msmeBankRate": "Enter the rate as a percentage, like 5.50.",
+      "udyamNumber": "A Udyam number looks like UDYAM-MH-26-0012345."
     },
     "leave": {
       "title": "Leave without saving?",
@@ -1039,6 +1047,10 @@
     "security": {
       "title": "Security",
       "description": "How people sign in to this organisation."
+    },
+    "msme": {
+      "title": "MSME (Udyam)",
+      "description": "If your business is registered as a micro or small enterprise, buyers who pay after 45 days owe you interest at three times the RBI bank rate (MSMED Act, section 16). LedgerNest works it out on overdue invoices, account links and reminders."
     }
   },
   "accounts": {
@@ -2548,7 +2560,8 @@
         "no_goods": "This invoice has only services: e-way bills are for moving goods.",
         "transport_doc": "Off the road, the railway receipt, airway bill or bill of lading number is needed."
       }
-    }
+    },
+    "msmeInterest": "Paid late: as a micro or small enterprise you can claim interest of {{amount}} so far on this invoice (MSMED Act, section 16). It shows on the customer’s account link and in reminders."
   },
   "payments": {
     "title": "Payments",
@@ -4074,7 +4087,9 @@
     "overdue": "{{amount}} of it is overdue",
     "payAll": "Pay it all by UPI",
     "invoices": "Invoices",
-    "download": "Download {{number}} as PDF"
+    "download": "Download {{number}} as PDF",
+    "msmeInterest": "Interest for late payment under the MSMED Act, 2006 (section 16) so far: {{amount}}",
+    "invoiceInterest": "MSMED Act interest so far: {{amount}}"
   },
   "twoFactor": {
     "action": "Two-factor sign-in",
@@ -4200,5 +4215,12 @@
       "answered": "This has been answered already.",
       "failed": "That didn’t go through. Try again."
     }
+  },
+  "legal": {
+    "privacy": "Privacy notice",
+    "terms": "Terms of use",
+    "nav": "Legal",
+    "updated": "Last updated {{date}}",
+    "english": "This page is in English."
   }
 }
