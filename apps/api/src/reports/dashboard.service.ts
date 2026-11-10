@@ -44,6 +44,8 @@ export class DashboardService {
         fiscalYearStartMonth: true,
         taxId: true,
         addressLine1: true,
+        country: true,
+        upiId: true,
       },
     });
     const today = todayIn(org.timeZone);
@@ -283,7 +285,7 @@ export class DashboardService {
       if (waiting) alerts.push({ kind: 'approvals_waiting', count: waiting });
     }
 
-    const [members, invitations, accountCount, years, banks] =
+    const [members, invitations, accountCount, years, banks, gstGroups] =
       await Promise.all([
         this.prisma.membership.count({ where: { organizationId } }),
         this.prisma.invitation.count({
@@ -299,6 +301,10 @@ export class DashboardService {
             archivedAt: null,
           },
         }),
+        // GST set up: the slab groups made by "Set up GST"
+        this.prisma.taxGroup.count({
+          where: { organizationId, gstSlabId: { not: null } },
+        }),
       ]);
     const setup = {
       organisation: !!(org.taxId || org.addressLine1),
@@ -306,6 +312,10 @@ export class DashboardService {
       coa: accountCount > 0,
       fiscal: years > 0,
       bank: banks > 0,
+      // India: GST registered and set up, and a UPI ID for getting paid
+      ...(org.country === 'IN'
+        ? { gst: !!org.taxId && gstGroups > 0, upi: !!org.upiId }
+        : {}),
     };
 
     return {

@@ -52,6 +52,8 @@ describe('Dashboard (e2e)', () => {
       get: (p: string) => auth(http().get(`/api/v1${p}`)),
       post: (p: string, body: object = {}) =>
         auth(http().post(`/api/v1${p}`)).send(body),
+      patch: (p: string, body: object) =>
+        auth(http().patch(`/api/v1${p}`)).send(body),
     };
   };
   const entry = async (
@@ -269,6 +271,22 @@ describe('Dashboard (e2e)', () => {
       coa: true,
       fiscal: true,
       bank: true,
+      // In India: GST (a GSTIN and the slab groups) and a UPI ID
+      gst: false,
+      upi: false,
+    });
+    await as().patch('/organization', { upiId: 'dash@okhdfcbank' }).expect(200);
+    await prisma.organization.update({
+      where: { id: org },
+      data: { taxId: '27AAPFN1234C1Z5' },
+    });
+    await as().post('/taxes/gst-setup').expect(200);
+    const after = (await as().get('/reports/dashboard').expect(200))
+      .body as Dash;
+    expect(after.setup).toMatchObject({
+      organisation: true,
+      gst: true,
+      upi: true,
     });
   });
 

@@ -96,7 +96,9 @@
       "team": "Invite your team and assign roles",
       "coa": "Choose a chart of accounts template",
       "fiscal": "Set your fiscal year and base currency",
-      "bank": "Connect a bank account"
+      "bank": "Connect a bank account",
+      "gst": "Add your GSTIN and set up GST",
+      "upi": "Add your UPI ID to get paid from invoices"
     },
     "vsLastMonthAmount": "{{value}} vs last month",
     "profitByMonth": "Profit by month",

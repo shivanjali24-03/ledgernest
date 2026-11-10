@@ -40,6 +40,10 @@ describe('dashboard', () => {
     const gstr3b = within(due).getAllByRole('link', { name: /GSTR-3B for / })[0]!;
     expect(gstr3b).toHaveTextContent(/days? (left|late)|Due today/);
     expect(gstr3b.getAttribute('href')).toMatch(/^\/reports\?tab=gst&from=\d{4}-\d{2}-01&to=\d{4}-\d{2}-\d{2}$/);
+    // Setting up for India: the UPI ID isn't there yet, and the step links to where it goes
+    const setup = screen.getByRole('region', { name: 'Set up your books' });
+    expect(within(setup).getByRole('link', { name: 'Add your UPI ID to get paid from invoices' })).toHaveAttribute('href', '/settings');
+    expect(within(setup).getByText('Add your GSTIN and set up GST')).not.toHaveAttribute('href');
     const draft = within(attention).getByRole('link', { name: /1 draft entries not posted/ });
     await userEvent.click(draft);
     await waitFor(() => expect(router.state.location.pathname).toBe('/journals'));
