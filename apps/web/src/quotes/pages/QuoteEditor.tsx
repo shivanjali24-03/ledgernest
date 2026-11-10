@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor as addDays, QUOTE_MOVES, QUOTE_VALID_DAYS, quoteEditable } from '@ledgernest/shared';
-import { ArrowLeft, Check, FileOutput, Mail, Printer, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, Copy, FileOutput, Mail, Printer, Undo2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../auth/client';
 import { useIntlLocale } from '../../i18n';
@@ -28,13 +28,14 @@ function quoteErrorMessage(e: unknown, t: (k: string) => string) {
   return typeof reason === 'string' && QUOTE_REASONS.includes(reason) ? t(`quotes.errors.${reason}`) : invoiceErrorMessage(e, t as never);
 }
 
-function DraftForm({ quote, api }: { quote: Quote | null; api: QuotesApi }) {
+/** `template`: a quote to copy into a new one (same customer, lines and notes; dated today) */
+function DraftForm({ quote, template, api }: { quote: Quote | null; template?: Quote; api: QuotesApi }) {
   const { t } = useTranslation();
   const toQuote = (p: SalesDraftPayload) => ({ contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, lines: p.lines });
   return (
     <SalesDraftForm
       config={{
-        initial: quote && { ...quote, contactId: quote.contact.id, date: quote.quoteDate, until: quote.expiryDate },
+        initial: quote ? { ...quote, contactId: quote.contact.id, date: quote.quoteDate, until: quote.expiryDate } : template ? { ...template, contactId: template.contact.id, date: undefined, until: null } : null,
         save: async (p, send) => {
           const saved = quote ? await api.update(quote.id, toQuote(p)) : await api.create(toQuote(p));
           const done = send && saved.status === 'draft' ? await api.move(saved.id, 'sent') : saved;
@@ -162,6 +163,9 @@ export default function QuoteEditor() {
   const key = ['quotes', session.organizationId, 'one', id] as const;
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !isNew });
   const quote = query.data;
+  const [params] = useSearchParams();
+  const copyId = isNew ? params.get('copy') : null;
+  const copy = useQuery({ queryKey: ['quotes', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const canManage = session.permissions.has('invoices.manage');
   const [emailing, setEmailing] = useState(false);
   const move = useMutation({
@@ -200,6 +204,11 @@ export default function QuoteEditor() {
                 <Pill tone={quote.status === 'invoiced' || quote.status === 'accepted' ? 'brand' : 'neutral'}>
                   <span className={quoteTone(quote.state)}>{t(`quotes.states.${quote.state}`)}</span>
                 </Pill>
+                {canManage && (
+                  <Button variant="ghost" icon={<Copy className="size-4" />} onClick={() => navigate(`/quotes/new?copy=${quote.id}`)}>
+                    {t('quotes.duplicate')}
+                  </Button>
+                )}
                 {!editable && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
@@ -237,7 +246,19 @@ export default function QuoteEditor() {
       </motion.div>
       <motion.div variants={fadeUp} className="space-y-4">
         {!api ? null : isNew ? (
-          canManage ? <DraftForm key="new" quote={null} api={api} /> : null
+          canManage ? (
+            copyId ? (
+              copy.data ? (
+                <DraftForm key={`copy-${copyId}`} quote={null} template={copy.data} api={api} />
+              ) : (
+                <Card>
+                  <SkeletonRows rows={6} />
+                </Card>
+              )
+            ) : (
+              <DraftForm key="new" quote={null} api={api} />
+            )
+          ) : null
         ) : query.isPending ? (
           <Card>
             <SkeletonRows rows={6} />

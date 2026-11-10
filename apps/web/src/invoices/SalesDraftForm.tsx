@@ -24,8 +24,8 @@ import { groupForSupply, supplyFor } from './gst';
 /** What the form starts from: an invoice's or a quote's own fields under shared names */
 export interface SalesDraft {
   contactId: string;
-  /** Issue date, or quote date */
-  date: string;
+  /** Issue date, or quote date; none for a copy (dated today) */
+  date?: string;
   /** Due date, or expiry date */
   until: string | null;
   reference: string | null;

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor } from '@ledgernest/shared';
-import { ArrowLeft, BellRing, Ban, FileMinus, HandCoins, Printer, Repeat } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, Copy, FileMinus, HandCoins, Printer, Repeat } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -30,13 +30,14 @@ import { useInvoicesApi } from '../useInvoicesApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 
 /** A draft invoice: the shared sales form, saved as an invoice and issued from its second button */
-function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi }) {
+/** `template`: an invoice to copy into a new draft (same customer, lines and notes; dated today, no reference) */
+function DraftForm({ invoice, template, api }: { invoice: Invoice | null; template?: Invoice; api: InvoicesApi }) {
   const { t } = useTranslation();
   const toInvoice = (p: SalesDraftPayload) => ({ ...p, issueDate: p.date, dueDate: p.until, date: undefined, until: undefined });
   return (
     <SalesDraftForm
       config={{
-        initial: invoice && { ...invoice, contactId: invoice.contact.id, date: invoice.issueDate, until: invoice.dueDate },
+        initial: invoice ? { ...invoice, contactId: invoice.contact.id, date: invoice.issueDate, until: invoice.dueDate } : template ? { ...template, contactId: template.contact.id, date: undefined, until: null, reference: null } : null,
         save: async (p, issue) => {
           const saved = invoice ? await api.update(invoice.id, toInvoice(p)) : await api.create(toInvoice(p));
           const done = issue ? await api.issue(saved.id) : saved;
@@ -68,6 +69,10 @@ export default function InvoiceEditor() {
   const key = ['invoices', session.organizationId, 'one', id] as const;
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !isNew });
   const invoice = query.data;
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const copyId = isNew ? params.get('copy') : null;
+  const copy = useQuery({ queryKey: ['invoices', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const [voiding, setVoiding] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [crediting, setCrediting] = useState(false);
@@ -108,6 +113,11 @@ export default function InvoiceEditor() {
                 <Pill tone={invoice.status === 'issued' ? 'brand' : 'neutral'}>
                   <span className={stateTone(invoice.state)}>{t(`invoices.states.${invoice.state}`)}</span>
                 </Pill>
+                {canManage && (
+                  <Button variant="ghost" icon={<Copy className="size-4" />} onClick={() => navigate(`/invoices/new?copy=${invoice.id}`)}>
+                    {t('invoices.duplicate')}
+                  </Button>
+                )}
                 {invoice.status !== 'draft' && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
@@ -145,7 +155,17 @@ export default function InvoiceEditor() {
       </motion.div>
       <motion.div variants={fadeUp} className="space-y-4">
         {!api ? null : isNew ? (
-          <DraftForm key="new" invoice={null} api={api} />
+          copyId ? (
+            copy.data ? (
+              <DraftForm key={`copy-${copyId}`} invoice={null} template={copy.data} api={api} />
+            ) : (
+              <Card>
+                <SkeletonRows rows={6} />
+              </Card>
+            )
+          ) : (
+            <DraftForm key="new" invoice={null} api={api} />
+          )
         ) : query.isPending ? (
           <Card>
             <SkeletonRows rows={6} />

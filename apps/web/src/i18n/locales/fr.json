@@ -2113,7 +2113,8 @@
         "repeatEveryDays": "De 1 à 90 jours.",
         "maxReminders": "De 1 à 10 relances."
       }
-    }
+    },
+    "duplicate": "Dupliquer"
   },
   "payments": {
     "title": "Paiements",
@@ -3363,6 +3364,7 @@
       "send": "Envoyer",
       "sent": "Devis envoyé à {{email}}",
       "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}"
-    }
+    },
+    "duplicate": "Dupliquer"
   }
 }
