@@ -46,6 +46,8 @@ export type QuoteFilter = QuoteState | 'open';
 export interface QuotesApi {
   list(q: { state?: QuoteFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: QuoteSummary[] }>;
   get(id: string): Promise<Quote>;
+  /** The quote as a PDF file */
+  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
   create(input: QuoteDraftInput): Promise<Quote>;
   update(id: string, input: QuoteDraftInput): Promise<Quote>;
   remove(id: string): Promise<void>;

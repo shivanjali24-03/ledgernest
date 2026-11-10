@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, HandCoins, Mail, Paperclip, Plus, Send } from 'lucide-react';
+import { Ban, Building2, FileDown, HandCoins, Mail, Paperclip, Plus, Send } from 'lucide-react';
 import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ import { usePaymentsApi } from '../usePaymentsApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 import Modal from '../../ui/Modal';
 import EmailDialog from '../../ui/EmailDialog';
+import { saveBlob } from '../../lib/saveBlob';
 import { apiErrorMessage } from '../../platform/errors';
 
 const PAGE_SIZE = 25;
@@ -145,7 +146,7 @@ export default function Payments() {
                   </span>
                   <RowMenu
                     label={t('payments.actionsFor', { number: p.number })}
-                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(p.kind === 'receipt' ? [{ key: 'pdf', label: t('payments.downloadReceipt'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }] : []), ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
                   />
                 </li>
               ))}

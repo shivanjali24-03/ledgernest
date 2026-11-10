@@ -937,4 +937,35 @@ describe('Aging reports (e2e)', () => {
     ).toBe(3);
     await as('viewer').get('/invoices/export').expect(403);
   });
+
+  it('downloads an invoice and a receipt as PDF', async () => {
+    const binary = (req: request.Test) =>
+      req.buffer(true).parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      });
+    const file = await binary(as().get(`/invoices/${inv.c}/pdf`)).expect(200);
+    expect(file.headers['content-type']).toContain('application/pdf');
+    expect(file.headers['content-disposition']).toContain(
+      'invoice-inv-2026-27-0004.pdf',
+    );
+    const text = (file.body as Buffer).toString('latin1');
+    expect(text.startsWith('%PDF-1.4')).toBe(true);
+    expect(text).toContain('INV/2026-27/0004) Tj');
+    const receipts = (
+      await as()
+        .get(
+          `/payments?kind=receipt&contactId=${contact.kumar}&page=1&pageSize=10`,
+        )
+        .expect(200)
+    ).body.items as { id: string; number: string }[];
+    const r = await binary(as().get(`/payments/${receipts[0]!.id}/pdf`)).expect(
+      200,
+    );
+    expect((r.body as Buffer).toString('latin1')).toContain(
+      '(Total received) Tj',
+    );
+    await as('viewer').get(`/invoices/${inv.c}/pdf`).expect(403);
+  });
 });

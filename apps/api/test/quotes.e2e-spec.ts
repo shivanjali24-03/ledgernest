@@ -430,4 +430,20 @@ describe('Quotes (e2e)', () => {
       .expect(200);
     expect(await alert()).toBeUndefined();
   });
+
+  it('downloads a quote as PDF', async () => {
+    const res = await as('auditor')
+      .get(`/quotes/${first}/pdf`)
+      .buffer(true)
+      .parse((r, done) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(res.headers['content-disposition']).toContain('quote-qt-0001.pdf');
+    expect((res.body as Buffer).toString('latin1')).toContain(
+      '(Quote QT-0001) Tj',
+    );
+  });
 });

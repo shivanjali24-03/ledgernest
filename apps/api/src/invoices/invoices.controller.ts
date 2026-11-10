@@ -13,6 +13,7 @@ import {
   Query,
   Req,
   Res,
+  StreamableFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -113,6 +114,23 @@ export class InvoicesController {
       actor,
       tenant,
       req,
+    });
+  }
+
+  @Get(':id/pdf')
+  @RequirePermission('invoices.view')
+  @ApiProduces('application/pdf')
+  async pdf(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) invoiceId: string,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.reminders.download(tenant.organizationId, invoiceId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return new StreamableFile(f.data, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
     });
   }
 

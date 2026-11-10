@@ -184,7 +184,8 @@
     "status": {
       "ACTIVE": "Active",
       "SUSPENDED": "Suspended"
-    }
+    },
+    "downloadPdf": "Download PDF"
   },
   "platform": {
     "eyebrow": "Super Admin",
@@ -2234,7 +2235,8 @@
       "sent": "Receipt sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
       "noEmail": "This customer has no email address. Enter one to send it to."
-    }
+    },
+    "downloadReceipt": "Download receipt"
   },
   "bills": {
     "title": "Bills",

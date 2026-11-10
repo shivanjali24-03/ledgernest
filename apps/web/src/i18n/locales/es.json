@@ -184,7 +184,8 @@
     "status": {
       "ACTIVE": "Activa",
       "SUSPENDED": "Suspendida"
-    }
+    },
+    "downloadPdf": "Descargar PDF"
   },
   "platform": {
     "eyebrow": "Superadministrador",
@@ -2234,7 +2235,8 @@
       "sent": "Recibo enviado a {{email}}",
       "sentDemo": "En la demo no se envía nada de verdad; iría a {{email}}",
       "noEmail": "Este cliente no tiene correo electrónico. Introduce uno para enviarlo."
-    }
+    },
+    "downloadReceipt": "Descargar recibo"
   },
   "bills": {
     "title": "Facturas de proveedor",

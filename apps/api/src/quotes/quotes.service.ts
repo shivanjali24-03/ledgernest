@@ -541,6 +541,35 @@ export class QuotesService {
     return { quote: done, invoiceId: invoice.id };
   }
 
+  /** A quote as a PDF: lines, totals, valid-until date and the organisation's terms */
+  private async pdf(
+    organizationId: string,
+    q: Awaited<ReturnType<QuotesService['get']>>,
+  ) {
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true, baseCurrency: true, invoiceTerms: true },
+    });
+    const currency = q.currency ?? org.baseCurrency;
+    const pdf = Buffer.from(
+      pdfTableBytes({
+        title: `Quote ${q.number}`,
+        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
+        after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
+        footer: `${org.name} · ${q.number}`,
+        rows: quoteRows({ ...q, currency }, currencyDigits(currency)),
+      }),
+    );
+    return { org, pdf, currency };
+  }
+
+  /** The PDF of a quote, to download */
+  async download(organizationId: string, id: string) {
+    const q = await this.get(organizationId, id);
+    const { pdf } = await this.pdf(organizationId, q);
+    return { data: pdf, fileName: `quote-${q.number.toLowerCase()}.pdf` };
+  }
+
   /** The quote as a PDF to the customer (or the address given); a draft is marked sent */
   async email(id: string, input: z.output<typeof quoteEmailSchema>, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
@@ -564,20 +593,7 @@ export class QuotesService {
         'This customer has no email address. Enter one to send it to.',
         'no_email',
       );
-    const org = await this.prisma.organization.findUniqueOrThrow({
-      where: { id: organizationId },
-      select: { name: true, baseCurrency: true, invoiceTerms: true },
-    });
-    const currency = q.currency ?? org.baseCurrency;
-    const pdf = Buffer.from(
-      pdfTableBytes({
-        title: `Quote ${q.number}`,
-        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
-        after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
-        footer: `${org.name} · ${q.number}`,
-        rows: quoteRows({ ...q, currency }, currencyDigits(currency)),
-      }),
-    );
+    const { org, pdf, currency } = await this.pdf(organizationId, q);
     const sent = await this.mail.send({
       to: [to],
       subject: `Quote ${q.number} from ${org.name}`,

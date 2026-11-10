@@ -1,4 +1,4 @@
-import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { invoiceRows, pdfTableBytes, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -265,6 +265,12 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
   };
   const prepare = demoPrepareSale;
   const api: InvoicesApi = {
+    pdf: async (iid) => {
+      const v = view(find(await load(), iid));
+      if (v.status === 'draft') throw refuse(409, 'not_issued');
+      const bytes = pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')) });
+      return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `invoice-${(v.number ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
+    },
     exportList: async (q) => {
       const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
       const rows = [['number', 'state', 'issue_date', 'due_date', 'customer', 'reference', 'currency', 'total', 'paid', 'balance'], ...all.map((i) => { const cur = i.currency ?? 'INR'; return [i.number ?? 'Draft', i.state, i.issueDate, i.dueDate, i.contact.name, i.reference ?? '', cur, major(i.total, cur), i.status === 'issued' ? major(i.amountPaid, cur) : '', i.status === 'issued' ? major(i.balance, cur) : '']; })];
