@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MailModule } from '../mail/mail.module.js';
 import { ReportsController } from './reports.controller.js';
+import {
+  BalanceConfirmationsController,
+  PublicConfirmationsController,
+} from './balance-confirmations.controller.js';
+import { BalanceConfirmationsService } from './balance-confirmations.service.js';
 import { CashForecastService } from './cash-forecast.service.js';
 import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
@@ -16,13 +21,18 @@ import { WeeklySummaryService } from './weekly-summary.service.js';
 
 @Module({
   imports: [MailModule],
-  controllers: [ReportsController],
+  controllers: [
+    ReportsController,
+    BalanceConfirmationsController,
+    PublicConfirmationsController,
+  ],
   providers: [
     CashForecastService,
     GstHealthService,
     TallyExportService,
     TdsReportService,
     MsmeReportService,
+    BalanceConfirmationsService,
     ReportsService,
     DashboardService,
     GstReturnsService,

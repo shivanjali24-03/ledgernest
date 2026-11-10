@@ -51,3 +51,4 @@ export * from './eway/index.js';
 export * from './msme/index.js';
 export * from './cheque/index.js';
 export * from './sessions/index.js';
+export * from './confirmations/index.js';

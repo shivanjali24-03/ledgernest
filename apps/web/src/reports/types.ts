@@ -229,6 +229,10 @@ export interface ReportsApi {
   tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
   /** Bills from micro and small suppliers against the 45-day rule, and what section 43B(h) takes out of the year */
   msme(date?: string): Promise<MsmeReportView>;
+  /** Balance confirmations asked for the day and side, with their answers */
+  confirmations(asOf: string, side: 'receivable' | 'payable'): Promise<ConfirmationRow[]>;
+  /** Asks everyone on that side with a balance on the day (or just those given) to confirm it, by email where possible */
+  requestConfirmations(input: { asOf: string; side: 'receivable' | 'payable'; contactIds?: string[]; send: boolean }): Promise<{ created: number; emailed: number; skipped: { contactId: string; name: string; reason: string }[] }>;
   /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates */
   tally(part: 'masters' | 'vouchers', from?: string, to?: string): Promise<{ blob: Blob; filename: string }>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
@@ -276,3 +280,18 @@ export interface GstHealth {
 }
 
 export type MsmeReportView = Omit<import('@ledgernest/shared').MsmeReport, 'bills'> & { bills: (import('@ledgernest/shared').MsmeBill & { vendorReference: string | null })[] };
+
+export interface ConfirmationRow {
+  id: string;
+  contact: { id: string; name: string; phone: string | null };
+  currency: string;
+  balance: number;
+  status: 'pending' | 'agreed' | 'disputed';
+  theirBalance: number | null;
+  note: string | null;
+  respondedBy: string | null;
+  respondedAt: string | null;
+  sentTo: string | null;
+  views: number;
+  token: string;
+}

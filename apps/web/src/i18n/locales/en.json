@@ -4102,5 +4102,80 @@
     "lastUsed": "Last used {{when}}",
     "signOut": "Sign out",
     "revoked": "That device is signed out."
+  },
+  "confirmations": {
+    "title": "Balance confirmations",
+    "side": "Ask",
+    "sides": {
+      "receivable": "Customers",
+      "payable": "Vendors"
+    },
+    "hint": "For the audit: ask customers or vendors to confirm their balance with you on a date, usually the year end.",
+    "summary": "{{agreed}} agreed · {{disputed}} disputed · {{pending}} waiting",
+    "ask": "Ask for confirmation",
+    "askTitle": "Ask for balance confirmation",
+    "askNow": "Ask now",
+    "askBodyReceivable": "Every customer with a balance on {{date}} gets a link to agree or dispute it. Ask again later and the same links are used.",
+    "askBodyPayable": "Every vendor with a balance on {{date}} gets a link to agree or dispute it. Ask again later and the same links are used.",
+    "email": "Email each one the link",
+    "emailHint": "Those without an email address (or if email isn’t set up): share the link on WhatsApp from the list.",
+    "asked_one": "Asked 1 party ({{emailed}} by email).",
+    "asked_other": "Asked {{count}} parties ({{emailed}} by email).",
+    "nobody": "No one on that side had a balance on that day.",
+    "emptyTitle": "No confirmations asked for this day",
+    "emptyBody": "Ask for confirmation to send each party their balance.",
+    "cols": {
+      "party": "Party",
+      "ours": "Our books",
+      "status": "Answer",
+      "theirs": "Their books",
+      "share": "Share"
+    },
+    "states": {
+      "pending": "Waiting",
+      "agreed": "Agreed",
+      "disputed": "Disputed"
+    },
+    "by": "by {{name}}",
+    "opened_one": "Opened once",
+    "opened_other": "Opened {{count}} times",
+    "emailedTo": "Emailed to {{email}}",
+    "notOpened": "Not opened yet",
+    "copy": "Copy the link for {{name}}",
+    "copied": "Link copied.",
+    "whatsapp": "Send {{name}} the link on WhatsApp",
+    "whatsappReceivable": "Dear {{name}}, for our audit please confirm your balance with us as on {{date}}: {{amount}}. Agree or tell us your figure here: {{url}}",
+    "whatsappPayable": "Dear {{name}}, for our audit please confirm our balance with you as on {{date}}: {{amount}}. Agree or tell us your figure here: {{url}}"
+  },
+  "confirmation": {
+    "pageTitle": "Balance confirmation",
+    "title": "Balance confirmation",
+    "dear": "Dear {{name}}, for the audit of {{organization}}, please confirm your balance with us.",
+    "asOf": "As per our books on {{date}}",
+    "youOwe": "You owe us {{amount}}",
+    "weOwe": "We owe you {{amount}}",
+    "nothing": "Nothing is outstanding",
+    "statement": "Download the statement",
+    "formLabel": "Your answer",
+    "question": "Does this match your books?",
+    "agree": "Yes, it matches",
+    "dispute": "No, it differs",
+    "theirs": "The balance in your books ({{currency}})",
+    "theirsHint": "As the amount above shows it; leave blank if you’d rather explain.",
+    "why": "What differs (payments, invoices or notes not shown)",
+    "noteOptional": "Anything to add (optional)",
+    "name": "Your name",
+    "sendAgree": "Confirm the balance",
+    "sendDispute": "Send my figure",
+    "thanksAgreed": "Thank you. {{name}} confirmed this balance.",
+    "thanksDisputed": "Thank you. {{name}} told us the balance differs; we’ll look into it.",
+    "yourFigure": "Your figure: {{figure}}",
+    "errors": {
+      "name": "Enter your name.",
+      "amount": "Enter the amount as a number, like 1,00,000.",
+      "why": "Tell us your balance, or what differs.",
+      "answered": "This has been answered already.",
+      "failed": "That didn’t go through. Try again."
+    }
   }
 }
