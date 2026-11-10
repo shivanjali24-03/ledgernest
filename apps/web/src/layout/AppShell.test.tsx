@@ -55,11 +55,13 @@ describe('AppShell', () => {
     expect(options[0]).toHaveTextContent('Organisations');
   });
 
-  it('switches the whole app to Arabic, right-to-left', async () => {
+  it('switches the whole app to Marathi, and offers only the Indian languages', async () => {
     renderShell('super_admin');
-    await userEvent.selectOptions(screen.getByLabelText('Language'), 'ar');
-    expect(document.documentElement.dir).toBe('rtl');
-    expect(screen.getByRole('navigation', { name: 'الرئيسية' })).toHaveTextContent('لوحة التحكم');
+    const picker = screen.getByLabelText('Language');
+    expect(within(picker).getAllByRole('option').map((o) => (o as HTMLOptionElement).value)).toEqual(['en', 'hi', 'mr']);
+    await userEvent.selectOptions(picker, 'mr');
+    expect(document.documentElement.lang).toBe('mr');
+    expect(nav2()).toHaveTextContent('डॅशबोर्ड');
     await i18n.changeLanguage('en');
   });
 

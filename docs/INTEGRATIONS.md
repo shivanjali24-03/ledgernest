@@ -115,7 +115,7 @@ Scheduled reports (**Reports → Scheduled**) are always kept in the app, to dow
 | `INVOICE_REMINDERS_MINUTES` | `60` (how often automatic payment reminders go out; 0 turns it off) |
 | `WEEKLY_SUMMARY_MINUTES` | `60` (how often to check for Monday weekly summaries; 0 turns it off) |
 
-Reports come as Excel, CSV or PDF. PDFs use the standard PDF fonts, which cover Western European text: the rupee sign is written "Rs", and names in other scripts (Devanagari, Arabic) show as "?", so choose Excel or CSV for those.
+Reports come as Excel, CSV or PDF. PDFs use the standard PDF fonts, which cover Western European text: the rupee sign is written "Rs", and names in Devanagari (Hindi, Marathi) show as "?", so choose Excel or CSV for those.
 
 The same server also sends **invoices**, **quotes** and **payment receipts** as PDFs (their **Email** actions), **payment reminders**, by hand (an invoice's **Send reminder**) or automatically for overdue invoices (**Settings → Payment reminders**: days after the due date, how often, at most how many), and **statements of account** (**Reports → Statements → Email**): a PDF to the customer or vendor, recorded in the audit trail. Without SMTP, download the PDF and send it yourself.
 

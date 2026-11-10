@@ -31,7 +31,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 - **Works for any domain:** industry chart-of-accounts templates for retail, services, healthcare, education, manufacturing, non-profits and more.
 - **Roles you can trust:** Super Admin, Owner, Admin, Accountant, Bookkeeper, Auditor and Viewer, plus custom roles.
 - **Accurate by design:** money is stored as integers, every journal entry must balance, and posted entries are reversed, never edited.
-- **Multi-language:** English, Hindi, Marathi, Spanish, French, German and Arabic (right-to-left).
+- **Languages:** English, Hindi and Marathi. LedgerNest is built for India first; Spanish, French, German and Arabic (right-to-left) translations are kept for later and switched off.
 - **Feels fast:** a motion system built for 60–240 Hz displays.
 
 ## What it does

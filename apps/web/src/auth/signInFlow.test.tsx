@@ -137,14 +137,13 @@ describe('sign-in page languages', () => {
     await i18n.changeLanguage('en');
   });
 
-  it('is fully translated, including right-to-left Arabic', async () => {
-    await i18n.changeLanguage('ar');
+  it('is fully translated, in Marathi', async () => {
+    await i18n.changeLanguage('mr');
     renderApp('/', null);
-    expect(await screen.findByRole('heading', { name: 'تسجيل الدخول إلى LedgerNest' })).toBeInTheDocument();
-    expect(document.documentElement.dir).toBe('rtl');
-    // Email and password stay left-to-right even in an RTL page
-    expect(screen.getByLabelText('البريد الإلكتروني')).toHaveAttribute('dir', 'ltr');
-    // ...and the show-password button sits with its field instead of on top of the text
-    expect(screen.getByRole('button', { name: 'إظهار كلمة المرور' }).parentElement).toHaveAttribute('dir', 'ltr');
+    expect(await screen.findByRole('heading', { name: 'LedgerNest मध्ये साइन इन करा' })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('mr');
+    // Email and password stay left-to-right, so they read correctly whatever the page direction
+    expect(screen.getByLabelText('ईमेल')).toHaveAttribute('dir', 'ltr');
+    expect(screen.getByRole('button', { name: 'पासवर्ड दाखवा' }).parentElement).toHaveAttribute('dir', 'ltr');
   });
 });

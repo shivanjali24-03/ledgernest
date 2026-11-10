@@ -14,7 +14,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Roles and permissions | Built-in roles (below) plus **custom roles** built from a permission matrix | ✅ #11 |
 | Invitations | Invite people to an organisation by email with a role; accept, resend, revoke | ✅ #11 |
 | Audit log | Who did what, when and from where, for every change to financial data and access | ✅ Done (#12) |
-| Multi-language | English, हिन्दी, मराठी, Español, Français, Deutsch and العربية (right-to-left), switchable at any time | ✅ (#5) |
+| Multi-language | English, हिन्दी and मराठी, switchable at any time. Spanish, French, German and Arabic (right-to-left) are kept in `apps/web/src/i18n/locales` but not offered while the app is India-only | ✅ (#5) |
 | Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | ✅ #38 |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | ✅ Amounts follow the organisation's currency and format (#42) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
