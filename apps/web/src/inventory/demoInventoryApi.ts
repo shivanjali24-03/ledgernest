@@ -141,6 +141,8 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
     return out;
   };
   return {
+    // The demo company keeps no batches
+    expiring: async (days) => ({ asOf: todayIn('Asia/Kolkata'), days, rows: [], expired: { count: 0, value: 0 }, expiring: { count: 0, value: 0 } }),
     valuation: (asOf) =>
       wait(async () => {
         const day = asOf ?? todayIn('Asia/Kolkata');

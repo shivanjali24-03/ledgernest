@@ -26,10 +26,21 @@ export interface StockValuation {
   accounts: { id: string; code: string; name: string; stock: number; ledger: number }[];
 }
 
+/** Batches with stock that have expired or expire soon */
+export interface ExpiringStock {
+  asOf: string;
+  days: number;
+  rows: { itemId: string; item: string; unit: string | null; batchId: string; batchNo: string; mfgDate: string | null; expiryDate: string; daysLeft: number; expired: boolean; onHand: string; value: number }[];
+  expired: { count: number; value: number };
+  expiring: { count: number; value: number };
+}
+
 /** Stock: valuation, movements and adjustments. Live and demo both implement it. */
 export interface InventoryApi {
   valuation(asOf?: string): Promise<StockValuation>;
   movements(itemId: string): Promise<{ movements: StockMovement[] }>;
+  /** Batches that have expired or expire within some days */
+  expiring(days: number): Promise<ExpiringStock>;
   adjust(input: StockAdjustmentInput): Promise<StockMovement>;
   undoAdjustment(id: string): Promise<void>;
 }

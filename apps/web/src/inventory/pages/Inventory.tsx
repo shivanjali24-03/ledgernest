@@ -13,7 +13,7 @@ import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import Button from '../../ui/Button';
-import { TextField } from '../../ui/Field';
+import { SelectField, TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import AdjustStockDialog from '../AdjustStockDialog';
@@ -165,9 +165,79 @@ export default function Inventory() {
           })}
         </motion.ul>
       )}
+      <motion.div variants={fadeUp}>
+        <Expiring api={api} />
+      </motion.div>
       {current && <Movements key={current.itemId} api={api} itemId={current.itemId} name={current.name} canAdjust={canAdjust} onAdjust={() => setAdjusting(current.itemId)} />}
       {adjusting && <AdjustStockDialog api={api} itemId={adjusting === true ? undefined : adjusting} onClose={() => setAdjusting(null)} />}
     </motion.div>
+  );
+}
+
+/** Stock to act on before it's wasted: batches already expired (to write off or return) and those expiring soon (to sell first) */
+function Expiring({ api }: { api: InventoryApi }) {
+  const { t } = useTranslation();
+  const locale = useIntlLocale();
+  const money = useMoney();
+  const session = useSession();
+  const [days, setDays] = useState(90);
+  const q = useQuery({ queryKey: ['inventory', session.organizationId, 'expiring', days], queryFn: () => api.expiring(days), placeholderData: keepPreviousData });
+  const r = q.data;
+  if (!r || (!r.rows.length && days === 90)) return null;
+  return (
+    <Card className="overflow-hidden">
+      <section id="expiring" aria-labelledby="expiring-title" className="scroll-mt-20">
+        <div className="flex flex-wrap items-end justify-between gap-3 p-4">
+          <div>
+            <h2 id="expiring-title" className="font-semibold">
+              {t('batches.expiring.title')}
+            </h2>
+            <p className="text-sm text-ink-500">
+              {t('batches.expiring.summary', { expired: r.expired.count, expiredValue: money.format(r.expired.value), expiring: r.expiring.count, expiringValue: money.format(r.expiring.value), days })}
+            </p>
+          </div>
+          <div className="w-44">
+            <SelectField label={t('batches.expiring.within')} value={String(days)} onChange={(e) => setDays(Number(e.target.value))} options={[30, 60, 90, 180].map((d) => ({ value: String(d), label: t('batches.expiring.days', { count: d }) }))} />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="border-y border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
+              <tr>
+                <th scope="col" className="px-4 py-2 text-start font-semibold">{t('batches.expiring.item')}</th>
+                <th scope="col" className="px-4 py-2 text-start font-semibold">{t('batches.batch')}</th>
+                <th scope="col" className="px-4 py-2 text-start font-semibold">{t('batches.expiryDate')}</th>
+                <th scope="col" className="px-4 py-2 text-end font-semibold">{t('batches.expiring.onHand')}</th>
+                <th scope="col" className="px-4 py-2 text-end font-semibold">{t('batches.expiring.value')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
+              {r.rows.map((b) => (
+                <tr key={b.batchId} className={clsx(b.expired && 'bg-red-50/60 dark:bg-red-950/20')}>
+                  <td className="px-4 py-2" dir="auto">{b.item}</td>
+                  <td className="px-4 py-2 font-mono" dir="ltr">{b.batchNo}</td>
+                  <td className={clsx('px-4 py-2', b.expired ? 'text-expense' : b.daysLeft <= 30 && 'text-amber-700 dark:text-amber-300')}>
+                    {formatDate(`${b.expiryDate}T00:00:00Z`, locale)} · {b.expired ? t('batches.expiring.expiredAgo', { count: -b.daysLeft }) : t('batches.expiring.daysLeft', { count: b.daysLeft })}
+                  </td>
+                  <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                    {b.onHand}
+                    {b.unit && <span className="ms-1 text-xs text-ink-500">{b.unit}</span>}
+                  </td>
+                  <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">{money.format(b.value)}</td>
+                </tr>
+              ))}
+              {!r.rows.length && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-ink-500">
+                    {t('batches.expiring.none', { count: days })}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </Card>
   );
 }
 

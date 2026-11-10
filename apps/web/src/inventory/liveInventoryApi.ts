@@ -7,6 +7,7 @@ export function createLiveInventoryApi(client: AuthClient, organizationId: strin
   return {
     valuation: (asOf) => r(`/valuation${asOf ? `?asOf=${asOf}` : ''}`),
     movements: (itemId) => r(`/items/${itemId}/movements`),
+    expiring: (days) => r(`/expiring?days=${days}`),
     adjust: (input) => r('/adjustments', { method: 'POST', json: input }),
     undoAdjustment: (id) => r(`/adjustments/${id}`, { method: 'DELETE' }),
   };
