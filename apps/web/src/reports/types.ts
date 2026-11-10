@@ -1,3 +1,4 @@
+import type { DocumentIssueRow } from '@ledgernest/shared';
 import type { CashForecast as SharedCashForecast, ComplianceItem, Gstr2bResult } from '@ledgernest/shared';
 import type { AccountStatement, AccountType, SalesReportBy, SalesReportRow, SalesReportSide, StatementEmailInput, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
@@ -188,6 +189,8 @@ export interface Gstr1 {
   cdnur: { name: string; number: string; date: string; invoice: string | null; value: number; items: GstRateRow[] }[];
   hsn: ({ hsn: string; unit: string | null; quantity: string; returned: boolean } & GstRateRow)[];
   documents: { invoices: { first: string | null; last: string | null; total: number; cancelled: number }; creditNotes: { total: number; cancelled: number } };
+  /** GSTR-1 Table 13: documents issued, series by series */
+  docIssue?: DocumentIssueRow[];
 }
 
 /** Reports. Live and demo both implement it. */

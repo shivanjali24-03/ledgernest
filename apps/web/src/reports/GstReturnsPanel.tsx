@@ -224,6 +224,34 @@ export function Gstr1Panel({ data, onJson, ...state }: { data: Gstr1 | undefined
           ))}
         </Block>
       )}
+      {(data.docIssue?.length ?? 0) > 0 && (
+        <Block
+          title={k('r1.docIssue')}
+          head={
+            <tr>
+              <th scope="col" className={`${th} text-start`}>{k('r1.docType')}</th>
+              <th scope="col" className={`${th} text-start`}>{k('r1.docSeries')}</th>
+              <th scope="col" className={`${th} text-start`}>{k('r1.docFrom')}</th>
+              <th scope="col" className={`${th} text-start`}>{k('r1.docTo')}</th>
+              <th scope="col" className={`${th} text-end`}>{k('r1.docTotal')}</th>
+              <th scope="col" className={`${th} text-end`}>{k('r1.docCancelled')}</th>
+              <th scope="col" className={`${th} text-end`}>{k('r1.docNet')}</th>
+            </tr>
+          }
+        >
+          {data.docIssue!.map((d) => (
+            <tr key={`${d.type}-${d.series}`}>
+              <td className="px-3 py-1.5">{k(`r1.docTypes.${d.type}`)}</td>
+              <td className="px-3 py-1.5">{d.series}</td>
+              <td className="px-3 py-1.5 font-mono" dir="ltr">{d.from}</td>
+              <td className="px-3 py-1.5 font-mono" dir="ltr">{d.to}</td>
+              <td className={num} dir="ltr">{d.total}</td>
+              <td className={num} dir="ltr">{d.cancelled}</td>
+              <td className={num} dir="ltr">{d.total - d.cancelled}</td>
+            </tr>
+          ))}
+        </Block>
+      )}
       <p className="text-sm text-ink-600 dark:text-ink-300">
         {t('reports.gst.r1.documents', { total: data.documents.invoices.total, first: data.documents.invoices.first ?? '—', last: data.documents.invoices.last ?? '—', cancelled: data.documents.invoices.cancelled, notes: data.documents.creditNotes.total })}
       </p>

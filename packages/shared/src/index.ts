@@ -54,3 +54,4 @@ export * from './sessions/index.js';
 export * from './confirmations/index.js';
 export * from './tally/import.js';
 export * from './geo/index.js';
+export * from './numbering/index.js';

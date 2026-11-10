@@ -21,6 +21,7 @@ import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, ty
 import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
 import TallyCard from '../TallyCard';
+import NumberSeriesCard from '../../numbering/NumberSeriesCard';
 import IndianAddressFields, { type IndianAddress } from '../../geo/IndianAddressFields';
 import DeleteOrganizationCard from '../DeleteOrganizationCard';
 import ReminderPolicyCard from '../../invoices/ReminderPolicyCard';
@@ -314,6 +315,11 @@ export default function Settings() {
           </div>
         )}
       </motion.div>
+      {session.permissions.has('invoices.view') && (
+        <motion.div variants={fadeUp}>
+          <NumberSeriesCard />
+        </motion.div>
+      )}
       {session.permissions.has('invoices.view') && (
         <motion.div variants={fadeUp}>
           <ReminderPolicyCard />

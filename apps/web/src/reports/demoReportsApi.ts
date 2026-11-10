@@ -1,4 +1,4 @@
-import { gstInterest, gstLateFee, msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { documentsIssued, gstInterest, gstLateFee, msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -651,6 +651,13 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       else out.cdnur.push(doc);
     }
     out.hsn = [...hsn.values()];
+    const serial = (n: string) => Number(n.match(/(\d+)\D*$/)?.[1] ?? 0);
+    out.docIssue = documentsIssued([
+      ...invoices.map((i) => ({ type: 'invoice' as const, series: 'Tax invoices', serial: serial(i.number!), number: i.number!, cancelled: i.status === 'void' })),
+      ...demoCreditNoteRows()
+        .filter((x) => x.date >= from && x.date <= to)
+        .map((n) => ({ type: 'credit_note' as const, series: 'Credit notes', serial: serial(n.number), number: n.number, cancelled: n.status === 'void' })),
+    ]);
     return out;
   };
 

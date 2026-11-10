@@ -10,6 +10,7 @@ import {
   type ComplianceItem,
   todayIn,
   creditNoteNumber,
+  documentsIssued,
   currencyDigits,
   findIndianState,
   gstSetOff,
@@ -29,6 +30,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { TdsReportService } from './tds-report.service.js';
 
+/** GSTR-1 Table 13's codes for the nature of documents */
+const DOC_NUM = { invoice: 1, debit_note: 4, credit_note: 5 } as const;
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const head = (kind: string): keyof GstHeads | null =>
@@ -186,8 +189,10 @@ export class GstReturnsService {
           placeOfSupply: true,
           status: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
           voidEntry: { select: { date: true } },
           contact: { select: { name: true, taxId: true } },
+          series: { select: { name: true } },
           lines: { select: lineSelect },
         },
       }),
@@ -203,14 +208,17 @@ export class GstReturnsService {
           rate: true,
           status: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
           voidEntry: { select: { date: true } },
           contact: { select: { name: true, taxId: true } },
+          series: { select: { name: true } },
           invoice: {
             select: {
               number: true,
               issueDate: true,
               placeOfSupply: true,
               fiscalYear: { select: { name: true } },
+              fullNumber: true,
             },
           },
           // A credit note line's item is its invoice line's
@@ -346,7 +354,8 @@ export class GstReturnsService {
     let cancelled = 0;
     const numbers: string[] = [];
     for (const i of invoices) {
-      const label = invoiceNumber(i.fiscalYear!.name, i.number!);
+      const label =
+        i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!);
       numbers.push(label);
       if (!live(i)) {
         cancelled++;
@@ -416,11 +425,12 @@ export class GstReturnsService {
           -1,
         );
       const doc = {
-        number: creditNoteNumber(n.fiscalYear.name, n.number),
+        number: n.fullNumber ?? creditNoteNumber(n.fiscalYear.name, n.number),
         date: iso(n.date),
         invoice:
           n.invoice.number && n.invoice.fiscalYear
-            ? invoiceNumber(n.invoice.fiscalYear.name, n.invoice.number)
+            ? (n.invoice.fullNumber ??
+              invoiceNumber(n.invoice.fiscalYear.name, n.invoice.number))
             : null,
         value: inBase(Number(n.total), n.currency, n.rate),
         items: byRate(n.lines, n.currency, n.rate),
@@ -474,6 +484,45 @@ export class GstReturnsService {
         cdnr: total(cdnr),
         cdnur: total(cdnur),
       },
+      // Table 13: the documents issued in the period, series by series (debit notes to suppliers included)
+      docIssue: documentsIssued([
+        ...invoices.map((i) => ({
+          type: 'invoice' as const,
+          series: i.series?.name ?? 'Tax invoices',
+          serial: i.number!,
+          number: i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
+          cancelled: i.status === 'void',
+        })),
+        ...notes.map((n) => ({
+          type: 'credit_note' as const,
+          series: n.series?.name ?? 'Credit notes',
+          serial: n.number,
+          number: n.fullNumber ?? creditNoteNumber(n.fiscalYear.name, n.number),
+          cancelled: n.status === 'void',
+        })),
+        ...(
+          await this.prisma.vendorCredit.findMany({
+            where: {
+              organizationId,
+              date: { gte: asDate(from), lte: asDate(to) },
+            },
+            select: {
+              number: true,
+              fullNumber: true,
+              status: true,
+              fiscalYear: { select: { name: true } },
+              series: { select: { name: true } },
+            },
+          })
+        ).map((n) => ({
+          type: 'debit_note' as const,
+          series: n.series?.name ?? 'Debit notes',
+          serial: n.number,
+          number:
+            n.fullNumber ?? vendorCreditNumber(n.fiscalYear.name, n.number),
+          cancelled: n.status === 'void',
+        })),
+      ]),
       documents: {
         invoices: {
           first: numbers[0] ?? null,
@@ -574,6 +623,24 @@ export class GstReturnsService {
               },
             ],
           })),
+          // Table 13: 1 = invoices for outward supply, 4 = debit notes, 5 = credit notes
+          doc_issue: {
+            doc_det: (['invoice', 'debit_note', 'credit_note'] as const)
+              .map((type) => ({
+                doc_num: DOC_NUM[type],
+                docs: g.docIssue
+                  .filter((d) => d.type === type)
+                  .map((d, k) => ({
+                    num: k + 1,
+                    from: d.from,
+                    to: d.to,
+                    totnum: d.total,
+                    cancel: d.cancelled,
+                    net_issue: d.total - d.cancelled,
+                  })),
+              }))
+              .filter((d) => d.docs.length),
+          },
           hsn: {
             data: g.hsn.map((h, k) => ({
               num: k + 1,
@@ -802,6 +869,7 @@ export class GstReturnsService {
         vendorReference: true,
         total: true,
         fiscalYear: { select: { name: true } },
+        fullNumber: true,
         contact: { select: { name: true, legalName: true, taxId: true } },
         lines: {
           select: {
@@ -837,7 +905,7 @@ export class GstReturnsService {
       return {
         id: n.id,
         kind: 'debit_note',
-        number: vendorCreditNumber(n.fiscalYear.name, n.number),
+        number: n.fullNumber ?? vendorCreditNumber(n.fiscalYear.name, n.number),
         vendorReference: n.vendorReference,
         vendorName: n.contact.legalName ?? n.contact.name,
         vendorGstin:

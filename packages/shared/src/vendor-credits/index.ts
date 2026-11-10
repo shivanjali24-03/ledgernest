@@ -23,6 +23,8 @@ export const vendorCreditSchema = z.object({
   date: isoDaySchema,
   /** The supplier's own credit note number, when they sent one (it shows in GSTR-2B) */
   vendorReference: text(64),
+  /** The number series to number it from; omitted = the default */
+  seriesId: z.uuid().nullable().optional().default(null),
   reason: text(500),
   lines: z
     .array(

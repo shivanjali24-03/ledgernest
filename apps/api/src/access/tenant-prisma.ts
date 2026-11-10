@@ -14,6 +14,7 @@ export const TENANT_MODELS = new Set<string>([
   'OrganizationLogo',
   'Account',
   'FiscalYear',
+  'NumberSeries',
   'Period',
   'JournalEntry',
   'JournalLine',

@@ -1667,7 +1667,20 @@
         "intra": "Within the state",
         "inter": "Inter-state",
         "quantity": "Quantity",
-        "documents": "13 Documents issued: {{total}} invoices ({{first}} to {{last}}), {{cancelled}} cancelled; {{notes}} credit notes."
+        "documents": "13 Documents issued: {{total}} invoices ({{first}} to {{last}}), {{cancelled}} cancelled; {{notes}} credit notes.",
+        "docIssue": "Documents issued (Table 13)",
+        "docType": "Document",
+        "docSeries": "Series",
+        "docFrom": "From",
+        "docTo": "To",
+        "docTotal": "Total",
+        "docCancelled": "Cancelled",
+        "docNet": "Net issued",
+        "docTypes": {
+          "invoice": "Invoices for outward supply",
+          "credit_note": "Credit notes",
+          "debit_note": "Debit notes"
+        }
       }
     },
     "print": "Print or PDF",
@@ -2434,7 +2447,8 @@
       "dueDate": "Due date",
       "reference": "Reference",
       "placeOfSupply": "Place of supply",
-      "notes": "Notes"
+      "notes": "Notes",
+      "series": "Number series"
     },
     "states": {
       "draft": "Draft",
@@ -4473,5 +4487,46 @@
     "area": "Area or locality",
     "chooseArea": "Choose the area",
     "line1": "Building, street"
+  },
+  "numbering": {
+    "title": "Number series",
+    "body": "How invoices, credit notes and debit notes are numbered: a prefix and suffix around a running number, at most 16 characters as GST requires. A number is kept once given, so changes apply to the next document.",
+    "add": "Add series",
+    "addTitle": "New number series",
+    "editTitle": "Change {{name}}",
+    "keptHint": "Documents already numbered keep their numbers.",
+    "type": "Documents",
+    "types": {
+      "invoice": "Tax invoices",
+      "credit_note": "Credit notes",
+      "debit_note": "Debit notes"
+    },
+    "name": "Name",
+    "namePlaceholder": "Export invoices",
+    "prefix": "Prefix",
+    "suffix": "Suffix",
+    "tokens": "Letters, digits, - and /. Add the year with {FY} (2026-27), {FY2} (26-27), {YYYY} or {YY}.",
+    "digits": "Digits",
+    "startNumber": "Start at",
+    "resetYearly": "Start again from the first number each financial year",
+    "makeDefault": "Use for new documents of this type",
+    "makeDefaultShort": "Make default",
+    "preview": "The next number will look like",
+    "save": "Save series",
+    "saved": "Number series saved",
+    "default": "Default",
+    "used": "{{count}} numbered",
+    "edit": "Change",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "errors": {
+      "name_taken": "There is already a series with that name.",
+      "too_long": "Numbers would be longer than the 16 characters GST allows. Shorten the prefix or suffix.",
+      "no_room": "The start number has more digits than the series allows.",
+      "characters": "Use letters, digits, - and / only.",
+      "default_needed": "Make another series the default first.",
+      "in_use": "This series has numbered documents. Archive it instead."
+    }
   }
 }

@@ -111,6 +111,8 @@ export const invoiceDraftSchema = z
     issueDate: isoDaySchema,
     /** Omitted = the issue date plus the customer's payment terms */
     dueDate: isoDaySchema.nullable().optional().default(null),
+    /** The number series to number it from; omitted = the default */
+    seriesId: z.uuid().nullable().optional().default(null),
     reference: text(64),
     notes: text(1000),
     /** GST state code of the place of supply; omitted = the customer's state */

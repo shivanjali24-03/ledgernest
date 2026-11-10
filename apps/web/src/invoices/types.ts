@@ -28,6 +28,8 @@ export interface Invoice {
   currency: string | null;
   rate: string | null;
   placeOfSupply: string | null;
+  /** The number series it's (to be) numbered from */
+  seriesId?: string | null;
   reference: string | null;
   notes: string | null;
   contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; phone?: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };

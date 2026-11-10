@@ -1,4 +1,5 @@
-import { formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, vendorCreditApplySchema, vendorCreditNumber, vendorCreditRefundSchema, vendorCreditSchema } from '@ledgernest/shared';
+import { formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, vendorCreditApplySchema, vendorCreditRefundSchema, vendorCreditSchema } from '@ledgernest/shared';
+import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
@@ -135,7 +136,7 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
         if (!year) throw refuse(409, 'no_period');
         const all = load();
         const seq = Math.max(0, ...all.filter((x) => x.yearName === year.name).map((x) => x.seq)) + 1;
-        const label = vendorCreditNumber(year.name, seq);
+        const label = demoDocNumber('debit_note', d.seriesId, year.name, seq);
         const payable = bill.payableAccount!;
         // The bill's entry the other way round
         const entry = await post({

@@ -986,6 +986,7 @@ export class ReconcileService {
         total: true,
         amountPaid: true,
         fiscalYear: { select: { name: true } },
+        fullNumber: true,
         contact: { select: { id: true, name: true, legalName: true } },
       },
     });
@@ -995,7 +996,7 @@ export class ReconcileService {
         .filter((i) => i.number && i.fiscalYear)
         .map((i) => ({
           id: i.id,
-          number: invoiceNumber(i.fiscalYear!.name, i.number!),
+          number: i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
           balance: Number(i.total - i.amountPaid),
           contact: i.contact,
         })),

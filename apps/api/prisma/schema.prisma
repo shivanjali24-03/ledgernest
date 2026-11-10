@@ -120,6 +120,7 @@ model Organization {
   contacts             Contact[]
   items                Item[]
   invoices             Invoice[]
+  numberSeries         NumberSeries[]
   invoiceLines         InvoiceLine[]
   payments             Payment[]
   allocations          PaymentAllocation[]
@@ -769,6 +770,9 @@ model Invoice {
   contactId           String    @map("contact_id") @db.Uuid
   /// Gap-free per financial year, given on issue
   number              Int?
+  /// The series that numbered it, and the number as written (kept, so changing the series never renumbers it)
+  seriesId            String?   @map("series_id") @db.Uuid
+  fullNumber          String?   @map("full_number")
   fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
   status              String    @default("draft") /// draft | issued | void
   issueDate           DateTime  @map("issue_date") @db.Date
@@ -812,6 +816,7 @@ model Invoice {
   organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact           Contact       @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
   fiscalYear        FiscalYear?   @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  series            NumberSeries? @relation(fields: [organizationId, seriesId], references: [organizationId, id], onDelete: NoAction)
   receivableAccount Account?      @relation("InvoiceReceivable", fields: [organizationId, receivableAccountId], references: [organizationId, id], onDelete: NoAction)
   journalEntry      JournalEntry? @relation("InvoiceEntry", fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
   voidEntry         JournalEntry? @relation("InvoiceVoidEntry", fields: [organizationId, voidEntryId], references: [organizationId, id], onDelete: NoAction)
@@ -824,7 +829,8 @@ model Invoice {
   recurring   RecurringInvoice?   @relation(fields: [organizationId, recurringInvoiceId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
-  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, fiscalYearId, fullNumber])
+  @@unique([seriesId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
   @@index([organizationId, contactId])
@@ -1023,6 +1029,9 @@ model VendorCredit {
   organizationId   String    @map("organization_id") @db.Uuid
   /// Gap-free per financial year
   number           Int
+  /// The series that numbered it, and the number as written (kept, so changing the series never renumbers it)
+  seriesId         String?   @map("series_id") @db.Uuid
+  fullNumber       String?   @map("full_number")
   fiscalYearId     String    @map("fiscal_year_id") @db.Uuid
   contactId        String    @map("contact_id") @db.Uuid
   billId           String    @map("bill_id") @db.Uuid
@@ -1045,6 +1054,7 @@ model VendorCredit {
 
   organization   Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fiscalYear     FiscalYear                @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  series         NumberSeries?             @relation(fields: [organizationId, seriesId], references: [organizationId, id], onDelete: NoAction)
   contact        Contact                   @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
   bill           Bill                      @relation(fields: [organizationId, billId], references: [organizationId, id], onDelete: NoAction)
   payableAccount Account                   @relation("VendorCreditPayable", fields: [organizationId, payableAccountId], references: [organizationId, id], onDelete: NoAction)
@@ -1054,7 +1064,8 @@ model VendorCredit {
   applications   VendorCreditApplication[]
 
   @@unique([organizationId, id])
-  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, fiscalYearId, fullNumber])
+  @@unique([seriesId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
   @@index([organizationId, contactId])
@@ -1123,6 +1134,9 @@ model CreditNote {
   organizationId      String    @map("organization_id") @db.Uuid
   /// Gap-free per financial year
   number              Int
+  /// The series that numbered it, and the number as written (kept, so changing the series never renumbers it)
+  seriesId            String?   @map("series_id") @db.Uuid
+  fullNumber          String?   @map("full_number")
   fiscalYearId        String    @map("fiscal_year_id") @db.Uuid
   contactId           String    @map("contact_id") @db.Uuid
   invoiceId           String    @map("invoice_id") @db.Uuid
@@ -1146,6 +1160,7 @@ model CreditNote {
 
   organization      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fiscalYear        FiscalYear          @relation(fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
+  series            NumberSeries?       @relation(fields: [organizationId, seriesId], references: [organizationId, id], onDelete: NoAction)
   contact           Contact             @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
   invoice           Invoice             @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
   receivableAccount Account             @relation("CreditNoteReceivable", fields: [organizationId, receivableAccountId], references: [organizationId, id], onDelete: NoAction)
@@ -1155,7 +1170,8 @@ model CreditNote {
   applications      CreditApplication[]
 
   @@unique([organizationId, id])
-  @@unique([organizationId, fiscalYearId, number])
+  @@unique([organizationId, fiscalYearId, fullNumber])
+  @@unique([seriesId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
   @@index([organizationId, contactId])
@@ -1953,4 +1969,32 @@ model PincodeCache {
   fetchedAt DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
 
   @@map("pincode_cache")
+}
+
+/// How documents of one type are numbered: a prefix and suffix around a serial (see shared numbering/)
+model NumberSeries {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  /// invoice | credit_note | debit_note
+  type           String
+  name           String
+  prefix         String   @default("")
+  suffix         String   @default("")
+  digits         Int      @default(4)
+  startNumber    Int      @default(1) @map("start_number")
+  /// Start again from the first number each financial year
+  resetYearly    Boolean  @default(true) @map("reset_yearly")
+  isDefault      Boolean  @default(false) @map("is_default")
+  archived       Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+  creditNotes   CreditNote[]
+  vendorCredits VendorCredit[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, type, name])
+  @@map("number_series")
 }

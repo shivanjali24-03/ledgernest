@@ -23,6 +23,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NumberingService } from '../numbering/numbering.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -70,6 +71,7 @@ const select = {
   createdAt: true,
   voidedAt: true,
   fiscalYear: { select: { name: true } },
+  fullNumber: true,
   contact: { select: { id: true, name: true } },
   bill: billRef,
   payableAccount: { select: { id: true, code: true, name: true } },
@@ -130,6 +132,7 @@ export class VendorCreditsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
+    private readonly numbering: NumberingService,
   ) {}
 
   /** Bills first (credit changes what they have left to pay), then payments: the order everything takes them in */
@@ -165,7 +168,7 @@ export class VendorCreditsService {
     const live = c.status === 'issued';
     return {
       id: c.id,
-      number: vendorCreditNumber(c.fiscalYear.name, c.number),
+      number: c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number),
       status: c.status as 'issued' | 'void',
       date: iso(c.date),
       contact: c.contact,
@@ -455,12 +458,17 @@ export class VendorCreditsService {
           'There is no financial year for this date. Add it under Financial years.',
           'no_period',
         );
-      const last = await tx.vendorCredit.aggregate({
-        where: { organizationId, fiscalYearId: year.id },
-        _max: { number: true },
-      });
-      const number = (last._max.number ?? 0) + 1;
-      const label = vendorCreditNumber(year.name, number);
+      const {
+        seriesId,
+        number,
+        fullNumber: label,
+      } = await this.numbering.allocate(
+        tx,
+        organizationId,
+        'debit_note',
+        input.seriesId,
+        year,
+      );
       const billLabelText = billLabel(bill)!;
 
       // A composition dealer took no input tax credit on the bill, so its GST comes back off the cost
@@ -511,6 +519,8 @@ export class VendorCreditsService {
         data: {
           organizationId,
           number,
+          seriesId,
+          fullNumber: label,
           fiscalYearId: year.id,
           contactId: bill.contact.id,
           billId: bill.id,
@@ -670,7 +680,8 @@ export class VendorCreditsService {
           entityType: 'vendor_credit',
           entityId: id,
           after: {
-            number: vendorCreditNumber(c.fiscalYear.name, c.number),
+            number:
+              c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number),
             bill: billLabel(bill),
             amount: input.amount,
           },
@@ -736,7 +747,8 @@ export class VendorCreditsService {
           'bank_invalid',
           { field: 'bankAccountId' },
         );
-      const label = vendorCreditNumber(c.fiscalYear.name, c.number);
+      const label =
+        c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number);
       // Money into the bank against the vendor's payable, which the debit note had left in debit
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -813,7 +825,8 @@ export class VendorCreditsService {
           'Some of this credit was refunded. It can’t be voided.',
           'has_refunds',
         );
-      const label = vendorCreditNumber(c.fiscalYear.name, c.number);
+      const label =
+        c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number);
       const r = await this.journals.reverseInTx(
         tx,
         organizationId,

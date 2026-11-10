@@ -35,12 +35,17 @@ import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
 import { useInvoicesApi } from '../useInvoicesApi';
+import { useNumberingApi } from '../../numbering/useNumberingApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 
 /** A draft invoice: the shared sales form, saved as an invoice and issued from its second button */
 /** `template`: an invoice to copy into a new draft (same customer, lines and notes; dated today, no reference) */
 function DraftForm({ invoice, template, api }: { invoice: Invoice | null; template?: Invoice; api: InvoicesApi }) {
   const { t } = useTranslation();
+  const session = useSession();
+  const numberingApi = useNumberingApi();
+  const series = useQuery({ queryKey: ['numberSeries', session.organizationId], queryFn: () => numberingApi!.list(), enabled: !!numberingApi });
+  const invoiceSeries = series.data?.items.filter((x) => x.type === 'invoice' && !x.archived);
   const toInvoice = (p: SalesDraftPayload) => ({ ...p, issueDate: p.date, dueDate: p.until, date: undefined, until: undefined });
   return (
     <SalesDraftForm
@@ -57,6 +62,7 @@ function DraftForm({ invoice, template, api }: { invoice: Invoice | null; templa
         listPath: '/invoices',
         invalidate: ['invoices', 'journals', 'journal', 'reports'],
         creditCheck: true,
+        series: invoiceSeries,
         autoUntil: (date, customer) => (customer ? dueDateFor(date, customer.paymentTermsDays) : ''),
         untilHint: (customer) => (customer ? t('invoices.dueHint', { days: customer.paymentTermsDays }) : undefined),
         labels: { date: t('invoices.fields.issueDate'), until: t('invoices.fields.dueDate'), save: t('invoices.saveDraft'), extra: t('invoices.issue'), delete: t('invoices.deleteDraft'), deleteTitle: t('invoices.deleteTitle'), deleteBody: t('invoices.deleteBody'), deleted: t('invoices.deleted') },

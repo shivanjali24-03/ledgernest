@@ -29,6 +29,7 @@ import { InventoryService } from '../inventory/inventory.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NumberingService } from '../numbering/numbering.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -54,13 +55,21 @@ const entryLabel = (
 ) =>
   e?.number && e.fiscalYear ? journalNumber(e.fiscalYear.name, e.number) : null;
 const invoiceRef = {
-  select: { id: true, number: true, fiscalYear: { select: { name: true } } },
+  select: {
+    id: true,
+    number: true,
+    fullNumber: true,
+    fiscalYear: { select: { name: true } },
+  },
 } as const;
 const invoiceLabel = (i: {
   number: number | null;
+  fullNumber: string | null;
   fiscalYear: { name: string } | null;
 }) =>
-  i.number && i.fiscalYear ? invoiceNumber(i.fiscalYear.name, i.number) : null;
+  i.number && i.fiscalYear
+    ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
+    : null;
 
 const select = {
   id: true,
@@ -77,6 +86,7 @@ const select = {
   createdAt: true,
   voidedAt: true,
   fiscalYear: { select: { name: true } },
+  fullNumber: true,
   contact: { select: { id: true, name: true } },
   invoice: invoiceRef,
   receivableAccount: { select: { id: true, code: true, name: true } },
@@ -138,6 +148,7 @@ export class CreditNotesService {
     private readonly journals: JournalsService,
     private readonly inventory: InventoryService,
     private readonly webhooks: WebhooksService,
+    private readonly numbering: NumberingService,
   ) {}
 
   /** Invoices first (credit changes what they have left to pay), then payments: the order everything takes them in */
@@ -176,7 +187,7 @@ export class CreditNotesService {
     const live = c.status === 'issued';
     return {
       id: c.id,
-      number: creditNoteNumber(c.fiscalYear.name, c.number),
+      number: c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number),
       status: c.status as 'issued' | 'void',
       date: iso(c.date),
       contact: c.contact,
@@ -347,6 +358,7 @@ export class CreditNotesService {
           receivableAccountId: true,
           number: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
           contact: { select: { id: true, name: true } },
           lines: {
             select: {
@@ -453,12 +465,17 @@ export class CreditNotesService {
           'There is no financial year for this date. Add it under Financial years.',
           'no_period',
         );
-      const last = await tx.creditNote.aggregate({
-        where: { organizationId, fiscalYearId: year.id },
-        _max: { number: true },
-      });
-      const number = (last._max.number ?? 0) + 1;
-      const label = creditNoteNumber(year.name, number);
+      const {
+        seriesId,
+        number,
+        fullNumber: label,
+      } = await this.numbering.allocate(
+        tx,
+        organizationId,
+        'credit_note',
+        input.seriesId,
+        year,
+      );
 
       // The invoice's entry the other way round, at the rate it was posted at, so nothing is left as an exchange difference
       const { baseCurrency } = await tx.organization.findUniqueOrThrow({
@@ -568,6 +585,8 @@ export class CreditNotesService {
         data: {
           organizationId,
           number,
+          seriesId,
+          fullNumber: label,
           fiscalYearId: year.id,
           contactId: inv.contact.id,
           invoiceId: inv.id,
@@ -687,6 +706,7 @@ export class CreditNotesService {
           issueDate: true,
           number: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
         },
       });
       if (!inv || inv.contactId !== c.contact.id)
@@ -749,7 +769,8 @@ export class CreditNotesService {
           entityType: 'credit_note',
           entityId: id,
           after: {
-            number: creditNoteNumber(c.fiscalYear.name, c.number),
+            number:
+              c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number),
             invoice: invoiceLabel(inv),
             amount: input.amount,
           },
@@ -840,7 +861,8 @@ export class CreditNotesService {
             { currency: c.currency, date: input.date },
           );
       }
-      const label = creditNoteNumber(c.fiscalYear.name, c.number);
+      const label =
+        c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number);
       const inBase = (minor: number) =>
         c.currency
           ? toBase(
@@ -953,7 +975,8 @@ export class CreditNotesService {
           'Some of this credit was refunded. It can’t be voided.',
           'has_refunds',
         );
-      const label = creditNoteNumber(c.fiscalYear.name, c.number);
+      const label =
+        c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number);
       const r = await this.journals.reverseInTx(
         tx,
         organizationId,

@@ -19,6 +19,8 @@ const text = (max: number) =>
 export const creditNoteSchema = z.object({
   invoiceId: z.uuid(),
   date: isoDaySchema,
+  /** The number series to number it from; omitted = the default */
+  seriesId: z.uuid().nullable().optional().default(null),
   reason: text(500),
   /** Goods came back: tracked items return to stock at the cost they left at, out of cost of sales */
   returnsStock: z.boolean().optional().default(false),
