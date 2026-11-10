@@ -174,6 +174,16 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         </div>
       </Section>
 
+      <Section title={t('settings.email.title')} description={t('settings.email.description')}>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={v.weeklySummary === 'true'} disabled={!canManage} onChange={(e) => set('weeklySummary')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
+          <span>
+            <span className="font-medium">{t('settings.fields.weeklySummary')}</span>
+            <span className="block text-ink-500">{t('settings.hints.weeklySummary')}</span>
+          </span>
+        </label>
+      </Section>
+
       {/* Appears only with unsaved changes; slides with transform so it stays smooth at high refresh rates */}
       <AnimatePresence>
         {canManage && dirty && (

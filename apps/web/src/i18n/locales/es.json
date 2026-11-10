@@ -913,7 +913,8 @@
       "fiscalYearStartMonth": "El ejercicio fiscal empieza en",
       "locale": "Formato de números y fechas",
       "timeZone": "Zona horaria",
-      "invoiceTerms": "Condiciones y datos bancarios"
+      "invoiceTerms": "Condiciones y datos bancarios",
+      "weeklySummary": "Resumen semanal"
     },
     "hints": {
       "legalName": "Tal como está registrada, para facturas y declaraciones.",
@@ -921,7 +922,8 @@
       "baseCurrency": "Tus libros se llevan en esta moneda.",
       "fiscalYear": "Tu ejercicio fiscal va de {{span}}.",
       "timeZone": "Allí son las {{time}}. Decide en qué día cae una transacción.",
-      "invoiceTerms": "Se imprime al pie de facturas y presupuestos, en pantalla y en los PDF enviados: condiciones de pago, cuenta bancaria, un agradecimiento. Hasta 1.000 caracteres."
+      "invoiceTerms": "Se imprime al pie de facturas y presupuestos, en pantalla y en los PDF enviados: condiciones de pago, cuenta bancaria, un agradecimiento. Hasta 1.000 caracteres.",
+      "weeklySummary": "Cada lunes por la mañana, propietarios y administradores reciben la tesorería, lo que se debe en ambos sentidos, el beneficio del año y lo que requiere atención. Requiere correo configurado en el servidor."
     },
     "locked": {
       "baseCurrency": "No se puede cambiar una vez contabilizados asientos",
@@ -961,6 +963,10 @@
     "documents": {
       "title": "Facturas y presupuestos",
       "description": "Lo que figura al pie de cada factura y presupuesto."
+    },
+    "email": {
+      "title": "Correo",
+      "description": "Lo que LedgerNest envía a tu equipo."
     }
   },
   "accounts": {

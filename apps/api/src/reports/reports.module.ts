@@ -7,6 +7,7 @@ import { GstReturnsService } from './gst-returns.service.js';
 import { ReportsService } from './reports.service.js';
 import { SalesReportService } from './sales-report.service.js';
 import { StatementsService } from './statements.service.js';
+import { WeeklySummaryService } from './weekly-summary.service.js';
 
 @Module({
   imports: [MailModule],
@@ -17,6 +18,7 @@ import { StatementsService } from './statements.service.js';
     GstReturnsService,
     StatementsService,
     SalesReportService,
+    WeeklySummaryService,
     ExportAuditInterceptor,
   ],
   exports: [ReportsService],

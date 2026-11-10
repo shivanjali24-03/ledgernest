@@ -75,6 +75,9 @@ model Organization {
   postalCode           String?            @map("postal_code")
   /// Printed at the foot of invoices and quotes: payment terms, bank details
   invoiceTerms         String?            @map("invoice_terms")
+  /// Email Owners and Admins a summary every Monday; the day it last went
+  weeklySummary        Boolean            @default(false) @map("weekly_summary")
+  weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 

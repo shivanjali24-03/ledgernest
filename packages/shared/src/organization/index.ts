@@ -97,6 +97,8 @@ export const organizationSettingsSchema = z
     fiscalYearStartMonth: z.number().int().min(1).max(12),
     /** Printed at the foot of invoices and quotes: payment terms, bank details */
     invoiceTerms: optionalText(1000),
+    /** Email Owners and Admins a summary every Monday morning */
+    weeklySummary: z.boolean(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

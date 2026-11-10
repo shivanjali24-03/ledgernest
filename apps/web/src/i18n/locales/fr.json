@@ -913,7 +913,8 @@
       "fiscalYearStartMonth": "L'exercice commence en",
       "locale": "Format des nombres et des dates",
       "timeZone": "Fuseau horaire",
-      "invoiceTerms": "Conditions et coordonnées bancaires"
+      "invoiceTerms": "Conditions et coordonnées bancaires",
+      "weeklySummary": "Résumé hebdomadaire"
     },
     "hints": {
       "legalName": "Telle qu'enregistrée, pour les factures et déclarations.",
@@ -921,7 +922,8 @@
       "baseCurrency": "Vos livres sont tenus dans cette devise.",
       "fiscalYear": "Votre exercice va de {{span}}.",
       "timeZone": "Il y est {{time}}. Détermine le jour d'une transaction.",
-      "invoiceTerms": "Imprimé au pied des factures et devis, à l’écran et dans les PDF envoyés : conditions de paiement, compte bancaire, un remerciement. Jusqu’à 1 000 caractères."
+      "invoiceTerms": "Imprimé au pied des factures et devis, à l’écran et dans les PDF envoyés : conditions de paiement, compte bancaire, un remerciement. Jusqu’à 1 000 caractères.",
+      "weeklySummary": "Chaque lundi matin, propriétaires et administrateurs reçoivent la trésorerie, ce qui est dû dans les deux sens, le résultat de l’exercice et ce qui demande attention. Nécessite l’e-mail configuré sur le serveur."
     },
     "locked": {
       "baseCurrency": "Non modifiable une fois des écritures comptabilisées",
@@ -961,6 +963,10 @@
     "documents": {
       "title": "Factures et devis",
       "description": "Ce qui figure au pied de chaque facture et devis."
+    },
+    "email": {
+      "title": "E-mail",
+      "description": "Ce que LedgerNest envoie à votre équipe."
     }
   },
   "accounts": {

@@ -913,7 +913,8 @@
       "fiscalYearStartMonth": "Financial year starts in",
       "locale": "Number and date format",
       "timeZone": "Time zone",
-      "invoiceTerms": "Terms and bank details"
+      "invoiceTerms": "Terms and bank details",
+      "weeklySummary": "Weekly summary"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -921,7 +922,8 @@
       "baseCurrency": "Your books are kept in this currency.",
       "fiscalYear": "Your financial year runs {{span}}.",
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
-      "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters."
+      "invoiceTerms": "Printed at the foot of invoices and quotes, on screen and in emailed PDFs: payment terms, bank account and IFSC, a thank-you. Up to 1,000 characters.",
+      "weeklySummary": "Every Monday morning, Owners and Admins get cash, what’s owed either way, profit so far this year and what needs attention. Needs email set up on the server."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -961,6 +963,10 @@
     "documents": {
       "title": "Invoices and quotes",
       "description": "What every invoice and quote carries at its foot."
+    },
+    "email": {
+      "title": "Email",
+      "description": "What LedgerNest emails your team."
     }
   },
   "accounts": {
