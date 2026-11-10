@@ -1,6 +1,7 @@
 import { averageUnitCost, formatQuantity, formatRate, parseQuantity, itemCreateSchema, itemUpdateSchema, type ItemKind } from '@ledgernest/shared';
 import { demoItemHasMovements, demoStockOf } from '../inventory/demoInventoryApi';
 import { ApiError } from '../auth/client';
+import { csvBlob, major } from '../lib/listCsv';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import type { Item, ItemsApi } from './types';
@@ -100,7 +101,13 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
     if (v.inventoryAccountId && type(v.inventoryAccountId) !== 'asset') throw refuse(400, 'inventory_account_type', { field: 'inventoryAccountId' });
     if (v.cogsAccountId && type(v.cogsAccountId) !== 'expense') throw refuse(400, 'cogs_account_type', { field: 'cogsAccountId' });
   };
-  return {
+  const api: ItemsApi = {
+    exportList: async (q) => {
+      const all = await api.list(q);
+      const acc = (id: string | null) => (id ? (demoAccountRows().find((a) => a.id === id)?.code ?? '') : '');
+      const rows = [['name', 'kind', 'sku', 'unit', 'sale price', 'purchase price', 'hsn/sac', 'income account', 'expense account', 'description'], ...all.map((i) => [i.name, i.kind, i.sku ?? '', i.unit ?? '', i.salePrice === null ? '' : major(i.salePrice, 'INR'), i.purchasePrice === null ? '' : major(i.purchasePrice, 'INR'), i.hsnSac ?? '', acc(i.incomeAccountId), acc(i.expenseAccountId), i.description ?? ''])];
+      return { blob: csvBlob(rows), filename: 'items.csv' };
+    },
     list: (q) =>
       wait(() => {
         const s = q.search?.trim().toLowerCase();
@@ -155,4 +162,5 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
         save(rows.filter((r) => r.id !== iid));
       }),
   };
+  return api;
 }

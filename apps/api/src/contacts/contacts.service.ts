@@ -13,6 +13,7 @@ import {
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { allPages, toCsv } from '../common/list-export.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -145,6 +146,66 @@ export class ContactsService {
     });
     if (!c) throw new NotFoundException('Contact not found.');
     return c;
+  }
+
+  /** Customers and vendors as CSV, in the columns the contacts import reads; recorded as an export */
+  async exportCsv(
+    organizationId: string,
+    q: { search?: string; type?: 'customer' | 'vendor'; archived: boolean },
+    ctx: Ctx,
+  ) {
+    const rows = await allPages((page) =>
+      this.list(organizationId, { ...q, page, pageSize: 100 }),
+    );
+    await this.audit.record({
+      action: 'org.report.export',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'report',
+      entityId: 'contacts',
+      after: { report: 'contacts', ...q, rows: rows.length },
+      req: ctx.req,
+    });
+    return toCsv([
+      [
+        'name',
+        'kind',
+        'legal name',
+        'gstin',
+        'email',
+        'phone',
+        'address',
+        'city',
+        'state',
+        'pin code',
+        'country',
+        'currency',
+        'payment terms',
+        'credit limit',
+        'notes',
+      ],
+      ...rows.map((c) => [
+        c.name,
+        c.isCustomer && c.isVendor
+          ? 'both'
+          : c.isCustomer
+            ? 'customer'
+            : 'vendor',
+        c.legalName ?? '',
+        c.taxId ?? '',
+        c.email ?? '',
+        c.phone ?? '',
+        c.billingAddress.line1 ?? '',
+        c.billingAddress.city ?? '',
+        c.billingAddress.region ?? '',
+        c.billingAddress.postalCode ?? '',
+        c.billingAddress.country ?? '',
+        c.currency ?? '',
+        c.paymentTermsDays,
+        c.creditLimit ?? '',
+        c.notes ?? '',
+      ]),
+    ]);
   }
 
   async list(

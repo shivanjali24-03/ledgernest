@@ -1,13 +1,15 @@
 import { useDeferredValue, useState } from 'react';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, Building2, Package, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Archive, ArchiveRestore, Building2, Package, Pencil, Plus, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../../layout/session';
 import { useMoney } from '../../lib/useMoney';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
+import { saveBlob } from '../../lib/saveBlob';
+import { apiErrorMessage } from '../../platform/errors';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { Card, EmptyState, ErrorState, PageHeader, Pill, SearchInput, Segmented, SkeletonRows } from '../../ui/Kit';
 import RowMenu from '../../ui/RowMenu';
@@ -32,6 +34,15 @@ export default function Items() {
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
   const [archived, setArchived] = useState(false);
+  const canExport = session.permissions.has('reports.export');
+  const exporting = useMutation({
+    mutationFn: () => api!.exportList({ search: deferred || undefined, kind: filter === 'all' ? undefined : filter, archived }),
+    onSuccess: (f) => {
+      saveBlob(f);
+      toast(t('audit.exported', { file: f.filename }));
+    },
+    onError: (e) => toast(apiErrorMessage(e, t), 'error'),
+  });
   const [editing, setEditing] = useState<Item | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Item | null>(null);
   const key = ['items', session.organizationId, session.role ?? session.customRoleName] as const;
@@ -73,11 +84,18 @@ export default function Items() {
           title={t('items.title')}
           description={t('items.description')}
           actions={
-            canManage ? (
-              <Button icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
-                {t('items.add')}
-              </Button>
-            ) : undefined
+            <>
+              {canExport && (
+                <Button variant="secondary" icon={<Download className="size-4" />} loading={exporting.isPending} onClick={() => exporting.mutate()}>
+                  {t('reports.export')}
+                </Button>
+              )}
+              {canManage && (
+                <Button icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
+                  {t('items.add')}
+                </Button>
+              )}
+            </>
           }
         />
       </motion.div>

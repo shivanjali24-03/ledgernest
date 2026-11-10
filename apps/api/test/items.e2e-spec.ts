@@ -104,4 +104,12 @@ describe('Products and services (e2e)', () => {
     const actions = (await prisma.auditLog.findMany({ where: { organizationId: orgA, action: { startsWith: 'org.item.' } }, select: { action: true } })).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(['org.item.create', 'org.item.update', 'org.item.archive', 'org.item.delete']));
   });
+
+  it('downloads items as CSV, in the columns the import reads', async () => {
+    const res = await as('owner').get('/items/export').expect(200);
+    const lines = res.text.replace(/^\uFEFF/, '').trim().split('\r\n').map((l) => l.replaceAll('"', ''));
+    expect(lines[0]).toBe('name,kind,sku,unit,sale price,purchase price,hsn/sac,income account,expense account,description');
+    // Earlier tests leave the laptop as the one active item: goods, bought at ₹72,000 into account 1710
+    expect(lines.slice(1)).toEqual(['Laptop,goods,,,,72000.00,84713010,,1710,']);
+  });
 });

@@ -5,6 +5,12 @@ import type { ItemsApi } from './types';
 export function createLiveItemsApi(client: AuthClient, organizationId: string): ItemsApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/items${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
+    exportList: async (q) => {
+      const p = new URLSearchParams();
+      for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') p.set(k, String(v));
+      const { blob, filename } = await client.download(`/items/export?${p}`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'items.csv' };
+    },
     list: (q) => {
       const p = new URLSearchParams();
       if (q.search) p.set('search', q.search);

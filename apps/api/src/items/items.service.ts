@@ -15,6 +15,7 @@ import {
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { major, toCsv } from '../common/list-export.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -204,6 +205,54 @@ export class ItemsService {
         },
       ]),
     );
+  }
+
+  /** Items as CSV, in the columns the items import reads (prices in the base currency); recorded as an export */
+  async exportCsv(
+    organizationId: string,
+    q: { search?: string; kind?: ItemKind; archived: boolean },
+    ctx: Ctx,
+  ) {
+    const { baseCurrency } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { baseCurrency: true },
+    });
+    const rows = await this.list(organizationId, q);
+    await this.audit.record({
+      action: 'org.report.export',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'report',
+      entityId: 'items',
+      after: { report: 'items', ...q, rows: rows.length },
+      req: ctx.req,
+    });
+    return toCsv([
+      [
+        'name',
+        'kind',
+        'sku',
+        'unit',
+        'sale price',
+        'purchase price',
+        'hsn/sac',
+        'income account',
+        'expense account',
+        'description',
+      ],
+      ...rows.map((i) => [
+        i.name,
+        i.kind,
+        i.sku ?? '',
+        i.unit ?? '',
+        i.salePrice === null ? '' : major(i.salePrice, baseCurrency),
+        i.purchasePrice === null ? '' : major(i.purchasePrice, baseCurrency),
+        i.hsnSac ?? '',
+        i.incomeAccount?.code ?? '',
+        i.expenseAccount?.code ?? '',
+        i.description ?? '',
+      ]),
+    ]);
   }
 
   async get(organizationId: string, id: string) {
