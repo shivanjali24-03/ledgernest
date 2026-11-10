@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   B2CL_THRESHOLD,
+  billNumber,
   creditNoteNumber,
   currencyDigits,
   findIndianState,
@@ -9,10 +10,14 @@ import {
   isGstin,
   parseQuantity,
   formatQuantity,
+  Gstr2bError,
+  parseGstr2b,
+  reconcileGstr2b,
   splitTax,
   toBase,
   zeroHeads,
   type GstHeads,
+  type Gstr2bBill,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -654,5 +659,134 @@ export class GstReturnsService {
         : `"${s.replace(/"/g, '""')}"`;
     };
     return `﻿${rows.map((r) => r.map(cell).join(',')).join('\r\n')}\r\n`;
+  }
+
+  /**
+   * GSTR-2B against the books: the portal's JSON matched to bills dated in the range (recorded, or voided after it),
+   * with their GST by head in the base currency. Nothing is stored; the file is read and the result returned.
+   */
+  async gstr2b(
+    organizationId: string,
+    content: string,
+    from: string,
+    to: string,
+  ) {
+    const org = await this.india(organizationId);
+    let file;
+    try {
+      file = parseGstr2b(content);
+    } catch (e) {
+      if (e instanceof Gstr2bError)
+        throw new BadRequestException({
+          message:
+            e.reason === 'not_json'
+              ? 'That file isn’t JSON. Download GSTR-2B from the GST portal as JSON.'
+              : e.reason === 'too_many'
+                ? 'That file has too many documents to match at once.'
+                : 'That doesn’t look like GSTR-2B. Download it from the GST portal (Returns → GSTR-2B → Download JSON).',
+          details: {
+            reason: e.reason === 'not_json' ? 'not_json' : 'not_gstr2b',
+          },
+        });
+      throw e;
+    }
+    const rows = await this.prisma.bill.findMany({
+      where: {
+        organizationId,
+        status: { in: ['open', 'void'] },
+        billDate: { gte: asDate(from), lte: asDate(to) },
+      },
+      orderBy: [{ billDate: 'asc' }, { number: 'asc' }],
+      select: {
+        id: true,
+        number: true,
+        status: true,
+        vendorReference: true,
+        billDate: true,
+        currency: true,
+        rate: true,
+        total: true,
+        fiscalYear: { select: { name: true } },
+        voidEntry: { select: { date: true } },
+        contact: { select: { name: true, legalName: true, taxId: true } },
+        lines: {
+          select: {
+            amount: true,
+            taxGroup: {
+              select: {
+                rates: {
+                  select: {
+                    rate: { select: { id: true, kind: true, ratePpm: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    const inBase = (
+      minor: number,
+      currency: string | null,
+      rate: { toString(): string } | null,
+    ) =>
+      currency && rate
+        ? toBase(
+            minor,
+            rate.toString(),
+            currencyDigits(currency),
+            currencyDigits(org.baseCurrency),
+          )
+        : minor;
+    const bills: Gstr2bBill[] = rows
+      .filter(
+        (b) =>
+          b.status !== 'void' ||
+          (!!b.voidEntry && b.voidEntry.date > asDate(to)),
+      )
+      .map((b) => {
+        const heads = zeroHeads();
+        let taxable = 0;
+        for (const l of b.lines) {
+          const rates = l.taxGroup?.rates ?? [];
+          taxable += inBase(Number(l.amount), b.currency, b.rate);
+          splitTax(
+            Number(l.amount),
+            false,
+            rates.map((r) => ({ rateId: r.rate.id, ratePpm: r.rate.ratePpm })),
+          ).taxes.forEach((t, k) => {
+            const h = head(rates[k]!.rate.kind);
+            if (h) heads[h] += inBase(t.amount, b.currency, b.rate);
+          });
+        }
+        return {
+          id: b.id,
+          number:
+            b.number && b.fiscalYear
+              ? billNumber(b.fiscalYear.name, b.number)
+              : null,
+          vendorReference: b.vendorReference,
+          vendorName: b.contact.legalName ?? b.contact.name,
+          vendorGstin:
+            b.contact.taxId && isGstin(b.contact.taxId)
+              ? b.contact.taxId.toUpperCase()
+              : null,
+          date: iso(b.billDate),
+          taxable,
+          heads,
+          total: inBase(Number(b.total), b.currency, b.rate),
+        };
+      });
+    const result = reconcileGstr2b(file.docs, bills);
+    return {
+      gstin: file.gstin,
+      period: file.period,
+      /** The file is for another GSTIN than the organisation's */
+      otherGstin:
+        !!file.gstin && !!org.taxId && file.gstin !== org.taxId.toUpperCase(),
+      from,
+      to,
+      ...result,
+    };
   }
 }

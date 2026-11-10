@@ -17,6 +17,7 @@ import { apiErrorMessage } from '../../platform/errors';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
+import Gstr2bPanel from '../Gstr2bPanel';
 import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
 import Tabs from '../../ui/Tabs';
 import { useToast } from '../../ui/toastContext';
@@ -90,7 +91,7 @@ export default function Reports() {
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
-  const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | null) ?? 'gstr-3b';
+  const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | 'gstr-2b' | null) ?? 'gstr-3b';
   const india = settings?.country === 'IN';
   const g3b = useQuery({ queryKey: [...key, 'gstr3b', from, to], queryFn: () => api!.gstr3b(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-3b' && from <= to, placeholderData: keepPreviousData });
   const g1 = useQuery({ queryKey: [...key, 'gstr1', from, to], queryFn: () => api!.gstr1(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-1' && from <= to, placeholderData: keepPreviousData });
@@ -139,7 +140,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className={clsx('flex flex-wrap gap-2 print:hidden', tab === 'scheduled' && 'hidden')}>
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || (tab === 'gst' && gstReturn === 'gstr-2b')) && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={(tab === 'ledger' && !accountId) || (tab === 'statement' && !contactId)}>
                 {t('reports.print')}
               </Button>
@@ -340,13 +341,14 @@ export default function Reports() {
       ) : tab === 'gst' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
           <div className="flex flex-wrap items-end gap-4 print:hidden">
-            <Segmented<'gstr-3b' | 'gstr-1'>
+            <Segmented<'gstr-3b' | 'gstr-1' | 'gstr-2b'>
               label={t('reports.gst.return')}
               value={gstReturn}
               onChange={(v) => set({ return: v === 'gstr-3b' ? null : v })}
               options={[
                 { value: 'gstr-3b', label: 'GSTR-3B' },
                 { value: 'gstr-1', label: 'GSTR-1' },
+                { value: 'gstr-2b', label: t('reports.gstr2b.tab') },
               ]}
             />
             <div className="w-44">
@@ -357,7 +359,7 @@ export default function Reports() {
             </div>
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
           </div>
-          {gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
+          {gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
         </motion.div>
       ) : tab === 'scheduled' ? (
         <motion.div variants={fadeUp} role="tabpanel">

@@ -1604,6 +1604,64 @@
       "emptyPurchases": "No purchases in these dates",
       "captionSales": "Sales",
       "captionPurchases": "Purchases"
+    },
+    "gstr2b": {
+      "tab": "GSTR-2B match",
+      "title": "GSTR-2B against the books",
+      "uploadTitle": "Match GSTR-2B with your bills",
+      "uploadHint": "On the GST portal: Returns → GSTR-2B → choose the month → Download JSON. It’s matched to bills dated {{from}} to {{to}}. Nothing is stored.",
+      "file": "GSTR-2B JSON file",
+      "choose": "Choose GSTR-2B file",
+      "another": "Choose another file",
+      "emptyTitle": "Check your input tax credit before you file",
+      "emptyBody": "See which purchase invoices your suppliers filed, which bills they haven’t (credit at risk), what differs, and what’s missing from your books.",
+      "errors": {
+        "not_json": "That file isn’t JSON. Download GSTR-2B from the GST portal as JSON.",
+        "not_gstr2b": "That doesn’t look like GSTR-2B. Download it from the GST portal: Returns → GSTR-2B → Download JSON.",
+        "too_big": "That file is over 4 MB. Download one month at a time.",
+        "failed": "The file couldn’t be matched. Try again."
+      },
+      "otherGstin": "This file is for GSTIN {{gstin}}, not this organisation’s. Check you downloaded the right one.",
+      "summary": "Summary",
+      "taxOf": "Tax {{amount}}",
+      "status": {
+        "matched": "Matched",
+        "mismatch": "Amounts differ",
+        "probable": "Probable match",
+        "missing_in_books": "Not in your books",
+        "missing_in_2b": "Not filed by supplier",
+        "note": "Credit or debit note"
+      },
+      "atRisk_one": "{{amount}} of input credit is at risk: one bill hasn’t been filed by its supplier yet. Ask them to file it before you claim it.",
+      "atRisk_other": "{{amount}} of input credit is at risk: {{count}} bills haven’t been filed by their suppliers yet. Ask them to file before you claim it.",
+      "noneAtRisk": "Every bill with GST in these dates was filed by its supplier.",
+      "skipped_one": "One bill without a supplier GSTIN or GST was left out.",
+      "skipped_other": "{{count}} bills without a supplier GSTIN or GST were left out.",
+      "all": "All {{count}}",
+      "csv": "Download CSV",
+      "nothing": "Nothing here.",
+      "cols": {
+        "status": "Status",
+        "supplier": "Supplier",
+        "inPortal": "In GSTR-2B",
+        "inBooks": "In your books",
+        "portalTax": "2B tax",
+        "booksTax": "Books tax"
+      },
+      "problems": {
+        "taxable": "taxable value",
+        "tax": "tax",
+        "tax_type": "IGST vs CGST + SGST",
+        "date": "date",
+        "number": "number"
+      },
+      "kinds": {
+        "credit_note": "credit note",
+        "debit_note": "debit note",
+        "invoice": "invoice"
+      },
+      "noItc": "no credit allowed",
+      "bill": "Bill"
     }
   },
   "taxes": {
