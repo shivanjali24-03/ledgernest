@@ -35,6 +35,11 @@ describe('dashboard', () => {
     const attention = screen.getByRole('region', { name: 'Needs attention' });
     // About ₹24 lakh in the bank never runs short
     expect(await within(attention).findByRole('link', { name: /^Cash in 13 weeks\s*Stays above zero, ending at ₹/ }, { timeout: 4000 })).toHaveAttribute('href', '/reports?tab=forecast');
+    // India's due dates: GSTR-3B for a month, with what it would put in cash, linking to that month's return
+    const due = await screen.findByRole('region', { name: 'Due dates' }, { timeout: 4000 });
+    const gstr3b = within(due).getAllByRole('link', { name: /GSTR-3B for / })[0]!;
+    expect(gstr3b).toHaveTextContent(/days? (left|late)|Due today/);
+    expect(gstr3b.getAttribute('href')).toMatch(/^\/reports\?tab=gst&from=\d{4}-\d{2}-01&to=\d{4}-\d{2}-\d{2}$/);
     const draft = within(attention).getByRole('link', { name: /1 draft entries not posted/ });
     await userEvent.click(draft);
     await waitFor(() => expect(router.state.location.pathname).toBe('/journals'));

@@ -42,3 +42,4 @@ export * from './taxes/gstr2b.js';
 export * from './forecast/index.js';
 export * from './invoices/words.js';
 export * from './einvoice/index.js';
+export * from './compliance/index.js';

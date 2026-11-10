@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   B2CL_THRESHOLD,
   billNumber,
+  complianceDueDates,
+  todayIn,
   creditNoteNumber,
   currencyDigits,
   findIndianState,
@@ -787,6 +789,43 @@ export class GstReturnsService {
       from,
       to,
       ...result,
+    };
+  }
+
+  /**
+   * The statutory due dates coming up (and just missed), each with days left; GSTR-3B with the tax it would put
+   * in cash from the books so far. Organisations outside India have none.
+   */
+  async compliance(organizationId: string, now = new Date()) {
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { country: true, taxId: true, timeZone: true },
+    });
+    if (org.country !== 'IN') return { today: null, items: [] };
+    const today = todayIn(org.timeZone, now);
+    const items = complianceDueDates(today, { gst: !!org.taxId });
+    const days = (due: string) =>
+      Math.round(
+        (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+          86_400_000,
+      );
+    return {
+      today,
+      items: await Promise.all(
+        items.map(async (i) => {
+          let amount: number | undefined;
+          if (i.kind === 'gstr3b') {
+            const r = await this.gstr3b(organizationId, i.from, i.to);
+            amount =
+              r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess;
+          }
+          return {
+            ...i,
+            daysLeft: days(i.due),
+            ...(amount === undefined ? {} : { amount }),
+          };
+        }),
+      ),
     };
   }
 }

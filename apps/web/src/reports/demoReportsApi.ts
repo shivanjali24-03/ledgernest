@@ -1,4 +1,4 @@
-import { buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Gstr2bReport } from './types';
+import type { CashForecast, Compliance, Gstr2bReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -381,6 +381,19 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     ];
     return { ...buildCashForecast({ today: d.asOf, opening: d.kpis.cash.value, items, weeks }), currency: 'INR', lateCustomers: [] };
   };
+  /** The demo organisation is GST-registered in Maharashtra */
+  const compliance = async (): Promise<Compliance> => {
+    const today = todayIn('Asia/Kolkata');
+    const items = await Promise.all(
+      complianceDueDates(today, { gst: true }).map(async (i) => {
+        const daysLeft = Math.round((Date.parse(`${i.due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+        if (i.kind !== 'gstr3b') return { ...i, daysLeft };
+        const r = await gstr3b(i.from, i.to);
+        return { ...i, daysLeft, amount: r.payable.igst + r.payable.cgst + r.payable.sgst + r.payable.cess };
+      }),
+    );
+    return { today, items };
+  };
   /** GSTR-2B against the demo's recorded bills, heads read from their tax lines' names */
   const gstr2b = async (content: string, from: string, to: string): Promise<Gstr2bReport> => {
     let file;
@@ -490,6 +503,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     gstr3b,
     gstr2b,
     cashForecast,
+    compliance,
     gstr1,
     async exportGstr1(from, to, format) {
       guard();
