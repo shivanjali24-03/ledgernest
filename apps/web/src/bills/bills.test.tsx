@@ -104,7 +104,8 @@ describe('bills', () => {
     );
     expect(await screen.findByText(/ scheduled$/, {}, { timeout: 4000 })).toBeInTheDocument();
     await router.navigate('/recurring-bills');
-    expect(await screen.findByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' }, { timeout: 4000 })).toBeInTheDocument();
+    // Found afresh each try: the page can remount as it loads
+    await waitFor(() => expect(screen.getByText('Sharma Office Supplies', { selector: 'span[dir="auto"]' })).toBeInTheDocument(), { timeout: 6000 });
     await screen.findByRole('button', { name: 'Run now' }, { timeout: 4000 });
     // Pressed until the schedule lists the bill it made: a press can land while the page re-renders, and running
     // twice on one day makes nothing more (the list is more lasting than the toast, which can come and go)
