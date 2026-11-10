@@ -120,6 +120,23 @@
       "title": "13 आठवड्यांत रोख",
       "shortfall": "{{date}} च्या आठवड्यात कमी पडेल: {{amount}}",
       "fine": "शून्याच्या वर राहते, शेवटी {{amount}}"
+    },
+    "compliance": {
+      "title": "देय तारखा",
+      "hint": "भारताच्या नियमित फाइलिंग आणि भरण्याच्या तारखा. सरकार कधीकधी त्या वाढवते.",
+      "kinds": {
+        "gstr1": "{{period}} चा GSTR-1",
+        "gstr3b": "{{period}} चा GSTR-3B",
+        "gstr9": "{{period}} चा GSTR-9 वार्षिक रिटर्न",
+        "advance_tax": "अग्रिम कर: वर्षाच्या कराचा {{share}}% ({{period}})"
+      },
+      "daysLeft_one": "1 दिवस बाकी",
+      "daysLeft_other": "{{count}} दिवस बाकी",
+      "today": "आज देय",
+      "overdue_one": "1 दिवस उशीर",
+      "overdue_other": "{{count}} दिवस उशीर",
+      "toPay": "आतापर्यंत सुमारे {{amount}} रोख भरायचे",
+      "nothingToPay": "आतापर्यंत रोख काही भरायचे नाही"
     }
   },
   "comingSoon": {

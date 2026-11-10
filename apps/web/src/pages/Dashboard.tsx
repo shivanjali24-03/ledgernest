@@ -13,6 +13,7 @@ import { useMoney } from '../lib/useMoney';
 import { useReportsApi } from '../reports/useReportsApi';
 import type { Dashboard as DashboardData } from '../reports/types';
 import { SkeletonRows } from '../ui/Kit';
+import ComplianceCard from './ComplianceCard';
 
 /** Tiny line chart; the line draws itself in (stroke animation, no layout). */
 function Sparkline({ points, up }: { points: number[]; up: boolean }) {
@@ -101,6 +102,7 @@ export default function Dashboard() {
   const canRead = session.permissions.has('reports.view');
   const query = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'dashboard'], queryFn: () => api!.dashboard(), enabled: !!api && canRead });
   const data = query.data;
+  const compliance = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'compliance'], queryFn: () => api!.compliance(), enabled: !!api && canRead && !!data });
   const forecast = useQuery({ queryKey: ['reports', session.organizationId, session.role ?? session.customRoleName, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && canRead && !!data });
   const firstName = session.name.split(' ')[0];
   const setup = data ? (['organisation', 'team', 'coa', 'fiscal', 'bank'] as const).map((k) => ({ key: k, done: data.setup[k] })) : [];
@@ -192,6 +194,12 @@ export default function Dashboard() {
               )}
             </section>
           </motion.div>
+
+          {!!compliance.data?.items.length && (
+            <motion.div variants={fadeUp}>
+              <ComplianceCard data={compliance.data} />
+            </motion.div>
+          )}
 
           {done < setup.length && (
             <motion.section variants={fadeUp} className="rounded-card border border-ink-200 bg-white p-6 shadow-card dark:border-ink-800 dark:bg-ink-900" aria-labelledby="setup-title">

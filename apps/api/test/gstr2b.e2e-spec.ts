@@ -3,7 +3,11 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
-import { gstinCheckChar } from '@ledgernest/shared';
+import {
+  complianceDueDates,
+  gstinCheckChar,
+  todayIn,
+} from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
@@ -51,6 +55,7 @@ describe('GSTR-2B reconciliation (e2e)', () => {
         .set('Authorization', `Bearer ${users[who]}`)
         .set('X-Organization-Id', org);
     return {
+      get: (p: string) => auth(http().get(`/api/v1${p}`)),
       post: (p: string, body: object = {}) =>
         auth(http().post(`/api/v1${p}`)).send(body),
     };
@@ -362,5 +367,31 @@ describe('GSTR-2B reconciliation (e2e)', () => {
       .set('X-Organization-Id', org)
       .send({ content: twoB(), from: '2026-10-01', to: '2026-10-31' })
       .expect(401);
+  });
+
+  it('lists the GST and advance-tax due dates coming up, with the GSTR-3B tax to pay', async () => {
+    const r = (await as('viewer').get('/reports/compliance').expect(200))
+      .body as {
+      today: string;
+      items: {
+        kind: string;
+        due: string;
+        daysLeft: number;
+        amount?: number;
+      }[];
+    };
+    const today = todayIn('Asia/Kolkata');
+    expect(r.today).toBe(today);
+    expect(r.items.map((i) => [i.kind, i.due])).toEqual(
+      complianceDueDates(today, { gst: true }).map((i) => [i.kind, i.due]),
+    );
+    for (const i of r.items) {
+      expect(i.daysLeft).toBe(
+        Math.round((Date.parse(i.due) - Date.parse(today)) / 86_400_000),
+      );
+      if (i.kind === 'gstr3b') expect(typeof i.amount).toBe('number');
+      else expect(i.amount).toBeUndefined();
+    }
+    expect(r.items.some((i) => i.kind === 'gstr3b')).toBe(true);
   });
 });

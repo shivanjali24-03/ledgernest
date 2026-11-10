@@ -522,6 +522,16 @@ export class ReportsController {
     );
   }
 
+  @Get('compliance')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Statutory due dates coming up in India (GSTR-1, GSTR-3B with the tax to pay, GSTR-9, advance tax), with days left',
+  })
+  compliance(@CurrentTenant() tenant: Tenant) {
+    return this.gst.compliance(tenant.organizationId);
+  }
+
   @Get('cash-forecast')
   @RequirePermission('reports.view')
   @ApiOkResponse({

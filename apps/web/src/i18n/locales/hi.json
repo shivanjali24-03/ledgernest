@@ -120,6 +120,23 @@
       "title": "13 हफ़्तों में नकदी",
       "shortfall": "{{date}} के हफ़्ते में कम पड़ेगी: {{amount}}",
       "fine": "शून्य से ऊपर रहती है, अंत में {{amount}}"
+    },
+    "compliance": {
+      "title": "देय तिथियाँ",
+      "hint": "भारत की नियमित फ़ाइलिंग और भुगतान तिथियाँ। सरकार कभी-कभी इन्हें बढ़ा देती है।",
+      "kinds": {
+        "gstr1": "{{period}} का GSTR-1",
+        "gstr3b": "{{period}} का GSTR-3B",
+        "gstr9": "{{period}} का GSTR-9 वार्षिक रिटर्न",
+        "advance_tax": "अग्रिम कर: साल के कर का {{share}}% ({{period}})"
+      },
+      "daysLeft_one": "1 दिन बाकी",
+      "daysLeft_other": "{{count}} दिन बाकी",
+      "today": "आज देय",
+      "overdue_one": "1 दिन देर",
+      "overdue_other": "{{count}} दिन देर",
+      "toPay": "अब तक लगभग {{amount}} नकद भुगतान करना है",
+      "nothingToPay": "अब तक कोई नकद भुगतान नहीं"
     }
   },
   "comingSoon": {

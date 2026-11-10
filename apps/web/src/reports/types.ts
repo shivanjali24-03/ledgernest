@@ -1,4 +1,4 @@
-import type { CashForecast as SharedCashForecast, Gstr2bResult } from '@ledgernest/shared';
+import type { CashForecast as SharedCashForecast, ComplianceItem, Gstr2bResult } from '@ledgernest/shared';
 import type { AccountStatement, AccountType, SalesReportBy, SalesReportRow, SalesReportSide, StatementEmailInput, AgingBucket, AgingSide, BsSection, PnlCompare, PnlSection } from '@ledgernest/shared';
 
 export interface TrialBalanceRow {
@@ -220,6 +220,8 @@ export interface ReportsApi {
   gstr2b(content: string, from: string, to: string): Promise<Gstr2bReport>;
   /** Cash week by week for the coming weeks */
   cashForecast(weeks: number): Promise<CashForecast>;
+  /** Statutory due dates coming up (India) */
+  compliance(): Promise<Compliance>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
@@ -239,3 +241,9 @@ export type Gstr2bReport = Gstr2bResult & { gstin: string | null; period: string
 
 /** What GET /reports/cash-forecast returns */
 export type CashForecast = SharedCashForecast & { currency: string; lateCustomers: { contact: { id: string; name: string }; days: number }[] };
+
+/** What GET /reports/compliance returns */
+export interface Compliance {
+  today: string | null;
+  items: (ComplianceItem & { daysLeft: number; amount?: number })[];
+}
