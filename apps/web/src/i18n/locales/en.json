@@ -4457,5 +4457,21 @@
       "closed": "Every month is closed.",
       "backup": "Download a full backup from Settings and keep it safe; books must be kept for eight years."
     }
+  },
+  "address": {
+    "pin": "PIN code",
+    "pinHint": "Enter the PIN code first: the state, city and area fill in from India Post.",
+    "pinInvalid": "A PIN code is 6 digits, not starting with 0.",
+    "looking": "Looking up the PIN code…",
+    "found": "{{district}}, {{state}}: pick the city and area.",
+    "unknown": "India Post doesn’t know this PIN code. Check it, or type the city and area.",
+    "unreachable": "India Post couldn’t be reached. Type the city and area.",
+    "state": "State",
+    "chooseState": "Choose a state",
+    "city": "City or town",
+    "chooseCity": "Choose the city or town",
+    "area": "Area or locality",
+    "chooseArea": "Choose the area",
+    "line1": "Building, street"
   }
 }

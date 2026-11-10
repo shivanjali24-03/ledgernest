@@ -9,6 +9,7 @@ import { countryOptions } from '../platform/options';
 import Button from '../ui/Button';
 import { Field, inputClass, SelectField, TextField } from '../ui/Field';
 import Modal from '../ui/Modal';
+import IndianAddressFields from '../geo/IndianAddressFields';
 import { useToast } from '../ui/toastContext';
 import { ApiError } from '../auth/client';
 import { contactErrorMessage } from './errors';
@@ -18,35 +19,35 @@ type Address = { line1: string; line2: string; city: string; region: string; pos
 const toForm = (a: ContactAddress | null | undefined): Address => ({ line1: a?.line1 ?? '', line2: a?.line2 ?? '', city: a?.city ?? '', region: a?.region ?? '', postalCode: a?.postalCode ?? '', country: a?.country ?? '' });
 const fromForm = (a: Address): ContactAddress => ({ line1: a.line1 || null, line2: a.line2 || null, city: a.city || null, region: a.region || null, postalCode: a.postalCode || null, country: a.country || null });
 
-/** One address: an Indian one picks its state from the GST list, others type the region. */
+/** One address: an Indian one is filled from its PIN code (state from the GST list), others are typed. */
 function AddressFields({ prefix, value, onChange, errors }: { prefix: 'billing' | 'shipping'; value: Address; onChange: (a: Address) => void; errors: Record<string, string> }) {
   const { t } = useTranslation();
   const locale = useIntlLocale();
   const set = (patch: Partial<Address>) => onChange({ ...value, ...patch });
   const err = (f: string) => errors[`${prefix}Address.${f}`];
+  const country = <SelectField label={t('contacts.address.country')} value={value.country} onChange={(e) => set({ country: e.target.value })} options={countryOptions(locale, t('contacts.address.noCountry'))} />;
   return (
     <fieldset className="grid gap-3 sm:grid-cols-2">
       <legend className="mb-2 text-sm font-semibold">{t(`contacts.fields.${prefix}Address`)}</legend>
-      <div className="sm:col-span-2">
-        <TextField label={t('contacts.address.line1')} value={value.line1} onChange={(e) => set({ line1: e.target.value })} dir="auto" />
-      </div>
-      <div className="sm:col-span-2">
-        <TextField label={t('contacts.address.line2')} value={value.line2} onChange={(e) => set({ line2: e.target.value })} dir="auto" />
-      </div>
-      <TextField label={t('contacts.address.city')} value={value.city} onChange={(e) => set({ city: e.target.value })} dir="auto" />
       {value.country === 'IN' ? (
-        <SelectField
-          label={t('contacts.address.state')}
-          value={INDIAN_STATES.find((s) => s.name === value.region)?.name ?? ''}
-          onChange={(e) => set({ region: e.target.value })}
-          error={err('region')}
-          options={[{ value: '', label: t('contacts.address.chooseState') }, ...INDIAN_STATES.map((s) => ({ value: s.name, label: `${s.code} · ${s.name}` }))]}
-        />
+        <>
+          <IndianAddressFields value={value} onChange={set} error={(f) => err(f)} />
+          {country}
+        </>
       ) : (
-        <TextField label={t('contacts.address.region')} value={value.region} onChange={(e) => set({ region: e.target.value })} dir="auto" />
+        <>
+          <div className="sm:col-span-2">
+            <TextField label={t('contacts.address.line1')} value={value.line1} onChange={(e) => set({ line1: e.target.value })} dir="auto" />
+          </div>
+          <div className="sm:col-span-2">
+            <TextField label={t('contacts.address.line2')} value={value.line2} onChange={(e) => set({ line2: e.target.value })} dir="auto" />
+          </div>
+          <TextField label={t('contacts.address.city')} value={value.city} onChange={(e) => set({ city: e.target.value })} dir="auto" />
+          <TextField label={t('contacts.address.region')} value={value.region} onChange={(e) => set({ region: e.target.value })} error={err('region')} dir="auto" />
+          <TextField label={t('contacts.address.postalCode')} value={value.postalCode} onChange={(e) => set({ postalCode: e.target.value })} dir="ltr" />
+          {country}
+        </>
       )}
-      <TextField label={t('contacts.address.postalCode')} value={value.postalCode} onChange={(e) => set({ postalCode: e.target.value })} dir="ltr" />
-      <SelectField label={t('contacts.address.country')} value={value.country} onChange={(e) => set({ country: e.target.value })} options={countryOptions(locale, t('contacts.address.noCountry'))} />
     </fieldset>
   );
 }

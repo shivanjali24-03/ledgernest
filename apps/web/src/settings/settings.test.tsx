@@ -140,7 +140,7 @@ describe('organisation settings', () => {
 
   it('asks before leaving with unsaved changes', async () => {
     const router = renderApp();
-    await userEvent.type(await field('City'), ' West');
+    await userEvent.type(await field('Building, street'), ' West');
     await userEvent.click(screen.getByRole('link', { name: 'Users & roles' }));
     const dialog = await screen.findByRole('dialog', { name: 'Leave without saving?' });
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
