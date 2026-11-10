@@ -52,6 +52,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms, and what each owes or is owed | ✅ #64 |
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
 | Invoices | Printable (PDF) GST invoices, numbering, due dates, place of supply; receipts against one or many invoices, with advances and realised exchange differences | ✅ #66, #69 |
+| Payment reminders | Email a customer what's still owed on an invoice, when it was due and what's been paid, with an optional note; the invoice shows how many reminders went and when | ✅ |
 | Recurring invoices | Weekly, monthly, quarterly or yearly schedules from a template invoice, ending on a date or after a count, raised as drafts or issued, with what's coming next | ✅ #71 |
 | Credit notes and refunds | Against the original invoice (some or all of its lines, tax included); the credit comes off the invoice, then goes onto another invoice or is refunded | ✅ #67 |
 | Bills and payments | Vendor bills with input GST to expense or asset accounts, and payments against one or many bills | ✅ #68, #69 |

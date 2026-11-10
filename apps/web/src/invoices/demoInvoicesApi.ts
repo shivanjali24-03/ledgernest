@@ -1,4 +1,4 @@
-import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
@@ -41,6 +41,8 @@ type Stored = {
   payments?: { id: string; number: string; date: string; amount: number }[];
   credits?: { id: string; number: string; date: string; amount: number }[];
   creditNotes?: { id: string; number: string; status: 'issued' | 'void'; total: number }[];
+  lastRemindedAt?: string | null;
+  reminders?: number;
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -194,6 +196,8 @@ function view(i: Stored): Invoice {
     payments: i.payments ?? [],
     credits: i.credits ?? [],
     creditNotes: i.creditNotes ?? [],
+    lastRemindedAt: i.lastRemindedAt ?? null,
+    reminders: i.reminders ?? 0,
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
@@ -352,6 +356,21 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         Object.assign(i, { status: 'void', voidEntryId: r.id, voidNumber: r.number });
         save(rows);
         return view(i);
+      }),
+    remind: (iid, input) =>
+      wait(async () => {
+        guard();
+        const q = invoiceReminderSchema.safeParse(input);
+        if (!q.success) throw new ApiError('validation', 400, undefined, undefined, { fields: q.error.issues });
+        const rows = await load();
+        const i = find(rows, iid);
+        const v = view(i);
+        if (v.status !== 'issued' || v.balance <= 0) throw refuse(409, 'nothing_owed');
+        const to = q.data.email ?? v.contact.email;
+        if (!to) throw refuse(400, 'no_email');
+        Object.assign(i, { lastRemindedAt: new Date().toISOString(), reminders: (i.reminders ?? 0) + 1 });
+        save(rows);
+        return { sentTo: to, lastRemindedAt: i.lastRemindedAt!, reminders: i.reminders! };
       }),
   };
 }

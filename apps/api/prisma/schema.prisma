@@ -717,6 +717,9 @@ model Invoice {
   createdById         String?   @map("created_by_id") @db.Uuid
   issuedAt            DateTime? @map("issued_at")
   voidedAt            DateTime? @map("voided_at")
+  /// When a payment reminder last went to the customer, and how many have
+  lastRemindedAt      DateTime? @map("last_reminded_at")
+  reminders           Int       @default(0)
   createdAt           DateTime  @default(now()) @map("created_at")
   updatedAt           DateTime  @updatedAt @map("updated_at")
 

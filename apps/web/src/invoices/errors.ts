@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { ApiError } from '../auth/client';
 import { journalErrorMessage } from '../journals/errors';
 
-const REASONS = ['not_customer', 'contact_archived', 'account_required', 'not_income', 'item_archived', 'no_receivable_account', 'receivable_currency', 'zero_total', 'not_draft', 'not_issued', 'has_payments', 'document_entry', 'no_rate', 'no_period', 'period_closed', 'over_allocated', 'bank_currency', 'bank_invalid', 'invoice_not_issued', 'invoice_currency', 'already_void'];
+const REASONS = ['not_customer', 'contact_archived', 'account_required', 'not_income', 'item_archived', 'no_receivable_account', 'receivable_currency', 'zero_total', 'not_draft', 'not_issued', 'has_payments', 'document_entry', 'no_rate', 'no_period', 'period_closed', 'over_allocated', 'bank_currency', 'bank_invalid', 'invoice_not_issued', 'invoice_currency', 'already_void', 'nothing_owed', 'no_email', 'mail_off', 'mail_failed'];
 
 /** A translated explanation for an invoice refusal (journal ones, like a closed month, included). */
 export function invoiceErrorMessage(e: unknown, t: TFunction): string {

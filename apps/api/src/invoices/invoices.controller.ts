@@ -21,6 +21,7 @@ import {
 import {
   invoiceDraftSchema,
   invoiceListQuerySchema,
+  invoiceReminderSchema,
   invoiceVoidSchema,
   type InvoiceDraftInput,
 } from '@ledgernest/shared';
@@ -33,6 +34,7 @@ import {
 } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { InvoiceRemindersService } from './invoice-reminders.service.js';
 import { InvoicesService } from './invoices.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
@@ -48,7 +50,10 @@ type Draft = Parameters<InvoicesService['createDraft']>[0];
 })
 @Controller('invoices')
 export class InvoicesController {
-  constructor(private readonly invoices: InvoicesService) {}
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly reminders: InvoiceRemindersService,
+  ) {}
 
   @Get()
   @RequirePermission('invoices.view')
@@ -136,5 +141,23 @@ export class InvoicesController {
     @Req() req: Request,
   ) {
     return this.invoices.void(invoiceId, body, { actor, tenant, req });
+  }
+
+  @Post(':id/remind')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Emails the customer a payment reminder for what’s still owed; 409 when nothing is owed or email isn’t set up',
+  })
+  remind(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(invoiceReminderSchema))
+    body: z.output<typeof invoiceReminderSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.reminders.remind(invoiceId, body, { actor, tenant, req });
   }
 }

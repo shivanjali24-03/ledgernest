@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, FileMinus, HandCoins, Plus, Printer, Repeat, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, BellRing, Ban, FileMinus, HandCoins, Plus, Printer, Repeat, Send, Trash2, X } from 'lucide-react';
 import RecurringDialog from '../../recurring/RecurringDialog';
 import { templateOf } from '../../recurring/templateOf';
 import { useRecurringApi } from '../../recurring/useRecurringApi';
@@ -15,6 +15,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../../contacts/useContactsApi';
 import { useIntlLocale } from '../../i18n';
+import { formatDate } from '../../lib/format';
 import { useItemsApi } from '../../items/useItemsApi';
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
@@ -27,6 +28,7 @@ import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import InvoiceDocument from '../InvoiceDocument';
 import { invoiceErrorMessage } from '../errors';
+import ReminderDialog from '../ReminderDialog';
 import { groupForSupply, supplyFor } from '../gst';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -315,6 +317,7 @@ function DraftForm({ invoice, api }: { invoice: Invoice | null; api: InvoicesApi
 /** One invoice: a new or draft one to edit, or an issued one to read, print or void. */
 export default function InvoiceEditor() {
   const { t } = useTranslation();
+  const locale = useIntlLocale();
   const { id } = useParams();
   const session = useSession();
   const toast = useToast();
@@ -328,6 +331,7 @@ export default function InvoiceEditor() {
   const [receiving, setReceiving] = useState(false);
   const [crediting, setCrediting] = useState(false);
   const [repeating, setRepeating] = useState(false);
+  const [reminding, setReminding] = useState(false);
   const recurringApi = useRecurringApi();
   const creditNotesApi = useCreditNotesApi();
   const paymentsApi = usePaymentsApi();
@@ -371,6 +375,11 @@ export default function InvoiceEditor() {
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
+                  </Button>
+                )}
+                {invoice.status === 'issued' && canManage && invoice.balance > 0 && (
+                  <Button variant="secondary" icon={<BellRing className="size-4" />} onClick={() => setReminding(true)}>
+                    {t('invoices.reminder.action')}
                   </Button>
                 )}
                 {invoice.status !== 'void' && canManage && (
@@ -456,6 +465,12 @@ export default function InvoiceEditor() {
                     </Link>
                   </span>
                 ))}
+              {invoice!.reminders > 0 && invoice!.lastRemindedAt && (
+                <span>
+                  {' · '}
+                  {t('invoices.reminder.history', { count: invoice!.reminders, date: formatDate(invoice!.lastRemindedAt, locale) })}
+                </span>
+              )}
               {invoice!.voidEntry && (
                 <>
                   {' · '}
@@ -470,6 +485,7 @@ export default function InvoiceEditor() {
         )}
         {invoice && <DocumentAttachments documentType="invoice" documentId={invoice.id} />}
       </motion.div>
+      {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}
       {repeating && invoice && recurringApi && <RecurringDialog api={recurringApi} template={templateOf(invoice)} onClose={() => setRepeating(false)} onSaved={() => setRepeating(false)} />}
       {crediting && invoice && creditNotesApi && (
         <CreditNoteDialog

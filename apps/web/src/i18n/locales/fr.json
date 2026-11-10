@@ -739,7 +739,8 @@
       "org_scheduled_report_delete": "Rapport planifié supprimé",
       "org_backup_export": "Sauvegarde téléchargée",
       "org_backup_restore": "Restauré depuis une sauvegarde",
-      "org_statement_email": "Relevé envoyé par e-mail"
+      "org_statement_email": "Relevé envoyé par e-mail",
+      "org_invoice_remind": "Relance de paiement envoyée"
     },
     "entities": {
       "membership": "Membre",
@@ -2036,7 +2037,24 @@
       "bank_invalid": "Choisissez un compte de banque ou de caisse actif.",
       "invoice_not_issued": "Seules les factures émises peuvent être payées.",
       "invoice_currency": "Une facture est dans une autre devise.",
-      "already_void": "C’est déjà annulé."
+      "already_void": "C’est déjà annulé.",
+      "nothing_owed": "Seules les factures émises avec un reste dû reçoivent des relances.",
+      "no_email": "Ce client n’a pas d’adresse e-mail. Saisissez-en une pour l’envoyer.",
+      "mail_off": "L’e-mail n’est pas configuré sur ce serveur : impossible d’envoyer des relances d’ici.",
+      "mail_failed": "L’e-mail n’a pas pu être envoyé. Réessayez plus tard."
+    },
+    "reminder": {
+      "action": "Envoyer une relance",
+      "title": "Relance de paiement pour {{number}}",
+      "body": "Un e-mail au client : ce qui reste dû ({{amount}}), l’échéance, et ce qui a déjà été payé.",
+      "to": "Envoyer à",
+      "badEmail": "Saisissez une adresse e-mail valide.",
+      "note": "Note",
+      "noteHint": "Facultatif : elle figure en haut de l’e-mail.",
+      "send": "Envoyer la relance",
+      "sent": "Relance envoyée à {{email}}",
+      "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; elle partirait à {{email}}",
+      "history": "Relances envoyées : {{count}}, la dernière le {{date}}"
     }
   },
   "payments": {

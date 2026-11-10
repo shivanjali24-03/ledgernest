@@ -739,7 +739,8 @@
       "org_scheduled_report_delete": "Scheduled report removed",
       "org_backup_export": "Backup downloaded",
       "org_backup_restore": "Restored from a backup",
-      "org_statement_email": "Statement emailed"
+      "org_statement_email": "Statement emailed",
+      "org_invoice_remind": "Payment reminder sent"
     },
     "entities": {
       "membership": "Member",
@@ -2036,7 +2037,24 @@
       "bank_invalid": "Choose an active bank or cash account.",
       "invoice_not_issued": "Only issued invoices can be paid.",
       "invoice_currency": "An invoice is in a different currency.",
-      "already_void": "This is already void."
+      "already_void": "This is already void.",
+      "nothing_owed": "Only issued invoices with something still owed get reminders.",
+      "no_email": "This customer has no email address. Enter one to send it to.",
+      "mail_off": "Email isn’t set up on this server, so reminders can’t be sent from here.",
+      "mail_failed": "The email couldn’t be sent. Try again later."
+    },
+    "reminder": {
+      "action": "Send reminder",
+      "title": "Payment reminder for {{number}}",
+      "body": "An email to the customer: what’s still owed ({{amount}}), when it was due, and what’s been paid.",
+      "to": "Send to",
+      "badEmail": "Enter a valid email address.",
+      "note": "Note",
+      "noteHint": "Optional: it goes at the top of the email.",
+      "send": "Send reminder",
+      "sent": "Reminder sent to {{email}}",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
+      "history": "Reminders sent: {{count}}, last on {{date}}"
     }
   },
   "payments": {
