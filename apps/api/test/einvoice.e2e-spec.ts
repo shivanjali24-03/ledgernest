@@ -320,4 +320,43 @@ describe('GST e-invoice JSON (e2e)', () => {
       ValDtls: { IgstVal: 4500, CgstVal: 0, TotInvVal: 29500 },
     });
   });
+
+  it('runs a GST health check: what would go wrong when filing, with examples to fix', async () => {
+    await as()
+      .post('/items', {
+        name: 'Packing material',
+        kind: 'goods',
+        incomeAccountId: acc.sales,
+      })
+      .expect(201);
+    const r = (await as().get('/reports/gst/health').expect(200)).body as {
+      checked: boolean;
+      issues: { kind: string; count: number; sample: { name: string }[] }[];
+    };
+    expect(r.checked).toBe(true);
+    // The organisation is complete; the walk-in customer has no state, the new item no HSN
+    expect(r.issues.map((i) => i.kind).sort()).toEqual([
+      'customers_state',
+      'items_hsn',
+    ]);
+    expect(r.issues.find((i) => i.kind === 'items_hsn')).toMatchObject({
+      count: 1,
+      sample: [expect.objectContaining({ name: 'Packing material' })],
+    });
+    expect(r.issues.find((i) => i.kind === 'customers_state')!.sample).toEqual([
+      expect.objectContaining({ name: 'Walk-in customer' }),
+    ]);
+    // A PIN code gone: the organisation's address is flagged
+    await prisma.organization.update({
+      where: { id: org },
+      data: { postalCode: null },
+    });
+    expect(
+      (
+        (await as().get('/reports/gst/health').expect(200)).body as {
+          issues: { kind: string }[];
+        }
+      ).issues.map((i) => i.kind),
+    ).toContain('org_address');
+  });
 });

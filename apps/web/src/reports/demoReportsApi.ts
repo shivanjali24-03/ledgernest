@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Compliance, Gstr2bReport, TdsReport } from './types';
+import type { CashForecast, Compliance, GstHealth, Gstr2bReport, TdsReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -445,6 +445,25 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       });
     return { blob: new Blob([tallyVouchersXml(company, vouchers)], { type: 'application/xml' }), filename: `tally-vouchers-${from}-${to}.xml` };
   };
+  /** The demo's GST health: its items, contacts and recorded bills, as the API checks them */
+  const gstHealth = async (): Promise<GstHealth> => {
+    const [{ demoItemRows }, { demoContactRows }, { demoStoredBillViews }] = await Promise.all([import('../items/demoItemsApi'), import('../contacts/demoContactsApi'), import('../bills/demoBillsApi')]);
+    const pin = /^[1-9]\d{5}$/;
+    const issue = (kind: GstHealth['issues'][number]['kind'], rows: { id: string; name: string }[]) => (rows.length ? [{ kind, count: rows.length, sample: rows.slice(0, 8).map((r) => ({ id: r.id, name: r.name })) }] : []);
+    const contacts = demoContactRows().filter((c) => !c.archived);
+    // Customers abroad are exports: no Indian state or e-invoice details to check
+    const customers = contacts.filter((c) => c.isCustomer && (!c.billingAddress.country || c.billingAddress.country === 'IN'));
+    const charged = new Set(demoStoredBillViews().filter((b) => b.status === 'open' && b.taxTotal > 0).map((b) => b.contact.id));
+    return {
+      checked: true,
+      issues: [
+        ...issue('items_hsn', demoItemRows().filter((i) => !i.archived && !/^\d{4,8}$/.test(i.hsnSac ?? ''))),
+        ...issue('customers_state', customers.filter((c) => !c.stateCode)),
+        ...issue('customers_einvoice', customers.filter((c) => !!c.taxId && (!c.billingAddress.line1 || !(c.billingAddress.city ?? c.billingAddress.region) || !pin.test(c.billingAddress.postalCode ?? '')))),
+        ...issue('vendors_gstin', contacts.filter((c) => c.isVendor && charged.has(c.id) && !(c.taxId && isGstin(c.taxId)))),
+      ],
+    };
+  };
   /** The demo organisation is GST-registered in Maharashtra */
   const compliance = async (): Promise<Compliance> => {
     const today = todayIn('Asia/Kolkata');
@@ -579,6 +598,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     gstr2b,
     cashForecast,
     compliance,
+    gstHealth,
     tds,
     tally,
     gstr1,

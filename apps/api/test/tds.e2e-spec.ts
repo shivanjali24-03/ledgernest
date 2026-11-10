@@ -418,4 +418,15 @@ describe('TDS on vendor payments (e2e)', () => {
       }),
     ]);
   });
+
+  it('flags vendors charging GST without a GSTIN on file in the GST health check', async () => {
+    const r = (await as().get('/reports/gst/health').expect(200)).body as {
+      issues: { kind: string; sample: { name: string }[] }[];
+    };
+    expect(
+      r.issues
+        .find((i) => i.kind === 'vendors_gstin')!
+        .sample.map((x) => x.name),
+    ).toEqual(['R. Joshi (contractor)']);
+  });
 });

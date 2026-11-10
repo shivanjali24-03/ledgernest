@@ -219,6 +219,8 @@ export interface ReportsApi {
   gstr1(from: string, to: string): Promise<Gstr1>;
   /** GSTR-2B (the portal's JSON) matched to bills dated in the range */
   gstr2b(content: string, from: string, to: string): Promise<Gstr2bReport>;
+  /** What would go wrong when filing GST, with examples to fix */
+  gstHealth(): Promise<GstHealth>;
   /** Cash week by week for the coming weeks */
   cashForecast(weeks: number): Promise<CashForecast>;
   /** Statutory due dates coming up (India) */
@@ -263,4 +265,10 @@ export interface TdsReport {
   months: { month: string; due: string; count: number; base: number; tds: number }[];
   missingPan: string[];
   payments: { id: string; number: string; date: string; vendor: { id: string; name: string; pan: string | null }; section: string; ratePpm: number; base: number; amount: number; tds: number }[];
+}
+
+/** What GET /reports/gst/health returns */
+export interface GstHealth {
+  checked: boolean;
+  issues: { kind: 'org_gstin' | 'org_address' | 'items_hsn' | 'customers_state' | 'customers_einvoice' | 'vendors_gstin'; count: number; sample: { id: string; name: string }[] }[];
 }
