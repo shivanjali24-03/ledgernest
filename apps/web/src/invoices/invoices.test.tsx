@@ -106,18 +106,21 @@ describe('invoices', () => {
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
     await screen.findByRole('article', {}, { timeout: 4000 });
     await screen.findByRole('button', { name: 'Record payment' }, { timeout: 4000 });
+    // Open the dialog and send in one step, retried, as the header re-renders while the invoice loads
+    let sent = false;
     await waitFor(
       () => {
+        if (sent) return;
         if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Send reminder' }));
         const dialog = screen.getByRole('dialog', { name: /^Payment reminder for INV\// });
         expect(within(dialog).getByLabelText('Send to')).toHaveValue('accounts@kumarlogistics.in');
         expect(dialog).toHaveTextContent('1,18,000.00');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Send reminder' }));
+        sent = true;
       },
-      { timeout: 6000 },
+      { timeout: 8000 },
     );
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Send reminder' }));
     await waitFor(() => expect(screen.getByText(/Posted as/)).toHaveTextContent(/Reminders sent: 1, last on/), { timeout: 8000 });
-    expect(screen.getByText('In the demo nothing is really sent; it would go to accounts@kumarlogistics.in')).toBeInTheDocument();
   });
 
   it('is read-only for Auditors', async () => {

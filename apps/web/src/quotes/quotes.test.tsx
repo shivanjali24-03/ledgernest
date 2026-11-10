@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -72,6 +72,26 @@ describe('quotes', () => {
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/invoices\/[0-9a-f-]{36}$/), { timeout: 6000 });
     await waitFor(() => expect(screen.getByDisplayValue('Patient booking app: design and build')).toBeInTheDocument(), { timeout: 4000 });
     await waitFor(() => expect(screen.getByLabelText('Reference')).toHaveValue('Clinic app, phase 1'));
+  });
+
+  it('emails a quote to the customer', { timeout: 20_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 4000 }));
+    await screen.findByRole('button', { name: 'Email' }, { timeout: 4000 });
+    // Open the dialog and send in one step, retried, as the header re-renders while the quote loads
+    let sent = false;
+    await waitFor(
+      () => {
+        if (sent) return;
+        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+        const dialog = screen.getByRole('dialog', { name: 'Email QT-0001 to the customer' });
+        expect(within(dialog).getByRole('textbox', { name: 'Send to' })).toHaveValue('finance@bluewave.health');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Send' }));
+        sent = true;
+      },
+      { timeout: 8000 },
+    );
+    await waitFor(() => expect(screen.getByText('In the demo nothing is really sent; it would go to finance@bluewave.health')).toBeInTheDocument(), { timeout: 4000 });
   });
 
   it('is read-only for Auditors', async () => {

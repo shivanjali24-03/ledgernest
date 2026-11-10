@@ -750,7 +750,8 @@
       "org_quote_accept": "Quote accepted",
       "org_quote_decline": "Quote declined",
       "org_quote_reopen": "Quote reopened",
-      "org_quote_invoice": "Quote invoiced"
+      "org_quote_invoice": "Quote invoiced",
+      "org_quote_email": "Quote emailed"
     },
     "entities": {
       "membership": "Member",
@@ -3302,7 +3303,11 @@
       "not_draft": "Only draft quotes can be deleted. Decline it instead.",
       "bad_move": "The quote can’t move that way.",
       "already_invoiced": "This quote is already an invoice.",
-      "declined": "A declined quote can’t be invoiced. Mark it accepted first."
+      "declined": "A declined quote can’t be invoiced. Mark it accepted first.",
+      "not_sendable": "Only open or accepted quotes can be emailed.",
+      "mail_off": "Email isn’t set up on this server. Print the quote and send it yourself.",
+      "no_email": "This customer has no email address. Enter one to send it to.",
+      "mail_failed": "The email couldn’t be sent. Try again later."
     },
     "moved": {
       "draft": "{{number}} is back to draft",
@@ -3316,6 +3321,19 @@
     "fields": {
       "quoteDate": "Quote date",
       "expiryDate": "Valid until"
+    },
+    "email": {
+      "action": "Email",
+      "title": "Email {{number}} to the customer",
+      "body": "It goes as a PDF with the lines, totals and valid-until date.",
+      "bodyDraft": "It goes as a PDF with the lines, totals and valid-until date, and the quote is marked sent.",
+      "to": "Send to",
+      "badEmail": "Enter a valid email address.",
+      "note": "Note",
+      "noteHint": "Optional: it goes at the top of the email.",
+      "send": "Send",
+      "sent": "Quote sent to {{email}}",
+      "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
     }
   }
 }

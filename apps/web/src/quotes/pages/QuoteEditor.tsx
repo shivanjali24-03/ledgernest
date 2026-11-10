@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { dueDateFor as addDays, QUOTE_MOVES, QUOTE_VALID_DAYS, quoteEditable } from '@ledgernest/shared';
-import { ArrowLeft, Check, FileOutput, Printer, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, FileOutput, Mail, Printer, Undo2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../auth/client';
 import { useIntlLocale } from '../../i18n';
@@ -15,11 +16,12 @@ import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
+import EmailQuoteDialog from '../EmailQuoteDialog';
 import { quoteTone } from '../tone';
 import type { Quote, QuotesApi } from '../types';
 import { useQuotesApi } from '../useQuotesApi';
 
-const QUOTE_REASONS = ['not_editable', 'not_draft', 'bad_move', 'already_invoiced', 'declined'];
+const QUOTE_REASONS = ['not_editable', 'not_draft', 'bad_move', 'already_invoiced', 'declined', 'not_sendable', 'mail_off', 'no_email', 'mail_failed'];
 /** A translated explanation for a quote refusal; line and customer problems read as they do for invoices */
 function quoteErrorMessage(e: unknown, t: (k: string) => string) {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
@@ -161,6 +163,7 @@ export default function QuoteEditor() {
   const query = useQuery({ queryKey: key, queryFn: () => api!.get(id!), enabled: !!api && !isNew });
   const quote = query.data;
   const canManage = session.permissions.has('invoices.manage');
+  const [emailing, setEmailing] = useState(false);
   const move = useMutation({
     mutationFn: (status: 'draft' | 'sent' | 'accepted' | 'declined') => api!.move(quote!.id, status),
     onSuccess: (q) => {
@@ -200,6 +203,11 @@ export default function QuoteEditor() {
                 {!editable && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
+                  </Button>
+                )}
+                {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
+                  <Button variant="secondary" icon={<Mail className="size-4" />} onClick={() => setEmailing(true)}>
+                    {t('quotes.email.action')}
                   </Button>
                 )}
                 {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
@@ -252,6 +260,19 @@ export default function QuoteEditor() {
           </p>
         )}
       </motion.div>
+      {emailing && quote && api && (
+        <EmailQuoteDialog
+          api={api}
+          quote={quote}
+          errorMessage={(e) => quoteErrorMessage(e, t)}
+          onClose={() => setEmailing(false)}
+          onSent={(q) => {
+            setEmailing(false);
+            queryClient.setQueryData(key, q);
+            void queryClient.invalidateQueries({ queryKey: ['quotes'] });
+          }}
+        />
+      )}
     </motion.div>
   );
 }

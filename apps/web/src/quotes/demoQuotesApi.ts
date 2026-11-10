@@ -1,4 +1,4 @@
-import { invoiceAmounts, QUOTE_MOVES, quoteDraftSchema, quoteEditable, quoteNumber, quoteState, QUOTE_VALID_DAYS, todayIn, type QuoteStatus } from '@ledgernest/shared';
+import { invoiceAmounts, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_VALID_DAYS, todayIn, type QuoteStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -224,6 +224,21 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         Object.assign(q, { status: 'invoiced', invoiceId: inv.id, decidedAt: new Date().toISOString() });
         save(rows);
         return { quote: await view(q), invoiceId: inv.id };
+      }),
+    email: (id, input) =>
+      wait(async () => {
+        guard();
+        const p = quoteEmailSchema.safeParse(input);
+        if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+        const rows = load();
+        const q = find(rows, id);
+        const v = await view(q);
+        if (v.status === 'declined' || v.status === 'invoiced') throw refuse(409, 'not_sendable');
+        const to = p.data.email ?? v.contact.email;
+        if (!to) throw refuse(400, 'no_email');
+        if (q.status === 'draft') Object.assign(q, { status: 'sent', sentAt: new Date().toISOString() });
+        save(rows);
+        return { sentTo: to, quote: await view(q) };
       }),
   };
 }

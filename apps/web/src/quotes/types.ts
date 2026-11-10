@@ -52,4 +52,6 @@ export interface QuotesApi {
   move(id: string, status: 'draft' | 'sent' | 'accepted' | 'declined'): Promise<Quote>;
   /** A draft invoice with the quote's lines */
   convert(id: string, input: { issueDate?: string }): Promise<{ quote: Quote; invoiceId: string }>;
+  /** Emails it as a PDF (a draft becomes sent); the demo only pretends */
+  email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; quote: Quote }>;
 }

@@ -5,7 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  currencyDigits,
   formatQuantity,
+  pdfTableBytes,
+  quoteRows,
   invoiceNumber,
   parseQuantity,
   QUOTE_MOVES,
@@ -14,6 +17,7 @@ import {
   quoteState,
   todayIn,
   type quoteDraftSchema,
+  type quoteEmailSchema,
   type QuoteStatus,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
@@ -21,6 +25,7 @@ import type { z } from 'zod';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
+import { MailService } from '../mail/mail.service.js';
 import { InvoicesService, type DraftIn } from '../invoices/invoices.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -94,6 +99,7 @@ export class QuotesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly invoices: InvoicesService,
+    private readonly mail: MailService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -516,5 +522,87 @@ export class QuotesService {
       },
     );
     return { quote: await this.get(organizationId, id), invoiceId: invoice.id };
+  }
+
+  /** The quote as a PDF to the customer (or the address given); a draft is marked sent */
+  async email(id: string, input: z.output<typeof quoteEmailSchema>, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const q = await this.get(organizationId, id);
+    if (q.status === 'declined' || q.status === 'invoiced')
+      throw refuse(
+        ConflictException,
+        'Only open or accepted quotes can be emailed.',
+        'not_sendable',
+      );
+    if (!this.mail.configured)
+      throw refuse(
+        ConflictException,
+        'Email isn’t set up on this server. Print the quote and send it yourself.',
+        'mail_off',
+      );
+    const to = input.email ?? q.contact.email;
+    if (!to)
+      throw refuse(
+        BadRequestException,
+        'This customer has no email address. Enter one to send it to.',
+        'no_email',
+      );
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true, baseCurrency: true },
+    });
+    const currency = q.currency ?? org.baseCurrency;
+    const pdf = Buffer.from(
+      pdfTableBytes({
+        title: `Quote ${q.number}`,
+        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
+        footer: `${org.name} · ${q.number}`,
+        rows: quoteRows({ ...q, currency }, currencyDigits(currency)),
+      }),
+    );
+    const sent = await this.mail.send({
+      to: [to],
+      subject: `Quote ${q.number} from ${org.name}`,
+      text: [
+        `Dear ${q.contact.name},`,
+        ...(input.message ? [input.message] : []),
+        `Please find our quote ${q.number} attached: ${currency} ${(q.total / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))} in all, valid until ${q.expiryDate}.`,
+        ...(q.notes ? [q.notes] : []),
+        org.name,
+      ].join('\n\n'),
+      attachments: [
+        {
+          filename: `quote-${q.number.toLowerCase()}.pdf`,
+          content: pdf,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    if (!sent)
+      throw refuse(
+        ConflictException,
+        'The email couldn’t be sent. Try again later.',
+        'mail_failed',
+      );
+    await this.prisma.$transaction(async (tx) => {
+      if (q.status === 'draft')
+        await tx.quote.updateMany({
+          where: { id, organizationId, status: 'draft' },
+          data: { status: 'sent', sentAt: new Date() },
+        });
+      await this.audit.record(
+        {
+          action: 'org.quote.email',
+          actorId: ctx.actor.userId,
+          organizationId,
+          entityType: 'quote',
+          entityId: id,
+          after: { number: q.number, email: to, total: q.total },
+          req: ctx.req,
+        },
+        tx,
+      );
+    });
+    return { sentTo: to, quote: await this.get(organizationId, id) };
   }
 }

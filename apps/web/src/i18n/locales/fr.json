@@ -750,7 +750,8 @@
       "org_quote_accept": "Devis accepté",
       "org_quote_decline": "Devis refusé",
       "org_quote_reopen": "Devis rouvert",
-      "org_quote_invoice": "Devis facturé"
+      "org_quote_invoice": "Devis facturé",
+      "org_quote_email": "Devis envoyé par e-mail"
     },
     "entities": {
       "membership": "Membre",
@@ -3302,7 +3303,11 @@
       "not_draft": "Seuls les brouillons peuvent être supprimés. Refusez-le plutôt.",
       "bad_move": "Le devis ne peut pas passer à cet état.",
       "already_invoiced": "Ce devis est déjà une facture.",
-      "declined": "Un devis refusé ne peut pas être facturé. Marquez-le d’abord accepté."
+      "declined": "Un devis refusé ne peut pas être facturé. Marquez-le d’abord accepté.",
+      "not_sendable": "Seuls les devis ouverts ou acceptés peuvent être envoyés.",
+      "mail_off": "L’e-mail n’est pas configuré sur ce serveur. Imprimez le devis et envoyez-le vous-même.",
+      "no_email": "Ce client n’a pas d’adresse e-mail. Saisissez-en une pour l’envoyer.",
+      "mail_failed": "L’e-mail n’a pas pu être envoyé. Réessayez plus tard."
     },
     "moved": {
       "draft": "{{number}} revient en brouillon",
@@ -3316,6 +3321,19 @@
     "fields": {
       "quoteDate": "Date du devis",
       "expiryDate": "Valable jusqu’au"
+    },
+    "email": {
+      "action": "Envoyer par e-mail",
+      "title": "Envoyer {{number}} au client",
+      "body": "Il part en PDF avec les lignes, les totaux et la date de validité.",
+      "bodyDraft": "Il part en PDF avec les lignes, les totaux et la date de validité, et le devis est marqué envoyé.",
+      "to": "Envoyer à",
+      "badEmail": "Saisissez une adresse e-mail valide.",
+      "note": "Note",
+      "noteHint": "Facultatif : elle figure en haut de l’e-mail.",
+      "send": "Envoyer",
+      "sent": "Devis envoyé à {{email}}",
+      "sentDemo": "Dans la démo, rien n’est vraiment envoyé ; il partirait à {{email}}"
     }
   }
 }

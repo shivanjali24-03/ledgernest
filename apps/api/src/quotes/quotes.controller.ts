@@ -21,6 +21,7 @@ import {
 import {
   quoteConvertSchema,
   quoteDraftSchema,
+  quoteEmailSchema,
   quoteListQuerySchema,
   quoteStatusSchema,
 } from '@ledgernest/shared';
@@ -139,5 +140,23 @@ export class QuotesController {
     @Req() req: Request,
   ) {
     return this.quotes.convert(quoteId, body, { actor, tenant, req });
+  }
+
+  @Post(':id/email')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Emails the quote as a PDF to the customer, or to the address given; a draft becomes sent',
+  })
+  email(
+    @Param('id', id) quoteId: string,
+    @Body(new ZodValidationPipe(quoteEmailSchema))
+    body: z.output<typeof quoteEmailSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.quotes.email(quoteId, body, { actor, tenant, req });
   }
 }
