@@ -3780,5 +3780,14 @@
       "reload": "Reload",
       "home": "Go to the dashboard"
     }
+  },
+  "tally": {
+    "title": "For your accountant: Tally Prime",
+    "body": "If your CA keeps your books in Tally, give them these two files. Your accounts, customers and vendors become Tally ledgers under its own groups; each posted entry becomes a voucher (sales, purchases, receipts, payments, contra, journals).",
+    "step1": "Ledgers first: in Tally, Gateway of Tally → Import → Masters.",
+    "step2": "Then the vouchers for the dates: Import → Transactions.",
+    "masters": "Download ledgers (XML)",
+    "vouchers": "Download vouchers (XML)",
+    "failed": "The Tally file couldn’t be made. Try again."
   }
 }

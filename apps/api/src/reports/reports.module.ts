@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MailModule } from '../mail/mail.module.js';
 import { ReportsController } from './reports.controller.js';
 import { CashForecastService } from './cash-forecast.service.js';
+import { TallyExportService } from './tally-export.service.js';
 import { TdsReportService } from './tds-report.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
@@ -16,6 +17,7 @@ import { WeeklySummaryService } from './weekly-summary.service.js';
   controllers: [ReportsController],
   providers: [
     CashForecastService,
+    TallyExportService,
     TdsReportService,
     ReportsService,
     DashboardService,

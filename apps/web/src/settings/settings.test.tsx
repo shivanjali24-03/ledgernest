@@ -80,6 +80,23 @@ describe('organisation settings', () => {
     expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.invoiceTerms).toBe('Payment within 15 days.\nHDFC Bank · IFSC HDFC0001234');
   });
 
+  it('gives the accountant the books for Tally: ledgers, then vouchers', async () => {
+    const saved: Blob[] = [];
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => (saved.push(b), 'blob:x')), revokeObjectURL: vi.fn() });
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Download ledgers (XML)' }, { timeout: 4000 }));
+    await waitFor(() => expect(saved).toHaveLength(1));
+    const masters = await saved[0]!.text();
+    expect(masters).toContain('<REPORTNAME>All Masters</REPORTNAME>');
+    expect(masters).toContain('<NAME>Kumar Logistics</NAME></NAME.LIST><PARENT>Sundry Debtors</PARENT>');
+    expect(masters).toContain('<PARENT>Bank Accounts</PARENT>');
+    fireEvent.click(screen.getByRole('button', { name: 'Download vouchers (XML)' }));
+    await waitFor(() => expect(saved).toHaveLength(2), { timeout: 4000 });
+    const vouchers = await saved[1]!.text();
+    expect(vouchers).toContain('<REPORTNAME>Vouchers</REPORTNAME>');
+    expect(vouchers).toMatch(/<VOUCHER VCHTYPE="(Journal|Receipt|Payment|Contra)"/);
+  });
+
   it('turns on the weekly summary email', async () => {
     renderApp();
     const box = await screen.findByRole('checkbox', { name: /^Weekly summary/ }, { timeout: 4000 });

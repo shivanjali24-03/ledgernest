@@ -44,3 +44,4 @@ export * from './invoices/words.js';
 export * from './einvoice/index.js';
 export * from './compliance/index.js';
 export * from './tds/index.js';
+export * from './tally/index.js';

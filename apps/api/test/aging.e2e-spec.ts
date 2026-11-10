@@ -954,7 +954,9 @@ describe('Aging reports (e2e)', () => {
     const text = (file.body as Buffer).toString('latin1');
     expect(text.startsWith('%PDF-1.4')).toBe(true);
     expect(text).toContain('INV/2026-27/0004) Tj');
-    expect(text).toContain('(Amount in words: Indian Rupees Three Hundred Only) Tj');
+    expect(text).toContain(
+      '(Amount in words: Indian Rupees Three Hundred Only) Tj',
+    );
     const receipts = (
       await as()
         .get(
@@ -1024,6 +1026,72 @@ describe('Aging reports (e2e)', () => {
       (await as().patch('/organization', { upiId: '' }).expect(200)).body.upiId,
     ).toBeNull();
     expect(await pdfText()).not.toContain('Scan to pay');
+  });
+
+  it('exports the books for Tally: ledgers under Tally groups, entries as vouchers with party ledgers', async () => {
+    const text = (r: request.Response) => r.text;
+    const masters = text(
+      await as()
+        .get('/reports/tally/export?part=masters')
+        .expect(200)
+        .expect('Content-Type', /application\/xml/),
+    );
+    expect(masters).toContain('<REPORTNAME>All Masters</REPORTNAME>');
+    expect(masters).toContain(
+      '<LEDGER NAME="Kumar Logistics" ACTION="Create"><NAME.LIST><NAME>Kumar Logistics</NAME></NAME.LIST><PARENT>Sundry Debtors</PARENT>',
+    );
+    expect(masters).toContain(
+      `<NAME>Sharma Supplies</NAME></NAME.LIST><PARENT>Sundry Creditors</PARENT>`,
+    );
+    expect(masters).toContain(
+      `<NAME>bank ${run}</NAME></NAME.LIST><PARENT>Bank Accounts</PARENT>`,
+    );
+    const vouchers = text(
+      await as()
+        .get(
+          '/reports/tally/export?part=vouchers&from=2026-04-01&to=2026-07-31',
+        )
+        .expect(200),
+    );
+    const list = [
+      ...vouchers.matchAll(/<VOUCHER VCHTYPE="([^"]+)"[\s\S]*?<\/VOUCHER>/g),
+    ];
+    const types = list.map((m) => m[1]);
+    // Five invoices, three receipts and the rent bill, and the voided invoice undone by a journal
+    expect(types.filter((x) => x === 'Sales')).toHaveLength(5);
+    expect(types.filter((x) => x === 'Receipt')).toHaveLength(3);
+    expect(types.filter((x) => x === 'Purchase')).toHaveLength(1);
+    expect(vouchers).toContain(
+      '<VOUCHERNUMBER>INV/2026-27/0002 void</VOUCHERNUMBER>',
+    );
+    // The customer's own ledger, not the receivables control account
+    const sale = list.find((m) =>
+      m[0].includes('<VOUCHERNUMBER>INV/2026-27/0004</VOUCHERNUMBER>'),
+    )![0];
+    expect(sale).toContain(
+      '<LEDGERNAME>Kumar Logistics</LEDGERNAME><ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE><AMOUNT>-300.00</AMOUNT>',
+    );
+    // Every voucher balances as Tally checks it
+    for (const [v] of list) {
+      const sum = [...v.matchAll(/<AMOUNT>(-?[\d.]+)<\/AMOUNT>/g)].reduce(
+        (x, a) => x + Number(a[1]),
+        0,
+      );
+      expect(Math.abs(sum)).toBeLessThan(0.001);
+    }
+    await as()
+      .get('/reports/tally/export?part=vouchers&from=2026-07-31&to=2026-04-01')
+      .expect(400);
+    await as().get('/reports/tally/export?part=vouchers').expect(400);
+    expect(
+      await prisma.auditLog.count({
+        where: {
+          organizationId: org,
+          action: 'org.report.export',
+          after: { path: ['report'], equals: 'tally' },
+        },
+      }),
+    ).toBe(2);
   });
 
   it('flags bills falling due in the coming week, with what they come to', async () => {
