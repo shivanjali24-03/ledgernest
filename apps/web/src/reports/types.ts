@@ -223,7 +223,7 @@ export interface ReportsApi {
   /** Statutory due dates coming up (India) */
   compliance(): Promise<Compliance>;
   /** TDS kept back from vendor payments in the dates */
-  tds(from: string, to: string): Promise<TdsReport>;
+  tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
@@ -254,6 +254,7 @@ export interface Compliance {
 export interface TdsReport {
   from: string;
   to: string;
+  side?: 'payable' | 'receivable';
   total: number;
   sections: { section: string; count: number; base: number; tds: number }[];
   months: { month: string; due: string; count: number; base: number; tds: number }[];

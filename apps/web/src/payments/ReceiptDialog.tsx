@@ -57,8 +57,9 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
     if (total) setAmount(plain(total));
   }
   // TDS on a vendor payment in rupees: kept back from the bank, owed to the government on a tax liability account
-  const canTds = !receipt && !!contactId && !currency;
-  const tdsAccounts = useMemo(() => (accounts.data ?? []).filter((a) => a.type === 'liability' && (a.subtype === 'tax_payable' || a.subtype === 'current_liability') && !a.archived).sort((a, b) => Number(/tds/i.test(b.name)) - Number(/tds/i.test(a.name))), [accounts.data]);
+  const canTds = !!contactId && !currency;
+  // Kept back from a vendor: owed on a tax liability. Kept back by a customer: claimed back from a current asset
+  const tdsAccounts = useMemo(() => (accounts.data ?? []).filter((a) => !a.archived && (receipt ? a.type === 'asset' && (a.subtype === 'current_asset' || a.subtype === 'other_asset') : a.type === 'liability' && (a.subtype === 'tax_payable' || a.subtype === 'current_liability'))).sort((a, b) => Number(/tds/i.test(b.name)) - Number(/tds/i.test(a.name))), [accounts.data, receipt]);
   const [tdsWanted, setTdsWanted] = useState(false);
   const [section, setSection] = useState<TdsSection>('194C');
   const [ratePct, setRatePct] = useState('1');
@@ -85,7 +86,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
       const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null };
       const chosen = parsedAllocs.filter((i) => i.value);
       const tds = tdsActive ? { section, ratePpm, base: baseMinor!, amount: tdsMinor!, accountId: tdsAccount } : null;
-      return receipt ? api.receive({ ...base, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, tds, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
+      return receipt ? api.receive({ ...base, tds, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, tds, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
     },
     onSuccess: (p) => {
       for (const k of ['payments', 'invoices', 'bills', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
@@ -147,7 +148,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
           <fieldset className="space-y-3 rounded-xl border border-ink-200 p-3 dark:border-ink-700">
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input type="checkbox" checked={tdsWanted} onChange={(e) => setTdsWanted(e.target.checked)} className="size-4 rounded accent-brand-600" />
-              {t('payments.tds.deduct')}
+              {t(receipt ? 'payments.tds.deductedByCustomer' : 'payments.tds.deduct')}
             </label>
             {tdsWanted && (
               <>
@@ -188,14 +189,14 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
                     className="text-end font-mono"
                     hint={t('payments.tds.baseHint')}
                   />
-                  <TextField label={t('payments.tds.amount', { currency: code })} value={tdsTouched ? tdsAmount : tdsMinor ? plain(tdsMinor) : ''} onChange={(e) => { setTdsAmount(e.target.value); setTdsTouched(true); }} inputMode="decimal" dir="ltr" className="text-end font-mono" />
+                  <TextField label={t(receipt ? 'payments.tds.amountByCustomer' : 'payments.tds.amount', { currency: code })} value={tdsTouched ? tdsAmount : tdsMinor ? plain(tdsMinor) : ''} onChange={(e) => { setTdsAmount(e.target.value); setTdsTouched(true); }} inputMode="decimal" dir="ltr" className="text-end font-mono" />
                   <div className="sm:col-span-2">
-                    <SelectField label={t('payments.tds.account')} value={tdsAccount} onChange={(e) => setTdsAccountId(e.target.value)} options={tdsAccounts.length ? tdsAccounts.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` })) : [{ value: '', label: t('payments.tds.noAccount') }]} />
+                    <SelectField label={t(receipt ? 'payments.tds.accountReceivable' : 'payments.tds.account')} value={tdsAccount} onChange={(e) => setTdsAccountId(e.target.value)} options={tdsAccounts.length ? tdsAccounts.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` })) : [{ value: '', label: t(receipt ? 'payments.tds.noAccountReceivable' : 'payments.tds.noAccount') }]} />
                   </div>
                 </div>
                 {amt && tdsMinor ? (
                   <p role="status" className={`text-sm ${tdsMinor >= amt ? 'text-expense' : 'text-ink-600 dark:text-ink-300'}`}>
-                    {tdsMinor >= amt ? t('payments.tds.tooMuch') : t('payments.tds.bankPays', { bank: `${code} ${plain(amt - tdsMinor)}`, tds: `${code} ${plain(tdsMinor)}` })}
+                    {tdsMinor >= amt ? t('payments.tds.tooMuch') : t(receipt ? 'payments.tds.bankGets' : 'payments.tds.bankPays', { bank: `${code} ${plain(amt - tdsMinor)}`, tds: `${code} ${plain(tdsMinor)}` })}
                   </p>
                 ) : null}
               </>

@@ -45,6 +45,15 @@ export class PaymentReceiptsService {
       ]),
       ...(p.unallocated ? [['Held as advance', fmt(p.unallocated)]] : []),
       ['Total received', fmt(p.amount)],
+      ...(p.tds
+        ? [
+            [
+              `Of which TDS deducted by you (${p.tds.section})`,
+              fmt(p.tds.amount),
+            ],
+            ['Into our bank', fmt(p.bankAmount)],
+          ]
+        : []),
     ];
     const pdf = Buffer.from(
       pdfTableBytes({

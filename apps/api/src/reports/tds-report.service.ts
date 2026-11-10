@@ -13,11 +13,16 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 export class TdsReportService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async report(organizationId: string, from: string, to: string) {
+  async report(
+    organizationId: string,
+    from: string,
+    to: string,
+    side: 'payable' | 'receivable' = 'payable',
+  ) {
     const rows = await this.prisma.payment.findMany({
       where: {
         organizationId,
-        kind: 'payment',
+        kind: side === 'payable' ? 'payment' : 'receipt',
         status: 'posted',
         tdsAmount: { gt: 0 },
         date: { gte: asDate(from), lte: asDate(to) },
@@ -41,7 +46,11 @@ export class TdsReportService {
     });
     const payments = rows.map((p) => ({
       id: p.id,
-      number: paymentNumber('payment', p.fiscalYear.name, p.number),
+      number: paymentNumber(
+        p.kind as 'payment' | 'receipt',
+        p.fiscalYear.name,
+        p.number,
+      ),
       date: iso(p.date),
       vendor: {
         id: p.contact.id,
@@ -70,6 +79,7 @@ export class TdsReportService {
     return {
       from,
       to,
+      side,
       total: payments.reduce((s, p) => s + p.tds, 0),
       sections: [...group((p) => p.section)]
         .map(([section, g]) => ({ section, ...g }))

@@ -132,6 +132,12 @@ describe('TDS on vendor payments (e2e)', () => {
         { code: '2000', type: 'liability', subtype: 'accounts_payable' },
       ],
       ['tds', { code: '2200', type: 'liability', subtype: 'tax_payable' }],
+      [
+        'debtors',
+        { code: '1300', type: 'asset', subtype: 'accounts_receivable' },
+      ],
+      ['tdsr', { code: '1400', type: 'asset', subtype: 'current_asset' }],
+      ['sales', { code: '4100', type: 'income', subtype: 'operating_income' }],
       ['fees', { code: '5500', type: 'expense', subtype: 'operating_expense' }],
     ] as const) {
       acc[key] = (
@@ -156,6 +162,15 @@ describe('TDS on vendor payments (e2e)', () => {
           isVendor: true,
           isCustomer: false,
           taxId: MEHTA,
+        },
+      ],
+      [
+        'kumar',
+        {
+          name: 'Kumar Logistics',
+          isVendor: false,
+          isCustomer: true,
+          taxId: gstin('27AAKCK4821R1Z'),
         },
       ],
       [
@@ -316,5 +331,91 @@ describe('TDS on vendor payments (e2e)', () => {
         .expect(200)
     ).body as { sections: { section: string }[] };
     expect(r.sections.map((s) => s.section)).toEqual(['194C']);
+  });
+
+  it('takes TDS a customer kept back as receivable: the invoice is paid in full, the bank gets the rest', async () => {
+    const inv = (
+      await as()
+        .post('/invoices', {
+          contactId: contact.kumar,
+          issueDate: today,
+          lines: [
+            {
+              description: 'Consulting',
+              quantity: 1,
+              unitPrice: 1_00_000_00,
+              taxGroupId: gst18,
+              accountId: acc.sales,
+            },
+          ],
+        })
+        .expect(201)
+    ).body as { id: string };
+    await as().post(`/invoices/${inv.id}/issue`).expect(200);
+    const receive = (accountId: string) =>
+      as().post('/payments/receipts', {
+        contactId: contact.kumar,
+        date: today,
+        bankAccountId: acc.bank,
+        amount: 1_18_000_00,
+        allocations: [{ invoiceId: inv.id, amount: 1_18_000_00 }],
+        tds: {
+          section: '194J',
+          ratePpm: 100_000,
+          base: 1_00_000_00,
+          amount: 10_000_00,
+          accountId,
+        },
+      });
+    // Not on a liability: that's TDS we owe, not TDS to claim back
+    expect((await receive(acc.tds).expect(400)).body.details).toMatchObject({
+      reason: 'tds_account',
+    });
+    const bankBefore = await balance(acc.bank);
+    const r = (await receive(acc.tdsr).expect(201)).body as Payment;
+    expect(r).toMatchObject({
+      amount: 1_18_000_00,
+      bankAmount: 1_08_000_00,
+      tds: { section: '194J', amount: 10_000_00 },
+    });
+    expect(
+      (await as().get(`/invoices/${inv.id}`).expect(200)).body.balance,
+    ).toBe(0);
+    expect((await balance(acc.bank)) - bankBefore).toBe(1_08_000_00);
+    expect(await balance(acc.tdsr)).toBe(10_000_00);
+    // The receipt PDF says what the customer kept back and what reached the bank
+    const pdf = (
+      await as()
+        .get(`/payments/${r.id}/pdf`)
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (c: Buffer) => chunks.push(c));
+          res.on('end', () => done(null, Buffer.concat(chunks)));
+        })
+        .expect(200)
+    ).body as Buffer;
+    expect(pdf.toString('latin1')).toContain(
+      '(Of which TDS deducted by you \\(194J\\)) Tj',
+    );
+    expect(pdf.toString('latin1')).toContain('(108000.00) Tj');
+    expect(await balance(acc.debtors)).toBe(0);
+    const report = (
+      await as()
+        .get(
+          `/reports/tds?from=${today.slice(0, 8)}01&to=${today}&side=receivable`,
+        )
+        .expect(200)
+    ).body as {
+      side: string;
+      total: number;
+      payments: { vendor: { name: string; pan: string | null } }[];
+    };
+    expect(report).toMatchObject({ side: 'receivable', total: 10_000_00 });
+    expect(report.payments).toEqual([
+      expect.objectContaining({
+        vendor: expect.objectContaining({ pan: 'AAKCK4821R' }),
+      }),
+    ]);
   });
 });
