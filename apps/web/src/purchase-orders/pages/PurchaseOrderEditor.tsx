@@ -158,7 +158,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
 }
 
 /** Recording what came against the order: a quantity for each line still to come */
-function ReceiveDialog({ order, api, onClose }: { order: PurchaseOrder; api: PurchaseOrdersApi; onClose: () => void }) {
+export function ReceiveDialog({ order, api, onClose }: { order: PurchaseOrder; api: PurchaseOrdersApi; onClose: () => void }) {
   const { t } = useTranslation();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -166,8 +166,23 @@ function ReceiveDialog({ order, api, onClose }: { order: PurchaseOrder; api: Pur
   const [date, setDate] = useState(todayIn('Asia/Kolkata'));
   const [reference, setReference] = useState('');
   const [qty, setQty] = useState<Record<string, string>>(Object.fromEntries(open.map((l) => [l.id, l.toReceive])));
+  // Goods kept by batch or serial number say which, as they would on a bill
+  const [batch, setBatch] = useState<Record<string, { batchNo: string; expiryDate: string }>>({});
+  const [serials, setSerials] = useState<Record<string, string>>({});
   const save = useMutation({
-    mutationFn: () => api.receive(order.id, { date, reference, lines: open.filter((l) => (parseQuantity(qty[l.id] ?? '') ?? 0n) > 0n).map((l) => ({ lineId: l.id, quantity: qty[l.id]! })) }),
+    mutationFn: () =>
+      api.receive(order.id, {
+        date,
+        reference,
+        lines: open
+          .filter((l) => (parseQuantity(qty[l.id] ?? '') ?? 0n) > 0n)
+          .map((l) => ({
+            lineId: l.id,
+            quantity: qty[l.id]!,
+            ...(l.item?.trackBatches ? { batchNo: batch[l.id]?.batchNo || null, expiryDate: batch[l.id]?.expiryDate || null } : {}),
+            ...(l.item?.trackSerials ? { serials: (serials[l.id] ?? '').split(/[\s,]+/).filter(Boolean) } : {}),
+          })),
+      }),
     onSuccess: (o) => {
       void queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
       toast(t('purchaseOrders.received', { number: o.receipts.at(-1)?.number }));
@@ -183,8 +198,18 @@ function ReceiveDialog({ order, api, onClose }: { order: PurchaseOrder; api: Pur
           <TextField label={t('purchaseOrders.fields.challan')} value={reference} onChange={(e) => setReference(e.target.value)} dir="auto" />
         </div>
         {open.map((l) => (
-          <TextField key={l.id} label={t('purchaseOrders.receiveLine', { description: l.description, left: l.toReceive })} value={qty[l.id] ?? ''} onChange={(e) => setQty((q) => ({ ...q, [l.id]: e.target.value }))} inputMode="decimal" dir="ltr" className="text-end" />
+          <div key={l.id} className="space-y-2">
+            <TextField label={t('purchaseOrders.receiveLine', { description: l.description, left: l.toReceive })} value={qty[l.id] ?? ''} onChange={(e) => setQty((q) => ({ ...q, [l.id]: e.target.value }))} inputMode="decimal" dir="ltr" className="text-end" />
+            {l.item?.trackBatches && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TextField label={t('purchaseOrders.batchOf', { description: l.description })} value={batch[l.id]?.batchNo ?? ''} onChange={(e) => setBatch((b) => ({ ...b, [l.id]: { batchNo: e.target.value, expiryDate: b[l.id]?.expiryDate ?? '' } }))} dir="ltr" className="font-mono" />
+                <TextField label={t('purchaseOrders.expiryOf', { description: l.description })} type="date" value={batch[l.id]?.expiryDate ?? ''} onChange={(e) => setBatch((b) => ({ ...b, [l.id]: { batchNo: b[l.id]?.batchNo ?? '', expiryDate: e.target.value } }))} />
+              </div>
+            )}
+            {l.item?.trackSerials && <TextField label={t('purchaseOrders.serialsOf', { description: l.description })} value={serials[l.id] ?? ''} onChange={(e) => setSerials((s) => ({ ...s, [l.id]: e.target.value }))} placeholder="SN-1, SN-2" dir="ltr" className="font-mono" />}
+          </div>
         ))}
+        {open.some((l) => l.item?.trackStock) && !order.currency && <p className="text-xs text-ink-500">{t('purchaseOrders.grniHint')}</p>}
       </form>
     </Modal>
   );
@@ -302,6 +327,11 @@ export default function PurchaseOrderEditor() {
               <p className="border-t border-ink-100 px-4 py-3 text-end font-semibold dark:border-ink-800">
                 {t('invoices.total')} <span className="font-mono" dir="ltr">{money.format(order.total)}</span>
               </p>
+              {(order.grniValue ?? 0) > 0 && (
+                <p className="border-t border-ink-100 px-4 py-3 text-end text-sm text-ink-600 dark:border-ink-800 dark:text-ink-300">
+                  {t('purchaseOrders.grniOwed')} <span className="font-mono" dir="ltr">{money.format(order.grniValue!)}</span>
+                </p>
+              )}
             </Card>
             {(order.receipts.length > 0 || order.bills.length > 0) && (
               <Card className="space-y-2 p-5 text-sm">

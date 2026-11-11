@@ -1098,6 +1098,9 @@ model Bill {
   billOfEntry       Json?     @map("bill_of_entry")
   /// The purchase order it was made from
   purchaseOrderId   String?   @map("purchase_order_id") @db.Uuid
+  /// Goods received on the order that recording this bill cleared from "goods received, not yet billed":
+  /// [{ poLineId, quantity, value }], put back if the bill is voided
+  grniCleared       Json?     @map("grni_cleared")
   /// When it's entered in the books
   billDate          DateTime  @map("bill_date") @db.Date
   dueDate           DateTime  @map("due_date") @db.Date
@@ -1761,7 +1764,7 @@ model StockMovement {
   organizationId String   @map("organization_id") @db.Uuid
   itemId         String   @map("item_id") @db.Uuid
   date           DateTime @db.Date
-  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | challan_out | challan_back | adjustment | adjustment_undo
+  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | challan_out | challan_back | grn | adjustment | adjustment_undo
   kind           String
   /// The bill or invoice it came from; for an undo, the movement it undoes
   sourceId       String?  @map("source_id") @db.Uuid
@@ -2314,6 +2317,10 @@ model PurchaseOrderLine {
   /// How much has come in on receipt notes, and been billed
   received        Decimal @default(0) @db.Decimal(13, 4)
   billed          Decimal @default(0) @db.Decimal(13, 4)
+  /// Goods kept in stock received and not yet cleared by a recorded bill: the quantity, and its value in stock
+  /// (owed on "goods received, not yet billed")
+  grniQuantity    Decimal @default(0) @map("grni_quantity") @db.Decimal(13, 4)
+  grniValue       BigInt  @default(0) @map("grni_value")
 
   organization  Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   purchaseOrder PurchaseOrder      @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: Cascade)
@@ -2336,6 +2343,8 @@ model GoodsReceipt {
   date            DateTime @db.Date
   reference       String?
   notes           String?
+  /// The goods kept in stock coming in, owed on "goods received, not yet billed"
+  journalEntryId  String?  @map("journal_entry_id") @db.Uuid
   createdById     String?  @map("created_by_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -2349,11 +2358,17 @@ model GoodsReceipt {
 }
 
 model GoodsReceiptLine {
-  id             String  @id @default(uuid()) @db.Uuid
-  organizationId String  @map("organization_id") @db.Uuid
-  goodsReceiptId String  @map("goods_receipt_id") @db.Uuid
-  poLineId       String  @map("po_line_id") @db.Uuid
-  quantity       Decimal @db.Decimal(13, 4)
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  goodsReceiptId String    @map("goods_receipt_id") @db.Uuid
+  poLineId       String    @map("po_line_id") @db.Uuid
+  quantity       Decimal   @db.Decimal(13, 4)
+  /// What came into stock (base currency, at the order's price); 0 for goods not kept in stock
+  value          BigInt    @default(0)
+  batchNo        String?   @map("batch_no")
+  mfgDate        DateTime? @map("mfg_date") @db.Date
+  expiryDate     DateTime? @map("expiry_date") @db.Date
+  serials        String[]  @default([])
 
   organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   goodsReceipt GoodsReceipt      @relation(fields: [organizationId, goodsReceiptId], references: [organizationId, id], onDelete: Cascade)

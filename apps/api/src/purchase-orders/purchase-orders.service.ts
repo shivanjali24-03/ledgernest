@@ -8,6 +8,7 @@ import {
   billNumber,
   formatQuantity,
   grnNumber,
+  invoiceAmounts,
   parseQuantity,
   poLineOpen,
   poNumber,
@@ -21,6 +22,9 @@ import { AuditService } from '../audit/audit.service.js';
 import { BillsService } from '../bills/bills.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { InventoryService } from '../inventory/inventory.service.js';
+import { JournalsService } from '../journals/journals.service.js';
 import type {
   goodsReceiptSchema,
   purchaseOrderDraftSchema,
@@ -73,7 +77,18 @@ const select = {
       taxAmount: true,
       received: true,
       billed: true,
-      item: { select: { id: true, name: true, unit: true } },
+      grniQuantity: true,
+      grniValue: true,
+      item: {
+        select: {
+          id: true,
+          name: true,
+          unit: true,
+          trackStock: true,
+          trackBatches: true,
+          trackSerials: true,
+        },
+      },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: { id: true, name: true } },
     },
@@ -86,7 +101,15 @@ const select = {
       date: true,
       reference: true,
       notes: true,
-      lines: { select: { poLineId: true, quantity: true } },
+      lines: {
+        select: {
+          poLineId: true,
+          quantity: true,
+          value: true,
+          batchNo: true,
+          serials: true,
+        },
+      },
     },
   },
   bills: {
@@ -104,7 +127,9 @@ type Row = Prisma.PurchaseOrderGetPayload<{ select: typeof select }>;
 
 /**
  * Purchase orders: drafted, issued to the vendor, received against on goods receipt notes (each line up to what was
- * ordered), and billed from what came in. The bill brings the stock in, as any bill does.
+ * ordered), and billed from what came in. Goods kept in stock come in on the receipt note at the order's price (in the
+ * base currency), owed on "goods received, not yet billed" until the bill is recorded; on an order in another currency
+ * the bill brings them in, as any bill does.
  */
 @Injectable()
 export class PurchaseOrdersService {
@@ -112,6 +137,8 @@ export class PurchaseOrdersService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly bills: BillsService,
+    private readonly inventory: InventoryService,
+    private readonly journals: JournalsService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -154,11 +181,15 @@ export class PurchaseOrdersService {
           discount: l.discountPpm / 10_000,
           amount: Number(l.amount),
           taxAmount: Number(l.taxAmount),
+          /** Goods in stock received and not yet cleared by a recorded bill, and their value */
+          grni: { quantity: qty(l.grniQuantity), value: Number(l.grniValue) },
           item: l.item,
           account: l.account,
           taxGroup: l.taxGroup,
         };
       }),
+      /** Goods received not yet billed, in all: owed on "goods received, not yet billed" */
+      grniValue: o.lines.reduce((t, l) => t + Number(l.grniValue), 0),
       /** Goods receipt notes */
       receipts: o.receipts.map((r) => ({
         id: r.id,
@@ -169,6 +200,9 @@ export class PurchaseOrdersService {
         lines: r.lines.map((x) => ({
           lineId: x.poLineId,
           quantity: qty(x.quantity),
+          value: Number(x.value),
+          batchNo: x.batchNo,
+          serials: x.serials,
         })),
       })),
       /** Bills made from it */
@@ -508,16 +542,118 @@ export class PurchaseOrdersService {
         },
         select: { id: true },
       });
+      // Goods kept in stock come in now, at the order's price net of discount, owed until the bill is recorded
+      const label = grnNumber(number);
+      const stocked = (r: ReceiptIn['lines'][number]) =>
+        !o.currency &&
+        !!o.lines.find((x) => x.id === r.lineId)!.item?.trackStock;
+      const valueOf = (r: ReceiptIn['lines'][number]) => {
+        const l = o.lines.find((x) => x.id === r.lineId)!;
+        return !stocked(r)
+          ? 0
+          : invoiceAmounts([
+              {
+                quantity: r.quantity,
+                unitPrice: Number(l.unitPrice),
+                discountPpm: l.discountPpm,
+                rates: [],
+              },
+            ]).subtotal;
+      };
+      const values = input.lines.map(valueOf);
+      const movements = await this.inventory.receipts(
+        tx,
+        organizationId,
+        input.lines.map((r, n) => {
+          const l = o.lines.find((x) => x.id === r.lineId)!;
+          return {
+            itemId: stocked(r) ? l.item!.id : null,
+            quantity: r.quantity,
+            value: values[n]!,
+            batchNo: r.batchNo,
+            mfgDate: r.mfgDate,
+            expiryDate: r.expiryDate,
+            serials: r.serials,
+            id: l.id,
+          };
+        }),
+      );
+      let entryId: string | null = null;
+      if (movements.length) {
+        const accounts = await this.inventory.inventoryAccounts(
+          tx,
+          organizationId,
+          movements.map((m) => m.itemId),
+        );
+        const byAccount = new Map<string, number>();
+        for (const m of movements)
+          byAccount.set(
+            accounts.get(m.itemId)!,
+            (byAccount.get(accounts.get(m.itemId)!) ?? 0) + Number(m.value),
+          );
+        const total = [...byAccount.values()].reduce((t, v) => t + v, 0);
+        if (total > 0) {
+          const description = `${label} · ${poNumber(o.number)}`;
+          const entry = await this.journals.postEntryInTx(
+            tx,
+            organizationId,
+            {
+              date: input.date,
+              memo: `Goods received ${label} · ${o.contact.name} · ${poNumber(o.number)}`,
+              reference: input.reference ?? label,
+              lines: [
+                ...[...byAccount].map(([accountId, v]) => ({
+                  accountId,
+                  description,
+                  debit: v,
+                  credit: 0,
+                })),
+                {
+                  accountId: await ensureFxAccount(tx, organizationId, 'grni'),
+                  description,
+                  debit: 0,
+                  credit: total,
+                },
+              ],
+            },
+            ctx.actor.userId,
+          );
+          entryId = entry.id;
+        }
+        await this.inventory.save(
+          tx,
+          organizationId,
+          {
+            kind: 'grn',
+            sourceId: g.id,
+            date: input.date,
+            journalEntryId: entryId,
+            actorId: ctx.actor.userId,
+          },
+          movements,
+        );
+        if (entryId)
+          await tx.goodsReceipt.update({
+            where: { id: g.id },
+            data: { journalEntryId: entryId },
+          });
+      }
       await tx.goodsReceiptLine.createMany({
-        data: input.lines.map((r) => ({
+        data: input.lines.map((r, n) => ({
           organizationId,
           goodsReceiptId: g.id,
           poLineId: r.lineId,
           quantity: r.quantity,
+          value: BigInt(values[n]!),
+          batchNo: r.batchNo,
+          mfgDate: r.mfgDate ? asDate(r.mfgDate) : null,
+          expiryDate: r.expiryDate ? asDate(r.expiryDate) : null,
+          serials: (r.serials ?? []).map((x) => x.trim().toUpperCase()),
         })),
       });
-      for (const r of input.lines) {
+      for (const [n, r] of input.lines.entries()) {
         const l = o.lines.find((x) => x.id === r.lineId)!;
+        const inStock = stocked(r);
         await tx.purchaseOrderLine.update({
           where: { id: l.id },
           data: {
@@ -525,6 +661,13 @@ export class PurchaseOrdersService {
               (parseQuantity(qty(l.received)) ?? 0n) +
                 parseQuantity(r.quantity)!,
             ),
+            ...(inStock && {
+              grniQuantity: dec(
+                (parseQuantity(qty(l.grniQuantity)) ?? 0n) +
+                  parseQuantity(r.quantity)!,
+              ),
+              grniValue: { increment: BigInt(values[n]!) },
+            }),
           },
         });
       }
