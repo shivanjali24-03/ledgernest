@@ -1,5 +1,6 @@
 import { isUpiId } from '../upi/index.js';
 import { z } from 'zod';
+import { isoDaySchema } from '../periods/index.js';
 import { emailSchema } from '../auth/index.js';
 
 /** True for an IANA time zone this runtime knows, e.g. "Asia/Kolkata". */
@@ -135,6 +136,10 @@ export const organizationSettingsSchema = z
     interestAutoRaise: z.boolean(),
     /** Round rupee invoice totals to the nearest rupee, showing the round-off */
     roundInvoiceTotals: z.boolean(),
+    /** The letter of undertaking for exports and SEZ supplies without IGST: its ARN and the dates it covers */
+    lutNumber: z.string().trim().toUpperCase().max(20).transform((v) => v || null).nullable(),
+    lutFrom: isoDaySchema.nullable(),
+    lutTo: isoDaySchema.nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

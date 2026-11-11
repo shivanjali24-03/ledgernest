@@ -13,6 +13,7 @@ import {
   type InvoiceCopy,
   dispatchLines,
   hsnSummary,
+  supplyDeclaration,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
   findIndianState,
@@ -372,6 +373,7 @@ export class InvoiceRemindersService
         invoiceTerms: true,
         upiId: true,
         gstScheme: true,
+        lutNumber: true,
       },
     });
     const composition = !!org.taxId && org.gstScheme === 'composition';
@@ -433,6 +435,22 @@ export class InvoiceRemindersService
               ]
             : []),
           `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
+          // An export's shipping bill
+          ...(inv.exportDetails &&
+          (inv.exportDetails.shippingBillNo || inv.exportDetails.portCode)
+            ? [
+                [
+                  inv.exportDetails.shippingBillNo &&
+                    `Shipping bill ${inv.exportDetails.shippingBillNo}${inv.exportDetails.shippingBillDate ? ` dated ${inv.exportDetails.shippingBillDate}` : ''}`,
+                  inv.exportDetails.portCode &&
+                    `Port ${inv.exportDetails.portCode}`,
+                  inv.exportDetails.countryCode &&
+                    `Destination ${inv.exportDetails.countryCode}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
+              ]
+            : []),
           // Order and dispatch details, two to a line
           ...dispatchLines(inv.dispatch)
             .reduce<string[][]>(
@@ -486,6 +504,10 @@ export class InvoiceRemindersService
               ]
             : []),
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
+          // What an export or zero-rated invoice must declare
+          ...(supplyDeclaration(inv.supplyKind, { number: org.lutNumber })
+            ? [supplyDeclaration(inv.supplyKind, { number: org.lutNumber })!]
+            : []),
           // The interest terms it was issued with
           ...(inv.interest ? [inv.interest.text] : []),
           // Paid in instalments: each one's day and amount

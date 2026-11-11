@@ -106,3 +106,16 @@ describe('HSN summary', () => {
     ]);
   });
 });
+
+describe('Exports and SEZ supplies', () => {
+  it('words the declaration each kind needs, with the LUT', async () => {
+    const { supplyDeclaration, exportDetailsSchema, zeroRatedUnderLut } = await import('./index.js');
+    expect(supplyDeclaration('export_lut', { number: 'AD271025000123X' })).toBe('Supply meant for export under bond or letter of undertaking without payment of IGST (LUT AD271025000123X).');
+    expect(supplyDeclaration('sez_with_igst')).toMatch(/SEZ unit .* on payment of IGST/);
+    expect(supplyDeclaration('regular')).toBeNull();
+    expect(zeroRatedUnderLut('sez_lut')).toBe(true);
+    expect(exportDetailsSchema.parse({ portCode: 'innsa1', shippingBillNo: '1234567', countryCode: 'us' })).toMatchObject({ portCode: 'INNSA1', countryCode: 'US', shippingBillDate: null });
+    expect(exportDetailsSchema.safeParse({ portCode: 'NSA' }).success).toBe(false);
+  });
+});
+

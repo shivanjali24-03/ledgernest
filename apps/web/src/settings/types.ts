@@ -38,6 +38,10 @@ export interface OrganizationSettings {
   interestAutoRaise?: boolean;
   /** Round rupee invoice totals to the rupee */
   roundInvoiceTotals?: boolean;
+  /** Letter of undertaking for zero-rated supplies without IGST */
+  lutNumber?: string | null;
+  lutFrom?: string | null;
+  lutTo?: string | null;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

@@ -1023,7 +1023,10 @@
       "interestMethod": "Worked out",
       "interestGraceDays": "Days of grace",
       "interestAutoRaise": "Draft interest invoices on the 1st of each month",
-      "roundInvoiceTotals": "Round rupee invoice totals to the rupee"
+      "roundInvoiceTotals": "Round rupee invoice totals to the rupee",
+      "lutNumber": "LUT ARN",
+      "lutFrom": "LUT valid from",
+      "lutTo": "LUT valid to"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1041,7 +1044,8 @@
       "interestRate": "Blank for no interest. 18% is common in India.",
       "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date.",
       "interestAutoRaise": "For the interest accrued to the end of the month just gone and not yet charged. You look over and issue them.",
-      "roundInvoiceTotals": "The difference shows as Round off and is booked to its own account."
+      "roundInvoiceTotals": "The difference shows as Round off and is booked to its own account.",
+      "lutNumber": "Letter of undertaking (RFD-11) for exports and SEZ supplies without IGST"
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -2571,7 +2575,8 @@
       "reference": "Reference",
       "placeOfSupply": "Place of supply",
       "notes": "Notes",
-      "series": "Number series"
+      "series": "Number series",
+      "supplyKind": "Type of supply"
     },
     "states": {
       "draft": "Draft",
@@ -2622,7 +2627,8 @@
       "already_charged": "This interest has just been charged.",
       "no_interest_terms": "Only an issued invoice with interest terms can be charged interest.",
       "instalments_total": "The instalments must add up to the invoice total.",
-      "instalments_before_issue": "The first instalment can’t fall due before the invoice date."
+      "instalments_before_issue": "The first instalment can’t fall due before the invoice date.",
+      "no_lut": "Add a letter of undertaking (LUT) covering the invoice date in Settings first."
     },
     "reminder": {
       "action": "Send reminder",
@@ -2833,7 +2839,22 @@
     "discountValue": "Discount",
     "discountIncluded": "Discount (in the taxable value)",
     "hsnSummary": "HSN/SAC summary",
-    "taxColumn": "Tax"
+    "taxColumn": "Tax",
+    "supplyKinds": {
+      "regular": "Regular (domestic)",
+      "export_with_igst": "Export with IGST",
+      "export_lut": "Export under LUT (no IGST)",
+      "sez_with_igst": "SEZ with IGST",
+      "sez_lut": "SEZ under LUT (no IGST)",
+      "deemed_export": "Deemed export"
+    },
+    "supplyKindLut": "Zero-rated: tax is left off; your LUT must cover the invoice date.",
+    "exportFields": {
+      "portCode": "Port code",
+      "shippingBillNo": "Shipping bill no.",
+      "shippingBillDate": "Shipping bill date",
+      "countryCode": "Country code"
+    }
   },
   "payments": {
     "title": "Payments",

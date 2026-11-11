@@ -86,3 +86,28 @@ describe('IRN from the portal', () => {
     expect(einvoiceIrnSchema.safeParse({ irn: 'short', ackNo: '1', ackDate: 'x', signedQrCode: 'y' }).success).toBe(false);
   });
 });
+
+describe('E-invoices for exports and SEZ supplies', () => {
+  it('marks the supply type, takes a buyer abroad as URP, and adds the shipping bill', async () => {
+    const { buildEinvoice, einvoiceProblems } = await import('./index.js');
+    const base = {
+      kind: 'invoice' as const,
+      number: 'EXP/26-27/1',
+      date: '2026-10-05',
+      currency: 'INR',
+      placeOfSupply: null,
+      seller: { gstin: '27AAPFN1234C1Z5', legalName: 'Nest Demo Private Limited', address1: 'Baner Road', city: 'Pune', pin: '411045' },
+      buyer: { gstin: null, legalName: 'Northwind Inc.', address1: '500 Congress Ave', city: 'Austin', pin: null },
+      lines: [{ description: 'Software', hsn: '998314', quantity: '1', unit: null, unitPrice: 1_00_000_00, amount: 1_00_000_00, heads: { igst: 0, cgst: 0, sgst: 0, cess: 0 }, gstRate: 0 }],
+    };
+    const exp = { ...base, supplyKind: 'export_lut', exportDetails: { portCode: 'INBOM4', shippingBillNo: '7712345', shippingBillDate: '2026-10-06', countryCode: 'US' }, foreignCurrency: 'USD' };
+    expect(einvoiceProblems(exp)).toEqual([]);
+    const j = buildEinvoice(exp);
+    expect(j.TranDtls.SupTyp).toBe('EXPWOP');
+    expect(j.BuyerDtls).toMatchObject({ Gstin: 'URP', Pin: 999999, Stcd: '96', Pos: '96' });
+    expect(j.ExpDtls).toEqual({ ShipBNo: '7712345', ShipBDt: '06/10/2026', Port: 'INBOM4', CntCode: 'US', ForCur: 'USD' });
+    // A domestic buyer still needs a GSTIN
+    expect(einvoiceProblems(base)).toContainEqual({ code: 'gstin', party: 'buyer' });
+  });
+});
+

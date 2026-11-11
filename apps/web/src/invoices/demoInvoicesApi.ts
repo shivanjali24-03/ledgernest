@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState, INVOICE_COPIES, type InvoiceDiscount } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState, INVOICE_COPIES, type InvoiceDiscount, type ExportDetails, type SupplyKind, isExport, zeroRatedUnderLut } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -42,6 +42,8 @@ type Stored = {
   shipTo?: ShipTo | null;
   pricesIncludeTax?: boolean;
   discount?: InvoiceDiscount | null;
+  supplyKind?: SupplyKind;
+  exportDetails?: ExportDetails | null;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -231,6 +233,8 @@ function demoEinvoiceInput(v: Invoice): EinvoiceInput {
     date: v.issueDate,
     currency: v.currency ?? 'INR',
     placeOfSupply: v.placeOfSupply,
+    supplyKind: v.supplyKind ?? 'regular',
+    exportDetails: v.exportDetails ?? null,
     seller: demoSeller(),
     buyer: { gstin: v.contact.taxId, legalName: v.contact.legalName ?? v.contact.name, address1: v.contact.billingAddress.line1 ?? null, address2: v.contact.billingAddress.line2 ?? null, city: v.contact.billingAddress.city ?? v.contact.billingAddress.region ?? null, pin: v.contact.billingAddress.postalCode ?? null },
     lines: v.lines.map((l) => {
@@ -338,6 +342,8 @@ function view(i: Stored): Invoice {
     instalments: plan ? instalmentStatus(plan, i.amountPaid, today()) : null,
     dispatch: i.dispatch ?? null,
     shipTo: i.shipTo ?? null,
+    supplyKind: i.supplyKind ?? 'regular',
+    exportDetails: i.exportDetails ?? null,
     state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate, instalments: plan }, today()),
   };
 }
@@ -352,8 +358,14 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
   if (!contact.isCustomer) throw refuse(400, 'not_customer', { field: 'contactId' });
   if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
   const shipToState = d.shipTo && (d.shipTo.country ?? 'IN') === 'IN' ? (findIndianState(d.shipTo.region)?.code ?? null) : null;
-  const placeOfSupply = d.placeOfSupply ?? shipToState ?? contact.stateCode;
-  const supply = supplyFor(ORG_STATE, placeOfSupply);
+  const kind = d.supplyKind ?? 'regular';
+  // An export has no Indian place of supply; exports and SEZ supplies are inter-state (IGST), or without tax under a LUT
+  const placeOfSupply = isExport(kind) ? null : (d.placeOfSupply ?? shipToState ?? contact.stateCode);
+  const supply = kind === 'regular' || kind === 'deemed_export' ? supplyFor(ORG_STATE, placeOfSupply) : 'inter';
+  if (zeroRatedUnderLut(kind)) {
+    const org = demoSettings();
+    if (!org.lutNumber || (org.lutFrom && d.issueDate < org.lutFrom) || (org.lutTo && d.issueDate > org.lutTo)) throw refuse(400, 'no_lut', { field: 'supplyKind' });
+  }
   const items = demoItemRows();
   const accounts = demoAccountRows();
   const groups = allGroups();
@@ -366,9 +378,10 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     let group = l.taxGroupId ? groups.find((g) => g.id === l.taxGroupId) : null;
     if (l.taxGroupId && !group) throw refuse(400, 'tax_group_not_found');
     if (group) group = groupForSupply(group, supply, groups);
+    if (zeroRatedUnderLut(kind)) group = null;
     return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null, pricesIncludeTax: !!d.pricesIncludeTax, discount: d.discount ?? null };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null, pricesIncludeTax: !!d.pricesIncludeTax, discount: d.discount ?? null, supplyKind: kind, exportDetails: isExport(kind) ? (d.exportDetails ?? null) : null };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {

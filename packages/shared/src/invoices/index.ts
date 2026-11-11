@@ -195,6 +195,45 @@ export const shipToSchema = z.object({
 });
 export type ShipTo = z.output<typeof shipToSchema>;
 
+/**
+ * What kind of supply an invoice is, for GST: an ordinary one, an export or a supply to an SEZ (zero-rated: with
+ * IGST paid and claimed back, or without it under a letter of undertaking), or a deemed export.
+ */
+export const SUPPLY_KINDS = ['regular', 'export_with_igst', 'export_lut', 'sez_with_igst', 'sez_lut', 'deemed_export'] as const;
+export type SupplyKind = (typeof SUPPLY_KINDS)[number];
+export const zeroRatedUnderLut = (k: SupplyKind | string | null | undefined) => k === 'export_lut' || k === 'sez_lut';
+export const isExport = (k: SupplyKind | string | null | undefined) => k === 'export_with_igst' || k === 'export_lut';
+export const isSez = (k: SupplyKind | string | null | undefined) => k === 'sez_with_igst' || k === 'sez_lut';
+
+/** An export's shipping bill: the port (6-character code), its number and date, and where the goods go */
+export const exportDetailsSchema = z.object({
+  portCode: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() || null : v), z.string().regex(/^[A-Z0-9]{6}$/, 'A port code has 6 letters or digits, like INNSA1.').nullable().optional().default(null)),
+  shippingBillNo: text(20),
+  shippingBillDate: z.preprocess((v) => (v === '' ? null : v), isoDaySchema.nullable().optional().default(null)),
+  /** Two-letter country code of where the goods go */
+  countryCode: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() || null : v), z.string().regex(/^[A-Z]{2}$/).nullable().optional().default(null)),
+});
+export type ExportDetails = z.output<typeof exportDetailsSchema>;
+
+/** The declaration a zero-rated or export invoice must carry */
+export function supplyDeclaration(kind: SupplyKind | string | null | undefined, lut?: { number: string | null } | null): string | null {
+  const arn = lut?.number ? ` (LUT ${lut.number})` : '';
+  switch (kind) {
+    case 'export_lut':
+      return `Supply meant for export under bond or letter of undertaking without payment of IGST${arn}.`;
+    case 'export_with_igst':
+      return 'Supply meant for export on payment of IGST.';
+    case 'sez_lut':
+      return `Supply to SEZ unit or developer for authorised operations under bond or letter of undertaking without payment of IGST${arn}.`;
+    case 'sez_with_igst':
+      return 'Supply to SEZ unit or developer for authorised operations on payment of IGST.';
+    case 'deemed_export':
+      return 'Deemed export.';
+    default:
+      return null;
+  }
+}
+
 export const invoiceDraftSchema = z
   .object({
     contactId: z.uuid(),
@@ -205,6 +244,10 @@ export const invoiceDraftSchema = z
     seriesId: z.uuid().nullable().optional().default(null),
     /** Paid in instalments: each one's day and amount, adding up to the total (the last is the due date) */
     instalments: instalmentsSchema.nullable().optional().default(null),
+    /** An ordinary supply, an export or SEZ supply (with IGST or under LUT), or a deemed export */
+    supplyKind: z.enum(SUPPLY_KINDS).optional().default('regular'),
+    /** For an export: the shipping bill and where the goods go */
+    exportDetails: exportDetailsSchema.nullable().optional().default(null),
     /** Prices include GST, which is taken out of each line */
     pricesIncludeTax: z.boolean().optional().default(false),
     /** A discount on the whole invoice, before tax */

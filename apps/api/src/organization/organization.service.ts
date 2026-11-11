@@ -58,6 +58,9 @@ const select = {
   interestGraceDays: true,
   interestAutoRaise: true,
   roundInvoiceTotals: true,
+  lutNumber: true,
+  lutFrom: true,
+  lutTo: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -94,6 +97,9 @@ type Columns = Partial<{
   interestGraceDays: number;
   interestAutoRaise: boolean;
   roundInvoiceTotals: boolean;
+  lutNumber: string | null;
+  lutFrom: Date | string | null;
+  lutTo: Date | string | null;
 }>;
 
 const ADDRESS_COLUMNS = {
@@ -137,10 +143,15 @@ export class OrganizationService {
       region,
       postalCode,
       logo,
+      lutFrom,
+      lutTo,
       ...rest
     } = org;
     return {
       ...rest,
+      // The letter of undertaking's dates, as days
+      lutFrom: lutFrom ? lutFrom.toISOString().slice(0, 10) : null,
+      lutTo: lutTo ? lutTo.toISOString().slice(0, 10) : null,
       address: {
         line1: addressLine1,
         line2: addressLine2,
@@ -169,9 +180,11 @@ export class OrganizationService {
       where: { id: organizationId },
       select,
     });
-    // Only what actually changes is written and audited
+    // Only what actually changes is written and audited (days compared as days)
+    const day = (v: unknown) =>
+      v instanceof Date ? v.toISOString().slice(0, 10) : v;
     const changed = (Object.keys(wanted) as (keyof Columns)[]).filter(
-      (k) => wanted[k] !== current[k],
+      (k) => day(wanted[k]) !== day(current[k]),
     );
     if (!changed.length) return this.get(organizationId);
 
@@ -223,7 +236,14 @@ export class OrganizationService {
       );
     }
 
-    const data = Object.fromEntries(changed.map((k) => [k, wanted[k]]));
+    const data = Object.fromEntries(
+      changed.map((k) => [
+        k,
+        (k === 'lutFrom' || k === 'lutTo') && typeof wanted[k] === 'string'
+          ? new Date(`${wanted[k] as string}T00:00:00Z`)
+          : wanted[k],
+      ]),
+    );
     await this.prisma.$transaction(async (tx) => {
       await tx.organization.update({ where: { id: organizationId }, data });
       await this.audit.record(

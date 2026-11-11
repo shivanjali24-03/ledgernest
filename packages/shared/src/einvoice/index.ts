@@ -53,6 +53,11 @@ export interface EinvoiceInput {
   shipTo?: EinvoiceParty | null;
   /** The total rounded to the rupee: the difference (paise) */
   roundOff?: number;
+  /** An export or SEZ supply (with IGST or under LUT), or a deemed export */
+  supplyKind?: string | null;
+  /** For an export: shipping bill, port, country, and the currency it's billed in */
+  exportDetails?: { portCode: string | null; shippingBillNo: string | null; shippingBillDate: string | null; countryCode: string | null } | null;
+  foreignCurrency?: string | null;
   lines: EinvoiceLine[];
 }
 
@@ -79,9 +84,15 @@ export function einvoiceProblems(i: EinvoiceInput): EinvoiceProblem[] {
   if (i.currency !== 'INR') out.push({ code: 'not_inr' });
   if (!i.lines.length) out.push({ code: 'no_lines' });
   if (i.number.length > 16) out.push({ code: 'number_too_long' });
-  if (!i.placeOfSupply) out.push({ code: 'no_place_of_supply' });
+  const exporting = i.supplyKind === 'export_with_igst' || i.supplyKind === 'export_lut';
+  if (!i.placeOfSupply && !exporting) out.push({ code: 'no_place_of_supply' });
   for (const party of ['seller', 'buyer'] as const) {
     const p = i[party];
+    // A buyer abroad has no GSTIN or Indian PIN: the portal takes URP and 999999
+    if (party === 'buyer' && exporting) {
+      if (!cut(p.address1, 100)) out.push({ code: 'address', party });
+      continue;
+    }
     if (!p.gstin || !GSTIN.test(p.gstin)) out.push({ code: 'gstin', party });
     if (!cut(p.address1, 100)) out.push({ code: 'address', party });
     if (cut(p.city, 50).length < 3) out.push({ code: 'city', party });
@@ -93,8 +104,12 @@ export function einvoiceProblems(i: EinvoiceInput): EinvoiceProblem[] {
   return out;
 }
 
+/** The portal's supply type for each kind of supply */
+const SUP_TYP: Record<string, string> = { regular: 'B2B', export_with_igst: 'EXPWP', export_lut: 'EXPWOP', sez_with_igst: 'SEZWP', sez_lut: 'SEZWOP', deemed_export: 'DEXP' };
+
 /** The portal's JSON; check einvoiceProblems first */
 export function buildEinvoice(i: EinvoiceInput) {
+  const exporting = i.supplyKind === 'export_with_igst' || i.supplyKind === 'export_lut';
   const party = (p: EinvoiceParty) => ({
     Gstin: p.gstin!,
     LglNm: cut(p.legalName, 100),
@@ -135,10 +150,23 @@ export function buildEinvoice(i: EinvoiceInput) {
   const total = sum((l) => l.amount + l.heads.igst + l.heads.cgst + l.heads.sgst + l.heads.cess);
   return {
     Version: '1.1',
-    TranDtls: { TaxSch: 'GST', SupTyp: 'B2B', RegRev: 'N', IgstOnIntra: 'N' },
+    TranDtls: { TaxSch: 'GST', SupTyp: SUP_TYP[i.supplyKind ?? 'regular'] ?? 'B2B', RegRev: 'N', IgstOnIntra: 'N' },
     DocDtls: { Typ: i.kind === 'credit_note' ? 'CRN' : 'INV', No: i.number, Dt: ddmmyyyy(i.date) },
     SellerDtls: party(i.seller),
-    BuyerDtls: { ...party(i.buyer), Pos: i.placeOfSupply! },
+    BuyerDtls: exporting
+      ? { Gstin: 'URP', LglNm: cut(i.buyer.legalName, 100), Addr1: cut(i.buyer.address1, 100), Loc: cut(i.buyer.city, 50) || 'Abroad', Pin: 999999, Stcd: '96', Pos: '96' }
+      : { ...party(i.buyer), Pos: i.placeOfSupply! },
+    ...(exporting && i.exportDetails
+      ? {
+          ExpDtls: {
+            ...(i.exportDetails.shippingBillNo ? { ShipBNo: i.exportDetails.shippingBillNo } : {}),
+            ...(i.exportDetails.shippingBillDate ? { ShipBDt: i.exportDetails.shippingBillDate.split('-').reverse().join('/') } : {}),
+            ...(i.exportDetails.portCode ? { Port: i.exportDetails.portCode } : {}),
+            ...(i.exportDetails.countryCode ? { CntCode: i.exportDetails.countryCode } : {}),
+            ...(i.foreignCurrency ? { ForCur: i.foreignCurrency } : {}),
+          },
+        }
+      : {}),
     // Goods delivered elsewhere: the ship-to address, its state from the address (it may have no GSTIN)
     ...(i.shipTo && i.shipTo.stateCode
       ? {

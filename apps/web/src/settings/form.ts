@@ -39,6 +39,9 @@ export interface SettingsValues {
   interestAutoRaise: string;
   /** 'true' or 'false' */
   roundInvoiceTotals: string;
+  lutNumber: string;
+  lutFrom: string;
+  lutTo: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -75,6 +78,9 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   interestGraceDays: String(s.interestGraceDays ?? 0),
   interestAutoRaise: String(!!s.interestAutoRaise),
   roundInvoiceTotals: String(!!s.roundInvoiceTotals),
+  lutNumber: s.lutNumber ?? '',
+  lutFrom: s.lutFrom ?? '',
+  lutTo: s.lutTo ?? '',
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -93,6 +99,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     else if (k === 'msmeBankRate') out.msmeBankRateBp = v[k].trim() ? Math.round(Number(v[k].replace('%', '').trim()) * 100) : null;
     else if (k === 'interestRate') out.interestRateBp = v[k].trim() ? Math.round(Number(v[k].replace('%', '').trim()) * 100) : null;
     else if (k === 'interestGraceDays') out.interestGraceDays = Number(v[k] || 0);
+    else if (k === 'lutFrom' || k === 'lutTo') out[k] = v[k] || null;
     else out[k] = v[k];
   }
   if (Object.keys(address).length) out.address = address;
@@ -102,7 +109,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme', 'interestMethod', 'interestGraceDays'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : key === 'interestRateBp' ? 'interestRate' : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme', 'interestMethod', 'interestGraceDays', 'lutNumber', 'lutFrom', 'lutTo'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : key === 'interestRateBp' ? 'interestRate' : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */

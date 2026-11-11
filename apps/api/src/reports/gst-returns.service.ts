@@ -190,6 +190,8 @@ export class GstReturnsService {
           currency: true,
           rate: true,
           placeOfSupply: true,
+          supplyKind: true,
+          exportDetails: true,
           status: true,
           fiscalYear: { select: { name: true } },
           fullNumber: true,
@@ -308,6 +310,8 @@ export class GstReturnsService {
       value: number;
       placeOfSupply: string | null;
       items: RateRow[];
+      /** R regular, SEWP / SEWOP to an SEZ with or without IGST, DE deemed export */
+      invoiceType?: 'R' | 'SEWP' | 'SEWOP' | 'DE';
     }[] = [];
     const b2cl: {
       number: string;
@@ -326,6 +330,11 @@ export class GstReturnsService {
       value: number;
       currency: string | null;
       items: RateRow[];
+      /** WPAY with IGST paid, WOPAY under LUT */
+      exportType?: 'WPAY' | 'WOPAY';
+      portCode?: string | null;
+      shippingBillNo?: string | null;
+      shippingBillDate?: string | null;
     }[] = [];
     const hsn = new Map<
       string,
@@ -376,14 +385,34 @@ export class GstReturnsService {
       const value = inBase(Number(i.total), i.currency, i.rate);
       for (const l of i.lines) addHsn(l, split(l, i.currency, i.rate), 1);
       const doc = { number: label, date: iso(i.issueDate), value, items };
-      if (i.contact.taxId && isGstin(i.contact.taxId))
+      const kind = i.supplyKind;
+      const exp = (i.exportDetails ?? {}) as Record<string, string | null>;
+      if (kind === 'export_with_igst' || kind === 'export_lut')
+        exports.push({
+          ...doc,
+          currency: i.currency,
+          exportType: kind === 'export_lut' ? 'WOPAY' : 'WPAY',
+          portCode: exp.portCode ?? null,
+          shippingBillNo: exp.shippingBillNo ?? null,
+          shippingBillDate: exp.shippingBillDate ?? null,
+        });
+      else if (i.contact.taxId && isGstin(i.contact.taxId))
         b2b.push({
           gstin: i.contact.taxId.toUpperCase(),
           name: i.contact.name,
           placeOfSupply: i.placeOfSupply,
           ...doc,
+          invoiceType:
+            kind === 'sez_with_igst'
+              ? 'SEWP'
+              : kind === 'sez_lut'
+                ? 'SEWOP'
+                : kind === 'deemed_export'
+                  ? 'DE'
+                  : 'R',
         });
-      else if (!i.placeOfSupply) exports.push({ ...doc, currency: i.currency });
+      else if (!i.placeOfSupply)
+        exports.push({ ...doc, currency: i.currency, exportType: 'WOPAY' });
       else {
         const inter =
           items.some((r) => r.igst) ||
@@ -587,7 +616,7 @@ export class GstReturnsService {
               val: rupees(i.value),
               pos: i.placeOfSupply,
               rchrg: 'N',
-              inv_typ: 'R',
+              inv_typ: i.invoiceType ?? 'R',
               itms: items(i.items),
             })),
           })),
@@ -613,19 +642,25 @@ export class GstReturnsService {
             samt: rupees(r.sgst),
             csamt: rupees(r.cess),
           })),
-          exp: g.exports.length
-            ? [
-                {
-                  exp_typ: 'WOPAY',
-                  inv: g.exports.map((i) => ({
-                    inum: i.number,
-                    idt: dmy(i.date),
-                    val: rupees(i.value),
-                    itms: items(i.items).map((x) => x.itm_det),
-                  })),
-                },
-              ]
-            : [],
+          // Exports, with IGST paid (WPAY) or under LUT (WOPAY), each with its shipping bill
+          exp: (['WPAY', 'WOPAY'] as const)
+            .map((t) => ({
+              exp_typ: t,
+              inv: g.exports
+                .filter((i) => (i.exportType ?? 'WOPAY') === t)
+                .map((i) => ({
+                  inum: i.number,
+                  idt: dmy(i.date),
+                  val: rupees(i.value),
+                  ...(i.portCode ? { sbpcode: i.portCode } : {}),
+                  ...(i.shippingBillNo ? { sbnum: i.shippingBillNo } : {}),
+                  ...(i.shippingBillDate
+                    ? { sbdt: dmy(i.shippingBillDate) }
+                    : {}),
+                  itms: items(i.items).map((x) => x.itm_det),
+                })),
+            }))
+            .filter((x) => x.inv.length),
           cdnr: g.cdnr.map((n) => ({
             ctin: n.gstin,
             nt: [

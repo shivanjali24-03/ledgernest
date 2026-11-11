@@ -27,6 +27,10 @@ function seed(): Stored {
       email: 'accounts@nestdemo.in',
       phone: '+91 20 4000 1234',
       address: { line1: '4th Floor, Riverside Business Bay', line2: 'Baner Road', city: 'Pune', region: 'Maharashtra', postalCode: '411045' },
+      // A letter of undertaking for the year, so exports and SEZ supplies can go without IGST
+      lutNumber: 'AD270326001234X',
+      lutFrom: '2026-04-01',
+      lutTo: '2027-03-31',
       logo: null,
       locks: { baseCurrency: true, fiscalYearStartMonth: false },
     },
