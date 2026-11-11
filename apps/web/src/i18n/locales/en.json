@@ -2690,7 +2690,7 @@
     "outstanding": "Outstanding",
     "overdue": "Overdue",
     "filter": "Show",
-    "search": "Search number, customer or reference",
+    "search": "Number, customer or ref.",
     "noMatches": "No invoices match",
     "empty": "No invoices yet",
     "emptyBody": "Bill a customer: pick them, add what you sold, and issue.",
@@ -4437,7 +4437,7 @@
     "description": "Estimates for customers, priced like invoices. Accepted ones become invoices in one step.",
     "new": "New quote",
     "filter": "Show",
-    "search": "Search by number, customer or reference",
+    "search": "Number, customer or ref.",
     "noMatches": "No quotes match",
     "empty": "No quotes yet",
     "emptyBody": "Send a customer a price before you invoice: same lines, same GST.",
@@ -5024,10 +5024,10 @@
     "details": {
       "bank_one": "1 bank line isn’t matched yet.",
       "bank_other": "{{count}} bank lines aren’t matched yet.",
-      "bankDone": "Every bank line is matched.",
+      "bankDone": "Every bank account is reconciled to the year end.",
       "drafts_one": "1 journal entry is still a draft.",
       "drafts_other": "{{count}} journal entries are still drafts.",
-      "draftsDone": "No drafts left.",
+      "draftsDone": "No journal entries left as drafts.",
       "confirmationsNone": "Not asked yet: ask customers and vendors to confirm their year-end balances.",
       "confirmations": "{{asked}} asked: {{waiting}} waiting, {{disputed}} disputed.",
       "msme": "{{amount}} owed past the deadline would be disallowed if still unpaid at the year end.",
@@ -5039,7 +5039,9 @@
       "close_other": "{{count}} months are still open. Closing the last one moves the year’s profit to retained earnings.",
       "closeDone": "Closed, with the closing entry {{number}}.",
       "closed": "Every month is closed.",
-      "backup": "Download a full backup from Settings and keep it safe; books must be kept for eight years."
+      "backup": "Download a full backup from Settings and keep it safe; books must be kept for eight years.",
+      "bankNotReconciled_one": "1 bank account isn’t reconciled to a statement dated {{date}} or later.",
+      "bankNotReconciled_other": "{{count}} bank accounts aren’t reconciled to a statement dated {{date}} or later."
     }
   },
   "address": {
@@ -5253,7 +5255,7 @@
       "closed": "Closed",
       "cancelled": "Cancelled"
     },
-    "search": "Search by number, vendor or reference",
+    "search": "Number, vendor or ref.",
     "empty": "No purchase orders yet",
     "emptyBody": "Order from a vendor, record goods as they arrive, and make the bill from what came.",
     "noMatches": "No purchase orders match",
@@ -5311,7 +5313,8 @@
     "expiryOf": "Expiry of {{description}}",
     "serialsOf": "Serial numbers of {{description}}",
     "grniHint": "Goods kept in stock come in now, at the order’s price, owed as goods received not yet billed until the bill is recorded.",
-    "grniOwed": "Received, not yet billed:"
+    "grniOwed": "Received, not yet billed:",
+    "totalBeforeTax": "Total before tax"
   },
   "warehouses": {
     "title": "Warehouses",

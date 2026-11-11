@@ -391,10 +391,10 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
 
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[1020px] text-sm">
+          <table className="w-full min-w-[950px] text-sm">
             <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>
-                <th scope="col" className="w-44 px-3 py-2 text-start font-semibold">
+                <th scope="col" className="w-40 px-3 py-2 text-start font-semibold">
                   {t('invoices.columns.item')}
                 </th>
                 <th scope="col" className="px-3 py-2 text-start font-semibold">
@@ -415,7 +415,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                 <th scope="col" className="w-32 px-3 py-2 text-start font-semibold">
                   {t('invoices.columns.tax')}
                 </th>
-                <th scope="col" className="w-32 px-3 py-2 text-end font-semibold">
+                <th scope="col" className="w-28 px-3 py-2 text-end font-semibold">
                   {t('invoices.columns.amount')}
                 </th>
                 <th scope="col" className="w-10">

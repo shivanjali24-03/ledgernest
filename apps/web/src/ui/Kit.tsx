@@ -8,14 +8,15 @@ import { inputClass } from './Field';
 export function PageHeader({ title, description, actions, eyebrow }: { title: string; description?: ReactNode; actions?: ReactNode; eyebrow?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3">
-      <div className="min-w-0">
+      {/* The title takes the room; a long description wraps rather than pushing the actions onto their own row */}
+      <div className="min-w-0 flex-1 basis-80">
         {eyebrow && <div className="mb-1 text-sm font-medium text-brand-700 dark:text-brand-300">{eyebrow}</div>}
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" dir="auto">
           {title}
         </h1>
         {description && <p className="mt-1 text-sm text-ink-500">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 sm:ms-auto sm:justify-end">{actions}</div>}
     </header>
   );
 }

@@ -87,7 +87,7 @@ export const pdfAmount = (minor: number, digits = 2) =>
 /** A date on a printed document: 11 Nov 2026 (an ISO date in; anything else comes back as it was) */
 export const pdfDate = (iso: string | null | undefined) => {
   if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso ?? '';
-  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`));
+  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`)).replace(/\bSept\b/, 'Sep');
 };
 
 /** Helvetica widths (per 1000 em) for space to tilde */

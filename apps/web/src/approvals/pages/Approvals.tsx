@@ -257,8 +257,9 @@ function RuleRow({ api, rule, canManage }: { api: ApprovalsApi; rule: ApprovalRu
           <TextField label={t('approvals.atOrAbove', { currency: money.currency })} value={amount} onChange={(e) => setAmount(e.target.value)} onBlur={() => minor && setAmount(money.plain(minor))} disabled={!canManage} inputMode="decimal" dir="ltr" className="text-end font-mono" placeholder="0.00" error={minor === null ? t('approvals.badAmount') : undefined} />
         </div>
       )}
-      {canManage && (
-        <Button size="sm" variant={changed ? 'primary' : 'ghost'} disabled={!changed || minor === null} loading={save.isPending} onClick={() => save.mutate()} aria-label={t('approvals.saveRule', { rule: label })}>
+      {/* Save appears once the rule is changed, instead of a greyed-out button on every row */}
+      {canManage && (changed || save.isPending) && (
+        <Button size="sm" disabled={minor === null} loading={save.isPending} onClick={() => save.mutate()} aria-label={t('approvals.saveRule', { rule: label })}>
           {t('common.save')}
         </Button>
       )}

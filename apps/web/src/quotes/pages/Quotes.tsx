@@ -95,7 +95,7 @@ export default function Quotes() {
           ) : (
             <div className="relative overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
+                <thead className="whitespace-nowrap border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>
                     <th scope="col" className="px-4 py-2.5 text-start font-semibold">
                       {t('quotes.columns.number')}
@@ -127,11 +127,13 @@ export default function Quotes() {
                         {q.contact.name}
                         {q.reference && <span className="block text-xs text-ink-500">{q.reference}</span>}
                       </td>
-                      <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{day(q.expiryDate)}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-ink-600 dark:text-ink-300">{day(q.expiryDate)}</td>
                       <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
                         {q.currency ? formatMoney(q.total, q.currency, locale) : money.format(q.total)}
                       </td>
-                      <td className={`px-4 py-2.5 font-medium ${quoteTone(q.state)}`}>{t(`quotes.states.${q.state}`)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex whitespace-nowrap rounded-full bg-current/10 px-2 py-0.5 text-xs font-semibold ${quoteTone(q.state)}`}>{t(`quotes.states.${q.state}`)}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

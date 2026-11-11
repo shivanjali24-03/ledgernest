@@ -332,10 +332,10 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
 
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[980px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>
-                <th scope="col" className="w-48 px-3 py-2 text-start font-semibold">
+                <th scope="col" className="w-44 px-3 py-2 text-start font-semibold">
                   {t('invoices.columns.item')}
                 </th>
                 <th scope="col" className="px-3 py-2 text-start font-semibold">
