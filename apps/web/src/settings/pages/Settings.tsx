@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useBlocker } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
@@ -131,7 +132,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
   const zones = useMemo(() => timeZoneOptions(locale, v.timeZone), [locale, v.timeZone]);
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-6 pb-24">
+    <form onSubmit={submit} noValidate className={clsx('space-y-6', dirty && 'pb-24')}>
       <Section title={t('settings.company.title')} description={t('settings.company.description')}>
         <div className="sm:col-span-2">{text('name', t('settings.fields.name'), { autoComplete: 'organization', dir: 'auto' })}</div>
         {text('legalName', t('settings.fields.legalName'), { dir: 'auto', hint: t('settings.hints.legalName') })}

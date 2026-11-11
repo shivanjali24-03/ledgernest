@@ -182,10 +182,10 @@ export default function Banking() {
       </motion.div>
 
       {selected && (
-        <motion.div variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <motion.div variants={fadeUp} className="grid grid-cols-[minmax(0,1fr)] gap-6 2xl:grid-cols-[minmax(0,1fr)_24rem]">
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-end gap-3 border-b border-ink-100 p-4 dark:border-ink-800">
-              <h2 className="flex-1 font-semibold" dir="auto">
+              <h2 className="min-w-0 flex-1 basis-60 font-semibold" dir="auto">
                 {t('banking.statement', { name: selected.name })}
               </h2>
               <div className="w-40">
@@ -309,7 +309,7 @@ export default function Banking() {
       )}
 
       {selected && (
-        <motion.div variants={fadeUp} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <motion.div variants={fadeUp} className="grid grid-cols-[minmax(0,1fr)] gap-6 2xl:grid-cols-[minmax(0,1fr)_24rem]">
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 p-4 dark:border-ink-800">
               <span className="flex-1">

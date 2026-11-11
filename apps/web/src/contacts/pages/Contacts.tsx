@@ -149,8 +149,12 @@ export default function Contacts() {
           ) : (
             <ul className="divide-y divide-ink-100 dark:divide-ink-800">
               {data!.items.map((c) => (
-                <li key={c.id} className={clsx('flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3', c.archived && 'opacity-70')}>
-                  <span className="min-w-0 flex-1">
+                <li
+                  key={c.id}
+                  // Columns that line up down the list: name | GSTIN | what's owed | terms | menu (on a phone: name | owed | menu)
+                  className={clsx('grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_10.5rem_11rem_5.5rem_auto] sm:gap-x-4 sm:px-5', c.archived && 'opacity-70')}
+                >
+                  <span className="min-w-0 max-sm:col-start-1 max-sm:row-start-1">
                     <span className="flex flex-wrap items-center gap-2">
                       <Link to={`/contacts/${c.id}`} className="text-start font-medium hover:underline" dir="auto">
                         {c.name}
@@ -164,23 +168,24 @@ export default function Contacts() {
                       {[c.legalName, place(c), c.email].filter(Boolean).join(' · ')}
                     </span>
                   </span>
-                  {c.taxId && (
-                    <code className="text-xs text-ink-500" dir="ltr">
-                      {c.taxId}
-                    </code>
-                  )}
+                  <code className="truncate text-xs text-ink-500 max-sm:col-start-1 max-sm:row-start-2" dir="ltr">
+                    {c.taxId ?? ''}
+                  </code>
+                  <span className="flex flex-col items-end gap-0.5 max-sm:col-start-2 max-sm:row-start-1">
                   {!!c.receivable && (
-                    <span className={clsx('text-end font-mono text-sm tabular-nums', c.receivable > 0 ? 'text-ink-800 dark:text-ink-100' : 'text-income')} dir="ltr">
+                    <span className={clsx('whitespace-nowrap text-end text-sm tabular-nums', c.receivable > 0 ? 'text-ink-800 dark:text-ink-100' : 'text-income')} dir="ltr">
                       {t(c.receivable > 0 ? 'contacts.owes' : 'contacts.inCredit', { amount: c.currency ? formatMoney(Math.abs(c.receivable), c.currency, locale) : money.format(Math.abs(c.receivable)) })}
                     </span>
                   )}
                   {!!c.payable && (
-                    <span className={clsx('text-end font-mono text-sm tabular-nums', c.payable > 0 ? 'text-expense' : 'text-ink-500')} dir="ltr">
+                    <span className={clsx('whitespace-nowrap text-end text-sm tabular-nums', c.payable > 0 ? 'text-expense' : 'text-ink-500')} dir="ltr">
                       {t(c.payable > 0 ? 'contacts.weOwe' : 'contacts.paidAhead', { amount: c.currency ? formatMoney(Math.abs(c.payable), c.currency, locale) : money.format(Math.abs(c.payable)) })}
                     </span>
                   )}
-                  <span className="w-24 text-end text-xs text-ink-500">{c.paymentTermsDays ? t('contacts.terms', { days: c.paymentTermsDays }) : t('contacts.onReceipt')}</span>
+                  </span>
+                  <span className="text-end text-xs text-ink-500 max-sm:col-start-2 max-sm:row-start-2">{c.paymentTermsDays ? t('contacts.terms', { days: c.paymentTermsDays }) : t('contacts.onReceipt')}</span>
                   {(canManage || canReport) && (
+                    <span className="max-sm:col-start-3 max-sm:row-span-2 max-sm:row-start-1">
                     <RowMenu
                       label={t('contacts.actionsFor', { name: c.name })}
                       items={[
@@ -198,6 +203,7 @@ export default function Contacts() {
                           : []),
                       ]}
                     />
+                    </span>
                   )}
                 </li>
               ))}
