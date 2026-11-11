@@ -67,7 +67,7 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
           )}
         </dl>
       </header>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="mt-4 w-full min-w-[640px]">
           <thead className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-700">
             <tr>

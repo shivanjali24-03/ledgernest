@@ -206,7 +206,7 @@ function PlanGrid({ api, id, canManage }: { api: BudgetsApi; id: string; canMana
           </>
         )}
       </div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-xs uppercase tracking-wide text-ink-400">
             <tr>
@@ -370,7 +370,7 @@ function ComparisonTable({ api, id }: { api: BudgetsApi; id: string }) {
         ) : !c.sections.some((s) => s.rows.length) ? (
           <EmptyState icon={<Target className="size-5" />} title={t('budgets.nothingYet')} body={t('budgets.nothingYetBody')} />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs uppercase tracking-wide text-ink-400">
                 <tr>

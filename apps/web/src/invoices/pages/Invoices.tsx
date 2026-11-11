@@ -118,7 +118,7 @@ export default function Invoices() {
           ) : !data!.items.length ? (
             <EmptyState icon={<FileText className="size-5" />} title={search || filter !== 'all' ? t('invoices.noMatches') : t('invoices.empty')} body={search || filter !== 'all' ? undefined : t('invoices.emptyBody')} />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>

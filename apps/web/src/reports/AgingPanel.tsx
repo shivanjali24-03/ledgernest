@@ -62,7 +62,7 @@ export default function AgingPanel({ data, isPending, isError, onRetry }: { data
         </Card>
       </dl>
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[860px] text-sm">
             <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>

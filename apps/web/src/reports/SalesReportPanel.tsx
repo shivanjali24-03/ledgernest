@@ -56,7 +56,7 @@ export default function SalesReportPanel({ api, side, by, from, to, set }: { api
         ) : !data!.rows.length ? (
           <EmptyState icon={<ShoppingCart className="size-5" />} title={t(side === 'sales' ? 'reports.sales.emptySales' : 'reports.sales.emptyPurchases')} />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <caption className="sr-only">{t(side === 'sales' ? 'reports.sales.captionSales' : 'reports.sales.captionPurchases')}</caption>
               <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">

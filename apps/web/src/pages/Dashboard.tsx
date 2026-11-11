@@ -17,13 +17,13 @@ import ComplianceCard from './ComplianceCard';
 import DemoTourCard from './DemoTourCard';
 
 /** Tiny line chart; the line draws itself in (stroke animation, no layout). */
-function Sparkline({ points, up }: { points: number[]; up: boolean }) {
+function Sparkline({ points, tone }: { points: number[]; tone: 'good' | 'bad' | 'flat' }) {
   const min = Math.min(...points);
   const max = Math.max(...points);
   const d = points.map((p, i) => `${(i / Math.max(points.length - 1, 1)) * 100},${30 - ((p - min) / (max - min || 1)) * 26 - 2}`).join(' L');
   return (
     <svg viewBox="0 0 100 30" className="h-10 w-full" preserveAspectRatio="none" aria-hidden>
-      <motion.path d={`M${d}`} fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className={up ? 'stroke-income' : 'stroke-expense'} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1] }} />
+      <motion.path d={`M${d}`} fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className={tone === 'flat' ? 'stroke-ink-300 dark:stroke-ink-600' : tone === 'good' ? 'stroke-income' : 'stroke-expense'} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1] }} />
     </svg>
   );
 }
@@ -148,10 +148,10 @@ export default function Dashboard() {
                     <AnimatedNumber value={k.value} format={(n) => formatCompactMoney(Math.round(n), data.baseCurrency, locale)} />
                   </p>
                   <p className={clsx('mt-1 inline-flex items-center gap-1 text-xs font-semibold', k.value === k.previous ? 'text-ink-500' : good ? 'text-income' : 'text-expense')}>
-                    {rising ? <ArrowUpRight className="size-3.5 rtl:-scale-x-100" aria-hidden /> : <ArrowDownRight className="size-3.5 rtl:-scale-x-100" aria-hidden />}
+                    {k.value === k.previous ? null : rising ? <ArrowUpRight className="size-3.5 rtl:-scale-x-100" aria-hidden /> : <ArrowDownRight className="size-3.5 rtl:-scale-x-100" aria-hidden />}
                     {change === null ? t('dashboard.vsLastMonthAmount', { value: money.format(k.value - k.previous) }) : t('dashboard.vsLastMonth', { value: formatPercent(change, locale) })}
                   </p>
-                  <Sparkline points={k.trend} up={good} />
+                  <Sparkline points={k.trend} tone={k.trend.every((p) => p === k.trend[0]) ? 'flat' : good ? 'good' : 'bad'} />
                 </motion.article>
               );
             })}
@@ -194,7 +194,7 @@ export default function Dashboard() {
                   </span>
                   <span className={clsx('mt-0.5 block', forecast.data.shortfall ? 'text-expense' : 'text-ink-600 dark:text-ink-300')}>
                     {forecast.data.shortfall
-                      ? t('dashboard.forecast.shortfall', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${forecast.data.shortfall.start}T00:00:00Z`)), amount: money.format(forecast.data.shortfall.balance) })
+                      ? t('dashboard.forecast.shortfall', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${forecast.data.shortfall.start}T00:00:00Z`)), amount: money.format(forecast.data.shortfall.balance).replace('-', '\u2212') }) /* a true minus sign: no line break after it */
                       : t('dashboard.forecast.fine', { amount: money.format(forecast.data.weeks.at(-1)?.closing ?? forecast.data.opening) })}
                   </span>
                 </Link>

@@ -25,7 +25,7 @@ export default function Itc180Panel({ data, isPending, isError, onRetry }: { dat
           </Card>
         ))}
       </div>
-      <Card className="overflow-x-auto">
+      <Card className="relative overflow-x-auto">
         {!data.bills.length ? (
           <p className="p-5 text-sm text-ink-500">{t('reports.itc180.none')}</p>
         ) : (

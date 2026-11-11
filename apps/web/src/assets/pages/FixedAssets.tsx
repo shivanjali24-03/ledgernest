@@ -112,7 +112,7 @@ export default function FixedAssets() {
             ) : !list.data!.length ? (
               <EmptyState icon={<Monitor className="size-5" />} title={t('assets.empty')} body={t('assets.emptyBody')} />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
                   <caption className="sr-only">{t('assets.register')}</caption>
                   <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
@@ -197,7 +197,7 @@ export default function FixedAssets() {
             ) : schedule.isError || !schedule.data ? (
               <ErrorState onRetry={() => void schedule.refetch()} />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[960px] text-sm">
                   <caption className="sr-only">{t('assets.schedule')}</caption>
                   <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">

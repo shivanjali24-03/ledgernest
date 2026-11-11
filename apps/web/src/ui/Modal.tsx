@@ -90,9 +90,9 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={spring.snappy}
-            className={`relative max-h-[90dvh] w-full overflow-y-auto rounded-2xl border border-ink-200 bg-white shadow-pop dark:border-ink-700 dark:bg-ink-900 ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
+            className={`relative flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-pop dark:border-ink-700 dark:bg-ink-900 ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
           >
-            <div className="flex items-start gap-4 p-5 pb-0">
+            <div className="flex shrink-0 items-start gap-4 p-5 pb-0">
               <div className="min-w-0 flex-1">
                 <h2 id={titleId} className="text-lg font-semibold">
                   {title}
@@ -107,8 +107,9 @@ export default function Modal({
                 <X className="size-5" />
               </button>
             </div>
-            {children && <div className="p-5">{children}</div>}
-            {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-ink-100 p-4 dark:border-ink-800">{footer}</div>}
+            {/* Only the body scrolls: the title, close button and actions stay in view */}
+            {children && <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>}
+            {footer && <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-ink-100 p-4 dark:border-ink-800">{footer}</div>}
           </motion.div>
         </div>
       )}

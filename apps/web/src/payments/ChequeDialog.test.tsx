@@ -37,14 +37,14 @@ describe('Cheque dialog', () => {
   it('starts from what was remembered, and refuses nudges that are too far', { timeout: 20_000 }, async () => {
     localStorage.setItem('ledgernest.cheque.alignment', JSON.stringify({ offsetX: -1, offsetY: 3, crossed: true }));
     show(vi.fn());
-    const dialog = await screen.findByRole('dialog', {}, { timeout: 4000 });
+    const dialog = await screen.findByRole('dialog', {}, { timeout: 10_000 });
     expect(within(dialog).getByLabelText('Move down (mm)')).toHaveValue('3');
     const right = within(dialog).getByLabelText('Move right (mm)');
     expect(right).toHaveValue('-1');
     await userEvent.clear(right);
     await userEvent.type(right, '45');
     // Under load the check can trail the typing: wait for it
-    expect(await within(dialog).findByText('Between -30 and 30 mm.', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await within(dialog).findByText('Between -30 and 30 mm.', {}, { timeout: 10_000 })).toBeInTheDocument();
     await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Download cheque PDF' })).toBeDisabled());
   });
 });

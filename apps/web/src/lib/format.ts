@@ -21,7 +21,7 @@ export function formatMoney(minor: number, currency = 'INR', locale = 'en-IN', o
 
 /** Short form for dashboards: ₹12.4L, $3.2M */
 export const formatCompactMoney = (minor: number, currency = 'INR', locale = 'en-IN') =>
-  formatMoney(minor, currency, locale, { notation: 'compact', maximumFractionDigits: 1 });
+  formatMoney(minor, currency, locale, { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 1 });
 
 export const formatPercent = (value: number, locale = 'en-IN') =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(value);

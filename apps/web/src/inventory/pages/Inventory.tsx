@@ -96,7 +96,7 @@ export default function Inventory() {
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full text-sm">
                 <caption className="sr-only">{t('inventory.valuation')}</caption>
                 <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
@@ -269,7 +269,7 @@ function Expiring({ api }: { api: InventoryApi }) {
             <SelectField label={t('batches.expiring.within')} value={String(days)} onChange={(e) => setDays(Number(e.target.value))} options={[30, 60, 90, 180].map((d) => ({ value: String(d), label: t('batches.expiring.days', { count: d }) }))} />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead className="border-y border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>
@@ -352,7 +352,7 @@ function Movements({ api, itemId, name, canAdjust, onAdjust }: { api: InventoryA
         ) : !q.data.movements.length ? (
           <p className="px-5 py-4 text-sm text-ink-500">{t('inventory.noMovements')}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-xs uppercase tracking-wide text-ink-400">
                 <tr>
