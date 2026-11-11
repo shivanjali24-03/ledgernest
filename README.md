@@ -43,6 +43,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 | **MSME 45-day rule** | Mark vendors as micro or small (Udyam) and see every bill's legal pay-by date, what's late, and what section 43B(h) would disallow at the year end. |
 | **Get your MSME interest** | If you are a micro or small business, overdue invoices, account links and reminders show the interest late buyers owe you under the MSMED Act. |
 | **Move from Tally** | Export the List of Accounts from Tally as XML and bring in ledgers, customers, vendors and opening balances in one go. |
+| **The March close, as a checklist** | Bank reconciled, drafts posted, confirmations in, MSME bills paid in time, GST clean, months closed, backup kept: see what's left and go straight to it. |
 | **Balance confirmations** | Ask every customer and vendor to confirm their year-end balance from a link; they agree or send their figure, and you see who did. |
 | **Cheque printing** | Print a vendor payment straight onto a cheque leaf: date boxes, payee, amount in words and figures, A/c Payee. |
 | **TDS, both ways** | Keep TDS back from contractors and landlords (Form 26Q, challan dates) and send them a payment advice, and record TDS your customers kept back (Form 26AS). |

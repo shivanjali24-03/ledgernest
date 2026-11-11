@@ -36,6 +36,7 @@ export const Bills = lazy(() => import('../bills/pages/Bills'));
 export const CreditNotes = lazy(() => import('../credit-notes/pages/CreditNotes'));
 export const Quotes = lazy(() => import('../quotes/pages/Quotes'));
 export const Collections = lazy(() => import('../collections/Collections'));
+export const YearEnd = lazy(() => import('../year-end/YearEnd'));
 export const ContactPage = lazy(() => import('../contacts/pages/ContactPage'));
 export const RecurringBills = lazy(() => import('../recurring-bills/pages/RecurringBills'));
 export const DebitNotes = lazy(() => import('../debit-notes/pages/DebitNotes'));
