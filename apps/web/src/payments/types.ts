@@ -1,4 +1,4 @@
-import type { PaymentKind, ReceiptInput, VendorPaymentInput } from '@ledgernest/shared';
+import type { PaymentKind, ReceiptInput, VendorPaymentInput, PaymentMode } from '@ledgernest/shared';
 
 export interface Payment {
   id: string;
@@ -19,6 +19,11 @@ export interface Payment {
   /** What actually left (or reached) the bank */
   bankAmount?: number;
   reference: string | null;
+  /** How the money moved, and its instrument */
+  mode?: PaymentMode | null;
+  instrumentNo?: string | null;
+  instrumentDate?: string | null;
+  drawnOn?: string | null;
   notes: string | null;
   journalEntry: { id: string; number: string | null };
   voidEntry: { id: string; number: string | null } | null;

@@ -12,6 +12,7 @@ import {
   todayIn,
   toBase,
   type PaymentKind,
+  type PaymentMode,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -32,6 +33,11 @@ type SettleIn = {
   amount: number;
   rate: string | null;
   reference: string | null;
+  /** How the money moved, and the instrument's details */
+  mode?: PaymentMode | null;
+  instrumentNo?: string | null;
+  instrumentDate?: string | null;
+  drawnOn?: string | null;
   notes: string | null;
   allocations: { documentId: string; amount: number }[];
   /** Vendor payments only: tax deducted at source, kept back from the bank */
@@ -83,6 +89,10 @@ const select = {
   tdsAmount: true,
   tdsAccount: { select: { id: true, code: true, name: true } },
   reference: true,
+  mode: true,
+  instrumentNo: true,
+  instrumentDate: true,
+  drawnOn: true,
   notes: true,
   createdAt: true,
   voidedAt: true,
@@ -155,6 +165,11 @@ export class PaymentsService {
       /** What actually left (or reached) the bank */
       bankAmount: Number(p.amount - p.tdsAmount),
       reference: p.reference,
+      /** How the money moved, and its instrument: "Cheque 123456 dated … on HDFC Bank" */
+      mode: p.mode as PaymentMode | null,
+      instrumentNo: p.instrumentNo,
+      instrumentDate: p.instrumentDate ? iso(p.instrumentDate) : null,
+      drawnOn: p.drawnOn,
       notes: p.notes,
       journalEntry: {
         id: p.journalEntry.id,
@@ -441,6 +456,18 @@ export class PaymentsService {
           'Choose an active bank or cash account.',
           'bank_invalid',
           { field: 'bankAccountId' },
+        );
+      // Cash moves through a cash account, and only cash does
+      const mode: PaymentMode | null =
+        input.mode ?? (bank.subtype === 'cash' ? 'cash' : null);
+      if ((mode === 'cash') !== (bank.subtype === 'cash') && mode)
+        throw refuse(
+          BadRequestException,
+          mode === 'cash'
+            ? 'Cash goes through a cash account: choose one.'
+            : 'A cash account only takes cash: choose the bank account.',
+          'mode_account',
+          { field: mode === 'cash' ? 'bankAccountId' : 'mode' },
         );
       if (bank.currency && bank.currency !== currency)
         throw refuse(
@@ -730,6 +757,14 @@ export class PaymentsService {
               }
             : {}),
           reference: input.reference,
+          mode,
+          instrumentNo: mode === 'cash' ? null : (input.instrumentNo ?? null),
+          instrumentDate:
+            (mode === 'cheque' || mode === 'dd') && input.instrumentDate
+              ? new Date(`${input.instrumentDate}T00:00:00Z`)
+              : null,
+          drawnOn:
+            mode === 'cheque' || mode === 'dd' ? (input.drawnOn ?? null) : null,
           notes: input.notes,
           journalEntryId: entry.id,
           createdById: ctx.actor.userId,

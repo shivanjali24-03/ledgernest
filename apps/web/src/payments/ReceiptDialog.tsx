@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { allocateOldestFirst, currencyDigits, tdsOn, TDS_SECTIONS, toMinor, todayIn, type PaymentKind, type TdsSection } from '@ledgernest/shared';
+import { allocateOldestFirst, currencyDigits, PAYMENT_MODES, tdsOn, TDS_SECTIONS, toMinor, todayIn, type PaymentKind, type PaymentMode, type TdsSection } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useAccountsApi } from '../accounts/useAccountsApi';
 import { useContactsApi } from '../contacts/useContactsApi';
@@ -46,6 +46,10 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
   const [date, setDate] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
+  const [mode, setMode] = useState<PaymentMode | ''>('');
+  const [instrumentNo, setInstrumentNo] = useState('');
+  const [instrumentDate, setInstrumentDate] = useState('');
+  const [drawnOn, setDrawnOn] = useState('');
   // Allocation per invoice, as typed; filled from the invoice it was opened from, or oldest first
   const [allocs, setAllocs] = useState<Record<string, string>>({});
   const [seeded, setSeeded] = useState<string | null>(null);
@@ -68,6 +72,8 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
   const [tdsTouched, setTdsTouched] = useState(false);
   const [tdsAccountId, setTdsAccountId] = useState('');
   const bank = bankAccountId || banks[0]?.id || '';
+  // A cash account takes cash only
+  const isCash = (accounts.data ?? []).find((a) => a.id === bank)?.subtype === 'cash';
   const amt = toMinor(amount, digits);
   const parsedAllocs = (open.data ?? []).map((i) => ({ ...i, value: allocs[i.id]?.trim() ? toMinor(allocs[i.id]!, digits) : 0 }));
   const allocated = parsedAllocs.reduce((s, i) => s + (i.value ?? 0), 0);
@@ -83,7 +89,8 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
 
   const save = useMutation({
     mutationFn: () => {
-      const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null };
+      const instrument = mode === 'cheque' || mode === 'dd';
+      const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null, mode: (isCash ? 'cash' : mode) || null, instrumentNo: isCash ? null : instrumentNo || null, instrumentDate: instrument ? instrumentDate || null : null, drawnOn: instrument ? drawnOn || null : null };
       const chosen = parsedAllocs.filter((i) => i.value);
       const tds = tdsActive ? { section, ratePpm, base: baseMinor!, amount: tdsMinor!, accountId: tdsAccount } : null;
       return receipt ? api.receive({ ...base, tds, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, tds, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
@@ -149,8 +156,20 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
           <TextField label={t(receipt ? 'payments.fields.date' : 'payments.fields.datePaid')} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <SelectField label={t(receipt ? 'payments.fields.bank' : 'payments.fields.from')} value={bank} onChange={(e) => setBank(e.target.value)} options={banks.length ? banks.map((a) => ({ value: a.id, label: `${a.code} · ${a.name}${a.currency ? ` (${a.currency})` : ''}` })) : [{ value: '', label: t('payments.noBank') }]} />
           <TextField label={t('payments.fields.amount', { currency: code })} value={amount} onChange={(e) => setAmount(e.target.value)} onBlur={() => amt && setAmount(plain(amt))} inputMode="decimal" dir="ltr" className="text-end font-mono" data-autofocus />
+          {!isCash && (
+            <>
+              <SelectField label={t('payments.fields.mode')} value={mode} onChange={(e) => setMode(e.target.value as PaymentMode | '')} options={[{ value: '', label: t('payments.modes.none') }, ...PAYMENT_MODES.filter((m) => m !== 'cash').map((m) => ({ value: m, label: t(`payments.modes.${m}`) }))]} />
+              {mode && mode !== 'card' && mode !== 'other' && <TextField label={t(mode === 'cheque' || mode === 'dd' ? 'payments.fields.chequeNo' : mode === 'upi' ? 'payments.fields.upiRef' : 'payments.fields.utr')} value={instrumentNo} onChange={(e) => setInstrumentNo(e.target.value.toUpperCase())} dir="ltr" className="font-mono" inputMode={mode === 'cheque' || mode === 'dd' || mode === 'upi' ? 'numeric' : undefined} />}
+              {(mode === 'cheque' || mode === 'dd') && (
+                <>
+                  <TextField label={t('payments.fields.chequeDate')} type="date" value={instrumentDate} onChange={(e) => setInstrumentDate(e.target.value)} />
+                  <TextField label={t('payments.fields.drawnOn')} value={drawnOn} onChange={(e) => setDrawnOn(e.target.value)} dir="auto" />
+                </>
+              )}
+            </>
+          )}
           <div className="sm:col-span-2">
-            <TextField label={t('payments.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="UTR 402918" dir="auto" />
+            <TextField label={t('payments.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} dir="auto" />
           </div>
         </div>
         {canTds && (

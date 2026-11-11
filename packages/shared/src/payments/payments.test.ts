@@ -25,3 +25,24 @@ describe('receipts', () => {
     expect(paymentNumber('payment', 'FY 2026–27', 12)).toBe('PAY/2026-27/0012');
   });
 });
+
+describe('payment modes', () => {
+  it('checks a cheque’s number and age, a UTR and a UPI reference', async () => {
+    const { paymentModeProblem } = await import('./index.js');
+    const base = { instrumentNo: null, instrumentDate: null, date: '2026-10-05' };
+    expect(paymentModeProblem({ ...base, mode: 'cheque', instrumentNo: '12345' })?.field).toBe('instrumentNo');
+    expect(paymentModeProblem({ ...base, mode: 'cheque', instrumentNo: '123456', instrumentDate: '2026-09-01' })).toBeNull();
+    expect(paymentModeProblem({ ...base, mode: 'cheque', instrumentNo: '123456', instrumentDate: '2026-06-01' })?.message).toMatch(/three months/);
+    expect(paymentModeProblem({ ...base, mode: 'neft', instrumentNo: 'HDFCN52026101012345' })).toBeNull();
+    expect(paymentModeProblem({ ...base, mode: 'rtgs', instrumentNo: 'X1' })?.field).toBe('instrumentNo');
+    expect(paymentModeProblem({ ...base, mode: 'upi', instrumentNo: '628310012345' })).toBeNull();
+    expect(paymentModeProblem({ ...base, mode: 'cash' })).toBeNull();
+  });
+
+  it('describes the mode for receipts and advice', async () => {
+    const { paymentModeText } = await import('./index.js');
+    expect(paymentModeText({ mode: 'cheque', instrumentNo: '123456', instrumentDate: '2026-10-05', drawnOn: 'HDFC Bank' })).toBe('Cheque 123456 dated 05/10/2026 on HDFC Bank');
+    expect(paymentModeText({ mode: 'neft', instrumentNo: 'HDFCN52026101012345', instrumentDate: null, drawnOn: null })).toBe('NEFT, UTR HDFCN52026101012345');
+    expect(paymentModeText({ mode: null, instrumentNo: null, instrumentDate: null, drawnOn: null })).toBeNull();
+  });
+});

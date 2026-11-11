@@ -23,6 +23,59 @@ const text = (max: number) =>
     .optional()
     .default(null);
 
+/** How the money moved */
+export const PAYMENT_MODES = ['cash', 'cheque', 'dd', 'neft', 'rtgs', 'imps', 'upi', 'card', 'other'] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
+
+/** The mode's details: a cheque or DD's number, date and bank; a bank transfer's UTR; a UPI reference */
+const modeShape = {
+  mode: z.enum(PAYMENT_MODES).nullable().optional().default(null),
+  instrumentNo: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(30)
+    .transform((v) => v || null)
+    .nullable()
+    .optional()
+    .default(null),
+  instrumentDate: isoDaySchema.nullable().optional().default(null),
+  /** The bank a cheque or DD is drawn on */
+  drawnOn: text(80),
+};
+
+/** What the mode's details must look like */
+export function paymentModeProblem(v: { mode: PaymentMode | null; instrumentNo: string | null; instrumentDate: string | null; date: string }): { field: 'instrumentNo' | 'instrumentDate'; message: string } | null {
+  const no = v.instrumentNo;
+  if (v.mode === 'cheque' || v.mode === 'dd') {
+    if (!no || !/^\d{6}$/.test(no)) return { field: 'instrumentNo', message: `A ${v.mode === 'dd' ? 'demand draft' : 'cheque'} number is 6 digits.` };
+    // A cheque is good for three months from its date (RBI)
+    if (v.instrumentDate) {
+      const months = (Date.parse(`${v.date}T00:00:00Z`) - Date.parse(`${v.instrumentDate}T00:00:00Z`)) / (86_400_000 * 30.44);
+      if (months > 3) return { field: 'instrumentDate', message: 'The cheque is more than three months old: it can’t be presented.' };
+    }
+  }
+  if ((v.mode === 'neft' || v.mode === 'rtgs' || v.mode === 'imps') && no && !/^[A-Z0-9]{10,22}$/.test(no)) return { field: 'instrumentNo', message: 'A UTR is 10 to 22 letters and digits.' };
+  if (v.mode === 'upi' && no && !/^\d{12}$/.test(no)) return { field: 'instrumentNo', message: 'A UPI reference is 12 digits.' };
+  return null;
+}
+
+/** "Cheque 123456 dated 05/10/2026 on HDFC Bank", "NEFT, UTR HDFCN52026101012345", "Cash" */
+export function paymentModeText(v: { mode: PaymentMode | null; instrumentNo: string | null; instrumentDate: string | null; drawnOn: string | null }): string | null {
+  if (!v.mode) return null;
+  const label: Record<PaymentMode, string> = { cash: 'Cash', cheque: 'Cheque', dd: 'Demand draft', neft: 'NEFT', rtgs: 'RTGS', imps: 'IMPS', upi: 'UPI', card: 'Card', other: 'Other' };
+  const day = (d: string) => d.split('-').reverse().join('/');
+  if (v.mode === 'cheque' || v.mode === 'dd') return [label[v.mode], v.instrumentNo, v.instrumentDate && `dated ${day(v.instrumentDate)}`, v.drawnOn && `on ${v.drawnOn}`].filter(Boolean).join(' ');
+  if (v.mode === 'neft' || v.mode === 'rtgs' || v.mode === 'imps') return v.instrumentNo ? `${label[v.mode]}, UTR ${v.instrumentNo}` : label[v.mode];
+  if (v.mode === 'upi') return v.instrumentNo ? `UPI, reference ${v.instrumentNo}` : 'UPI';
+  return v.instrumentNo ? `${label[v.mode]}, ${v.instrumentNo}` : label[v.mode];
+}
+
+const modeCheck = (v: { mode: PaymentMode | null; instrumentNo: string | null; instrumentDate: string | null; date: string }, ctx: z.RefinementCtx) => {
+  const p = paymentModeProblem(v);
+  if (p) ctx.addIssue({ code: 'custom', path: [p.field], message: p.message });
+};
+
 export const receiptSchema = z
   .object({
     contactId: z.uuid(),
@@ -34,6 +87,7 @@ export const receiptSchema = z
     /** For a foreign currency: 1 unit in the base currency; omitted = the day's rate */
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
+    ...modeShape,
     notes: text(500),
     /** TDS the customer kept back and pays the government for you: claimed back against Form 26AS */
     tds: tdsSchema,
@@ -44,7 +98,8 @@ export const receiptSchema = z
       .refine((a) => new Set(a.map((x) => x.invoiceId)).size === a.length, 'Each invoice can appear once.'),
   })
   .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was received.' })
-  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the receipt.' });
+  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the receipt.' })
+  .superRefine(modeCheck);
 export type ReceiptInput = z.input<typeof receiptSchema>;
 
 /** Money paid to a vendor, allocated to their open bills; the rest is an advance to them */
@@ -57,6 +112,7 @@ export const vendorPaymentSchema = z
     amount,
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
+    ...modeShape,
     notes: text(500),
     /** Tax deducted at source: kept back from the bank payment, owed to the government instead */
     tds: tdsSchema,
@@ -67,7 +123,8 @@ export const vendorPaymentSchema = z
       .refine((a) => new Set(a.map((x) => x.billId)).size === a.length, 'Each bill can appear once.'),
   })
   .refine((v) => v.allocations.reduce((s, a) => s + a.amount, 0) <= v.amount, { path: ['allocations'], message: 'You can’t allocate more than was paid.' })
-  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the payment.' });
+  .refine((v) => !v.tds || v.tds.amount < v.amount, { path: ['tds', 'amount'], message: 'TDS has to be less than the payment.' })
+  .superRefine(modeCheck);
 export type VendorPaymentInput = z.input<typeof vendorPaymentSchema>;
 
 export const paymentVoidSchema = z.object({ reason: z.string().trim().max(500).optional() });

@@ -48,6 +48,22 @@ describe('receipts', () => {
     expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeInTheDocument();
   }, 20_000);
 
+  it('records how it was paid: a cheque’s number, date and bank', async () => {
+    renderApp('/invoices');
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
+    await screen.findByRole('article', {}, { timeout: 4000 });
+    const dialog = await openDialog('Record payment', 'Record a receipt');
+    await waitFor(() => expect(within(dialog).getByLabelText('Amount (INR)')).toHaveValue('1,18,000.00'));
+    await userEvent.selectOptions(within(dialog).getByLabelText('Paid by'), 'cheque');
+    await userEvent.type(within(dialog).getByLabelText('Cheque or DD number'), '004512');
+    await userEvent.type(within(dialog).getByLabelText('Drawn on (bank)'), 'HDFC Bank');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Record receipt' }));
+    expect(await screen.findByText(/^Recorded as RCT\/.*\/0001$/, {}, { timeout: 4000 })).toBeInTheDocument();
+    const { createDemoPaymentsApi } = await import('./demoPaymentsApi');
+    const list = await createDemoPaymentsApi(() => true).list({ page: 1, pageSize: 10 });
+    expect(list.items[0]).toMatchObject({ mode: 'cheque', instrumentNo: '004512', drawnOn: 'HDFC Bank' });
+  }, 20_000);
+
   it('records a receipt where the customer kept TDS back: the invoice is paid in full and the TDS is to claim back', async () => {
     renderApp('/invoices');
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));
