@@ -1736,7 +1736,8 @@
       "emailBody": "It goes as a PDF, with the closing balance in the message.",
       "sent": "Statement sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
-      "mailOff": "Email isn’t set up on this server. Download the PDF and send it yourself."
+      "mailOff": "Email isn’t set up on this server. Download the PDF and send it yourself.",
+      "interest": "Interest on late payment to {{date}}, under the invoices’ terms: {{amount}}. It isn’t in the balance above."
     },
     "sales": {
       "title": "Sales & purchases",
@@ -4346,7 +4347,9 @@
     "download": "Download {{number}} as PDF",
     "msmeInterest": "Interest for late payment under the MSMED Act, 2006 (section 16) so far: {{amount}}",
     "invoiceInterest": "MSMED Act interest so far: {{amount}}",
-    "statement": "Download your statement for this year"
+    "statement": "Download your statement for this year",
+    "lateInterest": "Interest for paying late, as the invoices say: {{amount}} so far.",
+    "invoiceLateInterest": "Interest so far: {{amount}}"
   },
   "twoFactor": {
     "action": "Two-factor sign-in",
@@ -4521,7 +4524,8 @@
       "customer": "Customer",
       "overdue": "Overdue",
       "chased": "Last chased",
-      "actions": "Chase"
+      "actions": "Chase",
+      "interest": "Interest so far"
     },
     "invoices_one": "1 invoice, {{days}} days late",
     "invoices_other": "{{count}} invoices, oldest {{days}} days late",

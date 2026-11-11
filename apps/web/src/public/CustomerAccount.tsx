@@ -73,6 +73,11 @@ export default function CustomerAccount() {
                     </p>
                   ))}
                   {v.overdue > 0 && <p className="mt-1 text-sm font-medium text-expense">{t('customerAccount.overdue', { amount: money(v.overdue, 'INR') })}</p>}
+                  {!!v.interest && (
+                    <p className="mt-2 text-sm text-ink-600 dark:text-ink-300" data-testid="late-interest">
+                      {t('customerAccount.lateInterest', { amount: money(v.interest, 'INR') })}
+                    </p>
+                  )}
                   {!!v.msme?.interest && (
                     <p className="mt-2 text-sm text-ink-600 dark:text-ink-300" data-testid="msme-interest">
                       {t('customerAccount.msmeInterest', { amount: money(v.msme.interest, 'INR') })}
@@ -124,6 +129,7 @@ export default function CustomerAccount() {
                             <span className={clsx('block text-xs', i.state === 'overdue' ? 'text-expense' : 'text-ink-500')}>
                               {i.state === 'overdue' ? t('publicInvoice.overdueSince', { date: day(i.dueDate) }) : t('publicInvoice.dueOn', { date: day(i.dueDate) })}
                             </span>
+                            {!!i.interest && <span className="block text-xs text-ink-500">{t('customerAccount.invoiceLateInterest', { amount: money(i.interest, i.currency) })}</span>}
                             {!!i.msmeInterest && <span className="block text-xs text-ink-500">{t('customerAccount.invoiceInterest', { amount: money(i.msmeInterest, i.currency) })}</span>}
                           </span>
                           <span className="font-mono font-semibold tabular-nums" dir="ltr">

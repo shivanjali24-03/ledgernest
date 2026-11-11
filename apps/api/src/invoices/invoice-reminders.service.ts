@@ -271,6 +271,12 @@ export class InvoiceRemindersService
               `Pay by UPI to ${org.upiId}: on your phone, open ${upi} and your UPI app fills in the amount.`,
             ]
           : []),
+        // The interest terms it was issued with, and what's accrued
+        ...(inv.interest && inv.interest.accrued > 0
+          ? [
+              `${inv.interest.text} On this invoice it comes to ${money(inv.interest.accrued)} so far, and grows by ${money(inv.interest.perDay)} a day until it's paid.`,
+            ]
+          : []),
         ...(msmeInterest > 0
           ? [
               `As a ${org.msmeCategory} enterprise${org.udyamNumber ? ` (Udyam ${org.udyamNumber})` : ''}, we are entitled under section 16 of the MSMED Act, 2006 to interest on payments made after the appointed day. On this invoice it comes to ${money(msmeInterest)} so far.`,

@@ -6,7 +6,7 @@ import { FileText, Mail, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../contacts/useContactsApi';
 import { useIntlLocale } from '../i18n';
-import { formatDate } from '../lib/format';
+import { formatDate, formatMoney } from '../lib/format';
 import { useSession } from '../layout/session';
 import { apiErrorMessage } from '../platform/errors';
 import Button from '../ui/Button';
@@ -213,6 +213,11 @@ export default function ContactStatementPanel({ api, side, contactId, from, to, 
               </Card>
             ))
           )}
+          {(statement.data.interest ?? []).map((x) => (
+            <p key={x.currency} role="note" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+              {t('reports.statement.interest', { date: formatDate(`${statement.data!.to}T00:00:00Z`, locale), amount: formatMoney(x.accrued, x.currency, locale) })}
+            </p>
+          ))}
         </>
       )}
       {emailing && statement.data && <EmailStatementDialog api={api} contact={statement.data.contact} side={side} from={from} to={to} onClose={() => setEmailing(false)} />}

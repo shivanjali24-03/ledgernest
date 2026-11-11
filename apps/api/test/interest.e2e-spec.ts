@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { MailService } from '../src/mail/mail.service.js';
 import { setupApp } from '../src/setup-app.js';
 
 type Interest = {
@@ -58,6 +59,7 @@ describe('Interest on late payments (e2e)', () => {
   };
 
   beforeAll(async () => {
+    process.env.SMTP_URL = 'json';
     const mod = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -116,6 +118,7 @@ describe('Interest on late payments (e2e)', () => {
   });
 
   afterAll(async () => {
+    delete process.env.SMTP_URL;
     await prisma.organization.deleteMany({ where: { id: org } });
     await prisma.user.deleteMany({
       where: { email: { endsWith: `-${run}@test.ledgernest.local` } },
@@ -189,6 +192,59 @@ describe('Interest on late payments (e2e)', () => {
       rateBp: 2000,
       graceDays: 15,
     });
+  });
+
+  it('shows interest wherever what’s owed is shown: aging, statements, the customer’s link and reminders', async () => {
+    // ₹1,00,000 due 1 June at the customer's 24%, unpaid: 30 days to 1 July
+    const inv = await issue(who.dear!);
+    const expected = Math.round((1_00_000_00 * 0.24 * 30) / 365);
+    const aging = (
+      await get('/reports/aging?side=receivables&asOf=2026-07-01').expect(200)
+    ).body as {
+      contacts: {
+        contact: { id: string };
+        interest: number;
+        documents: { id: string; interest: number }[];
+      }[];
+    };
+    const row = aging.contacts.find((c) => c.contact.id === who.dear)!;
+    expect(row.documents.find((d) => d.id === inv.id)?.interest).toBe(expected);
+    expect(row.interest).toBe(
+      row.documents.reduce((s, d) => s + d.interest, 0),
+    );
+    const st = (
+      await get(
+        `/reports/statement?contactId=${who.dear}&side=receivables&from=2026-04-01&to=2026-07-01`,
+      ).expect(200)
+    ).body as { interest: { currency: string; accrued: number }[] };
+    expect(st.interest).toEqual([
+      { currency: 'INR', accrued: row.interest, perDay: expect.any(Number) },
+    ]);
+    // The customer's own link, to today
+    const link = (await post(`/contacts/${who.dear}/share`).expect(200))
+      .body as { token: string };
+    const view = (
+      await request(app.getHttpServer())
+        .get(`/api/v1/public/customers/${link.token}`)
+        .expect(200)
+    ).body as {
+      interest: number;
+      invoices: { id: string; interest: number }[];
+    };
+    const today = (await get(`/invoices/${inv.id}`).expect(200)).body as {
+      interest: Interest;
+    };
+    expect(view.invoices.find((i) => i.id === inv.id)?.interest).toBe(
+      today.interest!.accrued,
+    );
+    expect(view.interest).toBeGreaterThanOrEqual(today.interest!.accrued);
+    // And the reminder email
+    await post(`/invoices/${inv.id}/remind`, {
+      email: 'buyer@example.com',
+    }).expect(200);
+    expect(app.get(MailService).capturedText.at(-1)).toMatch(
+      /Interest at 24% a year is charged on any amount unpaid after the due date.*On this invoice it comes to INR [\d.]+ so far/,
+    );
   });
 
   it('prints the terms on the invoice PDF', async () => {

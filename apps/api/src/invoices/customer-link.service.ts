@@ -22,6 +22,7 @@ import { InvoiceRemindersService } from './invoice-reminders.service.js';
 import { InvoicesService } from './invoices.service.js';
 import { StatementsService } from '../reports/statements.service.js';
 import { SHARE_TOKEN } from './invoice-share.service.js';
+import { InterestService } from '../interest/interest.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 
@@ -37,6 +38,7 @@ export class CustomerLinkService {
     private readonly invoices: InvoicesService,
     private readonly documents: InvoiceRemindersService,
     private readonly statements: StatementsService,
+    private readonly interest: InterestService,
   ) {}
 
   private async customer(organizationId: string, id: string) {
@@ -205,7 +207,14 @@ export class CustomerLinkService {
     const charges =
       msmeCovered(org.msmeCategory as 'micro' | 'small' | null) &&
       !!org.msmeBankRateBp;
+    // Interest on late payment, under each invoice's own terms
+    const interest = await this.interest.forInvoices(
+      c.organizationId,
+      { contactId: c.id },
+      today,
+    );
     const invoices = rows.map((i) => ({
+      interest: interest.get(i.id)?.accrued ?? 0,
       id: i.id,
       number: i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
       issueDate: iso(i.issueDate),
@@ -281,6 +290,8 @@ export class CustomerLinkService {
             interest: invoices.reduce((s, i) => s + i.msmeInterest, 0),
           }
         : null,
+      /** Interest on late payment under the invoices' terms, together */
+      interest: invoices.reduce((s, i) => s + i.interest, 0),
     };
   }
 

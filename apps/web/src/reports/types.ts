@@ -69,6 +69,8 @@ export interface AgingDocument {
   bucket: AgingBucket;
   total: number;
   outstanding: number;
+  /** Interest on late payment accrued to the day, under the invoice's terms */
+  interest?: number;
 }
 export interface AgingContact {
   contact: { id: string; name: string };
@@ -81,6 +83,8 @@ export interface AgingContact {
   baseTotal: number;
   baseAdvance: number;
   documents: AgingDocument[];
+  /** The documents' interest on late payment, together */
+  interest?: number;
 }
 /** Who owes what, or what's owed, on a day, by days past due */
 export interface Aging {
