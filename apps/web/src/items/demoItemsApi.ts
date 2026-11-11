@@ -89,6 +89,8 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
   const check = (rows: Stored[], v: Omit<Stored, 'id' | 'archived'>, exceptId?: string) => {
     if (rows.some((r) => r.id !== exceptId && r.name.toLocaleLowerCase() === v.name.toLocaleLowerCase())) throw refuse(409, 'name_taken', { field: 'name' });
     if (v.sku && rows.some((r) => r.id !== exceptId && r.sku === v.sku)) throw refuse(409, 'sku_taken', { field: 'sku' });
+    if (v.barcode && rows.some((r) => r.id !== exceptId && r.barcode === v.barcode)) throw refuse(409, 'barcode_taken', { field: 'barcode' });
+    if (v.mrp != null && v.salePrice != null && v.salePrice > v.mrp) throw refuse(400, 'above_mrp', { field: 'salePrice' });
     const accounts = demoAccountRows();
     const type = (aid: string | null) => (aid ? accounts.find((a) => a.id === aid)?.type : undefined);
     if (v.incomeAccountId && type(v.incomeAccountId) !== 'income') throw refuse(400, 'income_account_type', { field: 'incomeAccountId' });
@@ -102,18 +104,24 @@ export function createDemoItemsApi(canManage: () => boolean): ItemsApi {
     if (v.cogsAccountId && type(v.cogsAccountId) !== 'expense') throw refuse(400, 'cogs_account_type', { field: 'cogsAccountId' });
   };
   const api: ItemsApi = {
+    facets: () =>
+      wait(() => {
+        const rows = load();
+        const uniq = (xs: (string | null | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b));
+        return { categories: uniq(rows.map((r) => r.category)), brands: uniq(rows.map((r) => r.brand)) };
+      }),
     exportList: async (q) => {
       const all = await api.list(q);
       const acc = (id: string | null) => (id ? (demoAccountRows().find((a) => a.id === id)?.code ?? '') : '');
-      const rows = [['name', 'kind', 'sku', 'unit', 'sale price', 'purchase price', 'hsn/sac', 'income account', 'expense account', 'description'], ...all.map((i) => [i.name, i.kind, i.sku ?? '', i.unit ?? '', i.salePrice === null ? '' : major(i.salePrice, 'INR'), i.purchasePrice === null ? '' : major(i.purchasePrice, 'INR'), i.hsnSac ?? '', acc(i.incomeAccountId), acc(i.expenseAccountId), i.description ?? ''])];
+      const rows = [['name', 'kind', 'sku', 'unit', 'sale price', 'purchase price', 'hsn/sac', 'income account', 'expense account', 'description', 'mrp', 'barcode', 'brand', 'category'], ...all.map((i) => [i.name, i.kind, i.sku ?? '', i.unit ?? '', i.salePrice === null ? '' : major(i.salePrice, 'INR'), i.purchasePrice === null ? '' : major(i.purchasePrice, 'INR'), i.hsnSac ?? '', acc(i.incomeAccountId), acc(i.expenseAccountId), i.description ?? '', i.mrp == null ? '' : major(i.mrp, 'INR'), i.barcode ?? '', i.brand ?? '', i.category ?? ''])];
       return { blob: csvBlob(rows), filename: 'items.csv' };
     },
     list: (q) =>
       wait(() => {
         const s = q.search?.trim().toLowerCase();
         return load()
-          .filter((i) => !!q.archived === i.archived && (!q.kind || i.kind === q.kind))
-          .filter((i) => !s || i.name.toLowerCase().includes(s) || i.sku?.toLowerCase().includes(s) || i.hsnSac?.startsWith(s))
+          .filter((i) => !!q.archived === i.archived && (!q.kind || i.kind === q.kind) && (!q.category || i.category?.toLowerCase() === q.category.toLowerCase()))
+          .filter((i) => !s || i.name.toLowerCase().includes(s) || i.sku?.toLowerCase().includes(s) || i.hsnSac?.startsWith(s) || i.barcode === q.search?.trim() || i.brand?.toLowerCase().includes(s))
           .sort((a, b) => a.name.localeCompare(b.name))
           .map(view);
       }),

@@ -89,6 +89,13 @@ export class ItemsController {
     });
   }
 
+  @Get('facets')
+  @RequirePermission('invoices.view')
+  @ApiOkResponse({ description: 'The categories and brands in use' })
+  facets(@CurrentTenant() tenant: Tenant) {
+    return this.items.facets(tenant.organizationId);
+  }
+
   @Get(':id')
   @RequirePermission('invoices.view')
   get(@Param('id', id) itemId: string, @CurrentTenant() tenant: Tenant) {

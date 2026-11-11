@@ -322,6 +322,10 @@ export class ImportsService {
       hsnSac: r.hsnSac || null,
       incomeAccountId: await byCode('incomeAccountCode'),
       expenseAccountId: await byCode('expenseAccountCode'),
+      mrp: money('mrp'),
+      barcode: r.barcode || null,
+      brand: r.brand || null,
+      category: r.category || null,
     });
     const i = await this.items.createInTx(tx, v, ctx);
     return i.name;

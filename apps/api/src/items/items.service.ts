@@ -37,6 +37,10 @@ type Values = {
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   reorderLevel: string | null;
+  mrp?: number | null;
+  barcode?: string | null;
+  brand?: string | null;
+  category?: string | null;
 };
 const EDITABLE = [
   'name',
@@ -54,6 +58,10 @@ const EDITABLE = [
   'inventoryAccountId',
   'cogsAccountId',
   'reorderLevel',
+  'mrp',
+  'barcode',
+  'brand',
+  'category',
 ] as const;
 
 const refuse = (
@@ -80,6 +88,10 @@ const select = {
   inventoryAccountId: true,
   cogsAccountId: true,
   reorderLevel: true,
+  mrp: true,
+  barcode: true,
+  brand: true,
+  category: true,
   archivedAt: true,
   taxGroup: {
     select: {
@@ -132,6 +144,7 @@ export class ItemsService {
       kind: i.kind as ItemKind,
       salePrice: i.salePrice === null ? null : Number(i.salePrice),
       purchasePrice: i.purchasePrice === null ? null : Number(i.purchasePrice),
+      mrp: i.mrp === null ? null : Number(i.mrp),
       taxGroup: taxGroup && {
         id: taxGroup.id,
         name: taxGroup.name,
@@ -158,18 +171,29 @@ export class ItemsService {
 
   async list(
     organizationId: string,
-    q: { search?: string; kind?: ItemKind; archived: boolean },
+    q: {
+      search?: string;
+      kind?: ItemKind;
+      category?: string;
+      archived: boolean;
+    },
   ) {
     const rows = await this.prisma.item.findMany({
       where: {
         organizationId,
         archivedAt: q.archived ? { not: null } : null,
         ...(q.kind && { kind: q.kind }),
+        ...(q.category && {
+          category: { equals: q.category, mode: 'insensitive' },
+        }),
         ...(q.search && {
           OR: [
             { name: { contains: q.search, mode: 'insensitive' } },
             { sku: { contains: q.search.toUpperCase() } },
             { hsnSac: { startsWith: q.search } },
+            // A scanned barcode finds its item exactly
+            { barcode: q.search },
+            { brand: { contains: q.search, mode: 'insensitive' } },
           ],
         }),
       },
@@ -207,10 +231,39 @@ export class ItemsService {
     );
   }
 
+  /** The categories and brands in use, for the item form's suggestions */
+  async facets(organizationId: string) {
+    const [categories, brands] = await Promise.all([
+      this.prisma.item.findMany({
+        where: { organizationId, category: { not: null } },
+        distinct: ['category'],
+        select: { category: true },
+        orderBy: { category: 'asc' },
+        take: 500,
+      }),
+      this.prisma.item.findMany({
+        where: { organizationId, brand: { not: null } },
+        distinct: ['brand'],
+        select: { brand: true },
+        orderBy: { brand: 'asc' },
+        take: 500,
+      }),
+    ]);
+    return {
+      categories: categories.map((c) => c.category!),
+      brands: brands.map((b) => b.brand!),
+    };
+  }
+
   /** Items as CSV, in the columns the items import reads (prices in the base currency); recorded as an export */
   async exportCsv(
     organizationId: string,
-    q: { search?: string; kind?: ItemKind; archived: boolean },
+    q: {
+      search?: string;
+      kind?: ItemKind;
+      category?: string;
+      archived: boolean;
+    },
     ctx: Ctx,
   ) {
     const { baseCurrency } = await this.prisma.organization.findUniqueOrThrow({
@@ -239,6 +292,10 @@ export class ItemsService {
         'income account',
         'expense account',
         'description',
+        'mrp',
+        'barcode',
+        'brand',
+        'category',
       ],
       ...rows.map((i) => [
         i.name,
@@ -251,6 +308,10 @@ export class ItemsService {
         i.incomeAccount?.code ?? '',
         i.expenseAccount?.code ?? '',
         i.description ?? '',
+        i.mrp === null ? '' : major(i.mrp, baseCurrency),
+        i.barcode ?? '',
+        i.brand ?? '',
+        i.category ?? '',
       ]),
     ]);
   }
@@ -299,6 +360,27 @@ export class ItemsService {
         'Another item already has this SKU.',
         'sku_taken',
         { field: 'sku' },
+      );
+    if (
+      v.barcode &&
+      (await tx.item.findFirst({
+        where: { organizationId, barcode: v.barcode, ...not },
+        select: { id: true },
+      }))
+    )
+      throw refuse(
+        ConflictException,
+        'Another item already has this barcode.',
+        'barcode_taken',
+        { field: 'barcode' },
+      );
+    // The MRP includes tax, so a price before tax above it can only be a mistake
+    if (v.mrp != null && v.salePrice != null && v.salePrice > v.mrp)
+      throw refuse(
+        BadRequestException,
+        'The sale price is more than the MRP printed on the pack.',
+        'above_mrp',
+        { field: 'salePrice' },
       );
     if (v.taxGroupId) {
       const g = await tx.taxGroup.findFirst({
@@ -411,6 +493,9 @@ export class ItemsService {
       ...('purchasePrice' in v && {
         purchasePrice:
           v.purchasePrice === null ? null : BigInt(v.purchasePrice!),
+      }),
+      ...('mrp' in v && {
+        mrp: v.mrp === null || v.mrp === undefined ? null : BigInt(v.mrp),
       }),
     };
   }

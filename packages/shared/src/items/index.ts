@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
+import { gtinValid } from './uqc.js';
+
+export * from './uqc.js';
 
 /**
  * Products and services to put on invoices and bills. Prices are in the base currency's smallest unit;
@@ -54,6 +57,20 @@ const fields = {
   inventoryAccountId: z.uuid().nullable(),
   /** The cost of sales account stock goes to as it's sold */
   cogsAccountId: z.uuid().nullable(),
+  /** Maximum retail price, tax included, as printed on the pack (Legal Metrology); a sale price can't exceed it */
+  mrp: price,
+  /** The barcode on the pack (EAN/UPC are checked); unique in the organisation */
+  barcode: z
+    .string()
+    .trim()
+    .max(40)
+    .regex(/^$|^[0-9A-Za-z-]{4,40}$/, 'Use 4 to 40 letters, digits or dashes.')
+    .refine((v) => !v || gtinValid(v), 'The barcode’s check digit is wrong. Check the number on the pack.')
+    .transform((v) => v || null)
+    .nullable(),
+  brand: text(80),
+  /** A grouping of the business's own, e.g. "Spices" or "Spare parts" */
+  category: text(80),
   /** Stock at or below this is low, e.g. "10" */
   reorderLevel: z
     .string()
@@ -79,6 +96,10 @@ export const itemCreateSchema = z.object({
   inventoryAccountId: fields.inventoryAccountId.optional().default(null),
   cogsAccountId: fields.cogsAccountId.optional().default(null),
   reorderLevel: fields.reorderLevel.optional().default(null),
+  mrp: fields.mrp.optional().default(null),
+  barcode: fields.barcode.optional().default(null),
+  brand: fields.brand.optional().default(null),
+  category: fields.category.optional().default(null),
 });
 export type ItemCreateInput = z.input<typeof itemCreateSchema>;
 
@@ -91,6 +112,7 @@ export type ItemUpdateInput = z.input<typeof itemUpdateSchema>;
 export const itemListQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   kind: z.enum(ITEM_KINDS).optional(),
+  category: z.string().trim().max(80).optional(),
   archived: z
     .enum(['true', 'false'])
     .optional()

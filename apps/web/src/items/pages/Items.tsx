@@ -142,7 +142,7 @@ export default function Items() {
                       {i.archived && <Pill>{t('items.archivedPill')}</Pill>}
                     </span>
                     <span className="block truncate text-sm text-ink-500" dir="auto">
-                      {[i.sku, i.hsnSac && `${t(i.kind === 'goods' ? 'items.fields.hsn' : 'items.fields.sac')} ${i.hsnSac}`, i.incomeAccount && `${i.incomeAccount.code} · ${i.incomeAccount.name}`].filter(Boolean).join(' · ')}
+                      {[i.sku, i.brand, i.category, i.hsnSac && `${t(i.kind === 'goods' ? 'items.fields.hsn' : 'items.fields.sac')} ${i.hsnSac}`, i.mrp != null && `${t('items.mrpShort')} ${money.format(i.mrp)}`, i.incomeAccount && `${i.incomeAccount.code} · ${i.incomeAccount.name}`].filter(Boolean).join(' · ')}
                     </span>
                   </span>
                   <span className="text-end font-mono text-sm tabular-nums" dir="ltr">

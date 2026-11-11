@@ -2342,19 +2342,28 @@
       "hsn": "HSN code",
       "sac": "SAC code",
       "incomeAccount": "Income account (sales)",
-      "expenseAccount": "Expense or asset account (purchases)"
+      "expenseAccount": "Expense or asset account (purchases)",
+      "mrp": "MRP ({{currency}})",
+      "barcode": "Barcode",
+      "brand": "Brand",
+      "category": "Category"
     },
     "kinds": {
       "goods": "Goods",
       "service": "Service"
     },
     "hints": {
-      "hsnSac": "4, 6 or 8 digits, for GST invoices."
+      "hsnSac": "4, 6 or 8 digits, for GST invoices.",
+      "uqc": "GST’s unit of quantity, used in GSTR-1, e-invoices and e-way bills.",
+      "mrp": "As printed on the pack, tax included. The sale price can’t be more.",
+      "barcode": "Scan it, or type the number under the bars."
     },
     "validation": {
       "name": "Enter at least 2 characters.",
       "price": "Enter an amount, like 2,500.",
-      "hsnSac": "Use a 4, 6 or 8-digit code."
+      "hsnSac": "Use a 4, 6 or 8-digit code.",
+      "aboveMrp": "The sale price is more than the MRP.",
+      "barcode": "That barcode isn’t right: check the number on the pack."
     },
     "errors": {
       "name_taken": "Another item already has this name.",
@@ -2362,8 +2371,59 @@
       "income_account_type": "Sales of an item go to an income account.",
       "expense_account_type": "Purchases of an item go to an expense or asset account.",
       "tax_group_archived": "That tax group is archived.",
-      "account_archived": "That account is archived."
-    }
+      "account_archived": "That account is archived.",
+      "barcode_taken": "Another item already has this barcode.",
+      "above_mrp": "The sale price is more than the MRP printed on the pack."
+    },
+    "uqc": {
+      "BAG": "Bags",
+      "BAL": "Bale",
+      "BDL": "Bundles",
+      "BKL": "Buckles",
+      "BOU": "Billion of units",
+      "BOX": "Box",
+      "BTL": "Bottles",
+      "BUN": "Bunches",
+      "CAN": "Cans",
+      "CBM": "Cubic metres",
+      "CCM": "Cubic centimetres",
+      "CMS": "Centimetres",
+      "CTN": "Cartons",
+      "DOZ": "Dozens",
+      "DRM": "Drums",
+      "GGK": "Great gross",
+      "GMS": "Grams",
+      "GRS": "Gross",
+      "GYD": "Gross yards",
+      "KGS": "Kilograms",
+      "KLR": "Kilolitres",
+      "KME": "Kilometres",
+      "LTR": "Litres",
+      "MLT": "Millilitres",
+      "MTR": "Metres",
+      "MTS": "Metric tons",
+      "NOS": "Numbers",
+      "PAC": "Packs",
+      "PCS": "Pieces",
+      "PRS": "Pairs",
+      "QTL": "Quintals",
+      "ROL": "Rolls",
+      "SET": "Sets",
+      "SQF": "Square feet",
+      "SQM": "Square metres",
+      "SQY": "Square yards",
+      "TBS": "Tablets",
+      "TGM": "Ten gross",
+      "THD": "Thousands",
+      "TON": "Tonnes",
+      "TUB": "Tubes",
+      "UGS": "US gallons",
+      "UNT": "Units",
+      "YDS": "Yards",
+      "OTH": "Others"
+    },
+    "chooseUnit": "Choose the unit",
+    "mrpShort": "MRP"
   },
   "invoices": {
     "title": "Invoices",

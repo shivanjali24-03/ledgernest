@@ -1,3 +1,4 @@
+import { isUqc } from '../items/uqc.js';
 import { z } from 'zod';
 import type { GstHeads } from '../taxes/index.js';
 
@@ -59,7 +60,8 @@ const PIN = /^[1-9]\d{5}$/;
 
 /** Units of quantity the portal knows (UQC), from the units people type */
 const UQC: Record<string, string> = { nos: 'NOS', no: 'NOS', pcs: 'PCS', pc: 'PCS', piece: 'PCS', pieces: 'PCS', unit: 'UNT', units: 'UNT', kg: 'KGS', kgs: 'KGS', g: 'GMS', gm: 'GMS', gms: 'GMS', gram: 'GMS', l: 'LTR', ltr: 'LTR', litre: 'LTR', liter: 'LTR', ml: 'MLT', m: 'MTR', mtr: 'MTR', metre: 'MTR', meter: 'MTR', box: 'BOX', boxes: 'BOX', dozen: 'DOZ', doz: 'DOZ', set: 'SET', sets: 'SET', pair: 'PRS', pairs: 'PRS', bag: 'BAG', bags: 'BAG', bottle: 'BTL', bottles: 'BTL', ton: 'TON', tonne: 'TON', sqm: 'SQM', sqft: 'SQF' };
-export const uqcOf = (unit: string | null | undefined) => (unit && UQC[unit.trim().toLowerCase().replace(/\.$/, '')]) || 'OTH';
+/** An item's unit as a UQC: already one (chosen from the list), or worked out from what was typed */
+export const uqcOf = (unit: string | null | undefined) => (isUqc(unit?.trim()) ? unit!.trim() : (unit && UQC[unit.trim().toLowerCase().replace(/\.$/, '')]) || 'OTH');
 
 const rupees = (paise: number) => Math.round(paise) / 100;
 const ddmmyyyy = (d: string) => d.split('-').reverse().join('/');

@@ -108,8 +108,30 @@ describe('Products and services (e2e)', () => {
   it('downloads items as CSV, in the columns the import reads', async () => {
     const res = await as('owner').get('/items/export').expect(200);
     const lines = res.text.replace(/^\uFEFF/, '').trim().split('\r\n').map((l) => l.replaceAll('"', ''));
-    expect(lines[0]).toBe('name,kind,sku,unit,sale price,purchase price,hsn/sac,income account,expense account,description');
+    expect(lines[0]).toBe('name,kind,sku,unit,sale price,purchase price,hsn/sac,income account,expense account,description,mrp,barcode,brand,category');
     // Earlier tests leave the laptop as the one active item: goods, bought at ₹72,000 into account 1710
-    expect(lines.slice(1)).toEqual(['Laptop,goods,,,,72000.00,84713010,,1710,']);
+    expect(lines.slice(1)).toEqual(['Laptop,goods,,,,72000.00,84713010,,1710,,,,,']);
+  });
+
+  it('keeps a packed product’s GST unit, MRP, barcode, brand and category, and finds it by its barcode', async () => {
+    const tea = (
+      await as('owner')
+        .post('/items', { name: 'Assam Tea 250g', kind: 'goods', unit: 'PAC', salePrice: 110_00, mrp: 140_00, barcode: '8901030865275', brand: 'Tata', category: 'Beverages', hsnSac: '0902' })
+        .expect(201)
+    ).body as { id: string };
+    expect((await as('owner').get(`/items/${tea.id}`).expect(200)).body).toMatchObject({ unit: 'PAC', mrp: 140_00, barcode: '8901030865275', brand: 'Tata', category: 'Beverages' });
+    // A scanner types the barcode into the search
+    expect((await as('owner').get('/items?search=8901030865275').expect(200)).body.map((i: { name: string }) => i.name)).toEqual(['Assam Tea 250g']);
+    expect((await as('owner').get('/items?category=beverages').expect(200)).body).toHaveLength(1);
+    expect((await as('owner').get('/items/facets').expect(200)).body).toEqual({ categories: ['Beverages'], brands: ['Tata'] });
+    // One barcode, one item; a wrong check digit; a price over the MRP, now or after a change
+    expect((await as('owner').post('/items', { name: 'Tea copy', barcode: '8901030865275' }).expect(409)).body.details).toMatchObject({ reason: 'barcode_taken' });
+    await as('owner').post('/items', { name: 'Tea typo', barcode: '8901030865278' }).expect(400);
+    expect((await as('owner').post('/items', { name: 'Dear tea', salePrice: 150_00, mrp: 140_00 }).expect(400)).body.details).toMatchObject({ reason: 'above_mrp' });
+    expect((await as('owner').patch(`/items/${tea.id}`, { salePrice: 141_00 }).expect(400)).body.details).toMatchObject({ reason: 'above_mrp' });
+    expect((await as('owner').patch(`/items/${tea.id}`, { mrp: null, salePrice: 141_00 }).expect(200)).body).toMatchObject({ mrp: null, salePrice: 141_00 });
+    // Another organisation may use the same barcode
+    await as('ownerB', orgB).post('/items', { name: 'Assam Tea', barcode: '8901030865275' }).expect(201);
+    await as('owner').delete(`/items/${tea.id}`).expect(204);
   });
 });

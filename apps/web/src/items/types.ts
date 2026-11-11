@@ -27,12 +27,19 @@ export interface Item {
   stock: { onHand: string; value: number; averageCost: number | null; low: boolean } | null;
   /** Stock at or below this is low */
   reorderLevel: string | null;
+  /** Maximum retail price, tax included (Legal Metrology) */
+  mrp?: number | null;
+  barcode?: string | null;
+  brand?: string | null;
+  category?: string | null;
   archived: boolean;
 }
 
 /** Products and services. Live and demo both implement it. */
 export interface ItemsApi {
-  list(q: { search?: string; kind?: ItemKind; archived?: boolean }): Promise<Item[]>;
+  list(q: { search?: string; kind?: ItemKind; category?: string; archived?: boolean }): Promise<Item[]>;
+  /** The categories and brands in use, for suggestions */
+  facets(): Promise<{ categories: string[]; brands: string[] }>;
   /** As CSV, in the columns the items import reads */
   exportList(q: { search?: string; kind?: ItemKind; archived?: boolean }): Promise<{ blob: Blob; filename: string }>;
   create(input: ItemCreateInput): Promise<Item>;
