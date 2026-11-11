@@ -18,7 +18,7 @@ import { AuditService } from '../audit/audit.service.js';
 import type { Env } from '../config/env.js';
 import { SHARE_TOKEN } from '../invoices/invoice-share.service.js';
 import { MailService } from '../mail/mail.service.js';
-import { organizationReplyTo } from '../common/reply-to.js';
+import { organizationSender } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StatementsService } from './statements.service.js';
 
@@ -170,7 +170,7 @@ export class BalanceConfirmationsService {
               ? `we owe you ${amount}`
               : `you owe us ${amount}`;
       const sent = await this.mail.send({
-        replyTo: await organizationReplyTo(this.prisma, organizationId),
+        ...(await organizationSender(this.prisma, organizationId)),
         to: [c.email],
         subject: `Balance confirmation as on ${input.asOf}: ${from}`,
         text: `Dear ${c.legalName ?? c.name},\n\nFor our audit, please confirm your balance with us. As per our books, on ${input.asOf} ${says}.\n\nAgree, or tell us what your books show, here (no sign-in needed):\n${this.link(row.token)}\n\nThank you,\n${from}`,
