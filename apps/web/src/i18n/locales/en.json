@@ -148,6 +148,44 @@
       "tdsToPay": "{{amount}} kept back",
       "lateFee": "Not filed yet? Late fee so far: {{fee}}",
       "lateFeeInterest": "Not filed yet? Late fee so far: {{fee}}, plus {{interest}} interest"
+    },
+    "tour": {
+      "title": "What makes LedgerNest different",
+      "body": "Built for how Indian businesses work. Try these in the sample company:",
+      "items": {
+        "upi": {
+          "title": "UPI QR on every invoice",
+          "body": "Open an invoice: customers scan and pay, no gateway or fees."
+        },
+        "collections": {
+          "title": "Collections in one tap",
+          "body": "Chase overdue customers on WhatsApp with one link to pay it all."
+        },
+        "quotes": {
+          "title": "Quotes accepted online",
+          "body": "Share a quote; the customer accepts it from their phone."
+        },
+        "gstr2b": {
+          "title": "GSTR-2B matching",
+          "body": "See which suppliers haven’t filed before you claim credit."
+        },
+        "msme": {
+          "title": "MSME 45-day rule",
+          "body": "Pay-by dates and what 43B(h) would disallow."
+        },
+        "yearEnd": {
+          "title": "Year-end close",
+          "body": "The March close as a checklist."
+        },
+        "tally": {
+          "title": "Move from Tally",
+          "body": "Bring ledgers, parties and balances from a Tally XML."
+        },
+        "cheque": {
+          "title": "Cheque printing",
+          "body": "Print a vendor payment straight onto a cheque leaf."
+        }
+      }
     }
   },
   "comingSoon": {

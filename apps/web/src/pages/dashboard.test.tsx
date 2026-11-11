@@ -48,4 +48,13 @@ describe('dashboard', () => {
     await userEvent.click(draft);
     await waitFor(() => expect(router.state.location.pathname).toBe('/journals'));
   });
+
+  it('shows a demo visitor what makes LedgerNest different, each a click away', async () => {
+    const router = renderApp();
+    const tour = await screen.findByRole('region', { name: 'What makes LedgerNest different' }, { timeout: 8000 });
+    const links = within(tour).getAllByRole('link');
+    expect(links).toHaveLength(8);
+    await userEvent.click(within(tour).getByRole('link', { name: /Collections in one tap/ }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/collections'));
+  });
 });

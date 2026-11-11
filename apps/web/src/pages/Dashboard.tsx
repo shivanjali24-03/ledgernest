@@ -14,6 +14,7 @@ import { useReportsApi } from '../reports/useReportsApi';
 import type { Dashboard as DashboardData } from '../reports/types';
 import { SkeletonRows } from '../ui/Kit';
 import ComplianceCard from './ComplianceCard';
+import DemoTourCard from './DemoTourCard';
 
 /** Tiny line chart; the line draws itself in (stroke animation, no layout). */
 function Sparkline({ points, up }: { points: number[]; up: boolean }) {
@@ -198,6 +199,12 @@ export default function Dashboard() {
               )}
             </section>
           </motion.div>
+
+          {session.mode === 'demo' && (
+            <motion.div variants={fadeUp}>
+              <DemoTourCard />
+            </motion.div>
+          )}
 
           {!!compliance.data?.items.length && (
             <motion.div variants={fadeUp}>
