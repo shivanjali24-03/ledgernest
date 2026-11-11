@@ -56,6 +56,8 @@ const select = {
   expectedDate: true,
   currency: true,
   placeOfSupply: true,
+  warehouseId: true,
+  warehouse: { select: { id: true, name: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -154,6 +156,8 @@ export class PurchaseOrdersService {
       expectedDate: o.expectedDate ? iso(o.expectedDate) : null,
       currency: o.currency,
       placeOfSupply: o.placeOfSupply,
+      /** The warehouse goods come into (null: the main one) */
+      warehouse: o.warehouse,
       reference: o.reference,
       notes: o.notes,
       contact: o.contact,
@@ -343,6 +347,13 @@ export class PurchaseOrdersService {
           expectedDate: input.expectedDate ? asDate(input.expectedDate) : null,
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: input.warehouseId
+            ? await this.inventory.warehouseFor(
+                tx,
+                organizationId,
+                input.warehouseId,
+              )
+            : null,
           reference: input.reference,
           notes: input.notes,
           subtotal: BigInt(p.amounts.subtotal),
@@ -390,6 +401,13 @@ export class PurchaseOrdersService {
           expectedDate: input.expectedDate ? asDate(input.expectedDate) : null,
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: input.warehouseId
+            ? await this.inventory.warehouseFor(
+                tx,
+                organizationId,
+                input.warehouseId,
+              )
+            : null,
           reference: input.reference,
           notes: input.notes,
           subtotal: BigInt(p.amounts.subtotal),
@@ -577,6 +595,7 @@ export class PurchaseOrdersService {
             id: l.id,
           };
         }),
+        o.warehouseId,
       );
       let entryId: string | null = null;
       if (movements.length) {
@@ -728,6 +747,7 @@ export class PurchaseOrdersService {
         vendorReference: null,
         notes: o.notes,
         placeOfSupply: o.placeOfSupply,
+        warehouseId: o.warehouseId,
         payableAccountId: null,
         rate: null,
         lines: open.map(({ l, toBill }) => ({

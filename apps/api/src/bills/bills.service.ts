@@ -73,6 +73,8 @@ export type DraftIn = {
   billOfEntry?: BillOfEntry | null;
   notes: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods come into; null = the main one */
+  warehouseId?: string | null;
   payableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
@@ -109,6 +111,8 @@ const select = {
   currency: true,
   rate: true,
   placeOfSupply: true,
+  warehouseId: true,
+  warehouse: { select: { id: true, name: true } },
   vendorReference: true,
   vendorBillDate: true,
   reverseCharge: true,
@@ -258,6 +262,17 @@ export class BillsService {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'bills:' + organizationId}))`;
   }
 
+  /** A warehouse chosen must be in use; none chosen is the main one */
+  private async checkWarehouse(
+    tx: Tx,
+    organizationId: string,
+    warehouseId: string | null | undefined,
+  ) {
+    if (warehouseId)
+      await this.inventory.warehouseFor(tx, organizationId, warehouseId);
+    return warehouseId ?? null;
+  }
+
   private async today(organizationId: string) {
     const { timeZone } = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
@@ -301,6 +316,8 @@ export class BillsService {
       currency: i.currency,
       rate: i.rate && rateText(i.rate),
       placeOfSupply: i.placeOfSupply,
+      /** The warehouse its goods come into (null: the main one) */
+      warehouse: i.warehouse,
       vendorReference: i.vendorReference,
       vendorBillDate: i.vendorBillDate ? iso(i.vendorBillDate) : null,
       /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
@@ -1028,6 +1045,11 @@ export class BillsService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: await this.checkWarehouse(
+            tx,
+            organizationId,
+            input.warehouseId,
+          ),
           vendorReference: input.vendorReference,
           reverseCharge: p.reverseCharge,
           billOfEntry: p.billOfEntry
@@ -1092,6 +1114,11 @@ export class BillsService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: await this.checkWarehouse(
+            tx,
+            organizationId,
+            input.warehouseId,
+          ),
           vendorReference: input.vendorReference,
           reverseCharge: p.reverseCharge,
           billOfEntry: p.billOfEntry
@@ -1548,6 +1575,7 @@ export class BillsService {
           serials: c.q === 0n ? (l.serials ?? []) : [],
           inAltUnit: l.inAltUnit ?? false,
         })),
+        i.warehouseId,
       );
       // Goods received earlier: only what the bill says they cost beyond the order's price changes the stock's value
       portions.forEach(({ row, l, c, restValue }, n) => {
@@ -1559,6 +1587,7 @@ export class BillsService {
             quantity: 0n,
             value: diff,
             sourceLineId: row.id,
+            warehouseId: i.warehouseId ?? undefined,
           });
       });
       await this.inventory.save(

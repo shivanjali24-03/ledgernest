@@ -98,6 +98,8 @@ export type DraftIn = {
   reference: string | null;
   notes: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods leave; null = the main one */
+  warehouseId?: string | null;
   receivableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
@@ -134,6 +136,8 @@ const select = {
   currency: true,
   rate: true,
   placeOfSupply: true,
+  warehouseId: true,
+  warehouse: { select: { id: true, name: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -301,6 +305,17 @@ export class InvoicesService {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'invoices:' + organizationId}))`;
   }
 
+  /** A warehouse chosen must be in use; none chosen is the main one */
+  private async checkWarehouse(
+    tx: Tx,
+    organizationId: string,
+    warehouseId: string | null | undefined,
+  ) {
+    if (warehouseId)
+      await this.inventory.warehouseFor(tx, organizationId, warehouseId);
+    return warehouseId ?? null;
+  }
+
   /** The organisation's time zone */
   async timeZone(organizationId: string) {
     return (
@@ -354,6 +369,8 @@ export class InvoicesService {
       currency: i.currency,
       rate: i.rate && rateText(i.rate),
       placeOfSupply: i.placeOfSupply,
+      /** The warehouse its goods leave (null: the main one) */
+      warehouse: i.warehouse,
       seriesId: i.seriesId,
       reference: i.reference,
       notes: i.notes,
@@ -1174,6 +1191,11 @@ export class InvoicesService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: await this.checkWarehouse(
+            tx,
+            organizationId,
+            input.warehouseId,
+          ),
           reference: input.reference,
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
@@ -1254,6 +1276,11 @@ export class InvoicesService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: await this.checkWarehouse(
+            tx,
+            organizationId,
+            input.warehouseId,
+          ),
           reference: input.reference,
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
@@ -1580,6 +1607,7 @@ export class InvoicesService {
           inAltUnit: l.inAltUnit ?? false,
         })),
         issueDate,
+        i.warehouseId,
       );
       const entry = await this.journals.postEntryInTx(
         tx,

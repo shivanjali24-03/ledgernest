@@ -41,6 +41,8 @@ export const purchaseOrderDraftSchema = z
       .nullable()
       .optional()
       .default(null),
+    /** The warehouse its goods leave or come into (once there are warehouses); null = the main one */
+    warehouseId: z.uuid().nullable().optional().default(null),
     lines: z.array(billLineSchema).min(1, 'Add at least one line.').max(MAX_INVOICE_LINES),
   })
   .refine((v) => !v.expectedDate || v.expectedDate >= v.orderDate, { path: ['expectedDate'], message: 'Goods can’t be expected before they’re ordered.' });

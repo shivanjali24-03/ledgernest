@@ -67,6 +67,8 @@ const select = {
   expiryDate: true,
   currency: true,
   placeOfSupply: true,
+  warehouseId: true,
+  warehouse: { select: { id: true, name: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -161,6 +163,8 @@ export class QuotesService {
       expiryDate,
       currency: q.currency,
       placeOfSupply: q.placeOfSupply,
+      /** A challan's goods leave this warehouse (null: the main one) */
+      warehouse: q.warehouse,
       reference: q.reference,
       notes: q.notes,
       contact: q.contact,
@@ -367,6 +371,13 @@ export class QuotesService {
           expiryDate: asDate(input.expiryDate),
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: input.warehouseId
+            ? await this.inventory.warehouseFor(
+                tx,
+                organizationId,
+                input.warehouseId,
+              )
+            : null,
           reference: input.reference,
           notes: input.notes,
           subtotal: BigInt(p.amounts.subtotal),
@@ -429,6 +440,13 @@ export class QuotesService {
           expiryDate: asDate(input.expiryDate),
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          warehouseId: input.warehouseId
+            ? await this.inventory.warehouseFor(
+                tx,
+                organizationId,
+                input.warehouseId,
+              )
+            : null,
           reference: input.reference,
           notes: input.notes,
           subtotal: BigInt(p.amounts.subtotal),
@@ -645,6 +663,7 @@ export class QuotesService {
           serials: given.get(l.id)?.serials ?? [],
         })),
         date,
+        q.warehouseId,
       );
       if (!out.movements.length)
         throw refuse(
@@ -792,6 +811,7 @@ export class QuotesService {
       reference: q.reference ?? quoteNumber(q.number, q.kind as QuoteKind),
       notes: q.notes,
       placeOfSupply: q.placeOfSupply,
+      warehouseId: q.warehouseId,
       receivableAccountId: null,
       rate: null,
       lines: q.lines.map((l) => ({

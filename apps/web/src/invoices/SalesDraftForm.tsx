@@ -22,6 +22,7 @@ import { useTaxesApi } from '../taxes/useTaxesApi';
 import Button from '../ui/Button';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { inputClass, SelectField, TextField } from '../ui/Field';
+import WarehouseSelect from '../inventory/WarehouseSelect';
 import { Card } from '../ui/Kit';
 import { useToast } from '../ui/toastContext';
 import { groupForSupply, supplyFor } from './gst';
@@ -36,6 +37,8 @@ export interface SalesDraft {
   reference: string | null;
   notes: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods leave (null: the main one) */
+  warehouse?: { id: string } | null;
   currency: string | null;
   /** The number series it will be numbered from (invoices) */
   seriesId?: string | null;
@@ -61,6 +64,7 @@ export interface SalesDraftPayload {
   reference: string;
   notes: string;
   placeOfSupply: string | null;
+  warehouseId?: string | null;
   seriesId?: string | null;
   interestRateBp?: number | null;
   instalments?: Instalment[] | null;
@@ -155,6 +159,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [reference, setReference] = useState(invoice?.reference ?? '');
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
+  const [warehouseId, setWarehouseId] = useState(invoice?.warehouse?.id ?? '');
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [interestRate, setInterestRate] = useState(invoice?.interestRateBp != null ? String(invoice.interestRateBp / 100) : '');
   const [instalments, setInstalments] = useState<Instalment[] | null>(invoice?.instalments ?? null);
@@ -227,6 +232,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     reference,
     notes,
     placeOfSupply: placeOfSupply || null,
+    warehouseId: warehouseId || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
     ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount, supplyKind, exportDetails: isExport(supplyKind) && Object.values(exportDetails).some((x) => x) ? exportDetails : null, reverseCharge: rcm } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
@@ -312,6 +318,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
             hint={supply ? t(`invoices.supply.${supply}`) : undefined}
           />
         )}
+        <WarehouseSelect value={warehouseId} onChange={setWarehouseId} disabled={!canManage} />
       </Card>
 
       <Card className="overflow-hidden">

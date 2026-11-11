@@ -16,6 +16,8 @@ export interface Bill {
   currency: string | null;
   rate: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods leave or come into (null: the main one) */
+  warehouse?: { id: string; name: string } | null;
   /** The vendor's own number for it */
   vendorReference: string | null;
   /** The date on the vendor's bill; null = the bill date */

@@ -269,6 +269,8 @@ export const invoiceDraftSchema = z
       .nullable()
       .optional()
       .default(null),
+    /** The warehouse its goods leave or come into (once there are warehouses); null = the main one */
+    warehouseId: z.uuid().nullable().optional().default(null),
     /** The receivable account; omitted = the first active receivable in the invoice's currency */
     receivableAccountId: z.uuid().nullable().optional().default(null),
     /** For a foreign-currency invoice: 1 unit in the base currency; omitted = the rate on the issue date */

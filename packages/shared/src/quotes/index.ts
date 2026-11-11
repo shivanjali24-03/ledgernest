@@ -67,6 +67,8 @@ export const quoteDraftSchema = z
       .nullable()
       .optional()
       .default(null),
+    /** The warehouse its goods leave or come into (once there are warehouses); null = the main one */
+    warehouseId: z.uuid().nullable().optional().default(null),
     lines: z.array(invoiceLineSchema).min(1, 'Add at least one line.').max(MAX_INVOICE_LINES),
   })
   .refine((v) => v.expiryDate >= v.quoteDate, { path: ['expiryDate'], message: 'The quote can’t expire before its date.' })
