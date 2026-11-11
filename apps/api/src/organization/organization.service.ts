@@ -39,6 +39,7 @@ const select = {
   udyamNumber: true,
   msmeBankRateBp: true,
   gstScheme: true,
+  compositionRateBp: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -69,6 +70,7 @@ type Columns = Partial<{
   udyamNumber: string | null;
   msmeBankRateBp: number | null;
   gstScheme: string;
+  compositionRateBp: number;
 }>;
 
 const ADDRESS_COLUMNS = { line1: 'addressLine1', line2: 'addressLine2', city: 'city', region: 'region', postalCode: 'postalCode' } as const;

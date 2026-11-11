@@ -96,6 +96,8 @@ model Organization {
   msmeBankRateBp       Int?               @map("msme_bank_rate_bp")
   /// regular | composition: a composition dealer charges no GST and issues bills of supply
   gstScheme            String             @default("regular") @map("gst_scheme")
+  /// The composition rate in basis points: 100 (traders, manufacturers), 500 (restaurants) or 600 (services)
+  compositionRateBp    Int                @default(100) @map("composition_rate_bp")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")

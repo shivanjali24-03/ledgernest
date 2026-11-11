@@ -491,6 +491,28 @@ describe('GST e-invoice JSON (e2e)', () => {
     expect(kinds).toContain('cmp08');
     expect(kinds).not.toContain('gstr1');
     expect(kinds).not.toContain('gstr3b');
+    // The October–December quarter's composition tax: its turnover at 5% (a restaurant)
+    await as().patch('/organization', { compositionRateBp: 500 }).expect(200);
+    const january = await app
+      .get(GstReturnsService)
+      .compliance(org, new Date('2027-01-10T06:00:00Z'));
+    const quarter = january.items.find(
+      (i) => i.kind === 'cmp08' && i.from === '2026-10-01',
+    ) as { due: string; amount: number };
+    const turnover = await prisma.invoice.aggregate({
+      where: {
+        organizationId: org,
+        status: 'issued',
+        issueDate: { gte: new Date('2026-10-01'), lte: new Date('2026-12-31') },
+      },
+      _sum: { subtotal: true },
+    });
+    expect(quarter.due).toBe('2027-01-18');
+    expect(quarter.amount).toBe(
+      Math.round((Number(turnover._sum.subtotal) * 500) / 10_000),
+    );
+    expect(quarter.amount).toBeGreaterThan(0);
+    await as().patch('/organization', { compositionRateBp: 7 }).expect(400);
     await as().patch('/organization', { gstScheme: 'regular' }).expect(200);
   });
 });

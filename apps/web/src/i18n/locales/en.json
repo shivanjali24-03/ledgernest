@@ -1015,7 +1015,8 @@
       "msmeCategory": "Your MSME category",
       "udyamNumber": "Your Udyam registration number",
       "msmeBankRate": "RBI bank rate (%)",
-      "gstScheme": "GST scheme"
+      "gstScheme": "GST scheme",
+      "compositionRate": "Composition rate"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1028,7 +1029,8 @@
       "upiId": "Like yourname@okhdfcbank. Rupee invoices then carry a QR code for what’s still owed, on screen, in PDFs and in reminders, so customers pay straight into your bank, free.",
       "requireTwoFactor": "Members without it are asked to set it up before they can open anything here. Turn it on for yourself first.",
       "msmeBankRate": "As published by the RBI (rbi.org.in); interest is charged at three times it, compounded monthly.",
-      "composition": "Invoices become bills of supply with no GST charged, saying you’re a composition taxable person; due dates show CMP-08 each quarter and GSTR-4 each year."
+      "composition": "Invoices become bills of supply with no GST charged, saying you’re a composition taxable person; due dates show CMP-08 each quarter and GSTR-4 each year.",
+      "compositionRate": "The tax for each quarter (CMP-08) is your turnover at this rate, shown on the dashboard’s due dates."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -1103,6 +1105,11 @@
     "gstSchemes": {
       "regular": "Regular",
       "composition": "Composition scheme"
+    },
+    "compositionRates": {
+      "100": "1%: traders and manufacturers",
+      "500": "5%: restaurants",
+      "600": "6%: services"
     }
   },
   "accounts": {
