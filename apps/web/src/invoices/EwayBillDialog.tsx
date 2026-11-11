@@ -22,11 +22,12 @@ export default function EwayBillDialog({ invoice, api, onClose }: { invoice: Inv
   const toast = useToast();
   const [mode, setMode] = useState<EwayMode>('road');
   const [distance, setDistance] = useState('');
-  const [vehicleNo, setVehicle] = useState('');
+  // Prefilled from the invoice's dispatch details
+  const [vehicleNo, setVehicle] = useState(invoice.dispatch?.vehicleNo ?? '');
   const [docNo, setDocNo] = useState('');
   const [docDate, setDocDate] = useState('');
   const [transporterId, setTransporterId] = useState('');
-  const [transporterName, setTransporterName] = useState('');
+  const [transporterName, setTransporterName] = useState(invoice.dispatch?.dispatchedThrough ?? '');
   const [problems, setProblems] = useState<EwayProblem[] | null>(null);
   const transport = ewayTransportSchema.safeParse({ mode, distanceKm: distance.trim() ? Number(distance) : 0, vehicleNo: mode === 'road' ? vehicleNo : null, docNo: mode === 'road' ? null : docNo, docDate: mode === 'road' ? null : docDate, transporterId, transporterName });
   const bad = transport.success ? null : String(transport.error.issues[0]?.path[0] ?? '');

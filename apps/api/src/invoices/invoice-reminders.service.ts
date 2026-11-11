@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   currencyDigits,
+  dispatchLines,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
   findIndianState,
@@ -415,6 +416,16 @@ export class InvoiceRemindersService
           `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
           address(inv.contact.billingAddress),
           `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
+          // Order and dispatch details, two to a line
+          ...dispatchLines(inv.dispatch)
+            .reduce<string[][]>(
+              (rows, x, n) => (
+                n % 2 ? rows[rows.length - 1]!.push(x) : rows.push([x]),
+                rows
+              ),
+              [],
+            )
+            .map((pair) => pair.join(' · ')),
           ...(inv.irn
             ? [
                 // The 64 characters in two even halves, so the line never breaks mid-way

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type Instalment } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +42,8 @@ export interface SalesDraft {
   interestRateBp?: number | null;
   /** Paid in instalments (invoices) */
   instalments?: Instalment[] | null;
+  /** Order and dispatch details (invoices) */
+  dispatch?: DispatchDetails | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
@@ -54,6 +56,7 @@ export interface SalesDraftPayload {
   seriesId?: string | null;
   interestRateBp?: number | null;
   instalments?: Instalment[] | null;
+  dispatch?: Partial<DispatchDetails> | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
@@ -141,6 +144,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [interestRate, setInterestRate] = useState(invoice?.interestRateBp != null ? String(invoice.interestRateBp / 100) : '');
   const [instalments, setInstalments] = useState<Instalment[] | null>(invoice?.instalments ?? null);
+  const [dispatch, setDispatch] = useState<Partial<DispatchDetails>>(invoice?.dispatch ?? {});
+  const [showDispatch, setShowDispatch] = useState(!!invoice?.dispatch);
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
       ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
@@ -192,7 +197,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    ...(config.interest ? { instalments: instalments?.length ? instalments : null } : {}),
+    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
@@ -387,6 +392,20 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         </div>
       </Card>
 
+      {config.interest && (
+        <Card className="p-5">
+          <button type="button" className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300" aria-expanded={showDispatch} onClick={() => setShowDispatch((x) => !x)}>
+            {t('dispatch.title')}
+          </button>
+          {showDispatch && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {(['buyerOrderNo', 'buyerOrderDate', 'deliveryNote', 'dispatchDocNo', 'dispatchedThrough', 'destination', 'vehicleNo', 'termsOfDelivery'] as const).map((k) => (
+                <TextField key={k} label={t(`dispatch.fields.${k}`)} type={k === 'buyerOrderDate' ? 'date' : 'text'} value={dispatch[k] ?? ''} onChange={(e) => setDispatch((d) => ({ ...d, [k]: e.target.value || null }))} disabled={!canManage} dir={k === 'vehicleNo' || k === 'dispatchDocNo' ? 'ltr' : 'auto'} />
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
       {config.interest && <InstalmentsEditor value={instalments} onChange={setInstalments} total={amounts.total} issueDate={issueDate} plain={plain} digits={digits} disabled={!canManage} />}
       <Card className="p-5">
         <TextField label={t('invoices.fields.notes')} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!canManage} dir="auto" placeholder={t('invoices.notesPlaceholder')} />

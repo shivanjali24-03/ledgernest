@@ -44,3 +44,13 @@ describe('invoiceRows', () => {
     ]);
   });
 });
+
+describe('Dispatch details', () => {
+  it('cleans the vehicle number and prints only what was given', async () => {
+    const { dispatchSchema, dispatchLines } = await import('./index.js');
+    const d = dispatchSchema.parse({ buyerOrderNo: 'PO-77', buyerOrderDate: '2026-05-02', vehicleNo: 'mh 12-ab 1234', dispatchedThrough: 'VRL Logistics', deliveryNote: '' });
+    expect(d).toMatchObject({ vehicleNo: 'MH12AB1234', deliveryNote: null });
+    expect(dispatchLines(d)).toEqual(["Buyer's order: PO-77 dated 2026-05-02", 'Dispatched through: VRL Logistics', 'Vehicle: MH12AB1234']);
+    expect(dispatchSchema.safeParse({ vehicleNo: '12' }).success).toBe(false);
+  });
+});

@@ -4795,5 +4795,18 @@
       "due": "देय",
       "overdue": "थकीत"
     }
+  },
+  "dispatch": {
+    "title": "ऑर्डर आणि रवानगी तपशील",
+    "fields": {
+      "buyerOrderNo": "खरेदीदाराचा ऑर्डर क्र.",
+      "buyerOrderDate": "ऑर्डरची तारीख",
+      "deliveryNote": "डिलिव्हरी नोट",
+      "dispatchDocNo": "रवानगी दस्तऐवज / LR क्र.",
+      "dispatchedThrough": "कोणामार्फत पाठवले",
+      "destination": "गंतव्य",
+      "vehicleNo": "वाहन क्र.",
+      "termsOfDelivery": "डिलिव्हरीच्या अटी"
+    }
   }
 }
