@@ -145,7 +145,7 @@ export interface Dashboard {
   baseCurrency: string;
   kpis: { cash: DashboardKpi; receivables: DashboardKpi; payables: DashboardKpi; profit: DashboardKpi & { since: string } };
   monthly: { month: string; income: number; expenses: number; profit: number; cash: number }[];
-  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon' | 'msme_due' | 'stock_expiring'; count: number; amount?: number }[];
+  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon' | 'msme_due' | 'stock_expiring' | 'itc_180'; count: number; amount?: number }[];
   /** gst and upi only for organisations in India */
   setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean; gst?: boolean; upi?: boolean };
 }
@@ -178,7 +178,9 @@ export interface Gstr3b {
   inwardReverseCharge?: { taxable: number } & GstHeads;
   itc: GstHeads;
   /** 4(B)(1): credit not taken: blocked under s.17(5), and otherwise ineligible */
-  itcReversed?: { blocked: GstHeads; ineligible: GstHeads };
+  itcReversed?: { blocked: GstHeads; ineligible: GstHeads; unpaid180?: GstHeads };
+  /** 4(D)(1): credit reversed under rule 37, taken back once the supplier is paid */
+  itcReclaimed?: GstHeads;
   inwardTaxable: number;
   setOff: { cash: GstHeads; carriedForward: GstHeads; used: Record<'igst' | 'cgst' | 'sgst' | 'cess', GstHeads> };
   payable: GstHeads;
@@ -240,6 +242,8 @@ export interface ReportsApi {
   tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
   /** Bills from micro and small suppliers against the 45-day rule, and what section 43B(h) takes out of the year */
   msme(date?: string): Promise<MsmeReportView>;
+  /** Rule 37: bills against the 180-day limit for paying suppliers */
+  itc180(date?: string): Promise<Itc180Report>;
   /** Interest on late payment across the books on a day */
   interest(date?: string): Promise<InterestReport>;
   /** Balance confirmations asked for the day and side, with their answers */
@@ -293,6 +297,13 @@ export interface GstHealth {
   issues: { kind: 'org_gstin' | 'org_address' | 'items_hsn' | 'customers_state' | 'customers_einvoice' | 'vendors_gstin'; count: number; sample: { id: string; name: string }[] }[];
 }
 
+type Heads = { igst: number; cgst: number; sgst: number; cess: number };
+/** What GET /reports/itc-180 returns */
+export interface Itc180Report {
+  asOf: string;
+  bills: { id: string; number: string | null; vendorReference: string | null; vendor: { id: string; name: string }; invoiceDate: string; total: number; deadline: string; daysLeft: number; state: 'ok' | 'due_soon' | 'reverse' | 'reclaim'; balance: number; atRisk: Heads; reversed: Heads; reclaimable: Heads }[];
+  totals: { dueSoon: number; reverse: number; reclaim: number };
+}
 export type MsmeReportView = Omit<import('@ledgernest/shared').MsmeReport, 'bills'> & { bills: (import('@ledgernest/shared').MsmeBill & { vendorReference: string | null })[] };
 
 export interface ConfirmationRow {

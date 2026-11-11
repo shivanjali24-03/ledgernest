@@ -1,4 +1,4 @@
-import { documentsIssued, gstInterest, gstLateFee, msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
+import { itcBillStatus, documentsIssued, gstInterest, gstLateFee, msmeReport, tallyGroup, tallyMastersXml, tallyVoucherType, tallyVouchersXml, uniqueLedgerNames, panFromGstin, tdsDepositDue, complianceDueDates, buildCashForecast, type ForecastItem, Gstr2bError, parseGstr2b, reconcileGstr2b, type Gstr2bBill, buildSalesReport, salesReportRows, type SalesReportLine, type SalesReportBy, type SalesReportSide, buildStatement, statementEmailSchema, PDF_TYPE, pdfTableBytes, statementRows as accountStatementRows, statementTitle, type AccountStatementEvent, B2CL_THRESHOLD, gstSetOff, isGstin, splitTax, todayIn, zeroHeads, AGING_BUCKETS, agingBucket, BS_SECTIONS, bsSectionOf, fiscalYearOf, fiscalYearSpan, PNL_SECTIONS, pnlColumns, pnlSectionOf, type BsSection, type PnlCompare, type PnlSection, compareCodes, csvCell, currencyDigits, daysBetween, formatRate, NORMAL_SIDE, taxRole, toBase, type AgingBucket, type AgingSide } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoPendingApprovals } from '../approvals/demoApprovalsApi';
 import { demoCostCentreRows } from '../cost-centres/demoCostCentresApi';
@@ -6,7 +6,7 @@ import { createDemoAccountsApi } from '../accounts/demoAccountsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
 import { demoTaxState } from '../taxes/demoTaxesApi';
 import { DEMO_BASE_CURRENCY } from '../currencies/demoCurrenciesApi';
-import type { CashForecast, Compliance, GstHealth, Gstr2bReport, MsmeReportView, TdsReport, InterestReport } from './types';
+import type { CashForecast, Compliance, GstHealth, Gstr2bReport, MsmeReportView, Itc180Report, TdsReport, InterestReport } from './types';
 import type { Aging, AgingContact, BalanceSheet, CashFlow, Dashboard, GstHeads, GstRateRow, Gstr1, Gstr3b, Ledger, ProfitAndLoss, ReportsApi, StatementRow, TaxSummary, TrialBalance } from './types';
 
 /** Reports in demo mode, computed from the demo's posted journal entries with the same rules as the API. */
@@ -324,6 +324,8 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     if (bills.length) alerts.push({ kind: 'overdue_bills', count: bills.length, amount: bills.reduce((s, b) => s + b.balance, 0) });
     const msmeLate = (await msme(today)).bills.filter((b) => b.state === 'overdue' || b.state === 'due_soon');
     if (msmeLate.length) alerts.push({ kind: 'msme_due', count: msmeLate.length, amount: msmeLate.reduce((s, b) => s + b.balance, 0) });
+    const credit = (await itc180(today)).bills.filter((b) => b.state === 'due_soon' || b.state === 'reverse');
+    if (credit.length) alerts.push({ kind: 'itc_180', count: credit.length, amount: credit.reduce((s, b) => s + b.atRisk.igst + b.atRisk.cgst + b.atRisk.sgst + b.atRisk.cess, 0) });
     const drafts = (await journals.list({ status: 'draft', page: 1, pageSize: 1 })).total;
     if (drafts) alerts.push({ kind: 'draft_entries', count: drafts });
     const waiting = demoPendingApprovals();
@@ -422,6 +424,31 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     }
     saveDemoConfirmations(rows);
     return { created, emailed: 0, skipped };
+  };
+  /** Rule 37: the demo's bills with input credit against the 180-day limit for paying suppliers */
+  const itc180 = async (date?: string): Promise<Itc180Report> => {
+    const asOf = date ?? todayIn('Asia/Kolkata');
+    const tax = demoTaxState();
+    const bills = (await import('../bills/demoBillsApi')).demoStoredBillViews().filter((b) => b.status === 'open' && !b.currency && !b.reverseCharge && b.billDate <= asOf);
+    const rows = bills.flatMap((b) => {
+      const credit = zeroHeads();
+      for (const l of b.lines) {
+        if (!l.taxGroup || (l.itc ?? 'eligible') !== 'eligible') continue;
+        const g = tax.groups.find((x) => x.id === l.taxGroup!.id);
+        const rates = (g?.rateIds ?? []).map((id) => tax.rates.find((r) => r.id === id)!).filter(Boolean);
+        splitTax(l.amount, false, rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((x, k) => {
+          const kind = rates[k]!.kind;
+          const h = kind === 'utgst' ? 'sgst' : kind;
+          if (h === 'igst' || h === 'cgst' || h === 'sgst' || h === 'cess') credit[h] += x.amount;
+        });
+      }
+      if (!credit.igst && !credit.cgst && !credit.sgst && !credit.cess) return [];
+      const invoiceDate = b.vendorBillDate ?? b.billDate;
+      const s = itcBillStatus({ id: b.id, invoiceDate, total: b.total, credit, settlements: [...b.payments, ...(b.credits ?? [])].map((p) => ({ date: p.date, amount: p.amount })) }, asOf);
+      return s.state === 'ok' ? [] : [{ ...s, number: b.number, vendorReference: b.vendorReference, vendor: { id: b.contact.id, name: b.contact.name }, invoiceDate, total: b.total }];
+    });
+    const sum = (state: string, f: (r: (typeof rows)[number]) => { igst: number; cgst: number; sgst: number; cess: number }) => rows.filter((r) => r.state === state).reduce((t, r) => { const h = f(r); return t + h.igst + h.cgst + h.sgst + h.cess; }, 0);
+    return { asOf, bills: rows.sort((a, b) => a.deadline.localeCompare(b.deadline)), totals: { dueSoon: sum('due_soon', (r) => r.atRisk), reverse: sum('reverse', (r) => r.reversed), reclaim: sum('reclaim', (r) => r.reclaimable) } };
   };
   /** The demo's bills from micro and small vendors against the 45-day rule */
   const msme = async (date?: string): Promise<MsmeReportView> => {
@@ -675,6 +702,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
     gstHealth,
     tds,
     msme,
+    itc180,
     // Interest to today on the demo's invoices with interest terms
     interest: async () => {
       const { demoInvoiceViews, createDemoInvoicesApi } = await import('../invoices/demoInvoicesApi');

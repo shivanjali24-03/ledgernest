@@ -54,6 +54,7 @@ import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
 import { TdsReportService } from './tds-report.service.js';
 import { MsmeReportService } from './msme-report.service.js';
+import { Itc180Service } from './itc-180.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
@@ -107,6 +108,7 @@ export class ReportsController {
     private readonly tally: TallyExportService,
     private readonly tds: TdsReportService,
     private readonly msme: MsmeReportService,
+    private readonly itc180: Itc180Service,
     private readonly interest: InterestService,
   ) {}
 
@@ -562,6 +564,20 @@ export class ReportsController {
       tenant.organizationId,
       q.date ?? (await this.today(tenant.organizationId)),
     );
+  }
+
+  @Get('itc-180')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Bills against the 180-day rule (CGST rule 37): credit at risk in the next 30 days, to reverse for suppliers still unpaid after 180 days, and to take back once paid',
+  })
+  itc180Report(
+    @Query(new ZodValidationPipe(z.object({ date: isoDaySchema.optional() })))
+    q: { date?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.itc180.report(tenant.organizationId, q.date);
   }
 
   @Get('msme')

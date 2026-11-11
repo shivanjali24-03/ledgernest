@@ -19,6 +19,7 @@ import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import Gstr2bPanel from '../Gstr2bPanel';
 import GstHealthPanel from '../GstHealthPanel';
+import Itc180Panel from '../Itc180Panel';
 import CashForecastPanel from '../CashForecastPanel';
 import TdsPanel from '../TdsPanel';
 import MsmePanel from '../MsmePanel';
@@ -106,7 +107,8 @@ export default function Reports() {
   const tdsReport = useQuery({ queryKey: [...key, 'tds', from, to, tdsSide], queryFn: () => api!.tds(from, to, tdsSide), enabled: !!api && tab === 'tds' && from <= to, placeholderData: keepPreviousData });
   const forecast = useQuery({ queryKey: [...key, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && tab === 'forecast' });
   const cf = useQuery({ queryKey: [...key, 'cash-flow', from, to], queryFn: () => api!.cashFlow(from, to), enabled: !!api && tab === 'cash-flow' && from <= to, placeholderData: keepPreviousData });
-  const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | 'gstr-2b' | 'health' | null) ?? 'gstr-3b';
+  const gstReturn = (params.get('return') as 'gstr-3b' | 'gstr-1' | 'gstr-2b' | 'health' | 'itc-180' | null) ?? 'gstr-3b';
+  const itc180 = useQuery({ queryKey: [...key, 'itc-180', asOf], queryFn: () => api!.itc180(asOf), enabled: !!api && tab === 'gst' && gstReturn === 'itc-180' });
   const india = settings?.country === 'IN';
   const gstHealth = useQuery({ queryKey: [...key, 'gst-health'], queryFn: () => api!.gstHealth(), enabled: !!api && tab === 'gst' && gstReturn === 'health' });
   const g3b = useQuery({ queryKey: [...key, 'gstr3b', from, to], queryFn: () => api!.gstr3b(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-3b' && from <= to, placeholderData: keepPreviousData });
@@ -156,7 +158,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || tab === 'interest' || tab === 'confirmations' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health'))) && 'hidden')}>
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || tab === 'interest' || tab === 'confirmations' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health' || gstReturn === 'itc-180'))) && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={(tab === 'ledger' && !accountId) || (tab === 'statement' && !contactId)}>
                 {t('reports.print')}
               </Button>
@@ -407,7 +409,7 @@ export default function Reports() {
       ) : tab === 'gst' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
           <div className="flex flex-wrap items-end gap-4 print:hidden">
-            <Segmented<'gstr-3b' | 'gstr-1' | 'gstr-2b' | 'health'>
+            <Segmented<'gstr-3b' | 'gstr-1' | 'gstr-2b' | 'health' | 'itc-180'>
               label={t('reports.gst.return')}
               value={gstReturn}
               onChange={(v) => set({ return: v === 'gstr-3b' ? null : v })}
@@ -416,6 +418,7 @@ export default function Reports() {
                 { value: 'gstr-1', label: 'GSTR-1' },
                 { value: 'gstr-2b', label: t('reports.gstr2b.tab') },
                 { value: 'health', label: t('reports.gstHealth.tab') },
+                { value: 'itc-180', label: t('reports.itc180.tab') },
               ]}
             />
             <div className="w-44">
@@ -427,7 +430,7 @@ export default function Reports() {
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
             {gstReturn === 'gstr-1' && session.permissions.has('invoices.view') && <EinvoiceBatchButton from={from} to={to} />}
           </div>
-          {gstReturn === 'health' ? <GstHealthPanel data={gstHealth.data} isPending={gstHealth.isPending} isError={gstHealth.isError} onRetry={() => void gstHealth.refetch()} /> : gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
+          {gstReturn === 'itc-180' ? <Itc180Panel data={itc180.data} isPending={itc180.isPending} isError={itc180.isError} onRetry={() => void itc180.refetch()} /> : gstReturn === 'health' ? <GstHealthPanel data={gstHealth.data} isPending={gstHealth.isPending} isError={gstHealth.isError} onRetry={() => void gstHealth.refetch()} /> : gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
         </motion.div>
       ) : tab === 'scheduled' ? (
         <motion.div variants={fadeUp} role="tabpanel">

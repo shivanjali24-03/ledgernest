@@ -31,6 +31,7 @@ export function createLiveReportsApi(client: AuthClient, organizationId: string)
     gstHealth: () => r('/gst/health'),
     tds: (from, to, side = 'payable') => r(`/tds?from=${from}&to=${to}&side=${side}`),
     msme: (date) => r(`/msme${date ? `?date=${date}` : ''}`),
+    itc180: (date) => r(`/itc-180${date ? `?date=${date}` : ''}`),
     interest: (date) => r(`/interest${date ? `?date=${date}` : ''}`),
     confirmations: (asOf, side) => client.request(`/balance-confirmations?asOf=${asOf}&side=${side}`, { headers: { 'X-Organization-Id': organizationId } }),
     requestConfirmations: (input) => client.request('/balance-confirmations', { method: 'POST', json: input, headers: { 'X-Organization-Id': organizationId } }),

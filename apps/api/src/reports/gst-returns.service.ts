@@ -30,6 +30,7 @@ import {
   type Gstr2bBill,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Itc180Service } from './itc-180.service.js';
 import { TdsReportService } from './tds-report.service.js';
 
 /** GSTR-1 Table 13's codes for the nature of documents */
@@ -65,6 +66,7 @@ export class GstReturnsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tds: TdsReportService,
+    private readonly itc180: Itc180Service,
   ) {}
 
   private async india(organizationId: string) {
@@ -211,6 +213,10 @@ export class GstReturnsService {
       else itc[h] -= Number(t.cr);
     }
     const v = values[0]!;
+    // Rule 37: credit on suppliers unpaid after 180 days is reversed (4(B)(2)); paid since, it comes back (4(D)(1))
+    const rule37 = await this.itc180.forPeriod(organizationId, from, to);
+    const netItc = (h: keyof GstHeads) =>
+      Math.max(itc[h] - rule37.reverse[h] + rule37.reclaim[h], 0);
     const setOff = gstSetOff(
       {
         igst: Math.max(output.igst, 0),
@@ -219,10 +225,10 @@ export class GstReturnsService {
         cess: Math.max(output.cess, 0),
       },
       {
-        igst: Math.max(itc.igst, 0),
-        cgst: Math.max(itc.cgst, 0),
-        sgst: Math.max(itc.sgst, 0),
-        cess: Math.max(itc.cess, 0),
+        igst: netItc('igst'),
+        cgst: netItc('cgst'),
+        sgst: netItc('sgst'),
+        cess: netItc('cess'),
       },
     );
     return {
@@ -238,7 +244,9 @@ export class GstReturnsService {
       /** 4(A)(5): input tax credit on purchases (4(A)(3) reverse charge included), net of 4(B) */
       itc,
       /** 4(B)(1): credit not taken: blocked under s.17(5), and otherwise ineligible (rules 42 and 43) */
-      itcReversed: reversed,
+      itcReversed: { ...reversed, unpaid180: rule37.reverse },
+      /** 4(D)(1): credit reversed earlier under rule 37, taken back now the supplier is paid */
+      itcReclaimed: rule37.reclaim,
       inwardTaxable: Number(v.taxed_in ?? 0),
       /** 6.1: how the credit is used, what's paid in cash, and what's carried forward */
       setOff,
