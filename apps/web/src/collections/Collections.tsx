@@ -83,10 +83,29 @@ export default function Collections() {
   const total = rows.reduce((s, r) => s + r.overdue, 0);
   // Interest on late payment, when any customer's invoices carry it
   const withInterest = rows.some((r) => !!r.a.interest);
+  const raiseAll = useMutation({
+    mutationFn: () => invoicesApi!.raiseAllInterest(),
+    onSuccess: (r) => {
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast(t('collections.interestRaised', { count: r.raised.length }));
+    },
+    onError: (e) => toast(apiErrorMessage(e, t), 'error'),
+  });
   return (
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>
-        <PageHeader eyebrow={<span dir="auto">{session.organization}</span>} title={t('collections.title')} description={rows.length ? t('collections.summary', { count: rows.length, amount: money.format(total) }) : t('collections.description')} />
+        <PageHeader
+          eyebrow={<span dir="auto">{session.organization}</span>}
+          title={t('collections.title')}
+          description={rows.length ? t('collections.summary', { count: rows.length, amount: money.format(total) }) : t('collections.description')}
+          actions={
+            withInterest && canChase && invoicesApi ? (
+              <Button variant="secondary" loading={raiseAll.isPending} onClick={() => raiseAll.mutate()}>
+                {t('collections.raiseInterest')}
+              </Button>
+            ) : undefined
+          }
+        />
       </motion.div>
       <motion.div variants={fadeUp}>
         <Card className="overflow-x-auto">

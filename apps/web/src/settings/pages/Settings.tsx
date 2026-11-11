@@ -210,6 +210,13 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         {text('interestRate', t('settings.fields.interestRate'), { dir: 'ltr', inputMode: 'decimal', placeholder: '18', hint: t('settings.hints.interestRate') })}
         <SelectField label={t('settings.fields.interestMethod')} value={v.interestMethod} onChange={set('interestMethod')} disabled={!canManage || !v.interestRate.trim()} options={[{ value: 'simple', label: t('settings.interestMethods.simple') }, { value: 'monthly', label: t('settings.interestMethods.monthly') }]} />
         {text('interestGraceDays', t('settings.fields.interestGraceDays'), { dir: 'ltr', inputMode: 'numeric', disabled: !canManage || !v.interestRate.trim(), hint: t('settings.hints.interestGraceDays') })}
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={v.interestAutoRaise === 'true'} disabled={!canManage || !v.interestRate.trim()} onChange={(e) => set('interestAutoRaise')({ target: { value: String(e.target.checked) } })} className="mt-0.5 size-4 rounded accent-brand-600" />
+          <span>
+            <span className="font-medium">{t('settings.fields.interestAutoRaise')}</span>
+            <span className="block text-xs text-ink-500">{t('settings.hints.interestAutoRaise')}</span>
+          </span>
+        </label>
       </Section>
 
       <Section title={t('settings.email.title')} description={t('settings.email.description')}>

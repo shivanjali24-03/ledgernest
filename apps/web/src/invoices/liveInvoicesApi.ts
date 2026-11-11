@@ -31,6 +31,10 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
     issue: (id) => r(`/${id}/issue`, { method: 'POST' }),
     void: (id, input) => r(`/${id}/void`, { method: 'POST', json: input }),
     remind: (id, input) => r(`/${id}/remind`, { method: 'POST', json: input }),
+    interestStatus: (id) => r(`/${id}/interest`),
+    raiseInterest: (id) => r(`/${id}/interest/raise`, { method: 'POST', json: {} }),
+    waiveInterest: (id, input) => r(`/${id}/interest/waive`, { method: 'POST', json: input }),
+    raiseAllInterest: () => r('/interest/raise', { method: 'POST', json: {} }),
     email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     share: (id) => r(`/${id}/share`, { method: 'POST' }),
     einvoice: async (id) => {

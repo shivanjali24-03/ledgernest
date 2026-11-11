@@ -140,3 +140,37 @@ export function interestTermsFor(
   if (!rateBp) return null;
   return { rateBp, method: org.method ?? 'simple', graceDays: org.graceDays ?? 0 };
 }
+
+/** Waiving interest a customer would owe: how much (omitted = everything chargeable now) and why */
+export const interestWaiverSchema = z.object({
+  amount: z.number().int().min(1).max(1e15).optional(),
+  reason: z.string().trim().min(3, 'Say why the interest is waived.').max(500),
+});
+export type InterestWaiverInput = z.input<typeof interestWaiverSchema>;
+
+/** Raising interest invoices: to which day (default today) */
+export const interestRaiseSchema = z.object({ asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
+
+/** The least worth raising an invoice for: ₹1 */
+export const INTEREST_MIN_CHARGE = 100;
+
+/**
+ * Interest split over a supply's GST rates in proportion to their taxable value, as GST charges interest on late
+ * payment at the rate of the supply it's on (CGST Act s.15(2)(d)); the paise left over go to the largest share.
+ */
+export function splitInterest(amount: number, parts: { key: string | null; value: number }[]): { key: string | null; amount: number }[] {
+  const byKey = new Map<string | null, number>();
+  for (const p of parts) if (p.value > 0) byKey.set(p.key, (byKey.get(p.key) ?? 0) + p.value);
+  const total = [...byKey.values()].reduce((s, v) => s + v, 0);
+  if (!total) return [{ key: null, amount }];
+  const shares = [...byKey].map(([key, v]) => ({ key, exact: (amount * v) / total }));
+  const out = shares.map((s) => ({ key: s.key, amount: Math.floor(s.exact) }));
+  let left = amount - out.reduce((s, x) => s + x.amount, 0);
+  const order = shares.map((s, i) => ({ i, frac: s.exact - Math.floor(s.exact) })).sort((a, b) => b.frac - a.frac);
+  for (const o of order) {
+    if (left <= 0) break;
+    out[o.i]!.amount++;
+    left--;
+  }
+  return out.filter((x) => x.amount > 0);
+}

@@ -14,6 +14,7 @@ import { CustomerLinkService } from './customer-link.service.js';
 import { InvoiceShareService } from './invoice-share.service.js';
 import { PublicInvoicesController } from './public-invoices.controller.js';
 import { InvoicesService } from './invoices.service.js';
+import { InterestChargesService } from './interest-charges.service.js';
 import { WebhookEventsModule } from '../integrations/webhook-events.module.js';
 // Stateless: provided here too, for the statement on a customer's account link
 import { StatementsService } from '../reports/statements.service.js';
@@ -28,6 +29,7 @@ import { StatementsService } from '../reports/statements.service.js';
     PublicCustomerController,
   ],
   providers: [
+    InterestChargesService,
     InvoicesService,
     StatementsService,
     InvoiceRemindersService,

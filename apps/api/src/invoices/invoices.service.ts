@@ -63,6 +63,8 @@ export type DraftIn = {
   seriesId?: string | null;
   /** Interest on late payment for this invoice: null = the customer's or organisation's, 0 = none */
   interestRateBp?: number | null;
+  /** For an invoice charging interest on late payment: the invoice it's on */
+  interestOnInvoiceId?: string | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -255,6 +257,16 @@ export class InvoicesService {
 
   private lock(tx: Tx, organizationId: string) {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'invoices:' + organizationId}))`;
+  }
+
+  /** The organisation's time zone */
+  async timeZone(organizationId: string) {
+    return (
+      await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { timeZone: true },
+      })
+    )?.timeZone;
   }
 
   private async today(organizationId: string) {
@@ -986,6 +998,7 @@ export class InvoicesService {
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
           interestRateBp: input.interestRateBp ?? null,
+          interestOnInvoiceId: input.interestOnInvoiceId ?? null,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),

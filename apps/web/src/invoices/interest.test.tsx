@@ -66,4 +66,24 @@ describe('interest on late payment', () => {
     const row = (await screen.findByRole('rowheader', { name: /Kumar Logistics/ })).closest('tr')!;
     expect(within(row).getAllByRole('cell')[1]!.textContent).toMatch(/₹[\d,]+\.\d{2}/);
   }, 30_000);
+
+  it('raises an interest invoice for what’s accrued, and waives with a reason', async () => {
+    await createDemoSettingsApi(() => true).update({ interestRateBp: 1800, interestMethod: 'simple', interestGraceDays: 0 });
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const d = await api.create({ contactId: kumar.id, issueDate: daysAgo(40), dueDate: daysAgo(30), lines: [{ description: 'Freight', quantity: '1', unitPrice: 1_00_000_00, accountId: sampleId('4100.01') }] });
+    const inv = await api.issue(d.id);
+    // Some is waived first, then the rest raised
+    const before = await api.interestStatus(inv.id);
+    expect(before.chargeable).toBe(before.accrued);
+    const after = await api.waiveInterest(inv.id, { amount: 100_00, reason: 'Goodwill' });
+    expect(after).toMatchObject({ waived: 100_00, chargeable: before.accrued - 100_00 });
+    renderApp(`/invoices/${inv.id}`);
+    const raise = await screen.findByRole('button', { name: /Raise interest invoice for/ }, { timeout: 10_000 });
+    await userEvent.click(raise);
+    expect(await screen.findByText('Interest invoice drafted: look it over and issue it', {}, { timeout: 10_000 })).toBeInTheDocument();
+    const status = await api.interestStatus(inv.id);
+    expect(status).toMatchObject({ charged: before.accrued - 100_00, chargeable: 0 });
+    expect(status.charges).toHaveLength(1);
+  }, 30_000);
 });

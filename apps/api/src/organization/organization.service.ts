@@ -56,6 +56,7 @@ const select = {
   interestRateBp: true,
   interestMethod: true,
   interestGraceDays: true,
+  interestAutoRaise: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -90,6 +91,7 @@ type Columns = Partial<{
   interestRateBp: number | null;
   interestMethod: string;
   interestGraceDays: number;
+  interestAutoRaise: boolean;
 }>;
 
 const ADDRESS_COLUMNS = {

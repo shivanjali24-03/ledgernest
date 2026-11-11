@@ -34,6 +34,9 @@ import {
   ewayTransportSchema,
   einvoiceIrnSchema,
   type EwayTransport,
+  interestRaiseSchema,
+  interestWaiverSchema,
+  todayIn,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -48,6 +51,7 @@ import { InvoiceRemindersService } from './invoice-reminders.service.js';
 import { EinvoiceService } from './einvoice.service.js';
 import { InvoiceShareService } from './invoice-share.service.js';
 import { InvoicesService } from './invoices.service.js';
+import { InterestChargesService } from './interest-charges.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
 type Draft = Parameters<InvoicesService['createDraft']>[0];
@@ -67,6 +71,7 @@ export class InvoicesController {
     private readonly reminders: InvoiceRemindersService,
     private readonly sharing: InvoiceShareService,
     private readonly einvoices: EinvoiceService,
+    private readonly interestCharges: InterestChargesService,
   ) {}
 
   @Get()
@@ -335,6 +340,89 @@ export class InvoicesController {
     @Req() req: Request,
   ) {
     return this.invoices.void(invoiceId, body, { actor, tenant, req });
+  }
+
+  @Post('interest/raise')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Draft interest invoices for every invoice with interest on late payment left to charge, to a day (default today)',
+  })
+  async raiseAllInterest(
+    @Body(new ZodValidationPipe(interestRaiseSchema)) body: { asOf?: string },
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    const asOf =
+      body.asOf ??
+      todayIn(
+        (await this.invoices.timeZone(tenant.organizationId)) ?? 'Asia/Kolkata',
+      );
+    return this.interestCharges.raiseAll(tenant.organizationId, asOf, {
+      actor,
+      tenant,
+      req,
+    });
+  }
+
+  @Get(':id/interest')
+  @RequirePermission('invoices.view')
+  @ApiOkResponse({
+    description:
+      'Interest on late payment on the invoice: accrued to today, invoiced already, waived, left to charge',
+  })
+  async interestStatus(
+    @Param('id', id) invoiceId: string,
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    await this.invoices.get(tenant.organizationId, invoiceId);
+    return this.interestCharges.status(
+      tenant.organizationId,
+      invoiceId,
+      todayIn(
+        (await this.invoices.timeZone(tenant.organizationId)) ?? 'Asia/Kolkata',
+      ),
+    );
+  }
+
+  @Post(':id/interest/raise')
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'A draft invoice for the interest left to charge on this one, with GST at its supply’s rates',
+  })
+  raiseInterest(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(interestRaiseSchema)) body: { asOf?: string },
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.interestCharges.raise(invoiceId, body.asOf, {
+      actor,
+      tenant,
+      req,
+    });
+  }
+
+  @Post(':id/interest/waive')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'Lets the customer off interest on this invoice, with the reason',
+  })
+  waiveInterest(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(interestWaiverSchema))
+    body: z.output<typeof interestWaiverSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.interestCharges.waive(invoiceId, body, { actor, tenant, req });
   }
 
   @Post(':id/remind')

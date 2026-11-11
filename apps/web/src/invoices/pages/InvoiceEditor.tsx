@@ -31,6 +31,7 @@ import ShareInvoiceDialog from '../ShareInvoiceDialog';
 import EinvoiceProblemsDialog from '../EinvoiceProblemsDialog';
 import EwayBillDialog from '../EwayBillDialog';
 import IrnDialog from '../IrnDialog';
+import InterestPanel from '../InterestPanel';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -272,6 +273,7 @@ export default function InvoiceEditor() {
               </p>
             )}
             <InvoiceDocument invoice={invoice!} />
+            {invoice!.interest && <InterestPanel invoice={invoice!} api={api} />}
             <p className="text-sm text-ink-500 print:hidden">
               {invoice!.journalEntry && (
                 <>

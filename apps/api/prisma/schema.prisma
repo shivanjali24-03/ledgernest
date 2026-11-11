@@ -102,6 +102,9 @@ model Organization {
   interestRateBp       Int?               @map("interest_rate_bp")
   interestMethod       String             @default("simple") @map("interest_method")
   interestGraceDays    Int                @default(0) @map("interest_grace_days")
+  /// On the 1st of each month, draft interest invoices for what's accrued; the month it last did
+  interestAutoRaise    Boolean            @default(false) @map("interest_auto_raise")
+  interestRaisedFor    String?            @map("interest_raised_for")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
@@ -127,6 +130,7 @@ model Organization {
   numberSeries         NumberSeries[]
   stockBatches         StockBatch[]
   stockSerials         StockSerial[]
+  interestWaivers      InterestWaiver[]
   invoiceLines         InvoiceLine[]
   payments             Payment[]
   allocations          PaymentAllocation[]
@@ -802,6 +806,8 @@ model Invoice {
   interestRateBp      Int?      @map("interest_rate_bp")
   interestMethod      String?   @map("interest_method")
   interestGraceDays   Int?      @map("interest_grace_days")
+  /// For an invoice raised for interest on late payment: the invoice the interest is on
+  interestOnInvoiceId String?   @map("interest_on_invoice_id") @db.Uuid
   fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
   status              String    @default("draft") /// draft | issued | void
   issueDate           DateTime  @map("issue_date") @db.Date
@@ -857,12 +863,15 @@ model Invoice {
   credits     CreditApplication[]
   recurring   RecurringInvoice?   @relation(fields: [organizationId, recurringInvoiceId], references: [organizationId, id], onDelete: NoAction)
 
+  interestWaivers InterestWaiver[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, fullNumber])
   @@unique([seriesId, fiscalYearId, number])
   @@unique([organizationId, journalEntryId])
   @@unique([organizationId, voidEntryId])
   @@index([organizationId, contactId])
+  @@index([organizationId, interestOnInvoiceId])
   @@index([organizationId, recurringInvoiceId])
   @@index([organizationId, status, dueDate])
   @@map("invoices")
@@ -2095,4 +2104,24 @@ model StockSerial {
   @@unique([organizationId, itemId, serialNo])
   @@index([organizationId, serialNo])
   @@map("stock_serials")
+}
+
+/// Interest on late payment a customer is let off, on one invoice, and why
+model InterestWaiver {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  amount         BigInt
+  reason         String
+  /// The day it was waived to
+  date           DateTime @db.Date
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoice      Invoice      @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: Cascade)
+
+  @@unique([organizationId, id])
+  @@index([organizationId, invoiceId])
+  @@map("interest_waivers")
 }
