@@ -35,6 +35,7 @@ import { AttachmentsModule } from './attachments/attachments.module.js';
 import { ImportsModule } from './imports/imports.module.js';
 import { IntegrationsModule } from './integrations/integrations.module.js';
 import { ScheduledReportsModule } from './scheduled-reports/scheduled-reports.module.js';
+import { HousekeepingModule } from './housekeeping/housekeeping.module.js';
 import { BackupsModule } from './backups/backups.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -80,6 +81,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ImportsModule,
     IntegrationsModule,
     ScheduledReportsModule,
+    HousekeepingModule,
     BackupsModule,
     PlatformModule,
   ],
