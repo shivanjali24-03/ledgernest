@@ -1,10 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import {
   currencyDigits,
   pdfTableBytes,
   rupeesInWords,
 } from '@ledgernest/shared';
 import { organizationLogo } from '../common/pdf-logo.js';
+import type { Request } from 'express';
+import type { Actor, Tenant } from '../access/types.js';
+import { AuditService } from '../audit/audit.service.js';
+import { organizationSender } from '../common/reply-to.js';
+import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { VendorCreditsService } from './vendor-credits.service.js';
 
@@ -18,6 +27,8 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 export class DebitNotePdfService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+    private readonly audit: AuditService,
     private readonly notes: VendorCreditsService,
   ) {}
 
@@ -136,5 +147,69 @@ export class DebitNotePdfService {
       data: pdf,
       fileName: `debit-note-${dn.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
     };
+  }
+
+  /** Emails the debit note as a PDF to the vendor (or the address given), and records that it went */
+  async email(
+    id: string,
+    input: { email?: string; message?: string },
+    ctx: { actor: Actor; tenant: Tenant; req: Request },
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    if (!this.mail.configured)
+      throw new ConflictException({
+        message:
+          'Email isn’t set up on this server. Download the PDF and send it yourself.',
+        details: { reason: 'mail_off' },
+      });
+    const note = await this.notes.get(organizationId, id);
+    const contact = await this.prisma.contact.findFirstOrThrow({
+      where: { organizationId, id: note.contact.id },
+      select: { name: true, email: true },
+    });
+    const to = input.email ?? contact.email;
+    if (!to)
+      throw new BadRequestException({
+        message: 'This vendor has no email address. Enter one to send it to.',
+        details: { reason: 'no_email' },
+      });
+    const file = await this.download(organizationId, id);
+    const { name } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+    const sent = await this.mail.send({
+      ...(await organizationSender(this.prisma, organizationId)),
+      to: [to],
+      subject: `Debit note ${note.number} from ${name}`,
+      text: [
+        `Dear ${contact.name},`,
+        ...(input.message ? [input.message] : []),
+        `Please find attached debit note ${note.number} against your bill ${note.bill.vendorReference ?? note.bill.number ?? ''}.`,
+        name,
+      ].join('\n\n'),
+      attachments: [
+        {
+          filename: file.fileName,
+          content: file.data,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    if (!sent)
+      throw new ConflictException({
+        message: 'The email couldn’t be sent. Try again later.',
+        details: { reason: 'mail_failed' },
+      });
+    await this.audit.record({
+      action: 'org.debit_note.email',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'vendor_credit',
+      entityId: id,
+      after: { number: note.number, email: to },
+      req: ctx.req,
+    });
+    return { sentTo: to };
   }
 }

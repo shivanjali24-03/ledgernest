@@ -26,6 +26,7 @@ import {
   creditNoteVoidSchema,
   creditRefundSchema,
   type CreditApplyInput,
+  invoiceEmailSchema,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import type { z } from 'zod';
@@ -98,6 +99,23 @@ export class CreditNotesController {
       disposition: `attachment; filename="${f.fileName}"`,
       length: f.data.length,
     });
+  }
+
+  @Post(':id/email')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description: 'Emails the credit note to the customer as a PDF',
+  })
+  email(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) noteId: string,
+    @Body(new ZodValidationPipe(invoiceEmailSchema))
+    body: z.output<typeof invoiceEmailSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.pdfs.email(noteId, body, { actor, tenant, req });
   }
 
   @Get(':id')

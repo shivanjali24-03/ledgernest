@@ -1,5 +1,6 @@
 import { creditApplySchema, creditNoteNumber, creditNoteSchema, creditRefundSchema, currencyDigits, formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
+import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { DEMO_BASE_CURRENCY, demoRateOn } from '../currencies/demoCurrenciesApi';
 import { demoAdjustCredit, demoInvoiceViews, demoTrackCreditNote } from '../invoices/demoInvoicesApi';
@@ -86,6 +87,13 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
         return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map(strip) };
       }),
     get: (id) => wait(() => strip(find(load(), id))),
+    email: (id, input) =>
+      wait(() => {
+        const c = strip(find(load(), id));
+        const to = input.email ?? demoContactRows().find((x) => x.id === c.contact.id)?.email;
+        if (!to) throw new ApiError('validation', 400, undefined, undefined, { reason: 'no_email' });
+        return { sentTo: to };
+      }),
     pdf: (id) =>
       wait(() => {
         const c = strip(find(load(), id));

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Banknote, Building2, FileDown, FileMinus, Forward } from 'lucide-react';
+import { Ban, Banknote, Building2, FileDown, FileMinus, Forward, Mail } from 'lucide-react';
 import { saveBlob } from '../../lib/saveBlob';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,8 @@ import { fadeUp, stagger } from '../../motion/tokens';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { Card, EmptyState, ErrorState, PageHeader, Pagination, Pill, SkeletonRows } from '../../ui/Kit';
 import RowMenu from '../../ui/RowMenu';
+import { apiErrorMessage } from '../../platform/errors';
+import EmailDialog from '../../ui/EmailDialog';
 import { useToast } from '../../ui/toastContext';
 import ApplyDebitDialog from '../ApplyDebitDialog';
 import VendorRefundDialog from '../VendorRefundDialog';
@@ -38,6 +40,7 @@ export default function DebitNotes() {
   const [applying, setApplying] = useState<DebitNote | null>(null);
   const [refunding, setRefunding] = useState<DebitNote | null>(null);
   const [voiding, setVoiding] = useState<DebitNote | null>(null);
+  const [emailing, setEmailing] = useState<DebitNote | null>(null);
   const query = useQuery({ queryKey: ['debit-notes', session.organizationId, session.role ?? session.customRoleName, page], queryFn: () => api!.list({ page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ c, reason }: { c: DebitNote; reason?: string }) => api!.void(c.id, reason),
@@ -123,6 +126,7 @@ export default function DebitNotes() {
                     label={t('payments.actionsFor', { number: c.number })}
                     items={[
                       { key: 'pdf', label: t('common.downloadPdf'), icon: FileDown, onSelect: () => void api!.pdf(c.id).then(saveBlob, (e: unknown) => toast(debitNoteErrorMessage(e, t), 'error')) },
+                      ...(c.status === 'issued' && canManage ? [{ key: 'email', label: t('debitNotes.email.action'), icon: Mail, onSelect: () => setEmailing(c) }] : []),
                       ...(c.status === 'issued' && canManage && c.remaining > 0 ? [{ key: 'apply', label: t('debitNotes.applyAction'), icon: Forward, onSelect: () => setApplying(c) }] : []),
                       ...(c.status === 'issued' && canRefund && c.remaining > 0 ? [{ key: 'refund', label: t('debitNotes.refundAction'), icon: Banknote, onSelect: () => setRefunding(c) }] : []),
                       ...(c.status === 'issued' && canManage ? [{ key: 'void', label: t('debitNotes.void'), icon: Ban, danger: true, onSelect: () => setVoiding(c) }] : []),
@@ -137,6 +141,19 @@ export default function DebitNotes() {
       {data && data.total > PAGE_SIZE && <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} />}
       {applying && <ApplyDebitDialog note={applying} api={api} onClose={() => setApplying(null)} />}
       {refunding && <VendorRefundDialog note={refunding} api={api} onClose={() => setRefunding(null)} />}
+      {emailing && api && (
+        <EmailDialog
+          title={t('debitNotes.email.title', { number: emailing.number })}
+          description={t('debitNotes.email.body')}
+          defaultEmail={null}
+          blankHint={t('debitNotes.email.blankHint')}
+          send={(input) => api.email(emailing.id, input)}
+          sentMessage={(email) => t('debitNotes.email.sent', { email })}
+          demoMessage={(email) => t('debitNotes.email.sentDemo', { email })}
+          errorMessage={(e) => (e instanceof Error && 'details' in e && (e as { details?: { reason?: string } }).details?.reason === 'no_email' ? t('debitNotes.email.noEmail') : apiErrorMessage(e, t))}
+          onClose={() => setEmailing(null)}
+        />
+      )}
       <ConfirmDialog
         open={!!voiding}
         title={voiding ? t('debitNotes.voidTitle', { number: voiding.number }) : ''}

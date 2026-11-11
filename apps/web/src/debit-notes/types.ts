@@ -34,6 +34,8 @@ export interface DebitNotesApi {
   get(id: string): Promise<DebitNote>;
   /** The debit note as a PDF for the vendor */
   pdf(id: string): Promise<{ blob: Blob; filename: string }>;
+  /** Emails it as a PDF; the demo only pretends */
+  email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
   /** How much of each of a bill's lines can still be credited, and which are goods kept in stock */
   creditable(billId: string): Promise<{ billLineId: string; quantity: string; stock: boolean }[]>;
   create(input: VendorCreditInput): Promise<DebitNote>;

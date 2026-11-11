@@ -7,6 +7,7 @@ import { gstinCheckChar } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { MailService } from '../src/mail/mail.service.js';
 
 const gstin = (first14: string) => `${first14}${gstinCheckChar(first14)}`;
 
@@ -280,6 +281,30 @@ describe('Debit notes to vendors (e2e)', () => {
     expect(text).toContain('(Authorised signatory) Tj');
   });
 
+  it('emails the debit note to the vendor as a PDF', async () => {
+    process.env.SMTP_URL = 'json';
+    try {
+      expect(
+        (await as().post(`/debit-notes/${chair.id}/email`, {}).expect(400)).body
+          .details,
+      ).toMatchObject({ reason: 'no_email' });
+      await as()
+        .post(`/debit-notes/${chair.id}/email`, {
+          email: 'billing@sharma.example',
+        })
+        .expect(200);
+      expect(app.get(MailService).captured.at(-1)).toMatchObject({
+        to: ['billing@sharma.example'],
+        attachments: ['debit-note-dn-2026-27-0001.pdf'],
+      });
+      expect(app.get(MailService).capturedText.at(-1)).toMatch(
+        /against your bill SOS\/[0-9a-f]{4}/,
+      );
+    } finally {
+      delete process.env.SMTP_URL;
+    }
+  });
+
   it('keeps credit with the vendor once the bill is paid, then puts it on another bill and takes a refund', async () => {
     await as()
       .post('/payments/payments', {
@@ -470,6 +495,7 @@ describe('Debit notes to vendors (e2e)', () => {
         'org.vendor_credit.apply',
         'org.vendor_credit.refund',
         'org.vendor_credit.void',
+        'org.debit_note.email',
       ]),
     );
   });
