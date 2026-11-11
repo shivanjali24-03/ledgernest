@@ -3921,7 +3921,8 @@
       "debit_note": "Debit note",
       "debit_note_void": "Debit note voided",
       "challan_out": "Sent on challan",
-      "challan_back": "Back from challan"
+      "challan_back": "Back from challan",
+      "grn": "Goods receipt"
     },
     "onHandPill": "On hand: {{quantity}} {{unit}}",
     "track": "Track stock",
@@ -5231,6 +5232,11 @@
       "nothing_to_bill": "Nothing has come in that isn’t billed yet. Record goods received first.",
       "before_order": "Goods can’t come before they’re ordered.",
       "not_vendor": "Choose a vendor."
-    }
+    },
+    "batchOf": "Batch of {{description}}",
+    "expiryOf": "Expiry of {{description}}",
+    "serialsOf": "Serial numbers of {{description}}",
+    "grniHint": "Goods kept in stock come in now, at the order’s price, owed as goods received not yet billed until the bill is recorded.",
+    "grniOwed": "Received, not yet billed:"
   }
 }

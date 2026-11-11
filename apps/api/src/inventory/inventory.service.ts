@@ -14,6 +14,7 @@ import {
   creditNoteNumber,
   vendorCreditNumber,
   quoteNumber,
+  grnNumber,
   type QuoteKind,
   costOfQuantity,
   formatQuantity,
@@ -1615,52 +1616,59 @@ export class InventoryService {
           'debit_note_void',
           'challan_out',
           'challan_back',
+          'grn',
         ].includes(x.kind),
     ))
       docs.set(r.sourceId!, null);
     if (docs.size) {
       const ids = [...docs.keys()];
-      const [bills, invoices, notes, debitNotes, challans] = await Promise.all([
-        this.prisma.bill.findMany({
-          where: { organizationId, id: { in: ids } },
-          select: {
-            id: true,
-            number: true,
-            fiscalYear: { select: { name: true } },
-          },
-        }),
-        this.prisma.invoice.findMany({
-          where: { organizationId, id: { in: ids } },
-          select: {
-            id: true,
-            number: true,
-            fiscalYear: { select: { name: true } },
-            fullNumber: true,
-          },
-        }),
-        this.prisma.creditNote.findMany({
-          where: { organizationId, id: { in: ids } },
-          select: {
-            id: true,
-            number: true,
-            fiscalYear: { select: { name: true } },
-            fullNumber: true,
-          },
-        }),
-        this.prisma.vendorCredit.findMany({
-          where: { organizationId, id: { in: ids } },
-          select: {
-            id: true,
-            number: true,
-            fiscalYear: { select: { name: true } },
-            fullNumber: true,
-          },
-        }),
-        this.prisma.quote.findMany({
-          where: { organizationId, id: { in: ids } },
-          select: { id: true, number: true, kind: true },
-        }),
-      ]);
+      const [bills, invoices, notes, debitNotes, challans, receipts] =
+        await Promise.all([
+          this.prisma.bill.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: {
+              id: true,
+              number: true,
+              fiscalYear: { select: { name: true } },
+            },
+          }),
+          this.prisma.invoice.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: {
+              id: true,
+              number: true,
+              fiscalYear: { select: { name: true } },
+              fullNumber: true,
+            },
+          }),
+          this.prisma.creditNote.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: {
+              id: true,
+              number: true,
+              fiscalYear: { select: { name: true } },
+              fullNumber: true,
+            },
+          }),
+          this.prisma.vendorCredit.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: {
+              id: true,
+              number: true,
+              fiscalYear: { select: { name: true } },
+              fullNumber: true,
+            },
+          }),
+          this.prisma.quote.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: { id: true, number: true, kind: true },
+          }),
+          this.prisma.goodsReceipt.findMany({
+            where: { organizationId, id: { in: ids } },
+            select: { id: true, number: true },
+          }),
+        ]);
+      for (const g of receipts) docs.set(g.id, grnNumber(g.number));
       for (const q of challans)
         docs.set(q.id, quoteNumber(q.number, q.kind as QuoteKind));
       for (const c of debitNotes)

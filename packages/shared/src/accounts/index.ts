@@ -134,6 +134,8 @@ export const FX_ACCOUNTS = {
   rcm_payable: { code: '2170', type: 'liability', subtype: 'tax_payable' },
   /** Goods out on delivery challans: still ours, but not on hand (job work, approval, exhibitions) */
   goods_on_challan: { code: '1560', type: 'asset', subtype: 'current_asset' },
+  /** Goods in stock received on purchase orders, their bills not yet recorded */
+  grni: { code: '2180', type: 'liability', subtype: 'current_liability' },
 } as const satisfies Record<string, { code: string; type: AccountType; subtype: AccountSubtype }>;
 export type FxAccountKey = keyof typeof FX_ACCOUNTS;
 export const FX_ACCOUNT_NAMES: Record<FxAccountKey, { en: string } & Record<string, string>> = {
@@ -142,6 +144,7 @@ export const FX_ACCOUNT_NAMES: Record<FxAccountKey, { en: string } & Record<stri
   round_off: { en: 'Round off', hi: 'राउंड ऑफ', mr: 'राउंड ऑफ' },
   rcm_payable: { en: 'GST payable under reverse charge', hi: 'रिवर्स चार्ज के तहत देय GST', mr: 'रिव्हर्स चार्ज अंतर्गत देय GST' },
   goods_on_challan: { en: 'Goods sent on delivery challan', hi: 'डिलीवरी चालान पर भेजा गया माल', mr: 'डिलिव्हरी चलनावर पाठवलेला माल' },
+  grni: { en: 'Goods received, not yet billed', hi: 'प्राप्त माल, बिल बाकी', mr: 'मिळालेला माल, बिल बाकी' },
   fx_unrealised: { en: 'Unrealised exchange gain or loss', hi: 'अप्राप्त विनिमय लाभ या हानि', mr: 'अप्राप्त विनिमय नफा किंवा तोटा', es: 'Diferencias de cambio no realizadas', fr: 'Écarts de change latents', de: 'Unrealisierte Kursgewinne und -verluste', ar: 'أرباح أو خسائر الصرف غير المحققة' },
 };
 

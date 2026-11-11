@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  costOfQuantity,
   currencyDigits,
   dueDateFor,
   findIndianState,
@@ -1406,6 +1407,95 @@ export class BillsService {
             credit: diff < 0 ? -diff : 0,
           });
       }
+      // Goods already in stock from the order's receipt notes: the bill clears what they're owed on ("goods received,
+      // not yet billed") instead of bringing them in again; what the bill says they cost beyond that goes to stock
+      const { purchaseOrderId } = await tx.bill.findUniqueOrThrow({
+        where: { id },
+        select: { purchaseOrderId: true },
+      });
+      const cleared: {
+        poLineId: string;
+        n: number;
+        quantity: bigint;
+        value: bigint;
+      }[] = [];
+      if (purchaseOrderId && !p.currency) {
+        const pending = (
+          await tx.purchaseOrderLine.findMany({
+            where: {
+              organizationId,
+              purchaseOrderId,
+              grniQuantity: { gt: 0 },
+            },
+            orderBy: { lineNo: 'asc' },
+            select: {
+              id: true,
+              itemId: true,
+              grniQuantity: true,
+              grniValue: true,
+            },
+          })
+        ).map((g) => ({
+          id: g.id,
+          itemId: g.itemId,
+          q: parseQuantity(g.grniQuantity.toFixed(4))!,
+          v: g.grniValue,
+        }));
+        p.lines.forEach((l, n) => {
+          if (!l.itemId || l.inAltUnit) return;
+          let want = parseQuantity(l.quantity)!;
+          for (const g of pending) {
+            if (g.itemId !== l.itemId || g.q <= 0n || want <= 0n) continue;
+            const take = want < g.q ? want : g.q;
+            const v = take === g.q ? g.v : costOfQuantity(g.q, g.v, take);
+            cleared.push({ poLineId: g.id, n, quantity: take, value: v });
+            g.q -= take;
+            g.v -= v;
+            want -= take;
+          }
+        });
+        const total = cleared.reduce((t, c) => t + Number(c.value), 0);
+        if (total > 0) {
+          lines.push({
+            accountId: await ensureFxAccount(tx, organizationId, 'grni'),
+            description: `${label} goods received earlier`,
+            debit: total,
+            credit: 0,
+          });
+          const byLine = new Map<number, number>();
+          for (const c of cleared)
+            byLine.set(c.n, (byLine.get(c.n) ?? 0) + Number(c.value));
+          for (const [n, v] of byLine)
+            lines.push({
+              accountId: p.lines[n]!.accountId,
+              description: `${p.lines[n]!.description} (received earlier)`,
+              debit: 0,
+              credit: v,
+            });
+        }
+        for (const c of cleared) {
+          const now = await tx.purchaseOrderLine.findUniqueOrThrow({
+            where: { id: c.poLineId },
+            select: { grniQuantity: true },
+          });
+          await tx.purchaseOrderLine.update({
+            where: { id: c.poLineId },
+            data: {
+              grniQuantity: formatQuantity(
+                parseQuantity(now.grniQuantity.toFixed(4))! - c.quantity,
+              ),
+              grniValue: { decrement: c.value },
+            },
+          });
+        }
+      }
+      const clearedOn = (n: number) =>
+        cleared
+          .filter((c) => c.n === n)
+          .reduce((t, c) => ({ q: t.q + c.quantity, v: t.v + c.value }), {
+            q: 0n,
+            v: 0n,
+          });
       const contactName = i.contact.name;
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -1418,7 +1508,55 @@ export class BillsService {
         },
         ctx.actor.userId,
       );
-      // Tracked goods come into stock at what they cost, net of tax, in the base currency
+      // Tracked goods come into stock at what they cost, net of tax, in the base currency; goods received earlier on
+      // the order only take the difference between what the bill and the order said they cost
+      const rows = await tx.billLine.findMany({
+        where: { billId: id },
+        orderBy: { lineNo: 'asc' },
+        select: { id: true },
+      });
+      const portions = rows.map((row, n) => {
+        const l = p.lines[n]!;
+        const all = parseQuantity(l.quantity)!;
+        const c = clearedOn(n);
+        const rest = all - c.q;
+        // The bill's value of what comes in now, the rest being for what came earlier
+        const restValue =
+          c.q === 0n
+            ? expense[n]!.debit
+            : rest > 0n
+              ? Number(costOfQuantity(all, BigInt(expense[n]!.debit), rest))
+              : 0;
+        return { row, l, c, rest, restValue };
+      });
+      const movements = await this.inventory.receipts(
+        tx,
+        organizationId,
+        portions.map(({ row, l, c, rest, restValue }) => ({
+          id: row.id,
+          itemId: rest > 0n ? l.itemId : null,
+          quantity: formatQuantity(rest > 0n ? rest : 0n),
+          // GST that can't be claimed is part of what the goods cost
+          value: restValue,
+          batchNo: l.batchNo ?? null,
+          mfgDate: l.mfgDate ?? null,
+          expiryDate: l.expiryDate ?? null,
+          serials: c.q === 0n ? (l.serials ?? []) : [],
+          inAltUnit: l.inAltUnit ?? false,
+        })),
+      );
+      // Goods received earlier: only what the bill says they cost beyond the order's price changes the stock's value
+      portions.forEach(({ row, l, c, restValue }, n) => {
+        if (c.q === 0n) return;
+        const diff = BigInt(expense[n]!.debit - restValue) - c.v;
+        if (diff !== 0n)
+          movements.push({
+            itemId: l.itemId!,
+            quantity: 0n,
+            value: diff,
+            sourceLineId: row.id,
+          });
+      });
       await this.inventory.save(
         tx,
         organizationId,
@@ -1429,31 +1567,7 @@ export class BillsService {
           journalEntryId: entry.id,
           actorId: ctx.actor.userId,
         },
-        await this.inventory.receipts(
-          tx,
-          organizationId,
-          (
-            await tx.billLine.findMany({
-              where: { billId: id },
-              orderBy: { lineNo: 'asc' },
-              select: { id: true },
-            })
-          ).map((row, n) => {
-            const l = p.lines[n]!;
-            return {
-              id: row.id,
-              itemId: l.itemId,
-              quantity: l.quantity,
-              // GST that can't be claimed is part of what the goods cost
-              value: expense[n]!.debit,
-              batchNo: l.batchNo ?? null,
-              mfgDate: l.mfgDate ?? null,
-              expiryDate: l.expiryDate ?? null,
-              serials: l.serials ?? [],
-              inAltUnit: l.inAltUnit ?? false,
-            };
-          }),
-        ),
+        movements,
       );
       // From an unregistered vendor (in India or abroad), we raise the invoice ourselves (CGST Act s.31(3)(f))
       let selfInvoiceNumber: string | null = null;
@@ -1485,6 +1599,13 @@ export class BillsService {
           rate,
           recordedAt: new Date(),
           selfInvoiceNumber,
+          ...(cleared.length && {
+            grniCleared: cleared.map((c) => ({
+              poLineId: c.poLineId,
+              quantity: formatQuantity(c.quantity),
+              value: Number(c.value),
+            })),
+          }),
         },
       });
       await this.audit.record(
@@ -1557,6 +1678,20 @@ export class BillsService {
         r.id,
         ctx.actor.userId,
       );
+      // Goods received on the order that it cleared are owed again, till another bill comes
+      const { grniCleared } = await tx.bill.findUniqueOrThrow({
+        where: { id },
+        select: { grniCleared: true },
+      });
+      for (const c of (grniCleared as
+        { poLineId: string; quantity: string; value: number }[] | null) ?? [])
+        await tx.purchaseOrderLine.update({
+          where: { id: c.poLineId },
+          data: {
+            grniQuantity: { increment: c.quantity },
+            grniValue: { increment: BigInt(c.value) },
+          },
+        });
       await tx.bill.update({
         where: { id },
         data: { status: 'void', voidEntryId: r.id, voidedAt: new Date() },

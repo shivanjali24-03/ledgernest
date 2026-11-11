@@ -14,7 +14,9 @@ export interface PurchaseOrderLine {
   discount: number;
   amount: number;
   taxAmount: number;
-  item: { id: string; name: string; unit: string | null } | null;
+  item: { id: string; name: string; unit: string | null; trackStock?: boolean; trackBatches?: boolean; trackSerials?: boolean } | null;
+  /** Goods in stock received and not yet cleared by a recorded bill */
+  grni?: { quantity: string; value: number };
   account: { id: string; code: string; name: string } | null;
   taxGroup: { id: string; name: string } | null;
 }
@@ -35,7 +37,9 @@ export interface PurchaseOrder {
   total: number;
   lines: PurchaseOrderLine[];
   /** Goods receipt notes */
-  receipts: { id: string; number: string; date: string; reference: string | null; notes: string | null; lines: { lineId: string; quantity: string }[] }[];
+  receipts: { id: string; number: string; date: string; reference: string | null; notes: string | null; lines: { lineId: string; quantity: string; value?: number; batchNo?: string | null; serials?: string[] }[] }[];
+  /** Goods received and not yet billed, in all: owed on "goods received, not yet billed" */
+  grniValue?: number;
   /** Bills made from it */
   bills: { id: string; number: string | null; status: string; total: number }[];
 }

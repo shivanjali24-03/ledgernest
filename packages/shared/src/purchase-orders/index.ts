@@ -2,11 +2,14 @@ import { z } from 'zod';
 import { billLineSchema } from '../bills/index.js';
 import { MAX_INVOICE_LINES, parseQuantity } from '../invoices/index.js';
 import { isoDaySchema } from '../periods/index.js';
+import { batchDatesInOrder, batchFieldShape, BATCH_DATES_MESSAGE } from '../inventory/batches.js';
+import { serialsSchema } from '../inventory/serials.js';
 
 /**
  * Purchase orders and goods receipt notes. An order (PO-0001) is drafted, then issued to the vendor; goods are
  * received against it on receipt notes (GRN-0001), each line up to what was ordered; and the bill is made from what
- * was received and not yet billed. Stock comes in when the bill is recorded, as for any bill.
+ * was received and not yet billed. Goods kept in stock come in on the receipt note, at the order's price, owed on
+ * "goods received, not yet billed"; recording the bill clears that, its price difference going to the stock's value.
  */
 export const PO_STATUSES = ['draft', 'issued', 'closed', 'cancelled'] as const;
 export type PoStatus = (typeof PO_STATUSES)[number];
@@ -55,7 +58,17 @@ export const goodsReceiptSchema = z.object({
   reference: text(64),
   notes: text(500),
   lines: z
-    .array(z.object({ lineId: z.uuid(), quantity }))
+    .array(
+      z
+        .object({
+          lineId: z.uuid(),
+          quantity,
+          /** Goods kept by batch: the batch it came as; by serial number: the units */
+          ...batchFieldShape,
+          serials: serialsSchema,
+        })
+        .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE }),
+    )
     .min(1, 'Say what came.')
     .max(MAX_INVOICE_LINES)
     .refine((a) => new Set(a.map((x) => x.lineId)).size === a.length, 'Each line can appear once.'),
