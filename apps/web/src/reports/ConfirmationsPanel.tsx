@@ -90,7 +90,7 @@ export default function ConfirmationsPanel({ api, asOf, side, canRequest, queryK
                         <button type="button" aria-label={t('confirmations.copy', { name: r.contact.name })} onClick={() => void navigator.clipboard?.writeText(confirmationUrl(r.token)).then(() => toast(t('confirmations.copied')))} className="grid size-8 place-items-center rounded-lg text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-800">
                           <Copy className="size-4" aria-hidden />
                         </button>
-                        <a aria-label={t('confirmations.whatsapp', { name: r.contact.name })} href={whatsappLink(message(r), r.contact.phone)} target="_blank" rel="noopener noreferrer" className="grid size-8 place-items-center rounded-lg text-[#1fa855] hover:bg-ink-100 dark:hover:bg-ink-800">
+                        <a aria-label={t('confirmations.whatsapp', { name: r.contact.name })} href={whatsappLink(message(r), r.contact.whatsapp ?? r.contact.phone)} target="_blank" rel="noopener noreferrer" className="grid size-8 place-items-center rounded-lg text-[#1fa855] hover:bg-ink-100 dark:hover:bg-ink-800">
                           <MessageCircle className="size-4" aria-hidden />
                         </a>
                       </span>

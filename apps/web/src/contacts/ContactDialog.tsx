@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { contactCreateSchema, GST_TREATMENTS, gstTreatmentOf, type GstTreatment, MSME_CATEGORIES, type MsmeCategory, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
+import { contactCreateSchema, TDS_SECTIONS, type TdsSection, GST_TREATMENTS, gstTreatmentOf, type GstTreatment, MSME_CATEGORIES, type MsmeCategory, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useCurrenciesApi } from '../currencies/useCurrenciesApi';
 import { useIntlLocale } from '../i18n';
@@ -10,6 +10,8 @@ import Button from '../ui/Button';
 import { Field, inputClass, SelectField, TextField } from '../ui/Field';
 import Modal from '../ui/Modal';
 import IndianAddressFields from '../geo/IndianAddressFields';
+import PersonsEditor, { type PersonForm } from './PersonsEditor';
+import ShipAddressesEditor, { type ShipAddressForm } from './ShipAddressesEditor';
 import BankDetailsFields from '../bank/BankDetailsFields';
 import { bankForm, bankValue, type BankForm } from '../bank/form';
 import { useToast } from '../ui/toastContext';
@@ -70,6 +72,10 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [pan, setPan] = useState(contact?.pan ?? '');
   const [email, setEmail] = useState(contact?.email ?? '');
   const [phone, setPhone] = useState(contact?.phone ?? '');
+  const [whatsapp, setWhatsapp] = useState(contact?.whatsapp ?? '');
+  const [tdsSection, setTdsSection] = useState<TdsSection | ''>(contact?.tdsSection ?? '');
+  const [persons, setPersons] = useState<PersonForm[]>((contact?.persons ?? []).map((p) => ({ name: p.name, designation: p.designation ?? '', email: p.email ?? '', phone: p.phone ?? '', whatsapp: p.whatsapp ?? '', primary: p.primary })));
+  const [shipAddresses, setShipAddresses] = useState<ShipAddressForm[]>((contact?.shipAddresses ?? []).map((a) => ({ label: a.label, line1: a.line1 ?? '', line2: a.line2 ?? '', city: a.city ?? '', region: a.region ?? '', postalCode: a.postalCode ?? '' })));
   const [billing, setBilling] = useState<Address>(() => toForm(contact?.billingAddress ?? { line1: null, line2: null, city: null, region: null, postalCode: null, country: 'IN' }));
   const [sameShipping, setSameShipping] = useState(!contact?.shippingAddress);
   const [shipping, setShipping] = useState<Address>(() => toForm(contact?.shippingAddress ?? null));
@@ -116,6 +122,10 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     udyamNumber: isVendor ? udyam : '',
     // Only vendors are paid into an account
     bankDetails: isVendor ? bankValue(bank) : null,
+    whatsapp: whatsapp || null,
+    tdsSection: isVendor && tdsSection ? tdsSection : null,
+    persons: persons.map((p) => ({ name: p.name, designation: p.designation || null, email: p.email || null, phone: p.phone || null, whatsapp: p.whatsapp || null, primary: p.primary })),
+    shipAddresses: shipAddresses.map((a) => ({ label: a.label, line1: a.line1 || null, line2: a.line2 || null, city: a.city || null, region: a.region || null, postalCode: a.postalCode || null, country: 'IN' })),
     notes,
   });
   const save = useMutation({
@@ -210,6 +220,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           />
           <TextField label={t('contacts.fields.email')} type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} dir="ltr" />
           <TextField label={t('contacts.fields.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} dir="ltr" />
+          <TextField label={t('contacts.fields.whatsapp')} value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} error={errors.whatsapp} dir="ltr" inputMode="tel" hint={t('contacts.hints.whatsapp')} />
+          {isVendor && billing.country === 'IN' && <SelectField label={t('contacts.fields.tdsSection')} value={tdsSection} onChange={(e) => setTdsSection(e.target.value as TdsSection | '')} options={[{ value: '', label: t('contacts.tdsNone') }, ...TDS_SECTIONS.map((x) => ({ value: x.code, label: `${x.code} · ${t(`payments.tds.sections.${x.code}`)}` }))]} />}
           <TextField label={t('contacts.fields.paymentTerms')} type="number" min={0} max={365} value={terms} onChange={(e) => setTerms(e.target.value)} error={errors.paymentTermsDays} hint={t('contacts.hints.paymentTerms')} />
           {isCustomer && <TextField label={t('contacts.fields.creditLimit')} value={limit} onChange={(e) => setLimit(e.target.value)} inputMode="decimal" dir="ltr" error={errors.creditLimit ? t('contacts.hints.badLimit') : undefined} hint={t('contacts.hints.creditLimit', { currency: currency || currencies.data?.base || '' })} />}
           {isCustomer && <TextField label={t('contacts.fields.interestRate')} value={interest} onChange={(e) => setInterest(e.target.value)} inputMode="decimal" dir="ltr" placeholder={t('contacts.hints.interestDefault')} error={errors.interestRateBp} hint={t('contacts.hints.interestRate')} />}
@@ -229,6 +241,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           </label>
           {!sameShipping && <AddressFields prefix="shipping" value={shipping} onChange={setShipping} errors={errors} />}
         </div>
+        <PersonsEditor value={persons} onChange={setPersons} errors={errors} />
+        {billing.country === 'IN' && isCustomer && <ShipAddressesEditor value={shipAddresses} onChange={setShipAddresses} errors={errors} />}
         <Field label={t('contacts.fields.notes')}>
           {({ id, describedBy }) => <textarea id={id} aria-describedby={describedBy} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} dir="auto" className={`${inputClass} h-auto border-ink-200 py-2 dark:border-ink-700`} />}
         </Field>

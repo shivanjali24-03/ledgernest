@@ -2352,7 +2352,9 @@
       "udyam": "Udyam registration number",
       "interestRate": "Interest on late payment, % a year",
       "gstTreatment": "GST registration",
-      "pan": "PAN"
+      "pan": "PAN",
+      "whatsapp": "WhatsApp number",
+      "tdsSection": "Usual TDS section"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
@@ -2362,7 +2364,8 @@
       "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h).",
       "interestDefault": "As set for the organisation",
       "interestRate": "Blank uses the organisation's rate; 0 charges none.",
-      "pan": "For TDS; worked out from the GSTIN when left blank"
+      "pan": "For TDS; worked out from the GSTIN when left blank",
+      "whatsapp": "When it isn’t the phone number; used for WhatsApp messages"
     },
     "address": {
       "line1": "Address",
@@ -2433,6 +2436,22 @@
       "consumer": "Consumer",
       "overseas": "Overseas",
       "uin": "UN body or embassy (UIN)"
+    },
+    "tdsNone": "None",
+    "persons": {
+      "title": "People",
+      "name": "Person {{n}}",
+      "designation": "Designation",
+      "primary": "Main contact",
+      "add": "Add a person",
+      "remove": "Remove person {{n}}"
+    },
+    "shipAddresses": {
+      "title": "Delivery addresses",
+      "label": "Address {{n}} name",
+      "labelHint": "Chakan plant, Bhiwandi warehouse…",
+      "add": "Add a delivery address",
+      "remove": "Remove address {{n}}"
     }
   },
   "items": {
@@ -4984,7 +5003,9 @@
     "toggle": "Ship to a different address",
     "title": "Ship to",
     "name": "Receiver",
-    "posHint": "Goods delivered to the customer’s own place in this state are supplied here, so it’s the place of supply. If they go to someone else on the customer’s say-so, choose the customer’s state instead (bill to, ship to)."
+    "posHint": "Goods delivered to the customer’s own place in this state are supplied here, so it’s the place of supply. If they go to someone else on the customer’s say-so, choose the customer’s state instead (bill to, ship to).",
+    "saved": "Saved delivery address",
+    "pickSaved": "Choose one of the customer’s addresses"
   },
   "bank": {
     "title": "Bank account",

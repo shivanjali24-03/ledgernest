@@ -298,7 +298,7 @@ function view(i: Stored): Invoice {
     placeOfSupply: i.placeOfSupply,
     reference: i.reference,
     notes: i.notes,
-    contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, phone: contact.phone ?? null, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
+    contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, phone: contact.phone ?? null, whatsapp: contact.whatsapp ?? null, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
     receivableAccount: receivable ? { id: receivable.id, code: receivable.code, name: receivable.name } : null,
     subtotal: a.subtotal,
     roundOff: a.roundOff,

@@ -70,6 +70,24 @@ describe('customers and vendors', () => {
     expect(within(await row('Tamil Textiles')).getByText(/Tamil Nadu/)).toBeInTheDocument();
   });
 
+  it('keeps the people to deal with, a WhatsApp number and delivery addresses', async () => {
+    renderApp();
+    await row('Kumar Logistics');
+    await userEvent.click(screen.getByRole('button', { name: 'Add contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New contact' }, { timeout: 5000 });
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Deccan Builders');
+    await userEvent.type(within(dialog).getByLabelText('WhatsApp number'), '+91 98220 11111');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add a person' }));
+    await userEvent.type(within(dialog).getByLabelText('Person 1'), 'Priya Joshi');
+    expect(within(dialog).getByRole('radio', { name: 'Main contact' })).toBeChecked();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add a delivery address' }));
+    await userEvent.type(within(dialog).getByLabelText('Address 1 name'), 'Chakan site');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add contact' }));
+    expect(await screen.findByText('Deccan Builders added', {}, { timeout: 5000 })).toBeInTheDocument();
+    const { demoContactRows } = await import('./demoContactsApi');
+    expect(demoContactRows().find((c) => c.name === 'Deccan Builders')).toMatchObject({ whatsapp: '+91 98220 11111', persons: [{ name: 'Priya Joshi', primary: true }], shipAddresses: [{ label: 'Chakan site' }] });
+  }, 30_000);
+
   it('fills an Indian address from the PIN code: the state, then the city and area to pick', async () => {
     renderApp();
     await row('Kumar Logistics');

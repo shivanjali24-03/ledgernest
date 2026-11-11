@@ -64,7 +64,7 @@ export default function Collections() {
       const share = await contactsApi!.share(r.a.contact.id);
       const amount = money.format(r.overdue);
       const message = t('collections.message', { name: r.a.contact.name, organization: session.organization, amount, count: r.count, days: r.oldest, link: accountUrl(share.token) });
-      const url = whatsappLink(message, r.contact?.phone);
+      const url = whatsappLink(message, r.contact?.whatsapp ?? r.contact?.phone);
       if (win) win.location.href = url;
       else window.open(url, '_blank');
       await contactsApi!.chased(r.a.contact.id, 'whatsapp');

@@ -205,7 +205,11 @@ export class BalanceConfirmationsService {
     const rows = await this.prisma.balanceConfirmation.findMany({
       where: { organizationId, asOf: asDate(asOf), side },
       orderBy: { contact: { name: 'asc' } },
-      include: { contact: { select: { id: true, name: true, phone: true } } },
+      include: {
+        contact: {
+          select: { id: true, name: true, phone: true, whatsapp: true },
+        },
+      },
     });
     return rows.map((r) => ({
       id: r.id,
