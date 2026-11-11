@@ -1,5 +1,5 @@
 import type { Einvoice, EinvoiceIrnInput, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
-import type { DispatchDetails, InvoiceCopy, InvoiceDraftInput, ShipTo, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
+import type { DispatchDetails, InvoiceCopy, InvoiceDiscount, InvoiceDraftInput, ShipTo, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
   id: string;
@@ -61,6 +61,11 @@ export interface Invoice {
   interest?: InvoiceInterest | null;
   /** The total rounded to the rupee: the difference */
   roundOff?: number;
+  /** Prices include GST */
+  pricesIncludeTax?: boolean;
+  /** A discount on the whole invoice, and what it came to */
+  discount?: InvoiceDiscount | null;
+  discountTotal?: number;
   /** Order and dispatch details */
   dispatch?: DispatchDetails | null;
   /** Where the goods go, when not the billing address */

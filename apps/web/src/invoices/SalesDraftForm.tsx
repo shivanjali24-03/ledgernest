@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ShipTo } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type InvoiceDiscount, type ShipTo } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +47,8 @@ export interface SalesDraft {
   dispatch?: DispatchDetails | null;
   /** Where the goods go (invoices) */
   shipTo?: ShipTo | null;
+  pricesIncludeTax?: boolean;
+  discount?: InvoiceDiscount | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
@@ -61,6 +63,8 @@ export interface SalesDraftPayload {
   instalments?: Instalment[] | null;
   dispatch?: Partial<DispatchDetails> | null;
   shipTo?: ShipTo | null;
+  pricesIncludeTax?: boolean;
+  discount?: InvoiceDiscount | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
@@ -151,6 +155,9 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [dispatch, setDispatch] = useState<Partial<DispatchDetails>>(invoice?.dispatch ?? {});
   const [showDispatch, setShowDispatch] = useState(!!invoice?.dispatch);
   const [shipTo, setShipTo] = useState<ShipTo | null>(invoice?.shipTo ?? null);
+  const [inclusive, setInclusive] = useState(!!invoice?.pricesIncludeTax);
+  const [discKind, setDiscKind] = useState<'percent' | 'amount'>(invoice?.discount?.kind ?? 'percent');
+  const [discText, setDiscText] = useState(invoice?.discount ? (invoice.discount.kind === 'percent' ? String(invoice.discount.value / 10_000) : (invoice.discount.value / 100).toFixed(2)) : '');
   const shipToState = shipTo && (shipTo.country ?? 'IN') === 'IN' ? (findIndianState(shipTo.region)?.code ?? null) : null;
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
@@ -180,7 +187,9 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     return { ...l, price, qty, disc, group, invalid: price === null || qty === null || disc === null };
   });
   const filled = parsed.filter((l) => l.description.trim() || l.price);
-  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: config.interest && settings?.roundInvoiceTotals && !customer?.currency ? 100 : undefined });
+  // A discount on the whole invoice: a percentage, or an amount in the invoice's currency
+  const invoiceDiscount: InvoiceDiscount | null = discText.trim() ? (discKind === 'percent' ? { kind: 'percent', value: Math.round(Number(discText) * 10_000) } : { kind: 'amount', value: toMinor(discText, digits) ?? 0 }) : null;
+  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: config.interest && settings?.roundInvoiceTotals && !customer?.currency ? 100 : undefined, taxInclusive: config.interest && inclusive, discount: config.interest ? invoiceDiscount : null });
   const breakdown = new Map<string, number>();
   filled
     .filter((l) => !l.invalid)
@@ -203,7 +212,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null } : {}),
+    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
@@ -390,6 +399,14 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                 </dd>
               </div>
             ))}
+            {!!amounts.discount && (
+              <>
+                <dt className="text-ink-500">{t('invoices.discountIncluded')}</dt>
+                <dd className="text-end font-mono tabular-nums" dir="ltr">
+                  −{plain(amounts.discount)}
+                </dd>
+              </>
+            )}
             {!!amounts.roundOff && (
               <>
                 <dt className="text-ink-500">{t('invoices.roundOff')}</dt>
@@ -406,6 +423,20 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         </div>
       </Card>
 
+      {config.interest && (
+        <Card className="flex flex-wrap items-end gap-4 p-5">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={inclusive} disabled={!canManage} onChange={(e) => setInclusive(e.target.checked)} className="size-4 rounded accent-brand-600" />
+            {t('invoices.pricesIncludeTax')}
+          </label>
+          <div className="w-40">
+            <SelectField label={t('invoices.discountKind')} value={discKind} onChange={(e) => setDiscKind(e.target.value as 'percent' | 'amount')} disabled={!canManage} options={[{ value: 'percent', label: t('invoices.discountPercent') }, { value: 'amount', label: t('invoices.discountAmount', { currency }) }]} />
+          </div>
+          <div className="w-32">
+            <TextField label={t('invoices.discountValue')} value={discText} onChange={(e) => setDiscText(e.target.value)} disabled={!canManage} inputMode="decimal" dir="ltr" className="text-end font-mono" placeholder="0" />
+          </div>
+        </Card>
+      )}
       {config.interest && (
         <Card className="p-5">
           <label className="flex items-center gap-2 text-sm font-medium">

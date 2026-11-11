@@ -65,3 +65,44 @@ describe('Rounding the total', () => {
     expect(invoiceAmounts([line(1_000_30)])).toMatchObject({ roundOff: 0, total: 1_180_35 });
   });
 });
+
+describe('Prices with tax, and a discount on the whole invoice', () => {
+  const g18 = [{ rateId: 'g', ratePpm: 180_000 }];
+  it('takes GST out of prices that include it', async () => {
+    const { invoiceAmounts } = await import('./index.js');
+    const r = invoiceAmounts([{ quantity: '1', unitPrice: 1_180_00, discountPpm: 0, rates: g18 }], { taxInclusive: true });
+    expect(r).toMatchObject({ subtotal: 1_000_00, tax: 180_00, total: 1_180_00 });
+  });
+
+  it('spreads a discount over the lines by value before tax, lowering the taxable value', async () => {
+    const { invoiceAmounts } = await import('./index.js');
+    const lines = [
+      { quantity: '1', unitPrice: 600_00, discountPpm: 0, rates: g18 },
+      { quantity: '1', unitPrice: 400_00, discountPpm: 0, rates: [] },
+    ];
+    const flat = invoiceAmounts(lines, { discount: { kind: 'amount', value: 100_00 } });
+    expect(flat.lines.map((l) => l.net)).toEqual([540_00, 360_00]);
+    expect(flat).toMatchObject({ beforeDiscount: 1_000_00, discount: 100_00, subtotal: 900_00, tax: 97_20, total: 997_20 });
+    const pct = invoiceAmounts(lines, { discount: { kind: 'percent', value: 50_000 } });
+    expect(pct).toMatchObject({ discount: 50_00, subtotal: 950_00 });
+    // The odd paise go to the largest share
+    expect(invoiceAmounts([{ quantity: '1', unitPrice: 1, discountPpm: 0, rates: [] }, { quantity: '1', unitPrice: 2, discountPpm: 0, rates: [] }], { discount: { kind: 'amount', value: 2 } }).lines.map((l) => l.net)).toEqual([0, 1]);
+  });
+});
+
+describe('HSN summary', () => {
+  it('adds up taxable value and tax by HSN and rate, leaving out lines without one', async () => {
+    const { hsnSummary } = await import('./index.js');
+    expect(
+      hsnSummary([
+        { amount: 100_00, taxAmount: 18_00, item: { hsnSac: '8471' }, ratePct: 18 },
+        { amount: 50_00, taxAmount: 9_00, item: { hsnSac: '8471' }, ratePct: 18 },
+        { amount: 20_00, taxAmount: 1_00, item: { hsnSac: '0902' }, ratePct: 5 },
+        { amount: 5_00, taxAmount: 0, item: null },
+      ]),
+    ).toEqual([
+      { hsn: '0902', rate: 5, taxable: 20_00, tax: 1_00 },
+      { hsn: '8471', rate: 18, taxable: 150_00, tax: 27_00 },
+    ]);
+  });
+});

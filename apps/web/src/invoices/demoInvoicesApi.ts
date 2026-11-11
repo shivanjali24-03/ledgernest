@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState, INVOICE_COPIES } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState, INVOICE_COPIES, type InvoiceDiscount } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -40,6 +40,8 @@ type Stored = {
   instalments?: Instalment[] | null;
   dispatch?: DispatchDetails | null;
   shipTo?: ShipTo | null;
+  pricesIncludeTax?: boolean;
+  discount?: InvoiceDiscount | null;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -262,7 +264,7 @@ function view(i: Stored): Invoice {
   const items = demoItemRows();
   const groups = i.lines.map((l) => groupOf(l.taxGroupId));
   // Rounded to the rupee when the demo company asks for it
-  const a = invoiceAmounts(i.lines.map((l, n) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discountPpm, rates: (groups[n]?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: demoSettings().roundInvoiceTotals && !i.currency ? 100 : undefined });
+  const a = invoiceAmounts(i.lines.map((l, n) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discountPpm, rates: (groups[n]?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: demoSettings().roundInvoiceTotals && !i.currency ? 100 : undefined, taxInclusive: !!i.pricesIncludeTax, discount: i.discount ?? null });
   const breakdown = new Map<string, number>();
   i.lines.forEach((_l, n) => {
     const g = groups[n];
@@ -286,6 +288,9 @@ function view(i: Stored): Invoice {
     receivableAccount: receivable ? { id: receivable.id, code: receivable.code, name: receivable.name } : null,
     subtotal: a.subtotal,
     roundOff: a.roundOff,
+    pricesIncludeTax: !!i.pricesIncludeTax,
+    discount: i.discount ?? null,
+    discountTotal: a.discount,
     taxTotal: a.tax,
     total: a.total,
     amountPaid: i.amountPaid,
@@ -363,7 +368,7 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     if (group) group = groupForSupply(group, supply, groups);
     return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null, dispatch: d.dispatch ?? null, shipTo: d.shipTo ?? null, pricesIncludeTax: !!d.pricesIncludeTax, discount: d.discount ?? null };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {

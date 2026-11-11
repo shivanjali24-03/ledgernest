@@ -30,6 +30,7 @@ import {
   type Instalment,
   type DispatchDetails,
   type ShipTo,
+  type InvoiceDiscount,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -77,6 +78,10 @@ export type DraftIn = {
   dispatch?: DispatchDetails | null;
   /** Where the goods go, when not the billing address */
   shipTo?: ShipTo | null;
+  /** Prices include GST */
+  pricesIncludeTax?: boolean;
+  /** A discount on the whole invoice, before tax */
+  discount?: InvoiceDiscount | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -123,6 +128,9 @@ const select = {
   subtotal: true,
   taxTotal: true,
   roundOff: true,
+  pricesIncludeTax: true,
+  discount: true,
+  discountTotal: true,
   total: true,
   amountPaid: true,
   issuedAt: true,
@@ -342,6 +350,11 @@ export class InvoicesService {
       subtotal: amount(i.subtotal),
       /** The total rounded to the rupee: the difference */
       roundOff: amount(i.roundOff),
+      /** Prices include GST */
+      pricesIncludeTax: i.pricesIncludeTax,
+      /** A discount on the whole invoice, and what it came to */
+      discount: (i.discount as InvoiceDiscount | null) ?? null,
+      discountTotal: amount(i.discountTotal),
       taxTotal: amount(i.taxTotal),
       total: amount(i.total),
       amountPaid: amount(i.amountPaid),
@@ -908,6 +921,8 @@ export class InvoicesService {
       // Rupee invoices, rounded to the rupee when the organisation asks for it
       {
         roundTo: org.roundInvoiceTotals && !contact.currency ? 100 : undefined,
+        taxInclusive: !!input.pricesIncludeTax,
+        discount: input.discount ?? null,
       },
     );
 
@@ -1078,6 +1093,11 @@ export class InvoicesService {
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
           roundOff: BigInt(p.amounts.roundOff),
+          pricesIncludeTax: !!input.pricesIncludeTax,
+          discount: input.discount
+            ? (input.discount as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
+          discountTotal: BigInt(p.amounts.discount),
           total: BigInt(p.amounts.total),
           createdById: ctx.actor.userId,
         },
@@ -1146,6 +1166,11 @@ export class InvoicesService {
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
           roundOff: BigInt(p.amounts.roundOff),
+          pricesIncludeTax: !!input.pricesIncludeTax,
+          discount: input.discount
+            ? (input.discount as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
+          discountTotal: BigInt(p.amounts.discount),
           total: BigInt(p.amounts.total),
         },
       });
@@ -1229,6 +1254,8 @@ export class InvoicesService {
         rate: i.rate && rateText(i.rate),
         instalments: (i.instalments as Instalment[] | null) ?? null,
         shipTo: (i.shipTo as ShipTo | null) ?? null,
+        pricesIncludeTax: i.pricesIncludeTax,
+        discount: (i.discount as InvoiceDiscount | null) ?? null,
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
           description: l.description,
@@ -1452,6 +1479,7 @@ export class InvoicesService {
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
           roundOff: BigInt(p.amounts.roundOff),
+          discountTotal: BigInt(p.amounts.discount),
           total: BigInt(p.amounts.total),
           interestRateBp: terms?.rateBp ?? 0,
           interestMethod: terms?.method ?? null,

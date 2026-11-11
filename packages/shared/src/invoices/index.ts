@@ -51,14 +51,43 @@ export interface InvoiceLineAmounts {
 }
 
 /** Each line's net and tax, and the invoice's subtotal, tax and total. */
+/** A discount on the whole invoice: a percentage (parts per million, 50_000 = 5%) or a flat amount (smallest unit) */
+export interface InvoiceDiscount {
+  kind: 'percent' | 'amount';
+  value: number;
+}
+
 /**
- * Line amounts, subtotal, tax and total. With `roundTo` (e.g. 100 paise), the total is rounded to the nearest whole
- * rupee, half up, and the difference kept as the round-off, as Indian invoices usually show.
+ * Line amounts, subtotal, tax and total.
+ * - `taxInclusive`: prices include GST, which is taken out of each line (the total is what the prices add up to).
+ * - `discount`: a discount on the whole invoice, spread over the lines by value before tax, so it lowers the
+ *   taxable value as GST allows for a discount given on the invoice; the paise left over go to the largest lines.
+ * - `roundTo` (e.g. 100 paise): the total rounded to the nearest whole rupee, half up, the difference kept as the
+ *   round-off.
  */
-export function invoiceAmounts(lines: readonly { quantity: string; unitPrice: number; discountPpm: number; rates: readonly TaxComponent[] }[], opts: { roundTo?: number } = {}) {
-  const out: InvoiceLineAmounts[] = lines.map((l) => {
-    const net = lineNet(l.quantity, l.unitPrice, l.discountPpm);
-    const { taxes } = splitTax(net, false, l.rates);
+export function invoiceAmounts(
+  lines: readonly { quantity: string; unitPrice: number; discountPpm: number; rates: readonly TaxComponent[] }[],
+  opts: { roundTo?: number; taxInclusive?: boolean; discount?: InvoiceDiscount | null } = {},
+) {
+  const values = lines.map((l) => lineNet(l.quantity, l.unitPrice, l.discountPpm));
+  const before = values.reduce((s, v) => s + v, 0);
+  // The invoice discount, line by line
+  const cut = values.map(() => 0);
+  const d = opts.discount;
+  if (d && d.value > 0 && before > 0) {
+    const wanted = d.kind === 'percent' ? Math.round((before * Math.min(d.value, 1_000_000)) / 1_000_000) : Math.min(d.value, before);
+    const exact = values.map((v) => (wanted * v) / before);
+    exact.forEach((x, n) => (cut[n] = Math.floor(x)));
+    let left = wanted - cut.reduce((s, x) => s + x, 0);
+    for (const n of exact.map((x, i) => ({ i, f: x - Math.floor(x) })).sort((a, b) => b.f - a.f).map((x) => x.i)) {
+      if (left <= 0) break;
+      cut[n]!++;
+      left--;
+    }
+  }
+  const out: InvoiceLineAmounts[] = lines.map((l, n) => {
+    const value = values[n]! - cut[n]!;
+    const { net, taxes } = splitTax(value, !!opts.taxInclusive, l.rates);
     return { net, taxes, tax: taxes.reduce((s, t) => s + t.amount, 0) };
   });
   const subtotal = out.reduce((s, l) => s + l.net, 0);
@@ -66,8 +95,11 @@ export function invoiceAmounts(lines: readonly { quantity: string; unitPrice: nu
   const raw = subtotal + tax;
   const step = opts.roundTo && opts.roundTo > 1 ? opts.roundTo : 0;
   const total = step ? Math.floor((raw + step / 2) / step) * step : raw;
-  return { lines: out, subtotal, tax, roundOff: total - raw, total };
+  /** discount: the invoice discount (in the prices' own terms: with tax when they include it) */
+  return { lines: out, subtotal, tax, roundOff: total - raw, total, discount: cut.reduce((s, x) => s + x, 0), beforeDiscount: before };
 }
+
+export const invoiceDiscountSchema = z.object({ kind: z.enum(['percent', 'amount']), value: z.number().int().min(1).max(1e15) }).refine((d) => d.kind !== 'percent' || d.value <= 1_000_000, 'A discount can’t be more than 100%.');
 
 const text = (max: number) =>
   z
@@ -173,6 +205,10 @@ export const invoiceDraftSchema = z
     seriesId: z.uuid().nullable().optional().default(null),
     /** Paid in instalments: each one's day and amount, adding up to the total (the last is the due date) */
     instalments: instalmentsSchema.nullable().optional().default(null),
+    /** Prices include GST, which is taken out of each line */
+    pricesIncludeTax: z.boolean().optional().default(false),
+    /** A discount on the whole invoice, before tax */
+    discount: invoiceDiscountSchema.nullable().optional().default(null),
     /** Interest on late payment for this invoice, basis points a year: null = the customer's or organisation's, 0 = none */
     interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
     reference: text(64),
@@ -304,3 +340,21 @@ export const INVOICE_COPIES = {
 } as const;
 export type InvoiceCopy = keyof typeof INVOICE_COPIES;
 export const invoiceCopyQuerySchema = z.object({ copy: z.enum(['original', 'duplicate', 'triplicate']).optional() });
+
+/**
+ * The HSN/SAC summary printed under a tax invoice: taxable value and tax for each code at each rate, as GST asks
+ * invoices to show by HSN.
+ */
+export function hsnSummary(lines: readonly { amount: number; taxAmount: number; item: { hsnSac: string | null } | null; ratePct?: number | null }[]) {
+  const by = new Map<string, { hsn: string; rate: number | null; taxable: number; tax: number }>();
+  for (const l of lines) {
+    const hsn = l.item?.hsnSac ?? '';
+    if (!hsn) continue;
+    const key = `${hsn}|${l.ratePct ?? ''}`;
+    const x = by.get(key) ?? { hsn, rate: l.ratePct ?? null, taxable: 0, tax: 0 };
+    x.taxable += l.amount;
+    x.tax += l.taxAmount;
+    by.set(key, x);
+  }
+  return [...by.values()].sort((a, b) => a.hsn.localeCompare(b.hsn) || (a.rate ?? 0) - (b.rate ?? 0));
+}

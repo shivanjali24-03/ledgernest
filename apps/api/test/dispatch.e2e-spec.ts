@@ -258,4 +258,106 @@ describe('Order and dispatch details on invoices (e2e)', () => {
     await get(`/invoices/${d.id}/pdf?copy=fifth`).expect(400);
     await patch('/organization', { roundInvoiceTotals: false }).expect(200);
   });
+
+  it('takes GST out of prices that include it, spreads an invoice discount before tax, and prints the HSN summary', async () => {
+    const gst18 = (
+      (await get('/taxes').expect(200)).body.groups as {
+        id: string;
+        name: string;
+      }[]
+    ).find((g) => g.name === 'GST 18%')!.id;
+    const item = (
+      await post('/items', {
+        name: `Cement ${run}`,
+        kind: 'goods',
+        hsnSac: '2523',
+        taxGroupId: gst18,
+        incomeAccountId: sales,
+      }).expect(201)
+    ).body.id as string;
+    const inclusive = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-05-10',
+        pricesIncludeTax: true,
+        lines: [
+          {
+            itemId: item,
+            description: 'Cement bag',
+            quantity: 1,
+            unitPrice: 1_180_00,
+            taxGroupId: gst18,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as {
+      subtotal: number;
+      taxTotal: number;
+      total: number;
+      pricesIncludeTax: boolean;
+    };
+    expect(inclusive).toMatchObject({
+      pricesIncludeTax: true,
+      subtotal: 1_000_00,
+      taxTotal: 180_00,
+      total: 1_180_00,
+    });
+    const discounted = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-05-10',
+        discount: { kind: 'percent', value: 100_000 },
+        lines: [
+          {
+            itemId: item,
+            description: 'Cement bag',
+            quantity: 10,
+            unitPrice: 400_00,
+            taxGroupId: gst18,
+            accountId: sales,
+          },
+          {
+            description: 'Loading',
+            quantity: 1,
+            unitPrice: 1_000_00,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as {
+      id: string;
+      subtotal: number;
+      taxTotal: number;
+      discountTotal: number;
+      lines: { amount: number }[];
+    };
+    // 10% off ₹5,000: ₹3,600 and ₹900 taxable, GST on the ₹3,600 only
+    expect(discounted).toMatchObject({
+      discountTotal: 500_00,
+      subtotal: 4_500_00,
+      taxTotal: 648_00,
+    });
+    expect(discounted.lines.map((l) => l.amount)).toEqual([3_600_00, 900_00]);
+    await post('/invoices', {
+      contactId: customer,
+      issueDate: '2026-05-10',
+      discount: { kind: 'percent', value: 2_000_000 },
+      lines: [
+        { description: 'x', quantity: 1, unitPrice: 100, accountId: sales },
+      ],
+    }).expect(400);
+    await post(`/invoices/${discounted.id}/issue`).expect(200);
+    const pdf = await get(`/invoices/${discounted.id}/pdf`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('HSN/SAC summary:');
+    expect(text).toContain('2523 @ 18%: taxable 3600.00, tax 648.00');
+    expect(text).toContain('Includes a discount of INR 500.00');
+  });
 });

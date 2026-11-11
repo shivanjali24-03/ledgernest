@@ -61,4 +61,16 @@ describe('order and dispatch details', () => {
     expect(d).toMatchObject({ roundOff: -30, total: 1_000_00 });
     resetDemoSettings();
   });
+
+  it('takes a discount on the whole invoice and prices with GST in them, in the draft’s totals', async () => {
+    renderApp('/invoices/new');
+    await userEvent.type(await screen.findByLabelText('Description on line 1', {}, { timeout: 10_000 }), 'Machine');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
+    await userEvent.type(screen.getByLabelText('Discount'), '10');
+    const totals = screen.getByRole('status', { name: 'Totals' });
+    expect(totals).toHaveTextContent('Discount (in the taxable value)');
+    expect(totals).toHaveTextContent(/900\.00/);
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Prices include GST' }));
+    expect(screen.getByRole('status', { name: 'Totals' })).toHaveTextContent(/900\.00/);
+  }, 30_000);
 });
