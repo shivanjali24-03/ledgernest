@@ -1,3 +1,4 @@
+import RowMenu from '../../ui/RowMenu';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
@@ -134,16 +135,6 @@ export default function ContactPage() {
                 </a>
               )}
               {c.isCustomer && can('invoices.manage') && (
-                <Button variant="secondary" icon={<Share2 className="size-4" />} onClick={() => setSharing(true)}>
-                  {c.share?.views ? t('contacts.account.actionOpened', { count: c.share.views }) : t('contacts.account.action')}
-                </Button>
-              )}
-              {can('contacts.manage') && (
-                <Button variant="ghost" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
-                  {t('contacts.edit')}
-                </Button>
-              )}
-              {c.isCustomer && can('invoices.manage') && (
                 <Button variant="secondary" icon={<Plus className="size-4" />} onClick={() => navigate(`/quotes/new?contact=${c.id}`)}>
                   {t('quotes.new')}
                 </Button>
@@ -153,6 +144,15 @@ export default function ContactPage() {
                   {t('invoices.new')}
                 </Button>
               )}
+              <RowMenu
+                label={t('quotes.moreActions')}
+                items={[
+                  ...(c.isCustomer && can('invoices.manage')
+                    ? [{ key: 'share', label: c.share?.views ? t('contacts.account.actionOpened', { count: c.share.views }) : t('contacts.account.action'), icon: Share2, onSelect: () => setSharing(true) }]
+                    : []),
+                  ...(can('contacts.manage') ? [{ key: 'edit', label: t('contacts.edit'), icon: Pencil, onSelect: () => setEditing(true) }] : []),
+                ]}
+              />
             </>
           }
         />

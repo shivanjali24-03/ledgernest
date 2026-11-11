@@ -104,14 +104,16 @@ describe('quotes', () => {
   it('duplicates a quote into a new one', { timeout: 20_000 }, async () => {
     const router = renderApp();
     await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 4000 }));
-    await screen.findByRole('button', { name: 'Duplicate' }, { timeout: 4000 });
+    // Under More (the page may still be settling: open the menu until the item shows)
     await waitFor(
       () => {
-        if (!router.state.location.search.includes('copy=')) fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
-        expect(router.state.location.search).toMatch(/^\?copy=/);
+        if (!screen.queryByRole('menuitem', { name: 'Duplicate' })) fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+        expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeInTheDocument();
       },
       { timeout: 6000 },
     );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate' }));
+    await waitFor(() => expect(router.state.location.search).toMatch(/^\?copy=/), { timeout: 6000 });
     await waitFor(() => expect(screen.getByLabelText('Description on line 1')).toHaveValue('Patient booking app: design and build'), { timeout: 4000 });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('QT-0002 saved', {}, { timeout: 4000 })).toBeInTheDocument();
@@ -161,7 +163,8 @@ describe('quotes', () => {
     const api = createDemoQuotesApi(() => true);
     const first = (await api.list({ page: 1, pageSize: 10 })).items[0]!;
     renderApp(`/quotes/${first.id}`);
-    await userEvent.click(await screen.findByRole('button', { name: 'Make a sales order' }, { timeout: 6000 }));
+    await userEvent.click(await screen.findByRole('button', { name: 'More actions' }, { timeout: 6000 }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Make a sales order' }));
     expect(await screen.findByText('SO-0001 drafted from it', {}, { timeout: 6000 })).toBeInTheDocument();
     const orders = await api.list({ kind: 'sales_order', page: 1, pageSize: 10 });
     expect(orders.items.map((q) => [q.number, q.reference])).toEqual([['SO-0001', first.number]]);

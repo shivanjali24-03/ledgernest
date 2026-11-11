@@ -41,8 +41,13 @@ export default function RowMenu({ label, items }: { label: string; items: RowMen
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => !root.current?.contains(e.target as Node) && !menu.current?.contains(e.target as Node) && setOpen(false);
-    // The page moved under it: close rather than float in the wrong place
-    const onScroll = (e: Event) => !menu.current?.contains(e.target as Node) && setOpen(false);
+    // The page moved under it: follow the button, and close once the button has left the screen
+    const onScroll = (e: Event) => {
+      if (menu.current?.contains(e.target as Node) || !button.current) return;
+      const r = button.current.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) setOpen(false);
+      else setPlace((p) => (p ? { ...p, top: p.up ? r.top - 4 - (menu.current?.offsetHeight ?? 0) : r.bottom + 4, left: Math.min(Math.max(8, r.right - 224), window.innerWidth - 232) } : p));
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       setOpen(false);

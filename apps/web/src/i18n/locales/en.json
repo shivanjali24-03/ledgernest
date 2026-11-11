@@ -4589,7 +4589,8 @@
         "duplicate": "Duplicate for transporter",
         "triplicate": "Triplicate for consignor"
       }
-    }
+    },
+    "moreActions": "More actions"
   },
   "emailDialog": {
     "send": "Send",

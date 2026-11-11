@@ -244,28 +244,16 @@ export default function QuoteEditor() {
                 <Pill tone={quote.status === 'invoiced' || quote.status === 'accepted' ? 'brand' : 'neutral'}>
                   <span className={quoteTone(quote.state)}>{t(`quotes.states.${quote.state}`)}</span>
                 </Pill>
-                {canManage && (
-                  <Button variant="ghost" icon={<Copy className="size-4" />} onClick={() => navigate(`/quotes/new?copy=${quote.id}`)}>
-                    {t('quotes.duplicate')}
+                {/* The main steps stay visible; everything else is under More */}
+                {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
+                  <Button icon={<FileOutput className="size-4" />} loading={convert.isPending} onClick={() => convert.mutate()}>
+                    {t('quotes.convert')}
                   </Button>
                 )}
-                {/* A quotation goes on to a sales order or a proforma; a proforma to a sales order */}
-                {canManage && quote.status !== 'declined' && (['sales_order', 'proforma', 'delivery_challan'] as const).filter((k) => k !== (quote.kind ?? 'quote') && (quote.kind === 'sales_order' ? k === 'delivery_challan' : quote.kind !== 'delivery_challan')).map((k) => (
-                  <Button key={k} variant="secondary" icon={<Copy className="size-4" />} loading={copyAs.isPending && copyAs.variables === k} onClick={() => copyAs.mutate(k)}>
-                    {t(`quotes.copyAs.${k}`)}
+                {canManage && moves.includes('accepted') && (
+                  <Button variant="secondary" icon={<Check className="size-4" />} loading={move.isPending && move.variables === 'accepted'} onClick={() => move.mutate('accepted')}>
+                    {t('quotes.accept')}
                   </Button>
-                ))}
-                {!editable && (
-                  <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
-                    {t('invoices.print')}
-                  </Button>
-                )}
-                <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate(undefined)}>
-                  {t('common.downloadPdf')}
-                </Button>
-                {/* A challan travels with the goods in three copies (Rule 55) */}
-                {quote.kind === 'delivery_challan' && (
-                  <RowMenu label={t('quotes.challan.copies.menu')} items={(['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: c, label: t(`quotes.challan.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) }))} />
                 )}
                 {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
                   <Button variant="secondary" icon={<Share2 className="size-4" />} onClick={() => setSharing(true)}>
@@ -277,26 +265,24 @@ export default function QuoteEditor() {
                     {t('quotes.email.action')}
                   </Button>
                 )}
-                {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
-                  <Button icon={<FileOutput className="size-4" />} loading={convert.isPending} onClick={() => convert.mutate()}>
-                    {t('quotes.convert')}
-                  </Button>
-                )}
-                {canManage && moves.includes('accepted') && (
-                  <Button variant="secondary" icon={<Check className="size-4" />} loading={move.isPending && move.variables === 'accepted'} onClick={() => move.mutate('accepted')}>
-                    {t('quotes.accept')}
-                  </Button>
-                )}
-                {canManage && moves.includes('declined') && (
-                  <Button variant="ghost" icon={<X className="size-4" />} loading={move.isPending && move.variables === 'declined'} onClick={() => move.mutate('declined')}>
-                    {t('quotes.decline')}
-                  </Button>
-                )}
-                {canManage && (quote.status === 'accepted' || quote.status === 'declined') && (
-                  <Button variant="ghost" icon={<Undo2 className="size-4" />} loading={move.isPending && move.variables === 'sent'} onClick={() => move.mutate('sent')}>
-                    {t('quotes.reopen')}
-                  </Button>
-                )}
+                <RowMenu
+                  label={t('quotes.moreActions')}
+                  items={[
+                    ...(canManage ? [{ key: 'duplicate', label: t('quotes.duplicate'), icon: Copy, onSelect: () => navigate(`/quotes/new?copy=${quote.id}`) }] : []),
+                    // A quotation goes on to a sales order or a proforma; a proforma to a sales order
+                    ...(canManage && quote.status !== 'declined'
+                      ? (['sales_order', 'proforma', 'delivery_challan'] as const)
+                          .filter((k) => k !== (quote.kind ?? 'quote') && (quote.kind === 'sales_order' ? k === 'delivery_challan' : quote.kind !== 'delivery_challan'))
+                          .map((k) => ({ key: k, label: t(`quotes.copyAs.${k}`), icon: Copy, onSelect: () => copyAs.mutate(k) }))
+                      : []),
+                    ...(!editable ? [{ key: 'print', label: t('invoices.print'), icon: Printer, onSelect: () => window.print() }] : []),
+                    { key: 'pdf', label: t('common.downloadPdf'), icon: FileDown, onSelect: () => download.mutate(undefined) },
+                    // A challan travels with the goods in three copies (Rule 55)
+                    ...(quote.kind === 'delivery_challan' ? (['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: `copy-${c}`, label: t(`quotes.challan.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) })) : []),
+                    ...(canManage && moves.includes('declined') ? [{ key: 'decline', label: t('quotes.decline'), icon: X, onSelect: () => move.mutate('declined') }] : []),
+                    ...(canManage && (quote.status === 'accepted' || quote.status === 'declined') ? [{ key: 'reopen', label: t('quotes.reopen'), icon: Undo2, onSelect: () => move.mutate('sent') }] : []),
+                  ]}
+                />
               </>
             ) : undefined
           }
