@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { serialsSchema } from '../inventory/serials.js';
 import { rateSchema } from '../currencies/index.js';
 import { invoiceNumber, parseQuantity } from '../invoices/index.js';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
@@ -28,6 +29,8 @@ export const creditNoteSchema = z.object({
     .array(
       z.object({
         invoiceLineId: z.uuid(),
+        /** For goods with serial numbers coming back: which units */
+        serials: serialsSchema,
         quantity: z
           .string()
           .trim()

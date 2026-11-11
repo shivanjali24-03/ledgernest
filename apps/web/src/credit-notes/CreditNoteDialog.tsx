@@ -32,6 +32,14 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
   const [date, setDate] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [reason, setReason] = useState('');
   const [returnsStock, setReturnsStock] = useState(false);
+  // Goods with serial numbers coming back: which units, ticked from those sold on the line
+  const [back, setBack] = useState<Record<string, string[]>>({});
+  const toggle = (lineId: string, serial: string) =>
+    setBack((b) => {
+      const now = b[lineId]?.includes(serial) ? b[lineId]!.filter((x) => x !== serial) : [...(b[lineId] ?? []), serial];
+      setQty((q) => ({ ...q, [lineId]: now.length ? String(now.length) : '' }));
+      return { ...b, [lineId]: now };
+    });
 
   const room = (lineId: string) => parseQuantity(left.data?.find((l) => l.invoiceLineId === lineId)?.quantity ?? '0') ?? 0n;
   const rows = invoice.lines.map((l) => {
@@ -45,7 +53,7 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
   const problem = rows.some((r) => r.invalid) ? 'quantity' : !chosen.length ? 'nothing' : null;
 
   const save = useMutation({
-    mutationFn: () => api.create({ invoiceId: invoice.id, date, reason: reason || null, returnsStock, lines: chosen.map((r) => ({ invoiceLineId: r.line.id, quantity: formatQuantity(r.q!) })) }),
+    mutationFn: () => api.create({ invoiceId: invoice.id, date, reason: reason || null, returnsStock, lines: chosen.map((r) => ({ invoiceLineId: r.line.id, quantity: formatQuantity(r.q!), ...(returnsStock && r.line.item?.trackSerials ? { serials: back[r.line.id] ?? [] } : {}) })) }),
     onSuccess: (c) => {
       for (const k of ['credit-notes', 'invoices', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
       toast(t('creditNotes.issued', { number: c.number }));
@@ -122,6 +130,17 @@ export default function CreditNoteDialog({ invoice, api, onClose, onDone }: { in
                       {r.line.quantity} × {plain(r.line.unitPrice)}
                       {r.line.taxGroup && ` · ${r.line.taxGroup.name}`}
                     </span>
+                    {returnsStock && r.line.item?.trackSerials && (r.line.serials?.length ?? 0) > 0 && (
+                      <fieldset className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                        <legend className="sr-only">{t('serials.returning', { description: r.line.description })}</legend>
+                        {r.line.serials!.map((sn) => (
+                          <label key={sn} className="flex items-center gap-1 font-mono text-xs" dir="ltr">
+                            <input type="checkbox" checked={back[r.line.id]?.includes(sn) ?? false} onChange={() => toggle(r.line.id, sn)} className="size-3.5 rounded accent-brand-600" />
+                            {sn}
+                          </label>
+                        ))}
+                      </fieldset>
+                    )}
                   </td>
                   <td className="py-1.5 text-end font-mono tabular-nums" dir="ltr">
                     {left.data ? formatQuantity(room(r.line.id)) : '…'}

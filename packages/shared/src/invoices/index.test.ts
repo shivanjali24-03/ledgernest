@@ -30,6 +30,11 @@ describe('invoiceRows', () => {
     expect(rows.at(-1)).toEqual(['', '', '', '', 'Balance due', '', '10000.00']);
   });
 
+  it('lists the serial numbers of the units sold under the line, three to a row', () => {
+    const rows = invoiceRows({ currency: 'INR', subtotal: 0, total: 0, amountPaid: 0, balance: 0, taxBreakdown: [], lines: [{ description: 'Phone', quantity: '4', unitPrice: 0, discount: 0, amount: 0, taxAmount: 0, item: null, serials: ['IMEI1', 'IMEI2', 'IMEI3', 'IMEI4'] }] }, 2);
+    expect(rows.slice(2, 4).map((r) => r[0])).toEqual(['   S/N IMEI1, IMEI2, IMEI3', '   S/N IMEI4']);
+  });
+
   it('lists the batches a line of goods came from under it', () => {
     const rows = invoiceRows({ currency: 'INR', subtotal: 100_00, total: 112_00, amountPaid: 0, balance: 112_00, taxBreakdown: [], lines: [{ description: 'Paracetamol 500mg', quantity: '10', unitPrice: 10_00, discount: 0, amount: 100_00, taxAmount: 12_00, item: { hsnSac: '3004' }, batches: [{ batchNo: 'PX1', mfgDate: '2026-01-10', expiryDate: '2027-12-31', quantity: '4' }, { batchNo: 'PX2', mfgDate: null, expiryDate: '2028-06-30', quantity: '6' }] }] }, 2);
     expect(rows.slice(1, 4)).toEqual([

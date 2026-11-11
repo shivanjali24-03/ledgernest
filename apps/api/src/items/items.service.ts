@@ -36,6 +36,7 @@ type Values = {
   expenseAccountId: string | null;
   trackStock: boolean;
   trackBatches?: boolean;
+  trackSerials?: boolean;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   reorderLevel: string | null;
@@ -58,6 +59,7 @@ const EDITABLE = [
   'expenseAccountId',
   'trackStock',
   'trackBatches',
+  'trackSerials',
   'inventoryAccountId',
   'cogsAccountId',
   'reorderLevel',
@@ -89,6 +91,7 @@ const select = {
   expenseAccountId: true,
   trackStock: true,
   trackBatches: true,
+  trackSerials: true,
   inventoryAccountId: true,
   cogsAccountId: true,
   reorderLevel: true,
@@ -458,6 +461,20 @@ export class ItemsService {
       'expense_account_type',
       'Purchases of an item go to an expense or asset account.',
     );
+    if (v.trackSerials && !v.trackStock)
+      throw refuse(
+        BadRequestException,
+        'Only goods whose stock is tracked can have serial numbers.',
+        'serials_need_stock',
+        { field: 'trackSerials' },
+      );
+    if (v.trackSerials && v.trackBatches)
+      throw refuse(
+        BadRequestException,
+        'Goods are kept either in batches or by serial number, not both.',
+        'batches_or_serials',
+        { field: 'trackSerials' },
+      );
     if (v.trackBatches && !v.trackStock)
       throw refuse(
         BadRequestException,
@@ -574,6 +591,7 @@ export class ItemsService {
         current.trackStock &&
         (changed.includes('trackStock') ||
           changed.includes('trackBatches') ||
+          changed.includes('trackSerials') ||
           changed.includes('inventoryAccountId') ||
           changed.includes('kind'))
       ) {

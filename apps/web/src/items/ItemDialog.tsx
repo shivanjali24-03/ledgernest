@@ -38,6 +38,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [expenseAccountId, setExpense] = useState(item?.expenseAccountId ?? '');
   const [trackStock, setTrackStock] = useState(item?.trackStock ?? false);
   const [trackBatches, setTrackBatches] = useState(item?.trackBatches ?? false);
+  const [trackSerials, setTrackSerials] = useState(item?.trackSerials ?? false);
   const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
   const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
   const [reorderLevel, setReorderLevel] = useState(item?.reorderLevel ?? '');
@@ -63,6 +64,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     expenseAccountId: expenseAccountId || null,
     trackStock: kind === 'goods' && trackStock,
     trackBatches: kind === 'goods' && trackStock && trackBatches,
+    trackSerials: kind === 'goods' && trackStock && trackSerials,
     inventoryAccountId: kind === 'goods' && trackStock ? inventoryAccountId || null : null,
     cogsAccountId: kind === 'goods' && trackStock ? cogsAccountId || null : null,
     reorderLevel: kind === 'goods' && trackStock ? reorderLevel.trim() || null : null,
@@ -212,10 +214,17 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
                 />
                 <TextField label={t('inventory.fields.reorderLevel')} value={reorderLevel} onChange={(e) => setReorderLevel(e.target.value)} error={errors.reorderLevel} hint={t('inventory.reorderHint')} inputMode="decimal" dir="ltr" className="text-end font-mono" />
                 <label className="flex items-start gap-2 text-sm sm:col-span-2">
-                  <input type="checkbox" checked={trackBatches} onChange={(e) => setTrackBatches(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+                  <input type="checkbox" checked={trackBatches} onChange={(e) => (setTrackBatches(e.target.checked), e.target.checked && setTrackSerials(false))} className="mt-0.5 size-4 rounded accent-brand-600" />
                   <span>
                     <span className="font-medium">{t('batches.track')}</span>
                     <span className="block text-xs text-ink-500">{t('batches.trackHint')}</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                  <input type="checkbox" checked={trackSerials} onChange={(e) => (setTrackSerials(e.target.checked), e.target.checked && setTrackBatches(false))} className="mt-0.5 size-4 rounded accent-brand-600" />
+                  <span>
+                    <span className="font-medium">{t('serials.track')}</span>
+                    <span className="block text-xs text-ink-500">{t('serials.trackHint')}</span>
                   </span>
                 </label>
               </div>

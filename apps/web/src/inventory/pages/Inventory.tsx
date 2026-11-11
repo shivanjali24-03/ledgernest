@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Boxes, Building2, CheckCircle2, SlidersHorizontal, Undo2 } from 'lucide-react';
@@ -168,9 +168,64 @@ export default function Inventory() {
       <motion.div variants={fadeUp}>
         <Expiring api={api} />
       </motion.div>
+      <motion.div variants={fadeUp}>
+        <SerialLookup api={api} />
+      </motion.div>
       {current && <Movements key={current.itemId} api={api} itemId={current.itemId} name={current.name} canAdjust={canAdjust} onAdjust={() => setAdjusting(current.itemId)} />}
       {adjusting && <AdjustStockDialog api={api} itemId={adjusting === true ? undefined : adjusting} onClose={() => setAdjusting(null)} />}
     </motion.div>
+  );
+}
+
+/** A serial number's story, for a warranty claim or a lost phone: which item, where it is now, who it was bought from and sold to */
+function SerialLookup({ api }: { api: InventoryApi }) {
+  const { t } = useTranslation();
+  const locale = useIntlLocale();
+  const [text, setText] = useState('');
+  const find = useMutation({ mutationFn: (serial: string) => api.serial(serial) });
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (text.trim().length >= 3) find.mutate(text.trim());
+  };
+  return (
+    <Card className="p-4">
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+        <div className="min-w-56 flex-1">
+          <TextField label={t('serials.lookup')} value={text} onChange={(e) => setText(e.target.value)} placeholder="IMEI / S/N" dir="ltr" className="font-mono" />
+        </div>
+        <Button type="submit" variant="secondary" loading={find.isPending} disabled={text.trim().length < 3}>
+          {t('serials.find')}
+        </Button>
+      </form>
+      {find.isError && <p className="mt-3 text-sm text-expense">{t('serials.notValid')}</p>}
+      {find.data && !find.data.length && <p className="mt-3 text-sm text-ink-500">{t('serials.notFound', { serial: find.variables })}</p>}
+      {find.data?.map((u) => (
+        <section key={u.itemId} className="mt-4" aria-label={`${u.serialNo} · ${u.item}`}>
+          <p className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-mono font-semibold" dir="ltr">
+              {u.serialNo}
+            </span>
+            <span dir="auto">{u.item}</span>
+            <Pill tone={u.status === 'in_stock' ? 'brand' : 'neutral'}>{t(`serials.statuses.${u.status}`)}</Pill>
+          </p>
+          <ol className="mt-2 space-y-1 border-s border-ink-200 ps-3 text-sm dark:border-ink-700">
+            {u.movements.map((m) => (
+              <li key={m.id}>
+                <span className="text-ink-500">{formatDate(`${m.date}T00:00:00Z`, locale)}</span> · {t(`inventory.kinds.${m.kind}`)}
+                {m.document?.number && (
+                  <span className="font-mono" dir="ltr">
+                    {' '}
+                    {m.document.number}
+                  </span>
+                )}
+                {m.contact && <span dir="auto"> · {m.contact}</span>}
+                {m.reason && <span className="text-ink-500" dir="auto"> · {m.reason}</span>}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </Card>
   );
 }
 

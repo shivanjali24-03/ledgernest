@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
 import { isoDaySchema } from '../periods/index.js';
 import { batchDatesInOrder, batchFieldShape, BATCH_DATES_MESSAGE } from './batches.js';
+import { serialsSchema } from './serials.js';
 
 /**
  * Stock kept at weighted average cost. Each movement in (a bill, an adjustment up) adds its quantity and value;
@@ -42,6 +43,8 @@ export const stockAdjustmentSchema = z
     reason: z.string().trim().min(3, 'Say why the stock changed.').max(500),
     /** For goods kept in batches: the batch counted (with its dates when it's new stock) */
     ...batchFieldShape,
+    /** For goods with serial numbers: the units counted in or written off */
+    serials: serialsSchema,
   })
   .strict()
   .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE });
@@ -49,3 +52,4 @@ export type StockAdjustmentInput = z.input<typeof stockAdjustmentSchema>;
 
 export const stockValuationQuerySchema = z.object({ asOf: isoDaySchema.optional() });
 export * from './batches.js';
+export * from './serials.js';

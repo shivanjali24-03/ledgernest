@@ -21,6 +21,8 @@ export interface Item {
   trackStock: boolean;
   /** Tracked goods kept in batches with manufacturing and expiry dates */
   trackBatches?: boolean;
+  /** Tracked goods whose every unit has its own serial number */
+  trackSerials?: boolean;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   inventoryAccount: { id: string; code: string; name: string } | null;

@@ -96,6 +96,11 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
               <tr key={l.id}>
                 <td className={cell} dir="auto">
                   {l.description}
+                  {(l.serials?.length ?? 0) > 0 && (
+                    <span className="block font-mono text-xs text-ink-500" dir="ltr">
+                      {t('serials.short')} {l.serials!.join(', ')}
+                    </span>
+                  )}
                   {l.batchNo && (
                     <span className="block text-xs text-ink-500" dir="ltr">
                       {batchLabel({ batchNo: l.batchNo, mfgDate: l.mfgDate, expiryDate: l.expiryDate })}
