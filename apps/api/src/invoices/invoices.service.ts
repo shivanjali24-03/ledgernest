@@ -1537,6 +1537,33 @@ export class InvoicesService {
         orderBy: { lineNo: 'asc' },
         select: { id: true },
       });
+      // Goods already out on the delivery challan this came from come back into stock first, to be sold here
+      const challan = await tx.quote.findFirst({
+        where: {
+          organizationId,
+          invoiceId: id,
+          kind: 'delivery_challan',
+          dispatchedAt: { not: null },
+          backAt: null,
+        },
+        select: { id: true },
+      });
+      const fromChallan = challan
+        ? await this.inventory.challanBack(tx, organizationId, challan.id)
+        : null;
+      if (challan && fromChallan)
+        await this.inventory.save(
+          tx,
+          organizationId,
+          {
+            kind: 'challan_back',
+            sourceId: challan.id,
+            date: issueDate,
+            journalEntryId: null,
+            actorId: ctx.actor.userId,
+          },
+          fromChallan.movements,
+        );
       const cost = await this.inventory.costOfSale(
         tx,
         organizationId,
@@ -1558,10 +1585,29 @@ export class InvoicesService {
           date: issueDate,
           memo: `Invoice ${label} · ${contactName}`,
           reference: label,
-          lines: [...lines, ...cost.journal],
+          lines: [...lines, ...(fromChallan?.journal ?? []), ...cost.journal],
         },
         ctx.actor.userId,
       );
+      if (challan) {
+        await tx.stockMovement.updateMany({
+          where: {
+            organizationId,
+            kind: 'challan_back',
+            sourceId: challan.id,
+            journalEntryId: null,
+          },
+          data: { journalEntryId: entry.id },
+        });
+        await tx.quote.update({
+          where: { id: challan.id },
+          data: {
+            backAt: asDate(issueDate),
+            backReason: 'invoiced',
+            backEntryId: entry.id,
+          },
+        });
+      }
       await this.inventory.save(
         tx,
         organizationId,

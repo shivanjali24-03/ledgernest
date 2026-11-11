@@ -1759,7 +1759,7 @@ model StockMovement {
   organizationId String   @map("organization_id") @db.Uuid
   itemId         String   @map("item_id") @db.Uuid
   date           DateTime @db.Date
-  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | adjustment | adjustment_undo
+  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | challan_out | challan_back | adjustment | adjustment_undo
   kind           String
   /// The bill or invoice it came from; for an undo, the movement it undoes
   sourceId       String?  @map("source_id") @db.Uuid
@@ -2005,38 +2005,45 @@ model ReminderPolicy {
 /// A quote (estimate) for a customer: priced like an invoice but posts nothing. It can be sent, accepted or
 /// declined, and turned into a draft invoice with the same lines.
 model Quote {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  number         Int
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  number          Int
   /// quote | proforma | sales_order | delivery_challan, each numbered on its own
-  kind           String    @default("quote")
+  kind            String    @default("quote")
   /// A delivery challan's reason (Rule 55): job_work | approval | branch_transfer | exhibition | unknown_quantity | other
-  purpose        String?
-  contactId      String    @map("contact_id") @db.Uuid
-  status         String    @default("draft") /// draft | sent | accepted | declined | invoiced
-  quoteDate      DateTime  @map("quote_date") @db.Date
-  expiryDate     DateTime  @map("expiry_date") @db.Date
-  currency       String?   @db.Char(3)
-  placeOfSupply  String?   @map("place_of_supply") @db.Char(2)
-  reference      String?
-  notes          String?
-  subtotal       BigInt    @default(0)
-  taxTotal       BigInt    @default(0) @map("tax_total")
-  total          BigInt    @default(0)
+  purpose         String?
+  contactId       String    @map("contact_id") @db.Uuid
+  status          String    @default("draft") /// draft | sent | accepted | declined | invoiced
+  quoteDate       DateTime  @map("quote_date") @db.Date
+  expiryDate      DateTime  @map("expiry_date") @db.Date
+  currency        String?   @db.Char(3)
+  placeOfSupply   String?   @map("place_of_supply") @db.Char(2)
+  reference       String?
+  notes           String?
+  subtotal        BigInt    @default(0)
+  taxTotal        BigInt    @default(0) @map("tax_total")
+  total           BigInt    @default(0)
   /// The invoice it became
-  invoiceId      String?   @map("invoice_id") @db.Uuid
-  createdById    String?   @map("created_by_id") @db.Uuid
-  sentAt         DateTime? @map("sent_at")
-  decidedAt      DateTime? @map("decided_at")
+  invoiceId       String?   @map("invoice_id") @db.Uuid
+  /// A delivery challan's goods leaving stock (to "goods sent on challan"), and coming back: invoiced or returned
+  dispatchedAt    DateTime? @map("dispatched_at") @db.Date
+  dispatchEntryId String?   @map("dispatch_entry_id") @db.Uuid
+  backAt          DateTime? @map("back_at") @db.Date
+  /// invoiced | returned
+  backReason      String?   @map("back_reason")
+  backEntryId     String?   @map("back_entry_id") @db.Uuid
+  createdById     String?   @map("created_by_id") @db.Uuid
+  sentAt          DateTime? @map("sent_at")
+  decidedAt       DateTime? @map("decided_at")
   /// A link the customer opens without signing in, to accept or decline (random, revocable)
-  shareToken     String?   @unique @map("share_token")
-  shareViews     Int       @default(0) @map("share_views")
-  shareViewedAt  DateTime? @map("share_viewed_at")
+  shareToken      String?   @unique @map("share_token")
+  shareViews      Int       @default(0) @map("share_views")
+  shareViewedAt   DateTime? @map("share_viewed_at")
   /// Who accepted or declined it from the link, and what they said
-  decidedBy      String?   @map("decided_by")
-  decisionNote   String?   @map("decision_note")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  decidedBy       String?   @map("decided_by")
+  decisionNote    String?   @map("decision_note")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)

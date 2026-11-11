@@ -1,4 +1,4 @@
-import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_TITLES, QUOTE_VALID_DAYS, todayIn, type QuoteKind, type QuoteStatus, type ChallanPurpose, CHALLAN_PURPOSE_TEXT } from '@ledgernest/shared';
+import { jobWorkDeadline, currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_TITLES, QUOTE_VALID_DAYS, todayIn, type QuoteKind, type QuoteStatus, type ChallanPurpose, CHALLAN_PURPOSE_TEXT } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -30,6 +30,10 @@ type Stored = {
   decisionNote?: string | null;
   shareToken?: string | null;
   shareViews?: number;
+  /** A challan's goods out and back (the demo keeps no stock for them) */
+  dispatchedAt?: string | null;
+  backAt?: string | null;
+  backReason?: 'invoiced' | 'returned' | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -117,6 +121,15 @@ async function view(q: Stored): Promise<Quote> {
     total: a.total,
     invoice: invoice ? { id: invoice.id, number: invoice.number, status: invoice.status } : null,
     sentAt: q.sentAt,
+    goods:
+      (q.kind ?? 'quote') === 'delivery_challan'
+        ? {
+            dispatchedAt: q.dispatchedAt ?? null,
+            backAt: q.backAt ?? (q.dispatchedAt && invoice && invoice.status !== 'draft' ? today() : null),
+            backReason: q.backReason ?? (q.dispatchedAt && invoice && invoice.status !== 'draft' ? 'invoiced' : null),
+            jobWorkDue: q.purpose === 'job_work' && q.dispatchedAt && !q.backAt ? jobWorkDeadline(q.dispatchedAt) : null,
+          }
+        : null,
     decidedAt: q.decidedAt,
     decidedBy: q.decidedBy ?? null,
     decisionNote: q.decisionNote ?? null,
@@ -246,6 +259,7 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         const rows = load();
         const q = find(rows, id);
         const from = (await view(q)).status;
+        if (status === 'draft' && q.dispatchedAt && !q.backAt) throw refuse(409, 'challan_dispatched');
         if (!QUOTE_MOVES[from].includes(status)) throw refuse(409, 'bad_move', { from, to: status });
         const now = new Date().toISOString();
         Object.assign(q, { status, invoiceId: null, updatedAt: now, sentAt: status === 'sent' ? (q.sentAt ?? now) : q.sentAt, decidedAt: status === 'accepted' || status === 'declined' ? now : null });
@@ -262,6 +276,34 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         const days = Math.round((Date.parse(src.expiryDate) - Date.parse(src.quoteDate)) / 86_400_000);
         const q: Stored = { ...src, id: crypto.randomUUID(), kind, number: Math.max(0, ...rows.filter((r) => (r.kind ?? 'quote') === kind).map((r) => r.number)) + 1, status: 'draft', quoteDate: today, expiryDate: new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10), reference: quoteNumber(src.number, src.kind ?? 'quote'), invoiceId: null, sentAt: null, decidedAt: null, decidedBy: null, decisionNote: null, shareToken: null, shareViews: 0, createdAt: now, updatedAt: now };
         rows.push(q);
+        save(rows);
+        return view(q);
+      }),
+    dispatch: (id, input) =>
+      wait(async () => {
+        guard();
+        const rows = load();
+        const q = find(rows, id);
+        if ((q.kind ?? 'quote') !== 'delivery_challan') throw refuse(400, 'not_challan');
+        if (q.dispatchedAt) throw refuse(409, 'challan_dispatched');
+        const v = await view(q);
+        if (v.status === 'invoiced' || v.status === 'declined') throw refuse(409, v.status === 'invoiced' ? 'already_invoiced' : 'declined');
+        const date = input.date ?? today();
+        if (date < q.quoteDate) throw refuse(400, 'before_challan');
+        const now = new Date().toISOString();
+        Object.assign(q, { dispatchedAt: date, updatedAt: now, ...(q.status === 'draft' ? { status: 'sent', sentAt: now } : {}) });
+        save(rows);
+        return view(q);
+      }),
+    goodsBack: (id, input) =>
+      wait(async () => {
+        guard();
+        const rows = load();
+        const q = find(rows, id);
+        if (!q.dispatchedAt || q.backAt) throw refuse(409, q.backAt ? 'challan_back' : 'challan_not_dispatched');
+        const date = input.date ?? today();
+        if (date < q.dispatchedAt) throw refuse(400, 'before_dispatch');
+        Object.assign(q, { backAt: date, backReason: 'returned', updatedAt: new Date().toISOString() });
         save(rows);
         return view(q);
       }),

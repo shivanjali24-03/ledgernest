@@ -13,6 +13,8 @@ import {
   billNumber,
   creditNoteNumber,
   vendorCreditNumber,
+  quoteNumber,
+  type QuoteKind,
   costOfQuantity,
   formatQuantity,
   invoiceNumber,
@@ -29,6 +31,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { AccountsService } from '../accounts/accounts.service.js';
+import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -451,7 +454,9 @@ export class InventoryService {
               ? 'written_off'
               : kind === 'debit_note'
                 ? 'returned'
-                : 'removed';
+                : kind === 'challan_out'
+                  ? 'on_challan'
+                  : 'removed';
         await tx.stockSerial.updateMany({
           where: { organizationId, id: { in: rows.map((r) => r.id) } },
           data: { status },
@@ -506,14 +511,15 @@ export class InventoryService {
     if (!ids.length) return new Map<string, string>();
     const pick = { id: true, contact: { select: { name: true } } } as const;
     const where = { organizationId, id: { in: ids } };
-    const [invoices, bills, notes, debitNotes] = await Promise.all([
+    const [invoices, bills, notes, debitNotes, challans] = await Promise.all([
       this.prisma.invoice.findMany({ where, select: pick }),
       this.prisma.bill.findMany({ where, select: pick }),
       this.prisma.creditNote.findMany({ where, select: pick }),
       this.prisma.vendorCredit.findMany({ where, select: pick }),
+      this.prisma.quote.findMany({ where, select: pick }),
     ]);
     return new Map(
-      [...invoices, ...bills, ...notes, ...debitNotes].map((d) => [
+      [...invoices, ...bills, ...notes, ...debitNotes, ...challans].map((d) => [
         d.id,
         d.contact.name,
       ]),
@@ -950,6 +956,89 @@ export class InventoryService {
             debit: diff < 0n ? Number(-diff) : 0,
             credit: diff > 0n ? Number(diff) : 0,
           },
+        );
+      }
+    }
+    return { movements, journal };
+  }
+
+  /**
+   * A delivery challan's goods leaving stock: taken at average cost as a sale would be (batches, serial numbers and
+   * all), but to "goods sent on challan" instead of cost of sales: they're still ours until invoiced.
+   */
+  async challanOut(
+    tx: Tx,
+    organizationId: string,
+    lines: Parameters<InventoryService['costOfSale']>[2],
+    day: string,
+  ) {
+    const cost = await this.costOfSale(tx, organizationId, lines, day);
+    if (!cost.movements.length) return cost;
+    const away = await ensureFxAccount(tx, organizationId, 'goods_on_challan');
+    return {
+      movements: cost.movements,
+      journal: cost.journal.map((l) =>
+        l.debit > 0
+          ? {
+              ...l,
+              accountId: away,
+              description: (l.description ?? '').replace(
+                /^Cost of /,
+                'Sent on challan: ',
+              ),
+              costCentreId: null,
+            }
+          : {
+              ...l,
+              description: (l.description ?? '').replace(
+                /^Cost of /,
+                'Sent on challan: ',
+              ),
+            },
+      ),
+    };
+  }
+
+  /**
+   * A delivery challan's goods coming back into stock, exactly as they left (same batches, units and value): returned,
+   * or about to be sold on the invoice made from it. Nothing if they never left or already came back.
+   */
+  async challanBack(tx: Tx, organizationId: string, quoteId: string) {
+    const out = await tx.stockMovement.findMany({
+      where: { organizationId, kind: 'challan_out', sourceId: quoteId },
+      select: {
+        itemId: true,
+        quantity: true,
+        value: true,
+        batchId: true,
+        sourceLineId: true,
+        serials: true,
+        item: { select: { name: true, inventoryAccountId: true } },
+      },
+    });
+    const movements: Movement[] = [];
+    const journal: EnteredLine[] = [];
+    if (!out.length) return { movements, journal };
+    const away = await ensureFxAccount(tx, organizationId, 'goods_on_challan');
+    for (const m of out) {
+      movements.push({
+        itemId: m.itemId,
+        quantity: -signed(m.quantity),
+        value: -m.value,
+        batchId: m.batchId,
+        sourceLineId: m.sourceLineId,
+        serials: m.serials,
+      });
+      if (m.value < 0n) {
+        const description = `${m.item.name} back from challan`;
+        journal.push(
+          {
+            accountId: m.item.inventoryAccountId!,
+            description,
+            debit: Number(-m.value),
+            credit: 0,
+          },
+          { accountId: away, description, debit: 0, credit: Number(-m.value) },
         );
       }
     }
@@ -1481,7 +1570,8 @@ export class InventoryService {
   async movements(organizationId: string, itemId: string) {
     const rows = await this.prisma.stockMovement.findMany({
       where: { organizationId, itemId },
-      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+      // Moved together (one document): what came in first, so the running quantity never dips below
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { quantity: 'desc' }],
       select: {
         id: true,
         itemId: true,
@@ -1523,12 +1613,14 @@ export class InventoryService {
           'credit_note_void',
           'debit_note',
           'debit_note_void',
+          'challan_out',
+          'challan_back',
         ].includes(x.kind),
     ))
       docs.set(r.sourceId!, null);
     if (docs.size) {
       const ids = [...docs.keys()];
-      const [bills, invoices, notes, debitNotes] = await Promise.all([
+      const [bills, invoices, notes, debitNotes, challans] = await Promise.all([
         this.prisma.bill.findMany({
           where: { organizationId, id: { in: ids } },
           select: {
@@ -1564,7 +1656,13 @@ export class InventoryService {
             fullNumber: true,
           },
         }),
+        this.prisma.quote.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: { id: true, number: true, kind: true },
+        }),
       ]);
+      for (const q of challans)
+        docs.set(q.id, quoteNumber(q.number, q.kind as QuoteKind));
       for (const c of debitNotes)
         docs.set(
           c.id,

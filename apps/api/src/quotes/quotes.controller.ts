@@ -24,6 +24,8 @@ import {
 import {
   quoteConvertSchema,
   quoteCopySchema,
+  challanDispatchSchema,
+  challanBackSchema,
   INVOICE_COPIES,
   type InvoiceCopy,
   quoteDraftSchema,
@@ -168,6 +170,42 @@ export class QuotesController {
     @Req() req: Request,
   ) {
     return this.quotes.copy(quoteId, body.kind, { actor, tenant, req });
+  }
+
+  @Post(':id/dispatch')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'A delivery challan’s goods leave stock (to goods sent on challan); returns the challan',
+  })
+  dispatch(
+    @Param('id', id) quoteId: string,
+    @Body(new ZodValidationPipe(challanDispatchSchema))
+    body: z.output<typeof challanDispatchSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.quotes.dispatch(quoteId, body, { actor, tenant, req });
+  }
+
+  @Post(':id/goods-back')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'A delivery challan’s goods came back into stock; returns the challan',
+  })
+  goodsBack(
+    @Param('id', id) quoteId: string,
+    @Body(new ZodValidationPipe(challanBackSchema))
+    body: z.output<typeof challanBackSchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.quotes.goodsBack(quoteId, body, { actor, tenant, req });
   }
 
   @Post(':id/convert')

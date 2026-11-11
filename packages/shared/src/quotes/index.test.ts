@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QUOTE_MOVES, quoteDraftSchema, quoteEditable, quoteNumber, quoteRows, quoteState } from './index.js';
+import { jobWorkDeadline, QUOTE_MOVES, quoteDraftSchema, quoteEditable, quoteNumber, quoteRows, quoteState } from './index.js';
 
 describe('quotes', () => {
   it('shows open quotes past their expiry as expired, and settled ones as they are', () => {
@@ -31,5 +31,13 @@ describe('quoteRows', () => {
     expect(rows[0]).toEqual(['Description', 'Qty', 'Price (INR)', 'Discount', 'Tax', 'Amount (INR)']);
     expect(rows[1]).toEqual(['Racking', '4', '2500.00', '10%', 'GST 18%', '9000.00']);
     expect(rows.at(-1)).toEqual(['', '', '', '', 'Total', '11800.00']);
+  });
+});
+
+describe('jobWorkDeadline', () => {
+  it('is a year on (three for capital goods), 29 February becoming the 28th', () => {
+    expect(jobWorkDeadline('2026-06-15')).toBe('2027-06-15');
+    expect(jobWorkDeadline('2026-06-15', 3)).toBe('2029-06-15');
+    expect(jobWorkDeadline('2028-02-29')).toBe('2029-02-28');
   });
 });
