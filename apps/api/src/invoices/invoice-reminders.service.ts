@@ -37,7 +37,7 @@ import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
-import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationLogo, organizationSignature } from '../common/pdf-logo.js';
 import { organizationSender } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoicesService } from './invoices.service.js';
@@ -412,9 +412,11 @@ export class InvoiceRemindersService
           ],
         }
       : undefined;
+    const signature = await organizationSignature(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
+        signature,
         title: `${composition ? 'Bill of supply' : org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
         subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}${copy ? ` · ${INVOICE_COPIES[copy]}` : ''}`,
         info: [
@@ -554,6 +556,7 @@ export class InvoiceRemindersService
                 '',
                 '',
                 'Authorised signatory',
+                ...(signature.name ? [signature.name] : []),
               ]
             : []),
         ],

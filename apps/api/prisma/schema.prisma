@@ -115,6 +115,9 @@ model Organization {
   tan                  String?
   cin                  String?
   iec                  String?
+  /// Who signs invoices, printed under the signature
+  signatoryName        String?            @map("signatory_name")
+  signatoryDesignation String?            @map("signatory_designation")
   /// The account customers pay into, printed on invoices { accountName, accountNumber, ifsc, bankName, branch, accountType }
   bankDetails          Json?              @map("bank_details")
   lutFrom              DateTime?          @map("lut_from") @db.Date
@@ -128,6 +131,7 @@ model Organization {
   invitations          Invitation[]
   auditEntries         AuditLog[]
   logo                 OrganizationLogo?
+  images               OrganizationImage[]
   accounts             Account[]
   fiscalYears          FiscalYear[]
   periods              Period[]
@@ -186,6 +190,21 @@ model Organization {
   recurringBills       RecurringBill[]
 
   @@map("organizations")
+}
+
+/// The signatory's signature and the seal, printed on invoices; apart from the organisation like the logo
+model OrganizationImage {
+  organizationId String   @map("organization_id") @db.Uuid
+  /// signature | seal
+  kind           String
+  contentType    String   @map("content_type") /// image/png | image/jpeg, checked against the bytes
+  data           Bytes
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([organizationId, kind])
+  @@map("organization_images")
 }
 
 /// An organisation's logo, kept apart so organisation queries never load image bytes by accident.

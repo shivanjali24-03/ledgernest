@@ -1,11 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Patch, Put, Req, Res, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Patch, Put, Req, Res, StreamableFile } from '@nestjs/common';
+import { z } from 'zod';
 import { ApiBearerAuth, ApiHeader, ApiNoContentResponse, ApiOkResponse, ApiProduces, ApiTags } from '@nestjs/swagger';
-import { logoUploadSchema, organizationDeleteSchema, organizationSettingsSchema, type LogoUpload, type OrganizationDeleteInput, type OrganizationSettingsUpdate } from '@ledgernest/shared';
+import { SIGNATURE_IMAGES, signatureUploadSchema, type SignatureImage, type SignatureUpload, logoUploadSchema, organizationDeleteSchema, organizationSettingsSchema, type LogoUpload, type OrganizationDeleteInput, type OrganizationSettingsUpdate } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { OrganizationService } from './organization.service.js';
+
+const imageKind = z.enum(SIGNATURE_IMAGES);
 
 @ApiTags('organization')
 @ApiBearerAuth()
@@ -65,6 +68,34 @@ export class OrganizationController {
   @ApiNoContentResponse()
   async removeLogo(@CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
     await this.organizations.removeLogo({ actor, tenant, req });
+  }
+
+  /** The signatory's signature or the seal, as uploaded */
+  @Get('images/:kind')
+  @RequirePermission('org.settings.view')
+  @ApiProduces('image/png', 'image/jpeg')
+  async image(@Param('kind', new ZodValidationPipe(imageKind)) kind: SignatureImage, @Res({ passthrough: true }) res: Response) {
+    const img = await this.organizations.image(kind);
+    if (!img) throw new NotFoundException(`This organisation has no ${kind}.`);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    return new StreamableFile(Buffer.from(img.data), { type: img.contentType, length: img.data.length });
+  }
+
+  /** Upload the signature or seal: PNG (transparent background works best) or JPEG, base64, up to 256 KB */
+  @Put('images/:kind')
+  @RequirePermission('org.settings.manage')
+  @ApiOkResponse({ description: 'The updated settings' })
+  setImage(@Param('kind', new ZodValidationPipe(imageKind)) kind: SignatureImage, @Body(new ZodValidationPipe(signatureUploadSchema)) body: SignatureUpload, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    return this.organizations.setImage(kind, body, { actor, tenant, req });
+  }
+
+  @Delete('images/:kind')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission('org.settings.manage')
+  @ApiNoContentResponse()
+  async removeImage(@Param('kind', new ZodValidationPipe(imageKind)) kind: SignatureImage, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    await this.organizations.removeImage(kind, { actor, tenant, req });
   }
 
   /** Deletes the organisation and all its books, for an Owner who typed its name. Download a backup first. */

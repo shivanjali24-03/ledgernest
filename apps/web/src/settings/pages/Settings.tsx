@@ -204,6 +204,12 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         </label>
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
         {v.country === 'IN' && (
+          <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+            {text('signatoryName', t('settings.fields.signatoryName'), { dir: 'auto', hint: t('settings.hints.signatoryName') })}
+            {text('signatoryDesignation', t('settings.fields.signatoryDesignation'), { dir: 'auto', placeholder: t('settings.hints.signatoryDesignation') })}
+          </div>
+        )}
+        {v.country === 'IN' && (
           <BankDetailsFields
             value={{ accountName: v.bankAccountName, accountNumber: v.bankAccountNumber, ifsc: v.bankIfsc, bankName: v.bankName, branch: v.bankBranch }}
             onChange={(b) => setMany({ bankAccountName: b.accountName, bankAccountNumber: b.accountNumber, bankIfsc: b.ifsc, bankName: b.bankName, bankBranch: b.branch })}
@@ -360,6 +366,8 @@ export default function Settings() {
             {/* First on phones; the right-hand column on wide screens */}
             <div className="lg:sticky lg:top-20 lg:order-last">
               <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} />
+              {query.data.country === 'IN' && <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} kind="signature" />}
+              {query.data.country === 'IN' && <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} kind="seal" />}
             </div>
             <SettingsForm api={api} settings={query.data} canManage={canManage} queryKey={queryKey} />
           </div>

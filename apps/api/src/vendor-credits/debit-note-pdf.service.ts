@@ -8,7 +8,7 @@ import {
   pdfTableBytes,
   rupeesInWords,
 } from '@ledgernest/shared';
-import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationLogo, organizationSignature } from '../common/pdf-logo.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -91,9 +91,11 @@ export class DebitNotePdfService {
         .join(', ');
     const buyer = org.legalName ?? org.name;
     const theirBill = dn.bill.vendorReference ?? dn.bill.number ?? '';
+    const signature = await organizationSignature(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
+        signature,
         title: `Debit note ${dn.number}${dn.status === 'void' ? ' (void)' : ''}`,
         subtitle: `${buyer}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
         info: [
@@ -137,7 +139,14 @@ export class DebitNotePdfService {
             ? [`Amount in words: ${rupeesInWords(dn.total)}`]
             : []),
           ...(org.taxId
-            ? ['', `For ${buyer}`, '', '', 'Authorised signatory']
+            ? [
+                '',
+                `For ${buyer}`,
+                '',
+                '',
+                'Authorised signatory',
+                ...(signature.name ? [signature.name] : []),
+              ]
             : []),
         ],
         footer: `${buyer} · ${dn.number}`,

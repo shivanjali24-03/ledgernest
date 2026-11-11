@@ -11,6 +11,16 @@ export function createLiveSettingsApi(client: AuthClient, organizationId: string
     setLogo: (upload) => r('/logo', { method: 'PUT', json: upload }),
     removeLogo: () => r('/logo', { method: 'DELETE' }),
     remove: (confirmName) => r('', { method: 'DELETE', json: { confirmName } }),
+    setImage: (kind, upload) => r(`/images/${kind}`, { method: 'PUT', json: upload }),
+    removeImage: (kind) => r(`/images/${kind}`, { method: 'DELETE' }),
+    async image(kind) {
+      try {
+        return (await client.download(`/organization/images/${kind}`, { headers })).blob;
+      } catch (e) {
+        if (e instanceof ApiError && e.kind === 'not_found') return null;
+        throw e;
+      }
+    },
     async logo() {
       try {
         return (await client.download('/organization/logo', { headers })).blob;

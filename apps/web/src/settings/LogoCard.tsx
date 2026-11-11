@@ -10,10 +10,13 @@ import Button from '../ui/Button';
 import { Card } from '../ui/Kit';
 import { useToast } from '../ui/toastContext';
 import { readLogo } from './form';
+import type { SignatureImage } from '@ledgernest/shared';
 import type { OrganizationSettings, SettingsApi } from './types';
 
 /** Logo preview, upload (button or drag and drop) and removal. Files are checked before anything is sent. */
-export default function LogoCard({ api, settings, canManage, queryKey }: { api: SettingsApi; settings: OrganizationSettings; canManage: boolean; queryKey: readonly unknown[] }) {
+/** The logo, or the signature or seal printed on invoices (those must be PNG or JPEG, which PDFs can hold) */
+export default function LogoCard({ api, settings, canManage, queryKey, kind = 'logo' }: { api: SettingsApi; settings: OrganizationSettings; canManage: boolean; queryKey: readonly unknown[]; kind?: 'logo' | SignatureImage }) {
+  const current = kind === 'logo' ? settings.logo : (settings.images?.[kind] ?? null);
   const { t } = useTranslation();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -23,8 +26,8 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
   const [problem, setProblem] = useState<string | null>(null);
 
   // The image is fetched with the access token, then shown from an object URL
-  const version = settings.logo?.updatedAt ?? 'none';
-  const image = useQuery({ queryKey: [...queryKey, 'logo', version], queryFn: () => api.logo(), enabled: !!settings.logo });
+  const version = current?.updatedAt ?? 'none';
+  const image = useQuery({ queryKey: [...queryKey, kind, version], queryFn: () => (kind === 'logo' ? api.logo() : api.image(kind)), enabled: !!current });
   const url = useMemo(() => (image.data ? URL.createObjectURL(image.data) : null), [image.data]);
   useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
 
@@ -33,13 +36,13 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
     void queryClient.invalidateQueries({ queryKey });
   };
   const upload = useMutation({
-    mutationFn: (file: { type: Parameters<SettingsApi['setLogo']>[0]['type']; data: string }) => api.setLogo(file),
-    onSuccess: () => done(t('settings.logo.uploaded')),
+    mutationFn: (file: { type: Parameters<SettingsApi['setLogo']>[0]['type']; data: string }) => (kind === 'logo' ? api.setLogo(file) : api.setImage(kind, file as { type: 'image/png' | 'image/jpeg'; data: string })),
+    onSuccess: () => done(t(`settings.${kind}.uploaded`)),
     onError: (e) => toast(apiErrorMessage(e, t), 'error'),
   });
   const remove = useMutation({
-    mutationFn: () => api.removeLogo(),
-    onSuccess: () => done(t('settings.logo.removed')),
+    mutationFn: () => (kind === 'logo' ? api.removeLogo() : api.removeImage(kind)),
+    onSuccess: () => done(t(`settings.${kind}.removed`)),
     onError: (e) => toast(apiErrorMessage(e, t), 'error'),
   });
 
@@ -48,6 +51,10 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
     const r = await readLogo(file);
     if (!r.ok) {
       setProblem(t(`settings.logo.problems.${r.problem}`));
+      return;
+    }
+    if (kind !== 'logo' && r.type === 'image/webp') {
+      setProblem(t('settings.signature.noWebp'));
       return;
     }
     setProblem(null);
@@ -59,12 +66,12 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
     if (canManage) void pick(e.dataTransfer.files[0]);
   };
 
-  const shown = settings.logo && url;
+  const shown = current && url;
   return (
     <Card className="p-5">
-      <h2 className="font-semibold">{t('settings.logo.title')}</h2>
+      <h2 className="font-semibold">{t(`settings.${kind}.title`)}</h2>
       <p id={hintId} className="mt-1 text-sm text-ink-500">
-        {t('settings.logo.hint')}
+        {t(`settings.${kind}.hint`)}
       </p>
       <div
         onDragOver={(e) => {
@@ -81,11 +88,11 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
       >
         <AnimatePresence mode="wait" initial={false}>
           {shown ? (
-            <motion.img key={url} variants={scaleIn} initial="hidden" animate="show" exit="exit" src={url} alt={t('settings.logo.alt', { name: settings.name })} className="max-h-full max-w-full object-contain" />
+            <motion.img key={url} variants={scaleIn} initial="hidden" animate="show" exit="exit" src={url} alt={t(`settings.${kind}.alt`, { name: settings.name })} className="max-h-full max-w-full object-contain" />
           ) : (
             <motion.div key="empty" variants={scaleIn} initial="hidden" animate="show" exit="exit" className="flex flex-col items-center gap-2 text-center text-sm text-ink-500">
               <ImageUp className="size-6 text-ink-400" aria-hidden />
-              {settings.logo ? t('common.loading') : canManage ? t('settings.logo.drop') : t('settings.logo.none')}
+              {current ? t('common.loading') : canManage ? t('settings.logo.drop') : t(`settings.${kind}.none`)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -97,13 +104,13 @@ export default function LogoCard({ api, settings, canManage, queryKey }: { api: 
       )}
       {canManage && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void pick(e.target.files?.[0]).finally(() => (e.target.value = ''))} />
+          <input ref={input} type="file" accept={kind === 'logo' ? 'image/png,image/jpeg,image/webp' : 'image/png,image/jpeg'} className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => void pick(e.target.files?.[0]).finally(() => (e.target.value = ''))} />
           <Button variant="secondary" size="sm" icon={<ImageUp className="size-4" />} loading={upload.isPending} aria-describedby={hintId} onClick={() => input.current?.click()}>
-            {settings.logo ? t('settings.logo.replace') : t('settings.logo.upload')}
+            {current ? t('settings.logo.replace') : t(`settings.${kind}.upload`)}
           </Button>
-          {settings.logo && (
+          {current && (
             <Button variant="ghost" size="sm" icon={<Trash2 className="size-4" />} loading={remove.isPending} onClick={() => remove.mutate()}>
-              {t('settings.logo.remove')}
+              {t(`settings.${kind}.remove`)}
             </Button>
           )}
         </div>

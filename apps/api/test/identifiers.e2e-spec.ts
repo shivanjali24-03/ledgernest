@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { crc32, deflateSync } from 'node:zlib';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -188,5 +189,91 @@ describe('Organisation and party identifiers (e2e)', () => {
       await contact({ name: 'Adv. Kulkarni', pan: 'abcpk1234f' }).expect(201)
     ).body as { pan: string };
     expect(c.pan).toBe('ABCPK1234F');
+  });
+
+  it('prints the signatory, their signature and the seal on invoices', async () => {
+    // A 2 x 1 PNG, red and transparent
+    const chunk = (type: string, data: Buffer) => {
+      const len = Buffer.alloc(4);
+      len.writeUInt32BE(data.length);
+      const crc = Buffer.alloc(4);
+      crc.writeUInt32BE(crc32(Buffer.concat([Buffer.from(type), data])));
+      return Buffer.concat([len, Buffer.from(type), data, crc]);
+    };
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(2, 0);
+    ihdr.writeUInt32BE(1, 4);
+    ihdr[8] = 8;
+    ihdr[9] = 6;
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', deflateSync(Buffer.from([0, 255, 0, 0, 255, 0, 0, 0, 0]))),
+      chunk('IEND', Buffer.alloc(0)),
+    ]);
+    const put = (kind: string, body: object) =>
+      auth(http().put(`/api/v1/organization/images/${kind}`)).send(body);
+    // The bytes must be what the type says, and only PNG or JPEG goes in a PDF
+    expect(
+      (
+        await put('signature', {
+          type: 'image/jpeg',
+          data: png.toString('base64'),
+        }).expect(400)
+      ).body.details,
+    ).toMatchObject({ reason: 'type_mismatch' });
+    await put('signature', {
+      type: 'image/webp',
+      data: png.toString('base64'),
+    }).expect(400);
+    await put('stamp', {
+      type: 'image/png',
+      data: png.toString('base64'),
+    }).expect(400);
+    const saved = (
+      await put('signature', {
+        type: 'image/png',
+        data: png.toString('base64'),
+      }).expect(200)
+    ).body as { images: Record<string, unknown> };
+    expect(saved.images.signature).toBeTruthy();
+    expect(saved.images.seal).toBeNull();
+    await put('seal', {
+      type: 'image/png',
+      data: png.toString('base64'),
+    }).expect(200);
+    const got = await auth(http().get('/api/v1/organization/images/signature'))
+      .buffer(true)
+      .expect(200);
+    expect(got.headers['content-type']).toBe('image/png');
+    await patchOrg({
+      signatoryName: 'Anita Rao',
+      signatoryDesignation: 'Partner',
+    }).expect(200);
+
+    const customer = (
+      await contact({ name: 'Signed buyer', isVendor: false }).expect(201)
+    ).body.id as string;
+    const inv = (
+      await post('/invoices', {
+        contactId: customer,
+        issueDate: '2026-06-11',
+        lines: [{ ...line(), accountId: sales }],
+      }).expect(201)
+    ).body as { id: string };
+    await post(`/invoices/${inv.id}/issue`).expect(200);
+    const pdf = await auth(http().get(`/api/v1/invoices/${inv.id}/pdf`))
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('/Im2 Do');
+    expect(text).toContain('/Im3 Do');
+    expect(text).toContain('Anita Rao, Partner');
+    await auth(http().delete('/api/v1/organization/images/seal')).expect(204);
+    await auth(http().get('/api/v1/organization/images/seal')).expect(404);
   });
 });
