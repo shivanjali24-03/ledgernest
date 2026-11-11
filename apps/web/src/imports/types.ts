@@ -14,8 +14,8 @@ export interface ImportResult {
   rows: number;
   valid: number;
   results: ImportRowResult[];
-  /** Opening balances: the totals, and the draft entry made */
-  summary?: { debit: number; credit: number; difference: number };
+  /** Opening balances: the totals, and the draft entry made; opening invoices or bills: how many, and what's owed */
+  summary?: { debit: number; credit: number; difference: number } | { count: number; total: number };
   journalEntry?: { id: string } | null;
 }
 

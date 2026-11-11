@@ -112,6 +112,7 @@ const select = {
   vendorReference: true,
   vendorBillDate: true,
   reverseCharge: true,
+  opening: true,
   selfInvoiceNumber: true,
   billOfEntry: true,
   notes: true,
@@ -304,6 +305,8 @@ export class BillsService {
       vendorBillDate: i.vendorBillDate ? iso(i.vendorBillDate) : null,
       /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
       reverseCharge: i.reverseCharge,
+      /** Owed from before the books started here (imported): not a sale or purchase of this period */
+      opening: i.opening,
       reverseChargeTax: [...rcmBreakdown].map(([name, value]) => ({
         name,
         amount: value,
@@ -1261,8 +1264,9 @@ export class BillsService {
           'There is no financial year for the bill date. Add it under Financial years.',
           'no_period',
         );
+      // Opening bills are numbered below zero, apart from the series
       const last = await tx.bill.aggregate({
-        where: { organizationId, fiscalYearId: year.id },
+        where: { organizationId, fiscalYearId: year.id, number: { gt: 0 } },
         _max: { number: true },
       });
       const number = (last._max.number ?? 0) + 1;

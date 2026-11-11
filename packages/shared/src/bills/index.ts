@@ -98,7 +98,8 @@ export const billListQuerySchema = z.object({
 export const billVoidSchema = z.object({ date: isoDaySchema.optional(), reason: z.string().trim().max(500).optional() });
 
 /** "BILL/2026-27/0004" */
-export const billNumber = (fiscalYearName: string, n: number) => `BILL/${fiscalYearName.replace(/^FY\s*/, '').replace('–', '-')}/${String(n).padStart(4, '0')}`;
+/** "BILL/2026-27/0001"; a bill brought in as owed when the books started (numbered below zero) is "OB/2026-27/0001" */
+export const billNumber = (fiscalYearName: string, n: number) => `${n < 0 ? 'OB' : 'BILL'}/${fiscalYearName.replace(/^FY\s*/, '').replace('–', '-')}/${String(Math.abs(n)).padStart(4, '0')}`;
 
 export function billState(b: { status: BillStatus; total: number; amountPaid: number; dueDate: string }, today: string): BillState {
   if (b.status !== 'open') return b.status;

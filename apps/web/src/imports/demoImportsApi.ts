@@ -1,4 +1,4 @@
-import { contactCreateSchema, IMPORT_FIELDS, IMPORT_PERMISSIONS, importAccountType, importContactKind, importSubtype, itemCreateSchema, todayIn, toMinor, type ImportKind, type OrganizationPermission } from '@ledgernest/shared';
+import { contactCreateSchema, parseImportDate, IMPORT_FIELDS, IMPORT_PERMISSIONS, importAccountType, importContactKind, importSubtype, itemCreateSchema, todayIn, toMinor, type ImportKind, type OrganizationPermission } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { createDemoAccountsApi, demoAccountRows } from '../accounts/demoAccountsApi';
 import { createDemoContactsApi, demoContactRows } from '../contacts/demoContactsApi';
@@ -77,6 +77,22 @@ export function createDemoImportsApi(can: (p: OrganizationPermission) => boolean
         results[n]!.label = p.data.name;
         build.push(async () => (await createDemoItemsApi(() => true).create(p.data)).name);
       });
+    } else if (kind === 'opening_invoices' || kind === 'opening_bills') {
+      // Checked as the API would; the demo keeps no opening documents
+      const parties = new Set(demoContactRows().filter((c) => (kind === 'opening_invoices' ? c.isCustomer : c.isVendor)).map((c) => c.name.toLowerCase()));
+      rows.forEach((r, n) => {
+        if (!results[n]!.ok) return;
+        if (!parties.has(r.party!.trim().toLowerCase())) return fail(n, 'party', `There’s no ${kind === 'opening_invoices' ? 'customer' : 'vendor'} called “${r.party!.trim()}”. Import the contacts first.`);
+        if (!parseImportDate(r.date!)) return fail(n, 'date', `“${r.date}” isn’t a date.`);
+        if (r.dueDate?.trim() && !parseImportDate(r.dueDate)) return fail(n, 'dueDate', `“${r.dueDate}” isn’t a date.`);
+        const amount = toMinor(r.amount!.replace(/,/g, '').trim(), 2);
+        if (!amount || amount <= 0) return fail(n, 'amount', `“${r.amount}” isn’t an amount owed.`);
+        results[n]!.label = `${r.party!.trim()} · ${r.number!.trim()}`;
+      });
+      build.push(async () => {
+        throw new ApiError('conflict', 409, undefined, undefined, { reason: 'demo_opening' });
+      });
+      return { results, build };
     } else {
       const parents = new Set(accounts.map((a) => a.parentId).filter(Boolean));
       const lines: Checked['lines'] = [];
@@ -112,7 +128,7 @@ export function createDemoImportsApi(can: (p: OrganizationPermission) => boolean
         if (kind === 'opening_balances') {
           if (!c.lines!.length) return result(kind, c, false);
           const equity = demoAccountRows().find((a) => a.code === '3990')!;
-          const diff = c.summary!.difference;
+          const diff = (c.summary as { difference: number }).difference;
           const e = await createDemoJournalsApi(() => true).create({ date: date ?? todayIn('Asia/Kolkata'), memo: 'Opening balances', reference: 'OPENING', lines: [...c.lines!.map((l) => ({ ...l, description: 'Opening balance' })), ...(diff ? [{ accountId: equity.id, description: 'Opening balance difference', debit: diff < 0 ? -diff : 0, credit: diff > 0 ? diff : 0 }] : [])] });
           return result(kind, c, true, { id: e.id });
         }

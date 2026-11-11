@@ -22,6 +22,8 @@ export interface Bill {
   vendorBillDate?: string | null;
   /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
   reverseCharge?: boolean;
+  /** Owed from before the books started here (imported): not a purchase of this period */
+  opening?: boolean;
   reverseChargeTax?: { name: string; amount: number }[];
   selfInvoiceNumber?: string | null;
   /** Goods imported: the bill of entry; its taxed lines are the assessable value, not owed here */
