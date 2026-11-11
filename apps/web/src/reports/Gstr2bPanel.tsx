@@ -32,7 +32,7 @@ const taxOf = (h: { igst: number; cgst: number; sgst: number; cess: number }) =>
  * bills the supplier hasn't filed (input credit at risk), filed invoices not yet in the books, probable matches with
  * the number typed differently, and what matched. Nothing is stored; the file is read and the result shown.
  */
-export default function Gstr2bPanel({ api, from, to }: { api: ReportsApi; from: string; to: string }) {
+export default function Gstr2bPanel({ api, from, to, registrationId }: { api: ReportsApi; from: string; to: string; registrationId?: string }) {
   const { t } = useTranslation();
   const locale = useIntlLocale();
   const money = useMoney();
@@ -40,7 +40,7 @@ export default function Gstr2bPanel({ api, from, to }: { api: ReportsApi; from: 
   const [fileName, setFileName] = useState<string | null>(null);
   const [tooBig, setTooBig] = useState(false);
   const [filter, setFilter] = useState<Gstr2bStatus | null>(null);
-  const run = useMutation({ mutationFn: (content: string) => api.gstr2b(content, from, to), onSuccess: () => setFilter(null) });
+  const run = useMutation({ mutationFn: (content: string) => api.gstr2b(content, from, to, registrationId), onSuccess: () => setFilter(null) });
   const pick = async (f: File | undefined) => {
     if (!f) return;
     setFileName(f.name);

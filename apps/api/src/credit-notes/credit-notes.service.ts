@@ -353,6 +353,7 @@ export class CreditNotesService {
           issueDate: true,
           currency: true,
           rate: true,
+          gstRegistrationId: true,
           total: true,
           amountPaid: true,
           receivableAccountId: true,
@@ -579,6 +580,8 @@ export class CreditNotesService {
         {
           date: input.date,
           memo: `Credit note ${label} · ${inv.contact.name} · ${invLabel}`,
+          // Its tax files with the invoice's GSTIN
+          gstRegistrationId: inv.gstRegistrationId,
           reference: label,
           lines: entryLines as never,
         },

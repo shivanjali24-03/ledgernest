@@ -22,6 +22,7 @@ import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
 import TallyCard from '../TallyCard';
 import NumberSeriesCard from '../../numbering/NumberSeriesCard';
+import GstRegistrationsCard from '../../gst-registrations/GstRegistrationsCard';
 import BankDetailsFields from '../../bank/BankDetailsFields';
 import IndianAddressFields, { type IndianAddress } from '../../geo/IndianAddressFields';
 import DeleteOrganizationCard from '../DeleteOrganizationCard';
@@ -373,6 +374,11 @@ export default function Settings() {
           </div>
         )}
       </motion.div>
+      {session.permissions.has('invoices.view') && (
+        <motion.div variants={fadeUp}>
+          <GstRegistrationsCard />
+        </motion.div>
+      )}
       {session.permissions.has('invoices.view') && (
         <motion.div variants={fadeUp}>
           <NumberSeriesCard />

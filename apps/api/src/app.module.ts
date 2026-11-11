@@ -45,9 +45,11 @@ import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 import { PdfFontsModule } from './pdf-fonts/pdf-fonts.module.js';
+import { GstRegistrationsModule } from './gst-registrations/gst-registrations.module.js';
 @Module({
   imports: [
     PdfFontsModule,
+    GstRegistrationsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,

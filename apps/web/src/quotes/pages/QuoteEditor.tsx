@@ -41,7 +41,7 @@ function DraftForm({ quote, template, api, kind = 'quote' }: { quote: Quote | nu
   const docKind = quote?.kind ?? kind;
   // A delivery challan says why the goods move (Rule 55)
   const [purpose, setPurpose] = useState<ChallanPurpose | ''>(quote?.purpose ?? '');
-  const toQuote = (p: SalesDraftPayload) => ({ kind: docKind, purpose: docKind === 'delivery_challan' ? purpose || null : null, contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, warehouseId: p.warehouseId ?? null, lines: p.lines });
+  const toQuote = (p: SalesDraftPayload) => ({ kind: docKind, purpose: docKind === 'delivery_challan' ? purpose || null : null, contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, warehouseId: p.warehouseId ?? null, gstRegistrationId: p.gstRegistrationId ?? null, lines: p.lines });
   return (
     <>
     {docKind === 'delivery_challan' && (

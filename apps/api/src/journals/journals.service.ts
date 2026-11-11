@@ -1058,6 +1058,13 @@ export class JournalsService {
         reference: e.reference,
         reversalOfId: id,
         createdById: actorId,
+        // Its tax files with the same GSTIN as the entry it reverses
+        gstRegistrationId: (
+          await tx.journalEntry.findUniqueOrThrow({
+            where: { id },
+            select: { gstRegistrationId: true },
+          })
+        ).gstRegistrationId,
       },
       select: { id: true },
     });
@@ -1103,6 +1110,8 @@ export class JournalsService {
       memo: string;
       reference: string | null;
       lines: LineIn[];
+      /** The GST registration the document is under (its tax files with that GSTIN); omitted = the organisation's */
+      gstRegistrationId?: string | null;
     },
     actorId: string,
   ) {
@@ -1114,6 +1123,7 @@ export class JournalsService {
         memo: input.memo,
         reference: input.reference,
         createdById: actorId,
+        gstRegistrationId: input.gstRegistrationId ?? null,
       },
       select: { id: true },
     });

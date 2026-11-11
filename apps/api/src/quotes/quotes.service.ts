@@ -43,6 +43,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { organizationLogo } from '../common/pdf-logo.js';
 import { organizationSender } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { registrationFor } from '../gst-registrations/gst-registrations.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -69,6 +70,8 @@ const select = {
   placeOfSupply: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true } },
+  gstRegistrationId: true,
+  gstRegistration: { select: { id: true, gstin: true, tradeName: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -165,6 +168,8 @@ export class QuotesService {
       placeOfSupply: q.placeOfSupply,
       /** A challan's goods leave this warehouse (null: the main one) */
       warehouse: q.warehouse,
+      /** The GSTIN it's under (null: the organisation's own) */
+      gstRegistration: q.gstRegistration,
       reference: q.reference,
       notes: q.notes,
       contact: q.contact,
@@ -316,6 +321,7 @@ export class QuotesService {
       reference: input.reference,
       notes: input.notes,
       placeOfSupply: input.placeOfSupply,
+      gstRegistrationId: input.gstRegistrationId,
       receivableAccountId: null,
       rate: null,
       lines: input.lines,
@@ -371,6 +377,9 @@ export class QuotesService {
           expiryDate: asDate(input.expiryDate),
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: input.warehouseId
             ? await this.inventory.warehouseFor(
                 tx,
@@ -440,6 +449,9 @@ export class QuotesService {
           expiryDate: asDate(input.expiryDate),
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: input.warehouseId
             ? await this.inventory.warehouseFor(
                 tx,
@@ -585,6 +597,8 @@ export class QuotesService {
         reference: quoteNumber(q.number, q.kind as QuoteKind),
         notes: q.notes,
         placeOfSupply: q.placeOfSupply,
+        warehouseId: q.warehouseId,
+        gstRegistrationId: q.gstRegistrationId,
         lines: q.lines.map((l) => ({
           itemId: l.item?.id ?? null,
           description: l.description,
@@ -812,6 +826,7 @@ export class QuotesService {
       notes: q.notes,
       placeOfSupply: q.placeOfSupply,
       warehouseId: q.warehouseId,
+      gstRegistrationId: q.gstRegistrationId,
       receivableAccountId: null,
       rate: null,
       lines: q.lines.map((l) => ({

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   B2CL_THRESHOLD,
   billNumber,
@@ -89,8 +93,30 @@ export class GstReturnsService {
     return { ...org, stateCode: findIndianState(org.region)?.code ?? null };
   }
 
-  async gstr3b(organizationId: string, from: string, to: string) {
+  /** A GST registration asked for (archived ones too: their returns still count); none = the organisation's own */
+  private async registration(organizationId: string, id?: string) {
+    if (!id) return null;
+    const r = await this.prisma.gstRegistration.findFirst({
+      where: { organizationId, id },
+      select: { id: true, gstin: true },
+    });
+    if (!r)
+      throw new NotFoundException({
+        message: 'GST registration not found.',
+        details: { reason: 'registration_not_found' },
+      });
+    return r;
+  }
+
+  async gstr3b(
+    organizationId: string,
+    from: string,
+    to: string,
+    registrationId?: string,
+  ) {
     const org = await this.india(organizationId);
+    const reg = await this.registration(organizationId, registrationId);
+    const regId = reg?.id ?? null;
     const range = [asDate(from), asDate(to)] as const;
     const [taxes, values] = await Promise.all([
       this.prisma.$queryRaw<
@@ -102,7 +128,7 @@ export class GstReturnsService {
         JOIN tax_rates r ON r.id = t.tax_rate_id
         JOIN journal_lines s ON s.entry_id = t.entry_id AND s.line_no = t.tax_source_line
         JOIN accounts a ON a.id = s.account_id
-        WHERE t.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date
+        WHERE t.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date AND e.gst_registration_id IS NOT DISTINCT FROM ${regId}::uuid
         GROUP BY 1, 2`,
       this.prisma.$queryRaw<
         {
@@ -115,7 +141,7 @@ export class GstReturnsService {
                sum(CASE WHEN l.tax_group_id IS NULL AND l.tax_rate_id IS NULL AND a.type = 'income' AND a.subtype = 'operating_income' THEN l.credit - l.debit END)::bigint AS untaxed_out,
                sum(CASE WHEN l.tax_group_id IS NOT NULL AND a.type IN ('asset', 'expense') THEN l.debit - l.credit END)::bigint AS taxed_in
         FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id JOIN accounts a ON a.id = l.account_id
-        WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date
+        WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date AND e.gst_registration_id IS NOT DISTINCT FROM ${regId}::uuid
           AND e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL)`,
     ]);
     // 3.1(d): what we bought under reverse charge, and the GST we owe on it (entries carrying the reverse charge account)
@@ -127,7 +153,7 @@ export class GstReturnsService {
       FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
       JOIN accounts a ON a.id = l.account_id
       LEFT JOIN tax_rates r ON r.id = l.tax_rate_id
-      WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date
+      WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date AND e.gst_registration_id IS NOT DISTINCT FROM ${regId}::uuid
         AND a.type IN ('asset', 'expense') AND (l.tax_rate_id IS NOT NULL OR l.tax_group_id IS NOT NULL)
         AND EXISTS (SELECT 1 FROM journal_lines x JOIN accounts y ON y.id = x.account_id WHERE x.entry_id = l.entry_id AND y.system_key = 'rcm_payable')
       GROUP BY r.kind`;
@@ -142,6 +168,7 @@ export class GstReturnsService {
     const noCredit = await this.prisma.bill.findMany({
       where: {
         organizationId,
+        gstRegistrationId: regId,
         status: { in: ['open', 'void'] },
         billDate: { gte: range[0], lte: range[1] },
         lines: { some: { itc: { not: 'eligible' } } },
@@ -214,7 +241,7 @@ export class GstReturnsService {
     }
     const v = values[0]!;
     // Rule 37: credit on suppliers unpaid after 180 days is reversed (4(B)(2)); paid since, it comes back (4(D)(1))
-    const rule37 = await this.itc180.forPeriod(organizationId, from, to);
+    const rule37 = await this.itc180.forPeriod(organizationId, from, to, regId);
     const netItc = (h: keyof GstHeads) =>
       Math.max(itc[h] - rule37.reverse[h] + rule37.reclaim[h], 0);
     const setOff = gstSetOff(
@@ -234,7 +261,7 @@ export class GstReturnsService {
     return {
       from,
       to,
-      gstin: org.taxId,
+      gstin: reg?.gstin ?? org.taxId,
       /** 3.1(a): outward taxable supplies and the tax on them */
       outward: { taxable: Number(v.taxed_out ?? 0), ...output },
       /** 3.1(c)/(e): outward supplies with no GST (nil-rated, exempt, non-GST) */
@@ -261,8 +288,15 @@ export class GstReturnsService {
     };
   }
 
-  async gstr1(organizationId: string, from: string, to: string) {
+  async gstr1(
+    organizationId: string,
+    from: string,
+    to: string,
+    registrationId?: string,
+  ) {
     const org = await this.india(organizationId);
+    const reg = await this.registration(organizationId, registrationId);
+    const regId = reg?.id ?? null;
     const lineSelect = {
       quantity: true,
       amount: true,
@@ -285,6 +319,7 @@ export class GstReturnsService {
           status: { in: ['issued', 'void'] },
           // Owed from before the books started here: filed in the returns of the time
           opening: false,
+          gstRegistrationId: regId,
           issueDate: { gte: asDate(from), lte: asDate(to) },
         },
         orderBy: [{ issueDate: 'asc' }, { number: 'asc' }],
@@ -314,7 +349,7 @@ export class GstReturnsService {
         where: {
           organizationId,
           date: { gte: asDate(from), lte: asDate(to) },
-          invoice: { opening: false },
+          invoice: { opening: false, gstRegistrationId: regId },
         },
         orderBy: [{ date: 'asc' }, { number: 'asc' }],
         select: {
@@ -624,7 +659,7 @@ export class GstReturnsService {
     return {
       from,
       to,
-      gstin: org.taxId,
+      gstin: reg?.gstin ?? org.taxId,
       legalName: org.legalName ?? org.name,
       b2b,
       b2cl,
@@ -669,6 +704,7 @@ export class GstReturnsService {
             where: {
               organizationId,
               date: { gte: asDate(from), lte: asDate(to) },
+              bill: { gstRegistrationId: regId },
             },
             select: {
               number: true,
@@ -918,8 +954,11 @@ export class GstReturnsService {
     content: string,
     from: string,
     to: string,
+    registrationId?: string,
   ) {
     const org = await this.india(organizationId);
+    const reg = await this.registration(organizationId, registrationId);
+    const regId = reg?.id ?? null;
     let file;
     try {
       file = parseGstr2b(content);
@@ -943,6 +982,7 @@ export class GstReturnsService {
         organizationId,
         status: { in: ['open', 'void'] },
         opening: false,
+        gstRegistrationId: regId,
         billDate: { gte: asDate(from), lte: asDate(to) },
       },
       orderBy: [{ billDate: 'asc' }, { number: 'asc' }],
@@ -1034,6 +1074,7 @@ export class GstReturnsService {
         organizationId,
         status: 'issued',
         date: { gte: asDate(from), lte: asDate(to) },
+        bill: { gstRegistrationId: regId },
       },
       select: {
         id: true,
@@ -1097,7 +1138,9 @@ export class GstReturnsService {
       period: file.period,
       /** The file is for another GSTIN than the organisation's */
       otherGstin:
-        !!file.gstin && !!org.taxId && file.gstin !== org.taxId.toUpperCase(),
+        !!file.gstin &&
+        !!(reg?.gstin ?? org.taxId) &&
+        file.gstin !== (reg?.gstin ?? org.taxId)!.toUpperCase(),
       from,
       to,
       ...result,

@@ -76,6 +76,19 @@ const ledgerQuery = new ZodValidationPipe(
 
 const agingQuery = new ZodValidationPipe(agingQuerySchema);
 
+/** A GST return's dates, and the registration it's for (omitted = the organisation's own GSTIN) */
+const gstRangeQuery = new ZodValidationPipe(
+  z
+    .object({
+      from: isoDaySchema,
+      to: isoDaySchema,
+      registrationId: z.uuid().optional(),
+    })
+    .refine((q) => q.from <= q.to, {
+      path: ['to'],
+      message: 'The end date is before the start date.',
+    }),
+);
 const rangeQuery = new ZodValidationPipe(
   z
     .object({ from: isoDaySchema, to: isoDaySchema })
@@ -674,10 +687,16 @@ export class ReportsController {
       'GSTR-3B for a month or quarter: outward supplies and tax, input tax credit, set-off and tax payable in cash',
   })
   gstr3b(
-    @Query(rangeQuery) q: { from: string; to: string },
+    @Query(gstRangeQuery)
+    q: { from: string; to: string; registrationId?: string },
     @CurrentTenant() tenant: Tenant,
   ) {
-    return this.gst.gstr3b(tenant.organizationId, q.from, q.to);
+    return this.gst.gstr3b(
+      tenant.organizationId,
+      q.from,
+      q.to,
+      q.registrationId,
+    );
   }
 
   @Post('gst/gstr-2b')
@@ -696,6 +715,7 @@ export class ReportsController {
       body.content,
       body.from,
       body.to,
+      body.registrationId,
     );
   }
 
@@ -706,10 +726,16 @@ export class ReportsController {
       'GSTR-1 for a month or quarter: B2B, B2C large and small, exports, credit notes, HSN summary and documents issued',
   })
   gstr1(
-    @Query(rangeQuery) q: { from: string; to: string },
+    @Query(gstRangeQuery)
+    q: { from: string; to: string; registrationId?: string },
     @CurrentTenant() tenant: Tenant,
   ) {
-    return this.gst.gstr1(tenant.organizationId, q.from, q.to);
+    return this.gst.gstr1(
+      tenant.organizationId,
+      q.from,
+      q.to,
+      q.registrationId,
+    );
   }
 
   @Get('gst/gstr-1/export')
@@ -723,14 +749,25 @@ export class ReportsController {
           from: isoDaySchema,
           to: isoDaySchema,
           format: z.enum(['csv', 'json']).default('csv'),
+          registrationId: z.uuid().optional(),
         }),
       ),
     )
-    q: { from: string; to: string; format: 'csv' | 'json' },
+    q: {
+      from: string;
+      to: string;
+      format: 'csv' | 'json';
+      registrationId?: string;
+    },
     @CurrentTenant() tenant: Tenant,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const g = await this.gst.gstr1(tenant.organizationId, q.from, q.to);
+    const g = await this.gst.gstr1(
+      tenant.organizationId,
+      q.from,
+      q.to,
+      q.registrationId,
+    );
     res.setHeader(
       'Content-Type',
       q.format === 'json'
