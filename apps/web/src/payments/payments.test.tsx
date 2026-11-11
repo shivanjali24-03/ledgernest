@@ -196,6 +196,22 @@ describe('vendor payments', () => {
     const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
     expect(text).toContain(`(Payment advice ${p.number}) Tj`);
     expect(text).toContain('(Paid in advance) Tj');
+
+    // And a message to send on WhatsApp
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    // Open the menu and pick the item in one retried step: the menu may still be closing from the download
+    await waitFor(
+      () => {
+        const item = screen.queryByRole('menuitem', { name: 'Send on WhatsApp' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(screen.getByRole('button', { name: `Actions for ${p.number}` }));
+        expect(open).toHaveBeenCalled();
+      },
+      { timeout: 6000 },
+    );
+    const url = String(open.mock.calls.at(-1)?.[0]);
+    expect(decodeURIComponent(url.split('text=')[1]!)).toMatch(/^Dear Sharma Office Supplies, we have paid ₹10,000\.00 to your bank on .* \(ref UTR 77120\) against your account\./);
+    open.mockRestore();
   });
 
   it('emails a customer a receipt for what they paid', { timeout: 20_000 }, async () => {

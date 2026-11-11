@@ -2691,6 +2691,13 @@
       "body": "The vendor gets a PDF of the bills this payment settles, any TDS kept back, and what reached their bank.",
       "blankHint": "Leave blank to use the vendor’s email address.",
       "noEmail": "This vendor has no email address. Enter one to send it to."
+    },
+    "whatsapp": {
+      "action": "Send on WhatsApp",
+      "onAccount": "your account",
+      "receipt": "Dear {{name}}, thank you: we received {{amount}} on {{date}} against {{docs}} (receipt {{number}}). {{organization}}",
+      "payment": "Dear {{name}}, we have paid {{amount}} to your bank on {{date}} (ref {{reference}}) against {{docs}}. {{organization}}",
+      "paymentTds": "Dear {{name}}, we have paid {{amount}} to your bank on {{date}} (ref {{reference}}) against {{docs}}, after TDS of {{tds}} under section {{section}}, which will show in your Form 26AS. {{organization}}"
     }
   },
   "bills": {

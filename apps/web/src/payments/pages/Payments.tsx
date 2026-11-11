@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Building2, FileDown, HandCoins, Mail, Paperclip, Plus, Send, SquarePen } from 'lucide-react';
+import { Ban, Building2, FileDown, HandCoins, Mail, MessageCircle, Paperclip, Plus, Send, SquarePen } from 'lucide-react';
 import type { PaymentKind } from '@ledgernest/shared';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import { useToast } from '../../ui/toastContext';
 import ReceiptDialog from '../ReceiptDialog';
 import type { Payment } from '../types';
 import ChequeDialog from '../ChequeDialog';
+import { whatsappLink } from '../../lib/whatsapp';
 import { usePaymentsApi } from '../usePaymentsApi';
 import DocumentAttachments from '../../attachments/DocumentAttachments';
 import Modal from '../../ui/Modal';
@@ -46,6 +47,14 @@ export default function Payments() {
   const [files, setFiles] = useState<Payment | null>(null);
   const [emailing, setEmailing] = useState<Payment | null>(null);
   const [cheque, setCheque] = useState<Payment | null>(null);
+  // A receipt thanks the customer; a payment tells the vendor what it settles and what TDS was kept back
+  const whatsappMessage = (p: Payment) => {
+    const cur = p.currency ?? 'INR';
+    const docs = p.allocations.map((a) => a.vendorReference || a.documentNumber).filter(Boolean).join(', ');
+    return p.kind === 'receipt'
+      ? t('payments.whatsapp.receipt', { name: p.contact.name, amount: formatMoney(p.amount, cur, locale), date: p.date, docs: docs || t('payments.whatsapp.onAccount'), organization: session.organization, number: p.number })
+      : t(p.tds ? 'payments.whatsapp.paymentTds' : 'payments.whatsapp.payment', { name: p.contact.name, amount: formatMoney(p.bankAmount ?? p.amount, cur, locale), date: p.date, docs: docs || t('payments.whatsapp.onAccount'), reference: p.reference ?? '–', tds: p.tds ? formatMoney(p.tds.amount, cur, locale) : '', section: p.tds?.section ?? '', organization: session.organization });
+  };
   const query = useQuery({ queryKey: ['payments', session.organizationId, session.role ?? session.customRoleName, kind, page], queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, page, pageSize: PAGE_SIZE }), enabled: !!api, placeholderData: keepPreviousData });
   const voidIt = useMutation({
     mutationFn: ({ p, reason }: { p: Payment; reason?: string }) => api!.void(p.id, reason),
@@ -153,7 +162,7 @@ export default function Payments() {
                   </span>
                   <RowMenu
                     label={t('payments.actionsFor', { number: p.number })}
-                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, { key: 'pdf', label: t(p.kind === 'receipt' ? 'payments.downloadReceipt' : 'payments.advice.download'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }, ...(p.status === 'posted' && p.kind === 'payment' && !p.currency ? [{ key: 'cheque', label: t('payments.cheque.action'), icon: SquarePen, onSelect: () => setCheque(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'email', label: t(p.kind === 'receipt' ? 'payments.emailReceipt.action' : 'payments.advice.email'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, { key: 'pdf', label: t(p.kind === 'receipt' ? 'payments.downloadReceipt' : 'payments.advice.download'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }, ...(p.status === 'posted' && p.kind === 'payment' && !p.currency ? [{ key: 'cheque', label: t('payments.cheque.action'), icon: SquarePen, onSelect: () => setCheque(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'email', label: t(p.kind === 'receipt' ? 'payments.emailReceipt.action' : 'payments.advice.email'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(p.status === 'posted' ? [{ key: 'whatsapp', label: t('payments.whatsapp.action'), icon: MessageCircle, onSelect: () => window.open(whatsappLink(whatsappMessage(p)), '_blank', 'noopener') }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
                   />
                 </li>
               ))}
