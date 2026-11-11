@@ -109,6 +109,27 @@ export class CustomerLinkService {
     return { ok: true };
   }
 
+  /** Records that the customer was chased for what's overdue (by WhatsApp or phone; email reminders record themselves) */
+  async chased(id: string, channel: 'whatsapp' | 'phone', ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const c = await this.customer(organizationId, id);
+    const now = new Date();
+    await this.prisma.contact.update({
+      where: { id },
+      data: { lastChasedAt: now },
+    });
+    await this.audit.record({
+      action: 'org.contact.chased',
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'contact',
+      entityId: id,
+      after: { name: c.name, channel },
+      req: ctx.req,
+    });
+    return { lastChasedAt: now };
+  }
+
   /** The link's customer, or not found for anything that isn't a live link */
   private async find(token: string) {
     const bad = () =>

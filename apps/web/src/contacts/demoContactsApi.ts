@@ -182,6 +182,16 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
         c.share = null;
         save(rows);
       }),
+    chased: (cid) =>
+      wait(() => {
+        guard();
+        const rows = load();
+        const c = find(rows, cid);
+        if (!c.isCustomer) throw refuse(400, 'not_customer');
+        c.lastChasedAt = new Date().toISOString();
+        save(rows);
+        return { lastChasedAt: c.lastChasedAt };
+      }),
   };
   return api;
 }

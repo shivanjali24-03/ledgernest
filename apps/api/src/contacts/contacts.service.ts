@@ -49,6 +49,7 @@ const select = {
   shareToken: true,
   shareViews: true,
   shareViewedAt: true,
+  lastChasedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;

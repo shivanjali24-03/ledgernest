@@ -34,6 +34,7 @@ The API runs on a free plan that sleeps when idle, so the first sign-in can take
 |---|---|
 | **Get paid by UPI** | Every rupee invoice carries a UPI QR code for what's still owed: on screen, in the PDF, in emails and reminders. Any UPI app pays straight into your bank. No gateway, no fees. |
 | **Send it on WhatsApp** | Share an invoice as a link your customer opens without an account, to pay by UPI or download the PDF. See when they opened it. Chase overdue invoices on WhatsApp in one tap. |
+| **Collections in one tap** | See every customer with money overdue, biggest first, and send each a WhatsApp reminder with their account link and one UPI code; see who opened it. |
 | **One link per customer** | Send a customer their own account link: every invoice they owe, each PDF, and one UPI code that pays the lot. |
 | **Quotes accepted online** | Send a quote on WhatsApp; the customer opens it and accepts or declines with a tap, and you see who did. |
 | **GSTR-2B, matched** | Upload the portal's GSTR-2B and see which bills your suppliers haven't filed (credit at risk) before you claim it. |
