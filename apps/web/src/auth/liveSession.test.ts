@@ -27,6 +27,12 @@ describe('liveSession', () => {
     expect(s.permissions).toEqual(new Set(BUILT_IN_ROLES.super_admin.permissions));
   });
 
+  it('asks a Super Admin to turn on two-factor sign-in when the platform requires it', () => {
+    const me: MeResponse = { ...ME, user: { ...ME.user, isSuperAdmin: true }, organizations: [], platformTwoFactorRequired: true };
+    expect(liveSession(me, async () => {}).twoFactorRequired).toBe(true);
+    expect(liveSession({ ...me, platformTwoFactorRequired: false }, async () => {}).twoFactorRequired).toBe(false);
+  });
+
   it('a user with no organisation can do nothing yet', () => {
     expect(liveSession({ ...ME, organizations: [] }, signOut).permissions.size).toBe(0);
   });

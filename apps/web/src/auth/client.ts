@@ -4,6 +4,8 @@ import type { BuiltInRoleId, Permission } from '@ledgernest/shared';
 export interface MeResponse {
   user: { id: string; email: string; name: string; locale: string; isSuperAdmin: boolean; twoFactorEnabled?: boolean };
   platformPermissions: Permission[];
+  /** A Super Admin who must turn on two-factor sign-in before using the console */
+  platformTwoFactorRequired?: boolean;
   organizations: {
     id: string;
     name: string;

@@ -54,7 +54,13 @@ export class AuthGuard implements CanActivate {
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, isSuperAdmin: true, status: true },
+      select: {
+        id: true,
+        email: true,
+        isSuperAdmin: true,
+        status: true,
+        totpEnabledAt: true,
+      },
     });
     if (!user || user.status !== 'ACTIVE')
       throw new UnauthorizedException('Please sign in again.');
@@ -63,6 +69,7 @@ export class AuthGuard implements CanActivate {
       userId: user.id,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,
+      twoFactor: !!user.totpEnabledAt,
     };
     return true;
   }

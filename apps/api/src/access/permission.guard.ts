@@ -1,3 +1,4 @@
+import { platformTwoFactorRequired } from './platform-2fa.js';
 import {
   BadRequestException,
   type CanActivate,
@@ -54,6 +55,12 @@ export class PermissionGuard implements CanActivate {
     if (platform.length) {
       if (!actor.isSuperAdmin)
         throw new ForbiddenException('Only a Super Admin can do this.');
+      if (platformTwoFactorRequired() && !actor.twoFactor)
+        throw new ForbiddenException({
+          message:
+            'The Super Admin console needs two-factor sign-in. Turn it on for your account to continue.',
+          details: { reason: 'two_factor_required' },
+        });
       return true;
     }
 

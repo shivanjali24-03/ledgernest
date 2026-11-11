@@ -6,7 +6,11 @@ import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
-import { checkWebhookUrl } from '../src/integrations/webhook-url.js';
+import {
+  checkWebhookUrl,
+  isPrivateAddress,
+  postWebhook,
+} from '../src/integrations/webhook-url.js';
 import { WebhooksService } from '../src/integrations/webhooks.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
@@ -145,6 +149,16 @@ describe('Webhooks (e2e)', () => {
     server.close();
   });
 
+  it('in production, never connects to a name that resolves to a private address', async () => {
+    await expect(
+      postWebhook('http://localhost:9/x', {}, '{}', true),
+    ).rejects.toThrow(/private network/);
+    expect(isPrivateAddress('::ffff:7f00:1')).toBe(true);
+    expect(isPrivateAddress('100.64.1.1')).toBe(true);
+    expect(isPrivateAddress('8.8.8.8')).toBe(false);
+    expect(isPrivateAddress('2606:4700::1111')).toBe(false);
+  });
+
   it('only lets webhooks point at https, or this machine outside production', () => {
     expect(() =>
       checkWebhookUrl('https://hooks.example.com/x', true),
@@ -159,6 +173,15 @@ describe('Webhooks (e2e)', () => {
       /private/,
     );
     expect(() => checkWebhookUrl('https://[::1]/x', true)).toThrow(/private/);
+    // IPv4 written as IPv6, the unspecified address, and cloud metadata
+    for (const u of [
+      'https://[::ffff:127.0.0.1]/x',
+      'https://[::ffff:a9fe:a9fe]/x',
+      'https://[::]/x',
+      'https://169.254.169.254/x',
+      'https://0.0.0.0/x',
+    ])
+      expect(() => checkWebhookUrl(u, true), u).toThrow(/private/);
     expect(() =>
       checkWebhookUrl('https://user:pw@hooks.example.com/x', true),
     ).toThrow(/user name/);

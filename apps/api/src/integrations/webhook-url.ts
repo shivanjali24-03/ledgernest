@@ -1,14 +1,116 @@
 import { BadRequestException } from '@nestjs/common';
+import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
+import { BlockList, isIP, type LookupFunction } from 'node:net';
 
-const PRIVATE_V4 = [
-  /^10\./,
-  /^127\./,
-  /^0\./,
-  /^169\.254\./,
-  /^192\.168\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
-];
+/** Addresses a webhook must never reach: this machine, private and link-local networks, and the like */
+const blocked = new BlockList();
+for (const c of [
+  '0.0.0.0/8',
+  '10.0.0.0/8',
+  '100.64.0.0/10',
+  '127.0.0.0/8',
+  '169.254.0.0/16',
+  '172.16.0.0/12',
+  '192.0.0.0/24',
+  '192.168.0.0/16',
+  '198.18.0.0/15',
+  '224.0.0.0/4',
+  '240.0.0.0/4',
+]) {
+  const [a, p] = c.split('/');
+  blocked.addSubnet(a!, Number(p), 'ipv4');
+}
+for (const [a, p] of [
+  ['::', 128],
+  ['::1', 128],
+  ['fc00::', 7],
+  ['fe80::', 10],
+  ['ff00::', 8],
+  ['64:ff9b::', 96],
+] as const)
+  blocked.addSubnet(a, p, 'ipv6');
+
+/** An IPv4 address written as IPv6 (::ffff:127.0.0.1, or ::ffff:7f00:1 as URL parsing gives it) */
+const mappedV4 = (ip: string) => {
+  const l = ip.toLowerCase();
+  const dotted = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(l);
+  if (dotted) return dotted[1]!;
+  const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(l);
+  if (!hex) return null;
+  const a = parseInt(hex[1]!, 16);
+  const b = parseInt(hex[2]!, 16);
+  return `${a >> 8}.${a & 255}.${b >> 8}.${b & 255}`;
+};
+
+/** Whether an IP address is local or private (any other text is not an address, so false) */
+export function isPrivateAddress(ip: string): boolean {
+  const v = isIP(ip);
+  if (!v) return false;
+  const v4 = v === 6 ? mappedV4(ip) : ip;
+  return v4 ? blocked.check(v4, 'ipv4') : blocked.check(ip, 'ipv6');
+}
+
+/** DNS lookup for webhook deliveries: refuses a name that resolves to a private address, at connect time */
+export const publicOnlyLookup: LookupFunction = (
+  hostname,
+  options,
+  callback,
+) => {
+  dnsLookup(hostname, { ...options, all: true }, (err, addresses) => {
+    if (err) return callback(err, '', 4);
+    const list = addresses as unknown as LookupAddress[];
+    if (!list.length || list.some((a) => isPrivateAddress(a.address)))
+      return callback(
+        Object.assign(new Error('The address resolves to a private network.'), {
+          code: 'EPRIVATE',
+        }),
+        '',
+        4,
+      );
+    if ((options as { all?: boolean }).all)
+      (callback as unknown as (e: null, a: LookupAddress[]) => void)(
+        null,
+        list,
+      );
+    else callback(null, list[0]!.address, list[0]!.family);
+  });
+};
+
+/**
+ * Posts a webhook and gives back the status code. No redirects are followed; in production the connection
+ * may only go to a public address (checked on the address actually connected to, so DNS can't be swapped after the check).
+ */
+export function postWebhook(
+  url: string,
+  headers: Record<string, string>,
+  body: string,
+  production = process.env.NODE_ENV === 'production',
+): Promise<number> {
+  const u = new URL(url);
+  const send = u.protocol === 'https:' ? httpsRequest : httpRequest;
+  return new Promise((resolve, reject) => {
+    const req = send(
+      u,
+      {
+        method: 'POST',
+        headers: { ...headers, 'Content-Length': Buffer.byteLength(body) },
+        timeout: 10_000,
+        ...(production ? { lookup: publicOnlyLookup } : {}),
+      },
+      (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      },
+    );
+    req.on('timeout', () =>
+      req.destroy(new Error('The endpoint didn’t answer in 10 seconds.')),
+    );
+    req.on('error', reject);
+    req.end(body);
+  });
+}
 
 /**
  * Where a webhook may point. In production: https only, and not this machine or a private network address
@@ -31,10 +133,7 @@ export function checkWebhookUrl(
   const local =
     host === 'localhost' ||
     host.endsWith('.localhost') ||
-    host === '::1' ||
-    PRIVATE_V4.some((r) => r.test(host)) ||
-    /^f[cd][0-9a-f]{2}:/.test(host) ||
-    host.startsWith('fe80:');
+    isPrivateAddress(host);
   if (u.username || u.password)
     throw new BadRequestException({
       message: 'Leave the user name and password out of the address.',
