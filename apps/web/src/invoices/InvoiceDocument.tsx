@@ -213,6 +213,14 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
               </dd>
             </div>
           ))}
+          {!!i.roundOff && (
+            <>
+              <dt className="text-ink-600 dark:text-ink-300">{t('invoices.roundOff')}</dt>
+              <dd className="text-end tabular-nums" dir="ltr">
+                {plain(i.roundOff)}
+              </dd>
+            </>
+          )}
           <dt className="border-t border-ink-200 pt-2 font-semibold dark:border-ink-700">{t('invoices.total')}</dt>
           <dd className="border-t border-ink-200 pt-2 text-end text-base font-semibold tabular-nums dark:border-ink-700" dir="ltr">
             {money(i.total)}

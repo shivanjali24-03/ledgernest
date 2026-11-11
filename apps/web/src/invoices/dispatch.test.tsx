@@ -50,4 +50,15 @@ describe('order and dispatch details', () => {
     expect(screen.getByLabelText('Place of supply')).toHaveValue('29');
     expect(screen.getByText(/bill to, ship to/)).toBeInTheDocument();
   }, 30_000);
+
+  it('rounds the total to the rupee when the organisation asks, showing the round-off', async () => {
+    const { createDemoSettingsApi, resetDemoSettings } = await import('../settings/demoSettingsApi');
+    resetDemoSettings();
+    await createDemoSettingsApi(() => true).update({ roundInvoiceTotals: true });
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const d = await api.create({ contactId: kumar.id, issueDate: '2026-10-01', lines: [{ description: 'Cement', quantity: '1', unitPrice: 1_000_30, accountId: sampleId('4100.01') }] });
+    expect(d).toMatchObject({ roundOff: -30, total: 1_000_00 });
+    resetDemoSettings();
+  });
 });

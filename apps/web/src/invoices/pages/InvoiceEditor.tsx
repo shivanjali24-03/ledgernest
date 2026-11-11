@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { dueDateFor, msmeCovered, msmeLateInterest, todayIn, type EinvoiceProblem } from '@ledgernest/shared';
+import { dueDateFor, msmeCovered, msmeLateInterest, todayIn, type EinvoiceProblem, type InvoiceCopy } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { useOrganizationSettings } from '../../settings/useOrganizationSettings';
 import { ArrowLeft, BellRing, Ban, Copy, FileDown, FileMinus, HandCoins, Mail, Printer, Repeat, Share2, FileJson, Truck } from 'lucide-react';
@@ -20,6 +20,7 @@ import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
+import RowMenu from '../../ui/RowMenu';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import InvoiceDocument from '../InvoiceDocument';
@@ -115,7 +116,7 @@ export default function InvoiceEditor() {
     onError: (e) => (e instanceof ApiError && e.details?.reason === 'einvoice_incomplete' ? setEinvoiceProblems(e.details.problems as EinvoiceProblem[]) : toast(invoiceErrorMessage(e, t), 'error')),
   });
   const download = useMutation({
-    mutationFn: () => api!.pdf(invoice!.id),
+    mutationFn: (copy?: InvoiceCopy) => api!.pdf(invoice!.id, copy),
     onSuccess: (f) => saveBlob(f),
     onError: (e) => toast(invoiceErrorMessage(e, t), 'error'),
   });
@@ -165,9 +166,17 @@ export default function InvoiceEditor() {
                   </Button>
                 )}
                 {invoice.status !== 'draft' && (
-                  <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate()}>
-                    {t('common.downloadPdf')}
-                  </Button>
+                  <>
+                    <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate(undefined)}>
+                      {t('common.downloadPdf')}
+                    </Button>
+                    {india && (
+                      <RowMenu
+                        label={t('invoices.copies.menu')}
+                        items={(['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: c, label: t(`invoices.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) }))}
+                      />
+                    )}
+                  </>
                 )}
                 {invoice.status === 'issued' && india && invoice.contact.taxId && (
                   <Button variant="ghost" icon={<FileJson className="size-4" />} loading={einvoice.isPending} onClick={() => einvoice.mutate()}>

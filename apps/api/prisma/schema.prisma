@@ -105,6 +105,8 @@ model Organization {
   /// On the 1st of each month, draft interest invoices for what's accrued; the month it last did
   interestAutoRaise    Boolean            @default(false) @map("interest_auto_raise")
   interestRaisedFor    String?            @map("interest_raised_for")
+  /// Round rupee invoice totals to the nearest rupee
+  roundInvoiceTotals   Boolean            @default(false) @map("round_invoice_totals")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
@@ -832,6 +834,8 @@ model Invoice {
   /// In the invoice currency's smallest unit
   subtotal            BigInt    @default(0)
   taxTotal            BigInt    @default(0) @map("tax_total")
+  /// The total rounded to the rupee: the difference (smallest unit)
+  roundOff            BigInt    @default(0) @map("round_off")
   total               BigInt    @default(0)
   amountPaid          BigInt    @default(0) @map("amount_paid")
   journalEntryId      String?   @map("journal_entry_id") @db.Uuid

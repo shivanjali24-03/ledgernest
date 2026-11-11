@@ -122,6 +122,7 @@ const select = {
   notes: true,
   subtotal: true,
   taxTotal: true,
+  roundOff: true,
   total: true,
   amountPaid: true,
   issuedAt: true,
@@ -339,6 +340,8 @@ export class InvoicesService {
       },
       receivableAccount: i.receivableAccount,
       subtotal: amount(i.subtotal),
+      /** The total rounded to the rupee: the difference */
+      roundOff: amount(i.roundOff),
       taxTotal: amount(i.taxTotal),
       total: amount(i.total),
       amountPaid: amount(i.amountPaid),
@@ -744,7 +747,12 @@ export class InvoicesService {
       );
     const org = await tx.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { country: true, region: true, gstScheme: true },
+      select: {
+        country: true,
+        region: true,
+        gstScheme: true,
+        roundInvoiceTotals: true,
+      },
     });
     // A composition dealer can't charge GST: its sales are bills of supply
     if (
@@ -897,6 +905,10 @@ export class InvoicesService {
             }))
           : [],
       })),
+      // Rupee invoices, rounded to the rupee when the organisation asks for it
+      {
+        roundTo: org.roundInvoiceTotals && !contact.currency ? 100 : undefined,
+      },
     );
 
     // The receivable: as chosen, or the first active receivable kept in the invoice's currency
@@ -1065,6 +1077,7 @@ export class InvoicesService {
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
+          roundOff: BigInt(p.amounts.roundOff),
           total: BigInt(p.amounts.total),
           createdById: ctx.actor.userId,
         },
@@ -1132,6 +1145,7 @@ export class InvoicesService {
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
+          roundOff: BigInt(p.amounts.roundOff),
           total: BigInt(p.amounts.total),
         },
       });
@@ -1343,6 +1357,14 @@ export class InvoicesService {
             credit: 0,
           };
       const lines = [receivable, ...income.filter((l) => l.credit > 0)];
+      // The total rounded to the rupee: the difference to Round off
+      if (p.amounts.roundOff)
+        lines.push({
+          accountId: await ensureFxAccount(tx, organizationId, 'round_off'),
+          description: `${label} round off`,
+          debit: p.amounts.roundOff < 0 ? -p.amounts.roundOff : 0,
+          credit: p.amounts.roundOff > 0 ? p.amounts.roundOff : 0,
+        });
       if (p.currency) {
         // Converting the parts and the total separately can differ by a paisa or two: book it as an exchange difference
         const parts = income.reduce(
@@ -1426,6 +1448,11 @@ export class InvoicesService {
           journalEntryId: entry.id,
           rate,
           issuedAt: new Date(),
+          // The amounts as worked out now, rounding included
+          subtotal: BigInt(p.amounts.subtotal),
+          taxTotal: BigInt(p.amounts.tax),
+          roundOff: BigInt(p.amounts.roundOff),
+          total: BigInt(p.amounts.total),
           interestRateBp: terms?.rateBp ?? 0,
           interestMethod: terms?.method ?? null,
           interestGraceDays: terms?.graceDays ?? null,

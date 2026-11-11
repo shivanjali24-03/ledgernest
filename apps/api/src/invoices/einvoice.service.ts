@@ -41,6 +41,7 @@ const invoiceSelect = {
   currency: true,
   placeOfSupply: true,
   shipTo: true,
+  roundOff: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -114,6 +115,7 @@ export class EinvoiceService {
       currency: string | null;
       placeOfSupply: string | null;
       shipTo?: unknown;
+      roundOff?: bigint;
       fullNumber: string | null;
       fiscalYear: { name: string } | null;
       contact: {
@@ -150,6 +152,7 @@ export class EinvoiceService {
       date: iso(i.issueDate),
       currency: i.currency ?? 'INR',
       placeOfSupply: i.placeOfSupply,
+      roundOff: Number(i.roundOff ?? 0),
       seller,
       buyer: {
         gstin: i.contact.taxId?.toUpperCase() ?? null,

@@ -1022,7 +1022,8 @@
       "interestRate": "Interest, % a year",
       "interestMethod": "Worked out",
       "interestGraceDays": "Days of grace",
-      "interestAutoRaise": "Draft interest invoices on the 1st of each month"
+      "interestAutoRaise": "Draft interest invoices on the 1st of each month",
+      "roundInvoiceTotals": "Round rupee invoice totals to the rupee"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1039,7 +1040,8 @@
       "compositionRate": "The tax for each quarter (CMP-08) is your turnover at this rate, shown on the dashboard’s due dates.",
       "interestRate": "Blank for no interest. 18% is common in India.",
       "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date.",
-      "interestAutoRaise": "For the interest accrued to the end of the month just gone and not yet charged. You look over and issue them."
+      "interestAutoRaise": "For the interest accrued to the end of the month just gone and not yet charged. You look over and issue them.",
+      "roundInvoiceTotals": "The difference shows as Round off and is booked to its own account."
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -2804,6 +2806,13 @@
       "panelCharged": "Invoiced",
       "panelWaived": "Waived",
       "panelChargeable": "Left to charge"
+    },
+    "roundOff": "Round off",
+    "copies": {
+      "menu": "Copies for goods",
+      "original": "Original for recipient",
+      "duplicate": "Duplicate for transporter",
+      "triplicate": "Triplicate for supplier"
     }
   },
   "payments": {

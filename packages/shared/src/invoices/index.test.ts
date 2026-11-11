@@ -54,3 +54,14 @@ describe('Dispatch details', () => {
     expect(dispatchSchema.safeParse({ vehicleNo: '12' }).success).toBe(false);
   });
 });
+
+describe('Rounding the total', () => {
+  it('rounds to the nearest rupee, half up, keeping the difference', async () => {
+    const { invoiceAmounts } = await import('./index.js');
+    const line = (unitPrice: number) => ({ quantity: '1', unitPrice, discountPpm: 0, rates: [{ rateId: 'g', ratePpm: 180_000 }] });
+    // 1,000.30 + 18% = 1,180.354 → 1,180.35 tax total; rounded to 1,180
+    expect(invoiceAmounts([line(1_000_30)], { roundTo: 100 })).toMatchObject({ subtotal: 1_000_30, tax: 180_05, roundOff: -35, total: 1_180_00 });
+    expect(invoiceAmounts([line(1_000_45)], { roundTo: 100 })).toMatchObject({ roundOff: 47, total: 1_181_00 });
+    expect(invoiceAmounts([line(1_000_30)])).toMatchObject({ roundOff: 0, total: 1_180_35 });
+  });
+});

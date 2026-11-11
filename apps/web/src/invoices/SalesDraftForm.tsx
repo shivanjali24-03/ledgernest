@@ -180,7 +180,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     return { ...l, price, qty, disc, group, invalid: price === null || qty === null || disc === null };
   });
   const filled = parsed.filter((l) => l.description.trim() || l.price);
-  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })));
+  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: config.interest && settings?.roundInvoiceTotals && !customer?.currency ? 100 : undefined });
   const breakdown = new Map<string, number>();
   filled
     .filter((l) => !l.invalid)
@@ -390,6 +390,14 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                 </dd>
               </div>
             ))}
+            {!!amounts.roundOff && (
+              <>
+                <dt className="text-ink-500">{t('invoices.roundOff')}</dt>
+                <dd className="text-end font-mono tabular-nums" dir="ltr">
+                  {plain(amounts.roundOff)}
+                </dd>
+              </>
+            )}
             <dt className="border-t border-ink-200 pt-1 font-semibold dark:border-ink-700">{t('invoices.total')}</dt>
             <dd className="border-t border-ink-200 pt-1 text-end font-mono font-semibold tabular-nums dark:border-ink-700" dir="ltr">
               {currency} {plain(amounts.total)}

@@ -1,5 +1,5 @@
 import type { Einvoice, EinvoiceIrnInput, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
-import type { DispatchDetails, InvoiceDraftInput, ShipTo, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
+import type { DispatchDetails, InvoiceCopy, InvoiceDraftInput, ShipTo, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
   id: string;
@@ -59,6 +59,8 @@ export interface Invoice {
   interestRateBp?: number | null;
   /** Once issued: its interest terms and what's accrued */
   interest?: InvoiceInterest | null;
+  /** The total rounded to the rupee: the difference */
+  roundOff?: number;
   /** Order and dispatch details */
   dispatch?: DispatchDetails | null;
   /** Where the goods go, when not the billing address */
@@ -139,7 +141,7 @@ export interface InvoicesApi {
   list(q: { state?: InvoiceFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; summary: { outstanding: number; overdue: number }; items: InvoiceSummary[] }>;
   get(id: string): Promise<Invoice>;
   /** An issued invoice as a PDF file */
-  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
+  pdf(id: string, copy?: InvoiceCopy): Promise<{ blob: Blob; filename: string }>;
   /** The list as CSV, with the same filters (every page) */
   exportList(q: { state?: InvoiceFilter; contactId?: string; search?: string }): Promise<{ blob: Blob; filename: string }>;
   create(input: InvoiceDraftInput): Promise<Invoice>;

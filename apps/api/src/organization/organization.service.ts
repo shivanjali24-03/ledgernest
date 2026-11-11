@@ -57,6 +57,7 @@ const select = {
   interestMethod: true,
   interestGraceDays: true,
   interestAutoRaise: true,
+  roundInvoiceTotals: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -92,6 +93,7 @@ type Columns = Partial<{
   interestMethod: string;
   interestGraceDays: number;
   interestAutoRaise: boolean;
+  roundInvoiceTotals: boolean;
 }>;
 
 const ADDRESS_COLUMNS = {

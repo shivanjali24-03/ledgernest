@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type DispatchDetails, type Instalment, type ShipTo, findIndianState, INVOICE_COPIES } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -261,7 +261,8 @@ function view(i: Stored): Invoice {
   const accounts = demoAccountRows();
   const items = demoItemRows();
   const groups = i.lines.map((l) => groupOf(l.taxGroupId));
-  const a = invoiceAmounts(i.lines.map((l, n) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discountPpm, rates: (groups[n]?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })));
+  // Rounded to the rupee when the demo company asks for it
+  const a = invoiceAmounts(i.lines.map((l, n) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discountPpm, rates: (groups[n]?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: demoSettings().roundInvoiceTotals && !i.currency ? 100 : undefined });
   const breakdown = new Map<string, number>();
   i.lines.forEach((_l, n) => {
     const g = groups[n];
@@ -284,6 +285,7 @@ function view(i: Stored): Invoice {
     contact: { id: contact.id, name: contact.name, legalName: contact.legalName, taxId: contact.taxId, email: contact.email, phone: contact.phone ?? null, billingAddress: { ...contact.billingAddress }, shippingAddress: contact.shippingAddress && { ...contact.shippingAddress }, stateCode: contact.stateCode },
     receivableAccount: receivable ? { id: receivable.id, code: receivable.code, name: receivable.name } : null,
     subtotal: a.subtotal,
+    roundOff: a.roundOff,
     taxTotal: a.tax,
     total: a.total,
     amountPaid: i.amountPaid,
@@ -426,7 +428,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         }
         return { asOf: today(), raised };
       }),
-    pdf: async (iid) => {
+    pdf: async (iid, copy) => {
       const v = view(find(await load(), iid));
       if (v.status === 'draft') throw refuse(409, 'not_issued');
       // The demo organisation's UPI ID, when one was saved in Settings
@@ -437,7 +439,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         /* no saved settings */
       }
       const upi = upiId && !v.currency && v.status === 'issued' && v.balance > 0 && v.number ? upiPayUri({ upiId, name: 'Nest Demo Private Limited', amount: v.balance, note: `Invoice ${v.number}`, reference: v.number }) : null;
-      const bytes = pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: 'Nest Demo Private Limited', info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')), after: v.currency ? undefined : [`Amount in words: ${rupeesInWords(v.total)}`], qr: upi ? { modules: qrMatrix(upi), caption: ['Scan to pay with any UPI app', `Rs ${(v.balance / 100).toFixed(2)} to ${upiId}`] } : undefined });
+      const bytes = pdfTableBytes({ title: `Tax invoice ${v.number}`, subtitle: `Nest Demo Private Limited${copy ? ` · ${INVOICE_COPIES[copy]}` : ''}`, info: [`Bill to: ${v.contact.legalName ?? v.contact.name}`, `Invoice date ${v.issueDate} · Due ${v.dueDate}`], footer: `Nest Demo Private Limited · ${v.number}`, rows: invoiceRows({ ...v, currency: v.currency ?? 'INR' }, currencyDigits(v.currency ?? 'INR')), after: v.currency ? undefined : [`Amount in words: ${rupeesInWords(v.total)}`], qr: upi ? { modules: qrMatrix(upi), caption: ['Scan to pay with any UPI app', `Rs ${(v.balance / 100).toFixed(2)} to ${upiId}`] } : undefined });
       return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `invoice-${(v.number ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
     },
     exportList: async (q) => {

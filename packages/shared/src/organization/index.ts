@@ -133,6 +133,8 @@ export const organizationSettingsSchema = z
     interestGraceDays: z.number().int().min(0).max(365),
     /** On the 1st of each month, draft interest invoices for what's accrued and not yet charged */
     interestAutoRaise: z.boolean(),
+    /** Round rupee invoice totals to the nearest rupee, showing the round-off */
+    roundInvoiceTotals: z.boolean(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
