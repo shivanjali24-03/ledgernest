@@ -119,7 +119,7 @@ export default function Invoices() {
             <EmptyState icon={<FileText className="size-5" />} title={search || filter !== 'all' ? t('invoices.noMatches') : t('invoices.empty')} body={search || filter !== 'all' ? undefined : t('invoices.emptyBody')} />
           ) : (
             <div className="relative overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="stack-sm w-full min-w-[720px] text-sm">
                 <thead className="whitespace-nowrap border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>
                     <th scope="col" className="px-4 py-2.5 text-start font-semibold">
@@ -155,14 +155,14 @@ export default function Invoices() {
                         {i.contact.name}
                         {i.reference && <span className="block text-xs text-ink-500">{i.reference}</span>}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-ink-600 dark:text-ink-300">{day(i.dueDate)}</td>
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                      <td className="whitespace-nowrap px-4 py-2.5 text-ink-600 dark:text-ink-300" data-label={t('invoices.fields.dueDate')}>{day(i.dueDate)}</td>
+                      <td className="px-4 py-2.5 text-end font-mono font-semibold tabular-nums sm:font-normal" dir="ltr" data-end>
                         {i.currency ? formatMoney(i.total, i.currency, locale) : money.format(i.total)}
                       </td>
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                      <td className={`px-4 py-2.5 text-end font-mono tabular-nums max-sm:text-xs ${i.status === 'issued' ? '' : 'max-sm:hidden'}`} dir="ltr" data-end data-label={i.status === 'issued' ? t('invoices.balanceDue') : undefined}>
                         {i.status === 'issued' ? (i.currency ? formatMoney(i.balance, i.currency, locale) : money.format(i.balance)) : '—'}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5" data-end>
                         <span className={`inline-flex whitespace-nowrap rounded-full bg-current/10 px-2 py-0.5 text-xs font-semibold ${stateTone(i.state)}`}>{t(`invoices.states.${i.state}`)}</span>
                       </td>
                     </tr>

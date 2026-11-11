@@ -99,7 +99,7 @@ export default function Journals() {
           ) : (
             <>
               <div className="relative overflow-x-auto">
-                <table className="w-full min-w-[640px] text-sm">
+                <table className="stack-sm w-full min-w-[640px] text-sm">
                   <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                     <tr>
                       <th scope="col" className="px-4 py-3 text-start font-semibold">
@@ -144,7 +144,7 @@ export default function Journals() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-end font-mono tabular-nums" dir="ltr">
+                        <td className="px-4 py-3 text-end font-mono tabular-nums" dir="ltr" data-end>
                           {money.plain(e.totals.debit)}
                           {e.totals.difference !== 0 && <span className="block text-xs text-expense">{t('journals.unbalancedBy', { amount: money.plain(Math.abs(e.totals.difference)) })}</span>}
                         </td>

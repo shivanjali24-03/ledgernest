@@ -1,3 +1,4 @@
+import { press } from '../test/openDialog';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -117,7 +118,7 @@ describe('bills', () => {
     await screen.findByRole('article', {}, { timeout: 4000 });
     await waitFor(
       () => {
-        if (!screen.queryByText(/^Its entry is reversed/)) fireEvent.click(screen.getByRole('button', { name: 'Void bill' }));
+        if (!screen.queryByText(/^Its entry is reversed/)) press('Void bill');
         const dialog = screen.getByText(/^Its entry is reversed/).closest('[role="dialog"]') as HTMLElement;
         fireEvent.click(within(dialog).getByRole('button', { name: 'Void bill' }));
       },
@@ -135,7 +136,7 @@ describe('bills', () => {
     await waitFor(
       () => {
         if (created) return;
-        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: 'Make recurring' }));
+        if (!screen.queryByRole('dialog')) press('Make recurring');
         const dialog = screen.getByRole('dialog', { name: 'Make this bill recurring' });
         expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toMatch(/^Sharma Office Supplies · /);
         fireEvent.click(within(dialog).getByRole('button', { name: 'Create schedule' }));

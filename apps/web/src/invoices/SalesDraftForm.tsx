@@ -332,7 +332,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
 
       <Card className="overflow-hidden">
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[920px] text-sm">
+          <table className="stack-sm w-full min-w-[920px] text-sm">
             <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
               <tr>
                 <th scope="col" className="w-44 px-3 py-2 text-start font-semibold">
@@ -367,7 +367,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                 const amount = !l.invalid && l.price !== null ? amounts.lines[filled.filter((x) => !x.invalid).indexOf(l)]?.net : undefined;
                 return (
                   <tr key={l.key} className="align-top">
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.item')}>
                       <select aria-label={t('invoices.lineItem', { n: n + 1 })} value={l.itemId} disabled={!canManage} onChange={(e) => pickItem(l.key, e.target.value)} className={cell}>
                         <option value="">{t('invoices.noItem')}</option>
                         {(items.data ?? []).map((i) => (
@@ -377,13 +377,13 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                         ))}
                       </select>
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.description')}>
                       <input aria-label={t('invoices.lineDescription', { n: n + 1 })} value={l.description} disabled={!canManage} onChange={(e) => set(l.key, { description: e.target.value })} dir="auto" className={cell} />
                       <CostCentreSelect centres={centres} value={l.costCentreId} onChange={(v) => set(l.key, { costCentreId: v })} label={t('costCentres.lineLabel', { n: n + 1 })} disabled={!canManage} />
                       {config.batches && l.itemId && items.data?.find((x) => x.id === l.itemId)?.trackBatches && <BatchSelect itemId={l.itemId} value={l.batchId} onChange={(v) => set(l.key, { batchId: v })} label={t('batches.lineBatch', { n: n + 1 })} disabled={!canManage} />}
                       {config.batches && l.itemId && items.data?.find((x) => x.id === l.itemId)?.trackSerials && <SerialsInput value={l.serials} onChange={(v) => set(l.key, { serials: v })} quantity={l.quantity} label={t('serials.lineSerials', { n: n + 1 })} disabled={!canManage} />}
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.qty')}>
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />
                       <UnitSelect
                         item={items.data?.find((x) => x.id === l.itemId)}
@@ -397,13 +397,13 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                         }}
                       />
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.price', { currency })}>
                       <input aria-label={t('invoices.linePrice', { n: n + 1 })} value={l.unitPrice} disabled={!canManage} onChange={(e) => set(l.key, { unitPrice: e.target.value })} onBlur={() => l.price && set(l.key, { unitPrice: plain(l.price) })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.price === null && 'border-expense')} />
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.discount')}>
                       <input aria-label={t('invoices.lineDiscount', { n: n + 1 })} value={l.discount} disabled={!canManage} onChange={(e) => set(l.key, { discount: e.target.value })} inputMode="decimal" dir="ltr" placeholder="0" className={clsx(cell, 'text-end font-mono', l.disc === null && 'border-expense')} />
                     </td>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 max-sm:py-1" data-label={t('invoices.columns.tax')}>
                       <select aria-label={t('invoices.lineTax', { n: n + 1 })} value={l.group?.id ?? ''} disabled={!canManage || composition} title={composition ? t('settings.gstSchemes.composition') : undefined} onChange={(e) => set(l.key, { taxGroupId: e.target.value })} className={cell}>
                         <option value="">{t('journals.tax.none')}</option>
                         {groups
@@ -415,10 +415,10 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                           ))}
                       </select>
                     </td>
-                    <td className="whitespace-nowrap px-3 pb-2 pt-3.5 text-end font-mono tabular-nums" dir="ltr">
+                    <td className="whitespace-nowrap px-3 pb-2 pt-3.5 text-end font-mono tabular-nums max-sm:font-semibold" dir="ltr" data-end>
                       {amount !== undefined ? plain(amount) : ''}
                     </td>
-                    <td className="py-1.5 pe-2">
+                    <td className="py-1.5 pe-2" data-end>
                       {canManage && lines.length > 1 && (
                         <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} aria-label={t('journals.removeLineN', { n: n + 1 })} className="grid size-9 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-expense dark:hover:bg-ink-800">
                           <X className="size-4" />

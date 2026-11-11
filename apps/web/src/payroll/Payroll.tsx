@@ -15,8 +15,15 @@ import { SelectField, TextField } from '../ui/Field';
 import { Card, EmptyState, PageHeader, Pill, Segmented, SkeletonRows } from '../ui/Kit';
 import Modal from '../ui/Modal';
 import { useToast } from '../ui/toastContext';
+import { useIntlLocale } from '../i18n';
 import { usePayrollApi } from './api';
 import type { Employee, PayRun, PayrollApi } from './types';
+
+/** "October 2026" in the reader's language (the API's label is English) */
+function useMonthLabel() {
+  const locale = useIntlLocale();
+  return (month: string) => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`));
+}
 
 const REASONS = ['code_taken', 'run_exists', 'no_employees', 'not_draft', 'not_posted', 'already_paid', 'bank_invalid', 'before_month'];
 const useFail = () => {
@@ -139,6 +146,7 @@ function EmployeesTable({ employees, canManage, onEdit }: { employees: Employee[
 
 function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canManage: boolean }) {
   const { t } = useTranslation();
+  const monthOf = useMonthLabel();
   const money = useMoney();
   const toast = useToast();
   const fail = useFail();
@@ -148,14 +156,14 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
     for (const k of ['payroll', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
     toast(message);
   };
-  const post = useMutation({ mutationFn: () => api.post(run.id), onSuccess: done(t('payroll.posted', { month: run.label })), onError: fail });
-  const unpost = useMutation({ mutationFn: () => api.unpost(run.id), onSuccess: done(t('payroll.unposted', { month: run.label })), onError: fail });
-  const remove = useMutation({ mutationFn: () => api.removeRun(run.id), onSuccess: done(t('payroll.deleted', { month: run.label })), onError: fail });
+  const post = useMutation({ mutationFn: () => api.post(run.id), onSuccess: done(t('payroll.posted', { month: monthOf(run.month) })), onError: fail });
+  const unpost = useMutation({ mutationFn: () => api.unpost(run.id), onSuccess: done(t('payroll.unposted', { month: monthOf(run.month) })), onError: fail });
+  const remove = useMutation({ mutationFn: () => api.removeRun(run.id), onSuccess: done(t('payroll.deleted', { month: monthOf(run.month) })), onError: fail });
   const slip = useMutation({ mutationFn: (id: string) => api.payslipPdf(id), onSuccess: (f) => saveBlob(f), onError: fail });
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 px-5 py-3 dark:border-ink-800">
-        <h2 className="flex-1 font-semibold">{t('payroll.runTitle', { month: run.label })}</h2>
+        <h2 className="flex-1 font-semibold">{t('payroll.runTitle', { month: monthOf(run.month) })}</h2>
         <Pill tone={run.status === 'draft' ? 'neutral' : 'brand'}>{t(`payroll.statuses.${run.status}`)}</Pill>
         {canManage && run.status === 'draft' && (
           <>
@@ -179,7 +187,7 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
         )}
       </div>
       <div className="relative overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm" aria-label={t('payroll.payslipsOf', { month: run.label })}>
+        <table className="w-full min-w-[640px] text-sm" aria-label={t('payroll.payslipsOf', { month: monthOf(run.month) })}>
           <thead className="text-xs uppercase tracking-wide text-ink-400">
             <tr>
               <th className="px-4 py-2 text-start font-semibold">{t('payroll.columns.employee')}</th>
@@ -244,6 +252,7 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
 
 function PayDialog({ api, run, onClose }: { api: PayrollApi; run: PayRun; onClose: () => void }) {
   const { t } = useTranslation();
+  const monthOf = useMonthLabel();
   const money = useMoney();
   const toast = useToast();
   const fail = useFail();
@@ -259,7 +268,7 @@ function PayDialog({ api, run, onClose }: { api: PayrollApi; run: PayRun; onClos
     mutationFn: () => api.pay(run.id, { date, bankAccountId: bank }),
     onSuccess: () => {
       for (const k of ['payroll', 'journals', 'reports', 'banking']) void queryClient.invalidateQueries({ queryKey: [k] });
-      toast(t('payroll.paid', { month: run.label }));
+      toast(t('payroll.paid', { month: monthOf(run.month) }));
       onClose();
     },
     onError: fail,
@@ -268,7 +277,7 @@ function PayDialog({ api, run, onClose }: { api: PayrollApi; run: PayRun; onClos
     <Modal
       open
       onClose={onClose}
-      title={t('payroll.payTitle', { month: run.label })}
+      title={t('payroll.payTitle', { month: monthOf(run.month) })}
       description={t('payroll.payBody', { amount: money.format(run.net) })}
       footer={
         <>
@@ -291,6 +300,7 @@ function PayDialog({ api, run, onClose }: { api: PayrollApi; run: PayRun; onClos
 
 function RunDialog({ api, employees, onClose }: { api: PayrollApi; employees: Employee[]; onClose: () => void }) {
   const { t } = useTranslation();
+  const monthOf = useMonthLabel();
   const toast = useToast();
   const fail = useFail();
   const queryClient = useQueryClient();
@@ -300,7 +310,7 @@ function RunDialog({ api, employees, onClose }: { api: PayrollApi; employees: Em
     mutationFn: () => api.createRun({ month, lossOfPay: Object.entries(lop).filter(([, v]) => Number(v) > 0).map(([employeeId, v]) => ({ employeeId, days: Number(v) })) }),
     onSuccess: (r) => {
       void queryClient.invalidateQueries({ queryKey: ['payroll'] });
-      toast(t('payroll.ran', { month: r.label }));
+      toast(t('payroll.ran', { month: monthOf(r.month) }));
       onClose();
     },
     onError: fail,
