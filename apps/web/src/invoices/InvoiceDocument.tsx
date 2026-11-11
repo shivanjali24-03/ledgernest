@@ -34,7 +34,8 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
   const plain = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
   const address = (a: Record<string, string | null> | { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null; country?: string | null }) =>
-    [a.line1, a.line2, [a.city, a.region, a.postalCode].filter(Boolean).join(', '), a.country && a.country !== org?.country ? countryName(a.country, locale) : null].filter(Boolean);
+    // An area named after its city ("Pune" then "Pune, Maharashtra") isn't repeated
+    [a.line1, a.line2 && a.line2 !== a.city ? a.line2 : null, [a.city, a.region, a.postalCode].filter(Boolean).join(', '), a.country && a.country !== org?.country ? countryName(a.country, locale) : null].filter((x) => x && !(x === a.city && a.region));
   const pos = stateName(i.placeOfSupply);
   // Pay by UPI: rupee invoices with something still owed, once the organisation has its UPI ID
   const upi =

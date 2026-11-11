@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ChequeDialog from './ChequeDialog';
@@ -41,8 +41,8 @@ describe('Cheque dialog', () => {
     expect(within(dialog).getByLabelText('Move down (mm)')).toHaveValue('3');
     const right = within(dialog).getByLabelText('Move right (mm)');
     expect(right).toHaveValue('-1');
-    await userEvent.clear(right);
-    await userEvent.type(right, '45');
+    // Set in one step: typing key by key is what ran slow under a busy test run
+    fireEvent.change(right, { target: { value: '45' } });
     // Under load the check can trail the typing: wait for it
     expect(await within(dialog).findByText('Between -30 and 30 mm.', {}, { timeout: 10_000 })).toBeInTheDocument();
     await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Download cheque PDF' })).toBeDisabled());

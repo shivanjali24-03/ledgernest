@@ -85,7 +85,7 @@ export default function Journals() {
         />
       </motion.div>
       <motion.div variants={fadeUp}>
-        <Card>
+        <Card className="overflow-hidden">
           {query.isPending ? (
             <SkeletonRows />
           ) : query.isError ? (

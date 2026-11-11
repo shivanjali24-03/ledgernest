@@ -81,7 +81,7 @@ export default function RecurringBills() {
           description={t('recurringBills.description')}
           actions={
             canManage ? (
-              <Button variant="secondary" icon={<Zap className="size-4" />} loading={run.isPending} onClick={() => run.mutate()}>
+              <Button variant="secondary" icon={<Zap className="size-4" />} loading={run.isPending} disabled={!list.data?.some((x) => x.status === 'active')} onClick={() => run.mutate()}>
                 {t('recurring.runNow')}
               </Button>
             ) : undefined
