@@ -3095,7 +3095,11 @@
       "bill_currency": "That bill is in a different currency.",
       "bill_not_found": "That bill belongs to another vendor.",
       "bill_reverse_charge": "Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again.",
-      "no_self_invoice": "Only a bill under reverse charge from an unregistered supplier has a self invoice."
+      "no_self_invoice": "Only a bill under reverse charge from an unregistered supplier has a self invoice.",
+      "boe_reverse_charge": "IGST on imported goods is paid to customs, not under reverse charge.",
+      "boe_currency": "Customs duty and IGST are paid in rupees: enter the bill of entry from customs or your clearing agent.",
+      "boe_stock": "Goods come into stock on the overseas supplier’s bill: leave stock items off the bill of entry.",
+      "boe_no_igst": "Give the value IGST is worked out on as a line with IGST."
     },
     "duplicates": {
       "title": "This may be a bill you’ve entered already:",
@@ -3122,6 +3126,15 @@
       "eligible": "Credit eligible",
       "blocked": "Credit blocked (s.17(5))",
       "ineligible": "Credit ineligible"
+    },
+    "boe": {
+      "label": "Goods imported (bill of entry)",
+      "hint": "From customs or your clearing agent: lines with IGST are the value it's worked out on; lines without tax are the duties",
+      "number": "Bill of entry no.",
+      "date": "Bill of entry date",
+      "portCode": "Port code",
+      "assessable": "Value for IGST (owed to the supplier, not here)",
+      "summary": "Bill of entry {{number}} dated {{date}}, port {{port}}"
     }
   },
   "creditNotes": {

@@ -250,4 +250,22 @@ describe('bills', () => {
     await userEvent.selectOptions(await screen.findByLabelText('Input tax credit on line 1'), 'blocked');
     expect(screen.getByLabelText('Input tax credit on line 1')).toHaveValue('blocked');
   }, 20_000);
+
+  it('records a bill of entry: customs is owed the duties and IGST, not the goods’ value', async () => {
+    const { createDemoBillsApi } = await import('./demoBillsApi');
+    const { createDemoContactsApi } = await import('../contacts/demoContactsApi');
+    const { demoTaxState } = await import('../taxes/demoTaxesApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const { createDemoJournalsApi } = await import('../journals/demoJournalsApi');
+    const customs = await createDemoContactsApi(() => true).create({ name: 'Commissioner of Customs', isCustomer: false, isVendor: true });
+    const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')!.id;
+    const api = createDemoBillsApi(() => true);
+    const today = new Date().toISOString().slice(0, 10);
+    const d = await api.create({ contactId: customs.id, billDate: today, vendorReference: 'BE 7654321', billOfEntry: { number: '7654321', date: today, portCode: 'INNSA1' }, lines: [{ description: 'Value for IGST', quantity: '1', unitPrice: 1_10_000_00, taxGroupId: gst18, accountId: sampleId('5300') }, { description: 'Basic customs duty', quantity: '1', unitPrice: 10_000_00, taxGroupId: null, accountId: sampleId('5300') }] });
+    expect(d.lines[0]!.taxGroup?.name).toBe('IGST 18%');
+    expect(d).toMatchObject({ subtotal: 10_000_00, taxTotal: 19_800_00, total: 29_800_00 });
+    const rec = await api.record(d.id);
+    const entry = await createDemoJournalsApi(() => true).get(rec.journalEntry!.id);
+    expect(entry.lines.reduce((s, l) => s + l.debit, 0)).toBe(entry.lines.reduce((s, l) => s + l.credit, 0));
+  }, 30_000);
 });

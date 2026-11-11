@@ -21,6 +21,7 @@ import {
   toBase,
   type BillStatus,
   type ItcKind,
+  type BillOfEntry,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -29,7 +30,7 @@ import { ApprovalGate } from '../approvals/approval-gate.js';
 import { AuditService } from '../audit/audit.service.js';
 import { allPages, major, toCsv } from '../common/list-export.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
-import type { Prisma } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
@@ -67,6 +68,8 @@ export type DraftIn = {
   vendorBillDate?: string | null;
   /** We pay the GST under reverse charge */
   reverseCharge?: boolean;
+  /** Goods imported: the bill of entry */
+  billOfEntry?: BillOfEntry | null;
   notes: string | null;
   placeOfSupply: string | null;
   payableAccountId: string | null;
@@ -109,6 +112,7 @@ const select = {
   vendorBillDate: true,
   reverseCharge: true,
   selfInvoiceNumber: true,
+  billOfEntry: true,
   notes: true,
   subtotal: true,
   taxTotal: true,
@@ -304,6 +308,8 @@ export class BillsService {
         amount: value,
       })),
       selfInvoiceNumber: i.selfInvoiceNumber,
+      /** Goods imported: the bill of entry; its taxed lines are the assessable value, not owed here */
+      billOfEntry: (i.billOfEntry as BillOfEntry | null) ?? null,
       notes: i.notes,
       contact: {
         ...i.contact,
@@ -696,9 +702,24 @@ export class BillsService {
       org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
     const placeOfSupply = input.placeOfSupply ?? contact.stateCode;
     const rcm = !!input.reverseCharge;
-    // Services bought from abroad under reverse charge are an import: IGST
+    const boe = input.billOfEntry ?? null;
+    if (boe && rcm)
+      throw refuse(
+        BadRequestException,
+        'IGST on imported goods is paid to customs, not under reverse charge.',
+        'boe_reverse_charge',
+        { field: 'reverseCharge' },
+      );
+    if (boe && contact.currency)
+      throw refuse(
+        BadRequestException,
+        'Customs duty and IGST are paid in rupees: enter the bill of entry from a vendor billed in rupees (customs or your clearing agent).',
+        'boe_currency',
+        { field: 'contactId' },
+      );
+    // Services bought from abroad under reverse charge, and goods imported, are inter-state: IGST
     const supply =
-      rcm && !placeOfSupply
+      (rcm && !placeOfSupply) || boe
         ? 'inter'
         : orgState && placeOfSupply
           ? orgState === placeOfSupply
@@ -838,7 +859,7 @@ export class BillsService {
         'account_archived',
       );
 
-    const amounts = invoiceAmounts(
+    const computed = invoiceAmounts(
       lines.map((l) => ({
         quantity: l.quantity,
         unitPrice: l.unitPrice,
@@ -851,6 +872,28 @@ export class BillsService {
           : [],
       })),
     );
+    // A bill of entry: taxed lines are the assessable value (the supplier's), so only the duties and the IGST are owed
+    if (boe) {
+      if (lines.some((l) => l.itemId && items.get(l.itemId)?.trackStock))
+        throw refuse(
+          BadRequestException,
+          'The goods come into stock on the overseas supplier’s bill: give the bill of entry lines without stock items.',
+          'boe_stock',
+        );
+      if (!lines.some((l) => l.group))
+        throw refuse(
+          BadRequestException,
+          'Give the assessable value as a line with IGST.',
+          'boe_no_igst',
+        );
+    }
+    const duties = computed.lines.reduce(
+      (s, x, n) => s + (lines[n]!.group ? 0 : x.net),
+      0,
+    );
+    const amounts = boe
+      ? { ...computed, subtotal: duties, total: duties + computed.tax }
+      : computed;
 
     // The payable: as chosen, or the first active payable kept in the bill's currency
     const currency = contact.currency;
@@ -891,6 +934,7 @@ export class BillsService {
     }
     return {
       reverseCharge: rcm,
+      billOfEntry: boe,
       /** No GSTIN: a self-invoice is raised for the reverse charge */
       vendorRegistered: !!contact.taxId && GSTIN_SHAPE.test(contact.taxId),
       contactId: contact.id,
@@ -957,6 +1001,9 @@ export class BillsService {
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
           reverseCharge: p.reverseCharge,
+          billOfEntry: p.billOfEntry
+            ? (p.billOfEntry as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           vendorBillDate: input.vendorBillDate
             ? asDate(input.vendorBillDate)
             : null,
@@ -1017,6 +1064,9 @@ export class BillsService {
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
           reverseCharge: p.reverseCharge,
+          billOfEntry: p.billOfEntry
+            ? (p.billOfEntry as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           vendorBillDate: input.vendorBillDate
             ? asDate(input.vendorBillDate)
             : null,
@@ -1133,6 +1183,7 @@ export class BillsService {
         dueDate: iso(i.dueDate),
         vendorReference: i.vendorReference,
         reverseCharge: i.reverseCharge,
+        billOfEntry: (i.billOfEntry as BillOfEntry | null) ?? null,
         notes: i.notes,
         placeOfSupply: i.placeOfSupply,
         payableAccountId: i.payableAccountId,
@@ -1281,6 +1332,18 @@ export class BillsService {
             credit: number;
           }
       )[] = [...expense.filter((l) => l.debit > 0), payable];
+      // A bill of entry: the assessable value carries the IGST (input credit) and comes straight back off, as it's owed
+      // to the overseas supplier on their own bill
+      if (p.billOfEntry)
+        p.lines.forEach((l, n) => {
+          if (l.group && expense[n]!.debit > 0)
+            lines.push({
+              accountId: l.accountId,
+              description: `${l.description} (assessable value, bill of entry ${p.billOfEntry!.number})`,
+              debit: 0,
+              credit: base(p.amounts.lines[n]!.net),
+            });
+        });
       // What we owe the government under reverse charge, paid in cash with the return
       const rcmTotal = p.lines.reduce((t, _l, n) => t + rcmTaxOf(n), 0);
       if (rcmTotal > 0)

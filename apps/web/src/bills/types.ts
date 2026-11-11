@@ -1,4 +1,4 @@
-import type { BillDraftInput, BillState, BillStatus, ItcKind } from '@ledgernest/shared';
+import type { BillDraftInput, BillOfEntry, BillState, BillStatus, ItcKind } from '@ledgernest/shared';
 import type { InvoiceLine } from '../invoices/types';
 
 export type BillLine = InvoiceLine & {
@@ -24,6 +24,8 @@ export interface Bill {
   reverseCharge?: boolean;
   reverseChargeTax?: { name: string; amount: number }[];
   selfInvoiceNumber?: string | null;
+  /** Goods imported: the bill of entry; its taxed lines are the assessable value, not owed here */
+  billOfEntry?: BillOfEntry | null;
   notes: string | null;
   contact: {
     id: string;

@@ -1032,6 +1032,8 @@ model Bill {
   reverseCharge     Boolean   @default(false) @map("reverse_charge")
   /// Under reverse charge from an unregistered vendor: the self-invoice we raise (CGST Act s.31(3)(f)), numbered SI/<FY>/NNNN
   selfInvoiceNumber String?   @map("self_invoice_number")
+  /// Goods imported: the bill of entry customs assessed { number, date, portCode }; its taxed lines are the assessable value (IGST on it goes to customs, the value to the supplier), its untaxed lines the duties
+  billOfEntry       Json?     @map("bill_of_entry")
   /// When it's entered in the books
   billDate          DateTime  @map("bill_date") @db.Date
   dueDate           DateTime  @map("due_date") @db.Date

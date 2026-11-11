@@ -334,6 +334,7 @@ export class VendorCreditsService {
           billDate: true,
           currency: true,
           reverseCharge: true,
+          billOfEntry: true,
           total: true,
           amountPaid: true,
           payableAccountId: true,
@@ -389,10 +390,10 @@ export class VendorCreditsService {
           'bill_currency',
         );
       // Its GST was ours to pay: putting it right means a journal for the tax as well
-      if (bill.reverseCharge)
+      if (bill.reverseCharge || bill.billOfEntry)
         throw refuse(
           BadRequestException,
-          'Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again.',
+          'Debit notes aren’t raised against bills under reverse charge or bills of entry yet: void the bill and record it again.',
           'bill_reverse_charge',
         );
       if (input.date < iso(bill.billDate))

@@ -160,6 +160,11 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
           </>
         )}
       </dl>
+      {b.billOfEntry && (
+        <p className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="bill-of-entry">
+          {t('bills.boe.summary', { number: b.billOfEntry.number, date: day(b.billOfEntry.date), port: b.billOfEntry.portCode })}
+        </p>
+      )}
       {b.reverseCharge && (
         <div className="mt-4 rounded border border-ink-200 px-3 py-2 text-xs text-ink-700 dark:border-ink-700 dark:text-ink-200" data-testid="bill-reverse-charge">
           <p className="font-semibold">{t('bills.reverseCharge.note')}</p>
