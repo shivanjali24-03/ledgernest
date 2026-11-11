@@ -1,4 +1,4 @@
-import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase, type BillStatus, type ItcKind, possibleDuplicateBills } from '@ledgernest/shared';
+import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase, type BillStatus, type ItcKind, type BillOfEntry, possibleDuplicateBills } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -49,6 +49,7 @@ type Stored = {
   vendorBillDate?: string | null;
   reverseCharge?: boolean;
   selfInvoiceNumber?: string | null;
+  billOfEntry?: BillOfEntry | null;
   notes: string | null;
   amountPaid: number;
   journalEntryId: string | null;
@@ -242,6 +243,8 @@ function view(i: Stored): Bill {
       })),
     })),
   );
+  // A bill of entry: taxed lines are the assessable value (owed to the supplier), so only duties and IGST are owed
+  const assessable = i.billOfEntry ? a.lines.reduce((s, x, n) => s + (groups[n] ? x.net : 0), 0) : 0;
   const breakdown = new Map<string, number>();
   i.lines.forEach((_l, n) => {
     const g = groups[n];
@@ -275,6 +278,7 @@ function view(i: Stored): Bill {
     reverseCharge: !!i.reverseCharge,
     reverseChargeTax: [...rcmBreakdown].map(([name, amount]) => ({ name, amount })),
     selfInvoiceNumber: i.selfInvoiceNumber ?? null,
+    billOfEntry: i.billOfEntry ?? null,
     notes: i.notes,
     contact: {
       id: contact.id,
@@ -289,11 +293,11 @@ function view(i: Stored): Bill {
       stateCode: contact.stateCode,
     },
     payableAccount: payable ? { id: payable.id, code: payable.code, name: payable.name } : null,
-    subtotal: a.subtotal,
+    subtotal: a.subtotal - assessable,
     taxTotal: a.tax,
-    total: a.total,
+    total: a.total - assessable,
     amountPaid: i.amountPaid,
-    balance: a.total - i.amountPaid,
+    balance: a.total - assessable - i.amountPaid,
     taxBreakdown: [...breakdown].map(([name, amount]) => ({ name, amount })),
     journalEntry: i.journalEntryId ? { id: i.journalEntryId, number: i.journalNumber } : null,
     payments: i.payments ?? [],
@@ -335,7 +339,7 @@ function view(i: Stored): Bill {
     state: billState(
       {
         status: i.status,
-        total: a.total,
+        total: a.total - assessable,
         amountPaid: i.amountPaid,
         dueDate: i.dueDate,
       },
@@ -372,8 +376,13 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
     if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
     const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
     const rcm = !!d.reverseCharge;
-    // Services bought from abroad under reverse charge are an import: IGST
-    const supply = rcm && !placeOfSupply ? 'inter' : supplyFor(ORG_STATE, placeOfSupply);
+    const boe = d.billOfEntry ?? null;
+    if (boe && rcm) throw refuse(400, 'boe_reverse_charge', { field: 'reverseCharge' });
+    if (boe && contact.currency) throw refuse(400, 'boe_currency', { field: 'contactId' });
+    if (boe && !d.lines.some((l) => l.taxGroupId)) throw refuse(400, 'boe_no_igst');
+    if (boe && d.lines.some((l) => demoInventoryAccountOf(l.itemId))) throw refuse(400, 'boe_stock');
+    // Services bought from abroad under reverse charge, and imported goods, are inter-state: IGST
+    const supply = (rcm && !placeOfSupply) || boe ? 'inter' : supplyFor(ORG_STATE, placeOfSupply);
     const items = demoItemRows();
     const accounts = demoAccountRows();
     const groups = allGroups();
@@ -411,6 +420,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
       vendorReference: d.vendorReference,
       vendorBillDate: d.vendorBillDate,
       reverseCharge: rcm,
+      billOfEntry: boe,
       notes: d.notes,
       lines,
     };
@@ -566,6 +576,8 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
           const g = l.rcmTaxGroup ? groupOf(l.rcmTaxGroup.id) : null;
           return s + (g ? splitTax(toInr(l.amount), false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.reduce((t, x) => t + x.amount, 0) : 0);
         }, 0);
+        // A bill of entry: the assessable value carries the IGST and comes straight back off
+        if (i.billOfEntry) for (const l of v.lines) if (l.taxGroup && l.amount > 0) lines.push({ accountId: l.account!.id, description: `${l.description} (assessable value, bill of entry ${i.billOfEntry.number})`, credit: l.amount });
         if (rcmTotal > 0) lines.push({ accountId: demoEnsureFxAccount('rcm_payable'), description: `${label} GST under reverse charge`, credit: rcmTotal });
         const draft = await journals.create({
           date: i.billDate,

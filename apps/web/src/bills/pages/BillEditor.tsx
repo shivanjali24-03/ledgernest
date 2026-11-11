@@ -132,6 +132,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const [reference, setReference] = useState(invoice?.vendorReference ?? '');
   const [vendorDate, setVendorDate] = useState(invoice?.vendorBillDate ?? '');
   const [reverseCharge, setReverseCharge] = useState(!!invoice?.reverseCharge);
+  const [boe, setBoe] = useState<{ number: string; date: string; portCode: string } | null>(invoice?.billOfEntry ?? null);
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
   const [lines, setLines] = useState<Line[]>(
@@ -168,7 +169,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
   const pos = placeOfSupply || customer?.stateCode || null;
   // Services bought from abroad under reverse charge are an import: IGST
-  const supply = reverseCharge && !pos ? 'inter' : supplyFor(orgState, pos);
+  const supply = (reverseCharge && !pos) || boe ? 'inter' : supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const pickItem = (key: string, itemId: string) => {
@@ -218,7 +219,10 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       })),
     }));
   // Under reverse charge the vendor charges no GST: we pay it ourselves, so it's shown but not owed to them
-  const amounts = invoiceAmounts(reverseCharge ? withRates.map((l) => ({ ...l, rates: [] })) : withRates);
+  const computed = invoiceAmounts(reverseCharge ? withRates.map((l) => ({ ...l, rates: [] })) : withRates);
+  // A bill of entry: taxed lines are the assessable value (owed to the overseas supplier), so only duties and IGST are owed
+  const assessable = boe ? computed.lines.reduce((s, x, n) => s + (withRates[n]!.rates.length ? x.net : 0), 0) : 0;
+  const amounts = boe ? { ...computed, subtotal: computed.subtotal - assessable, total: computed.total - assessable } : computed;
   const rcmTax = reverseCharge ? invoiceAmounts(withRates).tax : 0;
   const breakdown = new Map<string, number>();
   filled
@@ -238,6 +242,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     vendorReference: reference,
     vendorBillDate: vendorDate || null,
     reverseCharge,
+    billOfEntry: boe,
     notes,
     placeOfSupply: placeOfSupply || null,
     lines: filled.map((l) => ({
@@ -340,6 +345,22 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
               <span className="block text-xs font-normal text-ink-500">{t('bills.reverseCharge.hint')}</span>
             </span>
           </label>
+        )}
+        {india && (
+          <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium">
+            <input type="checkbox" checked={!!boe} disabled={!canManage} onChange={(e) => setBoe(e.target.checked ? { number: '', date: issueDate, portCode: '' } : null)} className="size-4 rounded accent-brand-600" />
+            <span>
+              {t('bills.boe.label')}
+              <span className="block text-xs font-normal text-ink-500">{t('bills.boe.hint')}</span>
+            </span>
+          </label>
+        )}
+        {boe && (
+          <>
+            <TextField label={t('bills.boe.number')} value={boe.number} onChange={(e) => setBoe({ ...boe, number: e.target.value })} disabled={!canManage} inputMode="numeric" dir="ltr" className="font-mono" />
+            <TextField label={t('bills.boe.date')} type="date" value={boe.date} onChange={(e) => setBoe({ ...boe, date: e.target.value })} disabled={!canManage} />
+            <TextField label={t('bills.boe.portCode')} value={boe.portCode} onChange={(e) => setBoe({ ...boe, portCode: e.target.value.toUpperCase() })} disabled={!canManage} placeholder="INNSA1" dir="ltr" className="font-mono uppercase" />
+          </>
         )}
         {india && (
           <SelectField
@@ -507,6 +528,14 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                 </dd>
               </div>
             ))}
+            {!!boe && (
+              <>
+                <dt className="text-ink-500">{t('bills.boe.assessable')}</dt>
+                <dd className="text-end font-mono tabular-nums text-ink-500" dir="ltr" data-testid="boe-assessable">
+                  {plain(assessable)}
+                </dd>
+              </>
+            )}
             {reverseCharge && (
               <>
                 <dt className="text-ink-500">{t('bills.reverseCharge.wePay')}</dt>

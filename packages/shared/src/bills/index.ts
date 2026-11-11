@@ -38,6 +38,24 @@ export const billLineSchema = invoiceLineSchema
   .extend({ itc: z.enum(ITC_KINDS).optional().default('eligible') })
   .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE });
 
+/**
+ * Goods imported: the bill of entry customs assessed them on (ICEGATE). Entered as a bill from customs (or the
+ * clearing agent): taxed lines are the assessable value IGST is worked out on (owed to the overseas supplier on their
+ * own bill, not here), untaxed lines are the duties (basic customs duty, social welfare surcharge). What's owed is the
+ * duties plus the IGST; the IGST is input credit, the duties are cost.
+ */
+export const billOfEntrySchema = z.object({
+  number: z.string().trim().regex(/^\d{6,8}$/, 'A bill of entry number is 6 to 8 digits.'),
+  date: isoDaySchema,
+  /** The customs port code, e.g. INNSA1 (Nhava Sheva) */
+  portCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{2}[A-Z0-9]{4}$/, 'A port code is 6 letters and digits, e.g. INNSA1.'),
+});
+export type BillOfEntry = z.output<typeof billOfEntrySchema>;
+
 export const billDraftSchema = z
   .object({
     contactId: z.uuid(),
@@ -47,6 +65,8 @@ export const billDraftSchema = z
     vendorBillDate: isoDaySchema.nullable().optional().default(null),
     /** We pay the GST under reverse charge (e.g. transport from a GTA, legal services, or services bought from abroad): the vendor charges none */
     reverseCharge: z.boolean().optional().default(false),
+    /** Goods imported: the bill of entry (see billOfEntrySchema) */
+    billOfEntry: billOfEntrySchema.nullable().optional().default(null),
     /** When the bill is entered in the books */
     billDate: isoDaySchema,
     /** Omitted = the bill date plus the vendor's payment terms */
