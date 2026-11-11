@@ -139,7 +139,13 @@ export function createAuthClient(baseUrl: string, fetchImpl: typeof fetch = (...
   /** Gets a new access token from the refresh cookie. Resolves false when there is no valid session. */
   function refresh(): Promise<boolean> {
     refreshing ??= withRefreshLock(async () => {
-      const res = await send('/auth/refresh', { method: 'POST' });
+      // Busy (429) or briefly down (5xx): wait and try again before treating the session as lost
+      let res = await send('/auth/refresh', { method: 'POST' });
+      for (let attempt = 0; attempt < 3 && (res.status === 429 || res.status >= 500); attempt++) {
+        const after = Number(res.headers.get('Retry-After'));
+        await new Promise((r) => setTimeout(r, Number.isFinite(after) && res.headers.has('Retry-After') ? Math.min(after, 10) * 1000 : 1000 * 2 ** attempt));
+        res = await send('/auth/refresh', { method: 'POST' });
+      }
       if (res.ok) {
         accessToken = ((await res.json()) as { accessToken: string }).accessToken;
         return true;
