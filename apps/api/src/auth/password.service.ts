@@ -1,12 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import argon2 from 'argon2';
-import { PASSWORD_RESET_MINUTES } from '@ledgernest/shared';
+import { LOCKOUT, PASSWORD_RESET_MINUTES } from '@ledgernest/shared';
 import type { Env } from '../config/env.js';
 import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -147,9 +143,30 @@ export class PasswordService {
   ) {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { passwordHash: true },
+      select: {
+        passwordHash: true,
+        failedLoginAttempts: true,
+        lockedUntil: true,
+      },
     });
+    // Someone holding a stolen session can't guess the password here either: these count like sign-ins
+    if (user.lockedUntil && user.lockedUntil > new Date())
+      throw new BadRequestException({
+        message: 'Too many wrong passwords. Try again in a few minutes.',
+        details: { reason: 'locked' },
+      });
     if (!(await argon2.verify(user.passwordHash, current))) {
+      const failures = user.failedLoginAttempts + 1;
+      await this.prisma.user.update({
+        where: { id: userId },
+        data:
+          failures >= LOCKOUT.maxFailedAttempts
+            ? {
+                failedLoginAttempts: 0,
+                lockedUntil: new Date(Date.now() + LOCKOUT.minutes * 60_000),
+              }
+            : { failedLoginAttempts: failures },
+      });
       await this.audit('auth.password.change_failed', ctx, userId);
       // 400, not 401: a 401 tells the app the session ended, which would sign the person out
       throw new BadRequestException({

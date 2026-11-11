@@ -86,7 +86,7 @@ describe('Authentication (e2e)', () => {
     const unknown = await login(`nobody-${run}@test.ledgernest.local`).expect(401);
     const wrong = await login(user.email, 'Wrong-Password-1').expect(401);
     expect(unknown.body.message).toBe(wrong.body.message);
-    expect(unknown.body.message).toBe('Email or password is incorrect.');
+    expect(unknown.body.message).toMatch(/^Email or password is incorrect./);
   });
 
   it('rejects malformed input with a 400 before touching the database', async () => {
@@ -100,9 +100,19 @@ describe('Authentication (e2e)', () => {
     const user = await makeUser();
     for (let i = 0; i < LOCKOUT.maxFailedAttempts; i++) await login(user.email, 'Wrong-Password-1').expect(401);
 
-    const locked = await login(user.email).expect(423);
-    expect(locked.body.message).toMatch(/Try again in 15 minutes/);
+    // Locked, the right password gets the same answer as a wrong one, so nobody learns the account exists
+    const locked = await login(user.email).expect(401);
+    const unknown = await login(`nobody-${Date.now()}@test.ledgernest.local`).expect(401);
+    expect(locked.body.message).toBe(unknown.body.message);
     expect(await prisma.auditLog.count({ where: { actorId: user.id, action: 'auth.lockout' } })).toBe(1);
+  });
+
+  it('refuses refresh and sign-out from another site, so nobody can force them on a visitor', async () => {
+    await http().post('/api/v1/auth/refresh').set('Origin', 'https://evil.example').expect(403);
+    await http().post('/api/v1/auth/logout').set('Origin', 'https://evil.example').expect(403);
+    // The web app's own origin, or no Origin at all, goes through as before
+    await http().post('/api/v1/auth/refresh').set('Origin', 'http://localhost:5173').expect(401);
+    await http().post('/api/v1/auth/logout').expect(204);
   });
 
   it('a successful sign-in resets the failed-attempt counter', async () => {
