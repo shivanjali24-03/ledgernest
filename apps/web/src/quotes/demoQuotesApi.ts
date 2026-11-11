@@ -1,4 +1,4 @@
-import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_VALID_DAYS, todayIn, type QuoteStatus } from '@ledgernest/shared';
+import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_TITLES, QUOTE_VALID_DAYS, todayIn, type QuoteKind, type QuoteStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -12,6 +12,7 @@ type StoredLine = ReturnType<typeof demoPrepareSale>['lines'][number];
 type Stored = {
   id: string;
   number: number;
+  kind?: QuoteKind;
   status: QuoteStatus;
   contactId: string;
   quoteDate: string;
@@ -98,7 +99,8 @@ async function view(q: Stored): Promise<Quote> {
   const status: QuoteStatus = q.status === 'invoiced' && !invoice ? 'accepted' : q.status;
   return {
     id: q.id,
-    number: quoteNumber(q.number),
+    kind: q.kind ?? 'quote',
+    number: quoteNumber(q.number, q.kind ?? 'quote'),
     status,
     state: quoteState({ status, expiryDate: q.expiryDate }, today()),
     quoteDate: q.quoteDate,
@@ -183,21 +185,23 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
     const raw = input as { lines: unknown[] };
     const d = p.data;
     const s = demoPrepareSale({ contactId: d.contactId, issueDate: d.quoteDate, dueDate: d.expiryDate, reference: d.reference, notes: d.notes, placeOfSupply: d.placeOfSupply, lines: raw.lines });
-    return { contactId: s.contactId, quoteDate: d.quoteDate, expiryDate: d.expiryDate, currency: s.currency, placeOfSupply: s.placeOfSupply, reference: d.reference, notes: d.notes, lines: s.lines };
+    return { kind: d.kind, contactId: s.contactId, quoteDate: d.quoteDate, expiryDate: d.expiryDate, currency: s.currency, placeOfSupply: s.placeOfSupply, reference: d.reference, notes: d.notes, lines: s.lines };
   };
   return {
     pdf: (id) =>
       wait(async () => {
         const q = await view(find(load(), id));
         const cur = q.currency ?? 'INR';
-        const bytes = pdfTableBytes({ title: `Quote ${q.number}`, subtitle: `Nest Demo Pvt. Ltd. for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, footer: `Nest Demo Pvt. Ltd. · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) });
-        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `quote-${q.number.toLowerCase()}.pdf` };
+        const kind = q.kind ?? 'quote';
+        const bytes = pdfTableBytes({ title: `${QUOTE_TITLES[kind]} ${q.number}`, subtitle: `Nest Demo Pvt. Ltd. for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, after: kind === 'proforma' ? ['This is a proforma invoice, not a tax invoice. A tax invoice follows on supply.'] : undefined, footer: `Nest Demo Pvt. Ltd. · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `${kind.replace('_', '-')}-${q.number.toLowerCase()}.pdf` };
       }),
     list: (q) =>
       wait(async () => {
         const all = await Promise.all(load().map(view));
         const s = q.search?.trim().toLowerCase();
         const items = all
+          .filter((x) => !q.kind || x.kind === q.kind)
           .filter((x) => !q.state || (q.state === 'open' ? x.state === 'draft' || x.state === 'sent' : x.state === q.state))
           .filter((x) => !q.contactId || x.contact.id === q.contactId)
           .filter((x) => !s || [x.number, x.reference, x.contact.name].some((v) => v?.toLowerCase().includes(s)))
@@ -211,7 +215,8 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         const p = prepare(input);
         const rows = load();
         const now = new Date().toISOString();
-        const q: Stored = { id: crypto.randomUUID(), number: Math.max(0, ...rows.map((r) => r.number)) + 1, status: 'draft', ...p, invoiceId: null, sentAt: null, decidedAt: null, createdAt: now, updatedAt: now };
+        // Each kind numbers on its own
+        const q: Stored = { id: crypto.randomUUID(), number: Math.max(0, ...rows.filter((r) => (r.kind ?? 'quote') === p.kind).map((r) => r.number)) + 1, status: 'draft', ...p, invoiceId: null, sentAt: null, decidedAt: null, createdAt: now, updatedAt: now };
         rows.push(q);
         save(rows);
         return view(q);
@@ -242,6 +247,19 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         if (!QUOTE_MOVES[from].includes(status)) throw refuse(409, 'bad_move', { from, to: status });
         const now = new Date().toISOString();
         Object.assign(q, { status, invoiceId: null, updatedAt: now, sentAt: status === 'sent' ? (q.sentAt ?? now) : q.sentAt, decidedAt: status === 'accepted' || status === 'declined' ? now : null });
+        save(rows);
+        return view(q);
+      }),
+    copy: (id, kind) =>
+      wait(async () => {
+        guard();
+        const rows = load();
+        const src = find(rows, id);
+        const now = new Date().toISOString();
+        const today = todayIn('Asia/Kolkata');
+        const days = Math.round((Date.parse(src.expiryDate) - Date.parse(src.quoteDate)) / 86_400_000);
+        const q: Stored = { ...src, id: crypto.randomUUID(), kind, number: Math.max(0, ...rows.filter((r) => (r.kind ?? 'quote') === kind).map((r) => r.number)) + 1, status: 'draft', quoteDate: today, expiryDate: new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10), reference: quoteNumber(src.number, src.kind ?? 'quote'), invoiceId: null, sentAt: null, decidedAt: null, decidedBy: null, decisionNote: null, shareToken: null, shareViews: 0, createdAt: now, updatedAt: now };
+        rows.push(q);
         save(rows);
         return view(q);
       }),

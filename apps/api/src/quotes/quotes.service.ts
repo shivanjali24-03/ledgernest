@@ -19,6 +19,9 @@ import {
   type quoteDraftSchema,
   type quoteEmailSchema,
   type QuoteStatus,
+  parseQuoteNumber,
+  QUOTE_TITLES,
+  type QuoteKind,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
@@ -48,6 +51,7 @@ const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
 const select = {
   id: true,
   number: true,
+  kind: true,
   status: true,
   quoteDate: true,
   expiryDate: true,
@@ -129,7 +133,9 @@ export class QuotesService {
     const expiryDate = iso(q.expiryDate);
     return {
       id: q.id,
-      number: quoteNumber(q.number),
+      /** A quotation, proforma invoice or sales order */
+      kind: q.kind as QuoteKind,
+      number: quoteNumber(q.number, q.kind as QuoteKind),
       status,
       state: quoteState({ status, expiryDate }, today),
       quoteDate: iso(q.quoteDate),
@@ -206,6 +212,7 @@ export class QuotesService {
   async list(
     organizationId: string,
     q: {
+      kind?: QuoteKind;
       state?: string;
       contactId?: string;
       search?: string;
@@ -214,6 +221,7 @@ export class QuotesService {
     },
   ) {
     const today = asDate(await this.today(organizationId));
+    const parsed = q.search ? parseQuoteNumber(q.search) : null;
     const open = { status: { in: ['draft', 'sent'] } };
     const byState: Record<string, Prisma.QuoteWhereInput> = {
       open: { ...open, expiryDate: { gte: today } },
@@ -221,14 +229,20 @@ export class QuotesService {
     };
     const where: Prisma.QuoteWhereInput = {
       organizationId,
+      ...(q.kind && { kind: q.kind }),
       ...(q.state && (byState[q.state] ?? { status: q.state })),
       ...(q.contactId && { contactId: q.contactId }),
       ...(q.search && {
         OR: [
           { reference: { contains: q.search, mode: 'insensitive' } },
           { contact: { name: { contains: q.search, mode: 'insensitive' } } },
-          ...(/^(QT-)?\d+$/i.test(q.search)
-            ? [{ number: Number(q.search.replace(/^QT-/i, '')) }]
+          ...(parsed
+            ? [
+                {
+                  number: parsed.number,
+                  ...(parsed.kind && { kind: parsed.kind }),
+                },
+              ]
             : []),
         ],
       }),
@@ -301,8 +315,10 @@ export class QuotesService {
     const p = await this.price(organizationId, input);
     const id = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
+      // Each kind numbers on its own: QT-0001, PI-0001, SO-0001
+      const kind: QuoteKind = input.kind ?? 'quote';
       const last = await tx.quote.aggregate({
-        where: { organizationId },
+        where: { organizationId, kind },
         _max: { number: true },
       });
       const number = (last._max.number ?? 0) + 1;
@@ -310,6 +326,7 @@ export class QuotesService {
         data: {
           organizationId,
           number,
+          kind,
           contactId: p.contactId,
           quoteDate: asDate(input.quoteDate),
           expiryDate: asDate(input.expiryDate),
@@ -333,7 +350,7 @@ export class QuotesService {
           entityType: 'quote',
           entityId: q.id,
           after: {
-            number: quoteNumber(number),
+            number: quoteNumber(number, kind),
             contactId: p.contactId,
             total: p.amounts.total,
             currency: p.currency,
@@ -422,7 +439,7 @@ export class QuotesService {
           entityType: 'quote',
           entityId: id,
           before: {
-            number: quoteNumber(q.number),
+            number: quoteNumber(q.number, q.kind as QuoteKind),
             contact: q.contact.name,
             total: Number(q.total),
           },
@@ -483,6 +500,41 @@ export class QuotesService {
     return moved;
   }
 
+  /**
+   * A new draft of another kind with the same lines: a quote accepted becomes a sales order, or a proforma to ask
+   * for an advance. Dated today, valid as long as the original was; its reference is the original's number.
+   */
+  async copy(id: string, kind: QuoteKind, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const q = await this.find(this.prisma, organizationId, id);
+    const today = await this.today(organizationId);
+    const days = Math.round(
+      (q.expiryDate.getTime() - q.quoteDate.getTime()) / 86_400_000,
+    );
+    return this.create(
+      {
+        contactId: q.contact.id,
+        kind,
+        quoteDate: today,
+        expiryDate: iso(new Date(asDate(today).getTime() + days * 86_400_000)),
+        reference: quoteNumber(q.number, q.kind as QuoteKind),
+        notes: q.notes,
+        placeOfSupply: q.placeOfSupply,
+        lines: q.lines.map((l) => ({
+          itemId: l.item?.id ?? null,
+          description: l.description,
+          quantity: formatQuantity(parseQuantity(l.quantity.toFixed(4))!),
+          unitPrice: Number(l.unitPrice),
+          discount: l.discountPpm,
+          taxGroupId: l.taxGroup?.id ?? null,
+          accountId: l.account?.id ?? null,
+          costCentreId: l.costCentre?.id ?? null,
+        })),
+      } as Input,
+      ctx,
+    );
+  }
+
   /** A draft invoice with the quote's lines, dated today unless another day is given */
   async convert(id: string, input: { issueDate?: string }, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
@@ -500,7 +552,7 @@ export class QuotesService {
       contactId: q.contact.id,
       issueDate: input.issueDate ?? (await this.today(organizationId)),
       dueDate: null,
-      reference: q.reference ?? quoteNumber(q.number),
+      reference: q.reference ?? quoteNumber(q.number, q.kind as QuoteKind),
       notes: q.notes,
       placeOfSupply: q.placeOfSupply,
       receivableAccountId: null,
@@ -575,9 +627,17 @@ export class QuotesService {
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
-        title: `Quote ${q.number}`,
-        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}${q.reference ? ` · ${q.reference}` : ''}`,
-        after: org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : undefined,
+        title: `${QUOTE_TITLES[q.kind]} ${q.number}`,
+        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}${q.kind === 'sales_order' ? '' : `, valid until ${q.expiryDate}`}${q.reference ? ` · ${q.reference}` : ''}`,
+        after: [
+          // A proforma asks for payment: it isn't a tax invoice, which follows when the goods or services are supplied
+          ...(q.kind === 'proforma'
+            ? [
+                'This is a proforma invoice, not a tax invoice. A tax invoice follows on supply.',
+              ]
+            : []),
+          ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
+        ],
         footer: `${org.name} · ${q.number}`,
         rows: quoteRows({ ...q, currency }, currencyDigits(currency)),
       }),
@@ -589,7 +649,10 @@ export class QuotesService {
   async download(organizationId: string, id: string) {
     const q = await this.get(organizationId, id);
     const { pdf } = await this.pdf(organizationId, q);
-    return { data: pdf, fileName: `quote-${q.number.toLowerCase()}.pdf` };
+    return {
+      data: pdf,
+      fileName: `${q.kind.replace('_', '-')}-${q.number.toLowerCase()}.pdf`,
+    };
   }
 
   /** The quote as a PDF to the customer (or the address given); a draft is marked sent */

@@ -155,4 +155,18 @@ describe('quotes', () => {
     await waitFor(() => expect(screen.getByText('Accepted by Dr. Meera Iyer from the quote link.')).toBeInTheDocument(), { timeout: 10_000 });
     expect(screen.getByText('“Go ahead from next week.”')).toBeInTheDocument();
   });
+
+  it('makes a sales order from a quote, numbered on its own, and lists them apart', async () => {
+    const { createDemoQuotesApi } = await import('./demoQuotesApi');
+    const api = createDemoQuotesApi(() => true);
+    const first = (await api.list({ page: 1, pageSize: 10 })).items[0]!;
+    renderApp(`/quotes/${first.id}`);
+    await userEvent.click(await screen.findByRole('button', { name: 'Make a sales order' }, { timeout: 6000 }));
+    expect(await screen.findByText('SO-0001 drafted from it', {}, { timeout: 6000 })).toBeInTheDocument();
+    const orders = await api.list({ kind: 'sales_order', page: 1, pageSize: 10 });
+    expect(orders.items.map((q) => [q.number, q.reference])).toEqual([['SO-0001', first.number]]);
+    const pi = await api.copy(first.id, 'proforma');
+    expect(pi.number).toBe('PI-0001');
+    expect((await api.pdf(pi.id)).filename).toBe('proforma-pi-0001.pdf');
+  }, 30_000);
 });

@@ -443,7 +443,7 @@ describe('Quotes (e2e)', () => {
       .expect(200);
     expect(res.headers['content-disposition']).toContain('quote-qt-0001.pdf');
     expect((res.body as Buffer).toString('latin1')).toContain(
-      '(Quote QT-0001) Tj',
+      '(Quotation QT-0001) Tj',
     );
   });
 });
