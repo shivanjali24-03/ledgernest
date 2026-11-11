@@ -116,6 +116,22 @@ export class PublicCustomerController {
     return this.links.view(token);
   }
 
+  @Get(':token/statement')
+  @ApiProduces('application/pdf')
+  async statement(
+    @Param('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.links.statementPdf(token);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    return new StreamableFile(f.data, {
+      type: f.contentType,
+      disposition: `attachment; filename="${f.fileName}"`,
+      length: f.data.length,
+    });
+  }
+
   @Get(':token/invoices/:invoiceId/pdf')
   @ApiProduces('application/pdf')
   async pdf(

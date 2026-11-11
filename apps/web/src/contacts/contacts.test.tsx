@@ -185,6 +185,12 @@ describe('customers and vendors', () => {
     const list = screen.getByRole('list', { name: 'Invoices' });
     expect(within(list).getByText(/^INV\/.+\/0001$/)).toBeInTheDocument();
     expect(within(list).getByRole('button', { name: /^Download INV\/.+\/0001 as PDF$/ })).toBeInTheDocument();
+    // And their statement for the year
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    await userEvent.click(screen.getByRole('button', { name: 'Download your statement for this year' }));
+    await waitFor(() => expect(saved).toBeDefined(), { timeout: 4000 });
+    expect(new TextDecoder('latin1').decode(await saved!.arrayBuffer())).toContain('Kumar Logistics');
   });
 
   it('finds a contact and their invoice from the command palette', { timeout: 20_000 }, async () => {
