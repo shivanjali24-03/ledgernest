@@ -18,6 +18,7 @@ import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '..
 import { useToast } from '../../ui/toastContext';
 import AdjustStockDialog from '../AdjustStockDialog';
 import OpeningStockDialog from '../OpeningStockDialog';
+import Warehouses from '../Warehouses';
 import { inventoryErrorMessage } from '../errors';
 import type { InventoryApi, StockMovement } from '../types';
 import { useInventoryApi } from '../useInventoryApi';
@@ -174,6 +175,9 @@ export default function Inventory() {
           })}
         </motion.ul>
       )}
+      <motion.div variants={fadeUp}>
+        <Warehouses api={api} items={(v?.rows ?? []).filter((r) => !r.archived).map((r) => ({ itemId: r.itemId, name: r.name }))} />
+      </motion.div>
       <motion.div variants={fadeUp}>
         <Expiring api={api} />
       </motion.div>
@@ -378,6 +382,7 @@ function Movements({ api, itemId, name, canAdjust, onAdjust }: { api: InventoryA
                     <td className="whitespace-nowrap px-4 py-2 text-ink-600 dark:text-ink-300">{formatDate(`${m.date}T00:00:00Z`, locale)}</td>
                     <td className="px-4 py-2" dir="auto">
                       {what(m)}
+                      {m.warehouse && <span className="ms-2 text-xs text-ink-500">{m.warehouse.name}</span>}
                       {m.journalEntry && (
                         <Link to={`/journals/${m.journalEntry.id}`} className="ms-2 font-mono text-xs text-brand-700 hover:underline dark:text-brand-300" dir="ltr">
                           {m.journalEntry.number}

@@ -59,3 +59,4 @@ export * from './tally/import.js';
 export * from './geo/index.js';
 export * from './numbering/index.js';
 export * from './interest/index.js';
+export * from './warehouses/index.js';

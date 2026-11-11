@@ -1,4 +1,4 @@
-import type { OpeningStockInput, StockAdjustmentInput, StockMovementKind } from '@ledgernest/shared';
+import type { OpeningStockInput, StockAdjustmentInput, StockMovementKind, StockTransferInput, WarehouseInput, WarehouseUpdateInput } from '@ledgernest/shared';
 
 export interface StockMovement {
   id: string;
@@ -15,6 +15,8 @@ export interface StockMovement {
   journalEntry: { id: string; number: string | null } | null;
   /** An adjustment that has since been undone */
   undone: boolean;
+  /** Where (once the organisation keeps warehouses) */
+  warehouse?: { id: string; name: string } | null;
   onHand: string;
   valueOnHand: number;
 }
@@ -43,8 +45,39 @@ export interface ExpiringStock {
   expiring: { count: number; value: number };
 }
 
+/** A place stock is kept, with how many items it holds and their value */
+export interface Warehouse {
+  id: string;
+  name: string;
+  code: string;
+  address: Record<string, string | null> | null;
+  isDefault: boolean;
+  archived: boolean;
+  items: number;
+  value: number;
+}
+export interface StockTransfer {
+  id: string;
+  number: string;
+  date: string;
+  reference: string | null;
+  notes: string | null;
+  from: { id: string; name: string };
+  to: { id: string; name: string };
+  lines: { item: { id: string; name: string }; quantity: string; value: number }[];
+  value: number;
+}
+
 /** Stock: valuation, movements and adjustments. Live and demo both implement it. */
 export interface InventoryApi {
+  warehouses(): Promise<{ warehouses: Warehouse[] }>;
+  /** The first one brings a main warehouse that takes the stock there was */
+  createWarehouse(input: WarehouseInput): Promise<Warehouse>;
+  updateWarehouse(id: string, input: WarehouseUpdateInput): Promise<Warehouse>;
+  archiveWarehouse(id: string): Promise<void>;
+  warehouseStock(id: string): Promise<{ items: { itemId: string; name: string; unit: string | null; quantity: string; value: number }[] }>;
+  transfers(): Promise<{ transfers: StockTransfer[] }>;
+  transfer(input: StockTransferInput): Promise<StockTransfer>;
   valuation(asOf?: string): Promise<StockValuation>;
   movements(itemId: string): Promise<{ movements: StockMovement[] }>;
   /** A serial number's story: the item, where the unit is, and its movements */

@@ -15,6 +15,7 @@ import {
   vendorCreditNumber,
   quoteNumber,
   grnNumber,
+  transferNumber,
   type QuoteKind,
   costOfQuantity,
   formatQuantity,
@@ -46,6 +47,8 @@ type Movement = {
   sourceLineId?: string | null;
   /** Serial numbers of the units moved (upper-cased) */
   serials?: string[];
+  /** Where (null: the organisation keeps no warehouses yet) */
+  warehouseId?: string | null;
 };
 const upper = (xs: string[] | undefined | null) =>
   (xs ?? []).map((x) => x.trim().toUpperCase()).filter(Boolean);
@@ -91,11 +94,46 @@ export class InventoryService {
   }
 
   /** Quantity (ten-thousandths) and value on hand for some items, optionally as of a day */
+  /** A warehouse asked for (it must be in use), or the main one when none was */
+  async warehouseFor(
+    tx: Tx | PrismaService,
+    organizationId: string,
+    warehouseId: string | null | undefined,
+  ) {
+    if (!warehouseId) return this.defaultWarehouse(tx, organizationId);
+    const w = await tx.warehouse.findFirst({
+      where: { organizationId, id: warehouseId },
+      select: { id: true, archivedAt: true },
+    });
+    if (!w || w.archivedAt)
+      throw refuse(
+        BadRequestException,
+        'Choose a warehouse in use.',
+        'warehouse_invalid',
+        { field: 'warehouseId' },
+      );
+    return w.id;
+  }
+
+  /** The main warehouse, once the organisation keeps more than one place; null before */
+  async defaultWarehouse(tx: Tx | PrismaService, organizationId: string) {
+    return (
+      (
+        await tx.warehouse.findFirst({
+          where: { organizationId, isDefault: true },
+          select: { id: true },
+        })
+      )?.id ?? null
+    );
+  }
+
   async onHand(
     tx: Tx | PrismaService,
     organizationId: string,
     itemIds?: string[],
     asOf?: string,
+    /** In one warehouse; omitted = everywhere */
+    warehouseId?: string | null,
   ) {
     const rows = await tx.stockMovement.groupBy({
       by: ['itemId'],
@@ -103,6 +141,7 @@ export class InventoryService {
         organizationId,
         ...(itemIds && { itemId: { in: itemIds } }),
         ...(asOf && { date: { lte: asDate(asOf) } }),
+        ...(warehouseId && { warehouseId }),
       },
       _sum: { quantity: true, value: true },
     });
@@ -169,6 +208,8 @@ export class InventoryService {
     tx: Tx | PrismaService,
     organizationId: string,
     itemIds: string[],
+    /** In one warehouse; omitted = everywhere */
+    warehouseId?: string | null,
   ) {
     if (!itemIds.length) return [];
     const [batches, sums] = await Promise.all([
@@ -190,6 +231,7 @@ export class InventoryService {
           organizationId,
           itemId: { in: itemIds },
           batchId: { not: null },
+          ...(warehouseId && { warehouseId }),
         },
         _sum: { quantity: true },
       }),
@@ -555,6 +597,8 @@ export class InventoryService {
     }[],
     /** The day it's sold: expired batches can't be */
     day?: string,
+    /** The warehouse it leaves; omitted = the main one */
+    warehouseId?: string | null,
   ) {
     const items = await this.tracked(
       tx,
@@ -564,7 +608,14 @@ export class InventoryService {
     if (!items.size)
       return { movements: [] as Movement[], journal: [] as EnteredLine[] };
     await this.lock(tx, organizationId);
-    const stock = await this.onHand(tx, organizationId, [...items.keys()]);
+    const wh = warehouseId ?? (await this.defaultWarehouse(tx, organizationId));
+    const stock = await this.onHand(
+      tx,
+      organizationId,
+      [...items.keys()],
+      undefined,
+      wh,
+    );
     const batched = [...items.values()].filter((i) => i.trackBatches);
     const batchLeft = new Map(
       (
@@ -572,6 +623,7 @@ export class InventoryService {
           tx,
           organizationId,
           batched.map((i) => i.id),
+          wh,
         )
       ).map((b) => [b.id, b]),
     );
@@ -652,6 +704,7 @@ export class InventoryService {
             value: -v,
             batchId: t.id,
             sourceLineId: l.id ?? null,
+            warehouseId: wh,
           });
         }
       } else {
@@ -663,6 +716,7 @@ export class InventoryService {
           value: -value,
           sourceLineId: l.id ?? null,
           serials: item.trackSerials ? upper(l.serials) : [],
+          warehouseId: wh,
         });
       }
       if (value > 0n) {
@@ -735,6 +789,7 @@ export class InventoryService {
               value: true,
               batchId: true,
               serials: true,
+              warehouseId: true,
             },
           })
         : [];
@@ -747,7 +802,13 @@ export class InventoryService {
             itemId: item.id,
           },
           take: 1,
-          select: { quantity: true, value: true, batchId: true, serials: true },
+          select: {
+            quantity: true,
+            value: true,
+            batchId: true,
+            serials: true,
+            warehouseId: true,
+          },
         });
       if (!sold.length) continue;
       const soldQ = sold.reduce((x, m) => x - signed(m.quantity), 0n);
@@ -773,6 +834,7 @@ export class InventoryService {
           value,
           sourceLineId: l.invoiceLineId ?? null,
           serials: back,
+          warehouseId: sold[0]!.warehouseId,
         });
         if (value > 0n) {
           const description = `${item.name} returned`;
@@ -811,6 +873,7 @@ export class InventoryService {
           value: v,
           batchId: m.batchId,
           sourceLineId: l.invoiceLineId ?? null,
+          warehouseId: m.warehouseId,
         });
         restQ -= back;
         restV -= v;
@@ -868,28 +931,17 @@ export class InventoryService {
     const journal: EnteredLine[] = [];
     if (!items.size) return { movements, journal };
     await this.lock(tx, organizationId);
-    const stock = await this.onHand(tx, organizationId, [...items.keys()]);
-    const batchLeft = new Map(
-      (
-        await this.batchStock(
-          tx,
-          organizationId,
-          [...items.values()].filter((i) => i.trackBatches).map((i) => i.id),
-        )
-      ).map((b) => [b.id, b]),
-    );
+    const main = await this.defaultWarehouse(tx, organizationId);
+    // What's on hand where each line's goods came in, item by item and batch by batch
+    const stock = new Map<string, { quantity: bigint; value: bigint }>();
+    const batches = new Map<
+      string,
+      Map<string, { onHand: bigint; batchNo: string }>
+    >();
     for (const l of lines) {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
       const q = this.mainQuantity(item, l);
-      const s = stock.get(item.id) ?? { quantity: 0n, value: 0n };
-      if (q > s.quantity)
-        throw refuse(
-          ConflictException,
-          `Only ${onHandText(s.quantity)} of ${item.name} in stock to send back.`,
-          'insufficient_stock',
-          { itemId: item.id, onHand: onHandText(s.quantity) },
-        );
       const bought = await tx.stockMovement.findMany({
         where: {
           organizationId,
@@ -897,11 +949,38 @@ export class InventoryService {
           sourceId: billId,
           sourceLineId: l.billLineId,
         },
-        select: { batchId: true, serials: true },
+        select: { batchId: true, serials: true, warehouseId: true },
       });
+      // Back out of the warehouse they came into
+      const wh = bought.find((m) => m.warehouseId)?.warehouseId ?? main;
+      const key = `${item.id}|${wh ?? ''}`;
+      if (!stock.has(key))
+        stock.set(
+          key,
+          (await this.onHand(tx, organizationId, [item.id], undefined, wh)).get(
+            item.id,
+          ) ?? { quantity: 0n, value: 0n },
+        );
+      const s = stock.get(key)!;
+      if (q > s.quantity)
+        throw refuse(
+          ConflictException,
+          `Only ${onHandText(s.quantity)} of ${item.name} in stock to send back.`,
+          'insufficient_stock',
+          { itemId: item.id, onHand: onHandText(s.quantity) },
+        );
       const batchId = bought.find((m) => m.batchId)?.batchId ?? null;
       if (batchId) {
-        const b = batchLeft.get(batchId);
+        if (!batches.has(key))
+          batches.set(
+            key,
+            new Map(
+              (await this.batchStock(tx, organizationId, [item.id], wh)).map(
+                (b) => [b.id, { onHand: b.onHand, batchNo: b.batchNo }],
+              ),
+            ),
+          );
+        const b = batches.get(key)!.get(batchId);
         if (!b || q > b.onHand)
           throw refuse(
             ConflictException,
@@ -913,7 +992,7 @@ export class InventoryService {
               onHand: onHandText(b?.onHand ?? 0n),
             },
           );
-        batchLeft.set(batchId, { ...b, onHand: b.onHand - q });
+        b.onHand -= q;
       }
       const back = item.trackSerials ? upper(l.serials) : [];
       if (item.trackSerials) {
@@ -931,7 +1010,7 @@ export class InventoryService {
       // The last of the item takes all its value with it; the difference from the bill's cost goes to cost of sales
       const cost = BigInt(l.value);
       const value = q === s.quantity ? s.value : cost;
-      stock.set(item.id, { quantity: s.quantity - q, value: s.value - value });
+      stock.set(key, { quantity: s.quantity - q, value: s.value - value });
       movements.push({
         itemId: item.id,
         quantity: -q,
@@ -939,6 +1018,7 @@ export class InventoryService {
         batchId,
         sourceLineId: l.billLineId,
         serials: back,
+        warehouseId: wh,
       });
       const diff = value - cost;
       if (diff !== 0n) {
@@ -972,8 +1052,15 @@ export class InventoryService {
     organizationId: string,
     lines: Parameters<InventoryService['costOfSale']>[2],
     day: string,
+    warehouseId?: string | null,
   ) {
-    const cost = await this.costOfSale(tx, organizationId, lines, day);
+    const cost = await this.costOfSale(
+      tx,
+      organizationId,
+      lines,
+      day,
+      warehouseId,
+    );
     if (!cost.movements.length) return cost;
     const away = await ensureFxAccount(tx, organizationId, 'goods_on_challan');
     return {
@@ -1014,6 +1101,7 @@ export class InventoryService {
         batchId: true,
         sourceLineId: true,
         serials: true,
+        warehouseId: true,
         item: { select: { name: true, inventoryAccountId: true } },
       },
     });
@@ -1029,6 +1117,7 @@ export class InventoryService {
         batchId: m.batchId,
         sourceLineId: m.sourceLineId,
         serials: m.serials,
+        warehouseId: m.warehouseId,
       });
       if (m.value < 0n) {
         const description = `${m.item.name} back from challan`;
@@ -1058,6 +1147,8 @@ export class InventoryService {
       serials?: string[];
       inAltUnit?: boolean;
     } & Partial<BatchIn>)[],
+    /** The warehouse they come into; omitted = the main one */
+    warehouseId?: string | null,
   ) {
     const items = await this.tracked(
       tx,
@@ -1065,6 +1156,9 @@ export class InventoryService {
       lines.map((l) => l.itemId),
     );
     const out: Movement[] = [];
+    const wh = items.size
+      ? (warehouseId ?? (await this.defaultWarehouse(tx, organizationId)))
+      : null;
     for (const l of lines) {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
@@ -1087,6 +1181,7 @@ export class InventoryService {
             })
           : null,
         sourceLineId: l.id ?? null,
+        warehouseId: wh,
       });
     }
     return out;
@@ -1107,8 +1202,12 @@ export class InventoryService {
   ) {
     if (!movements.length) return;
     await this.lock(tx, organizationId);
+    const main = movements.some((x) => x.warehouseId === undefined)
+      ? await this.defaultWarehouse(tx, organizationId)
+      : null;
     await tx.stockMovement.createMany({
       data: movements.map((x) => ({
+        warehouseId: x.warehouseId === undefined ? main : x.warehouseId,
         organizationId,
         itemId: x.itemId,
         date: asDate(m.date),
@@ -1149,6 +1248,7 @@ export class InventoryService {
         batchId: true,
         sourceLineId: true,
         serials: true,
+        warehouseId: true,
         item: { select: { name: true } },
         batch: { select: { batchNo: true } },
       },
@@ -1157,11 +1257,25 @@ export class InventoryService {
     await this.lock(tx, organizationId);
     // Stock that came in (a bill, goods returned) can only go out again while it's still on hand
     if (kind === 'bill' || kind === 'credit_note') {
-      const stock = await this.onHand(tx, organizationId, [
-        ...new Set(done.map((d) => d.itemId)),
-      ]);
+      // Item by item, and batch by batch, in the warehouse it came into
+      const stock = new Map<string, { quantity: bigint; value: bigint }>();
+      const left = new Map<string, bigint>();
       for (const d of done) {
-        const s = stock.get(d.itemId)!;
+        const key = `${d.itemId}|${d.warehouseId ?? ''}`;
+        if (!stock.has(key))
+          stock.set(
+            key,
+            (
+              await this.onHand(
+                tx,
+                organizationId,
+                [d.itemId],
+                undefined,
+                d.warehouseId,
+              )
+            ).get(d.itemId) ?? { quantity: 0n, value: 0n },
+          );
+        const s = stock.get(key)!;
         const q = signed(d.quantity);
         if (q > s.quantity)
           throw refuse(
@@ -1170,24 +1284,22 @@ export class InventoryService {
             'stock_used',
             { itemId: d.itemId },
           );
-        stock.set(d.itemId, {
-          quantity: s.quantity - q,
-          value: s.value - d.value,
-        });
-      }
-      // And from the same batch
-      const batched = done.filter((d) => d.batchId);
-      if (batched.length) {
-        const left = new Map(
-          (
-            await this.batchStock(tx, organizationId, [
-              ...new Set(batched.map((d) => d.itemId)),
-            ])
-          ).map((b) => [b.id, b.onHand]),
-        );
-        for (const d of batched) {
-          const q = signed(d.quantity);
-          const have = left.get(d.batchId!) ?? 0n;
+        stock.set(key, { quantity: s.quantity - q, value: s.value - d.value });
+        if (d.batchId) {
+          const bkey = `${d.batchId}|${d.warehouseId ?? ''}`;
+          if (!left.has(bkey))
+            left.set(
+              bkey,
+              (
+                await this.batchStock(
+                  tx,
+                  organizationId,
+                  [d.itemId],
+                  d.warehouseId,
+                )
+              ).find((b) => b.id === d.batchId)?.onHand ?? 0n,
+            );
+          const have = left.get(bkey)!;
           if (q > have)
             throw refuse(
               ConflictException,
@@ -1195,7 +1307,7 @@ export class InventoryService {
               'stock_used',
               { itemId: d.itemId },
             );
-          left.set(d.batchId!, have - q);
+          left.set(bkey, have - q);
         }
       }
     }
@@ -1216,6 +1328,7 @@ export class InventoryService {
         batchId: d.batchId,
         sourceLineId: d.sourceLineId,
         serials: d.serials,
+        warehouseId: d.warehouseId,
       })),
     );
   }
@@ -1254,6 +1367,7 @@ export class InventoryService {
             {
               ...l,
               date: input.date,
+              warehouseId: input.warehouseId,
               direction: 'in',
               accountId: equity.id,
               reason: 'Opening stock',
@@ -1309,10 +1423,11 @@ export class InventoryService {
           'account_invalid',
           { field: 'accountId' },
         );
+      const wh = await this.warehouseFor(tx, organizationId, input.warehouseId);
       const q = parseQuantity(input.quantity)!;
-      const s = (await this.onHand(tx, organizationId, [item.id])).get(
-        item.id,
-      ) ?? { quantity: 0n, value: 0n };
+      const s = (
+        await this.onHand(tx, organizationId, [item.id], undefined, wh)
+      ).get(item.id) ?? { quantity: 0n, value: 0n };
       let value: bigint;
       // Goods kept in batches are counted batch by batch: new stock into its batch, a write-off from one that has it
       let batchId: string | null = null;
@@ -1329,7 +1444,9 @@ export class InventoryService {
               'batch_required',
               { field: 'batchNo' },
             );
-          const b = (await this.batchStock(tx, organizationId, [item.id])).find(
+          const b = (
+            await this.batchStock(tx, organizationId, [item.id], wh)
+          ).find(
             (x) => x.batchNo.toLowerCase() === input.batchNo!.toLowerCase(),
           );
           if (!b || q > b.onHand)
@@ -1420,6 +1537,7 @@ export class InventoryService {
           createdById: ctx.actor.userId,
           batchId,
           serials,
+          warehouseId: wh,
         },
         select: { id: true },
       });
@@ -1469,6 +1587,7 @@ export class InventoryService {
           reason: true,
           batchId: true,
           serials: true,
+          warehouseId: true,
           item: { select: { name: true } },
         },
       });
@@ -1486,13 +1605,24 @@ export class InventoryService {
         );
       const q = signed(m.quantity);
       if (q > 0n) {
-        const s = (await this.onHand(tx, organizationId, [m.itemId])).get(
-          m.itemId,
-        )!;
+        const s = (
+          await this.onHand(
+            tx,
+            organizationId,
+            [m.itemId],
+            undefined,
+            m.warehouseId,
+          )
+        ).get(m.itemId) ?? { quantity: 0n, value: 0n };
         const inBatch = m.batchId
-          ? ((await this.batchStock(tx, organizationId, [m.itemId])).find(
-              (b) => b.id === m.batchId,
-            )?.onHand ?? 0n)
+          ? ((
+              await this.batchStock(
+                tx,
+                organizationId,
+                [m.itemId],
+                m.warehouseId,
+              )
+            ).find((b) => b.id === m.batchId)?.onHand ?? 0n)
           : q;
         if (q > s.quantity || q > inBatch)
           throw refuse(
@@ -1530,6 +1660,7 @@ export class InventoryService {
           createdById: ctx.actor.userId,
           batchId: m.batchId,
           serials: m.serials,
+          warehouseId: m.warehouseId,
         },
       });
       await this.applySerials(tx, organizationId, 'adjustment_undo', [
@@ -1591,6 +1722,7 @@ export class InventoryService {
           },
         },
         item: { select: { name: true } },
+        warehouse: { select: { id: true, name: true } },
       },
     });
     const undone = new Set(
@@ -1617,57 +1749,70 @@ export class InventoryService {
           'challan_out',
           'challan_back',
           'grn',
+          'transfer',
         ].includes(x.kind),
     ))
       docs.set(r.sourceId!, null);
     if (docs.size) {
       const ids = [...docs.keys()];
-      const [bills, invoices, notes, debitNotes, challans, receipts] =
-        await Promise.all([
-          this.prisma.bill.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: {
-              id: true,
-              number: true,
-              fiscalYear: { select: { name: true } },
-            },
-          }),
-          this.prisma.invoice.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: {
-              id: true,
-              number: true,
-              fiscalYear: { select: { name: true } },
-              fullNumber: true,
-            },
-          }),
-          this.prisma.creditNote.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: {
-              id: true,
-              number: true,
-              fiscalYear: { select: { name: true } },
-              fullNumber: true,
-            },
-          }),
-          this.prisma.vendorCredit.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: {
-              id: true,
-              number: true,
-              fiscalYear: { select: { name: true } },
-              fullNumber: true,
-            },
-          }),
-          this.prisma.quote.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: { id: true, number: true, kind: true },
-          }),
-          this.prisma.goodsReceipt.findMany({
-            where: { organizationId, id: { in: ids } },
-            select: { id: true, number: true },
-          }),
-        ]);
+      const [
+        bills,
+        invoices,
+        notes,
+        debitNotes,
+        challans,
+        receipts,
+        transfers,
+      ] = await Promise.all([
+        this.prisma.bill.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+          },
+        }),
+        this.prisma.invoice.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+            fullNumber: true,
+          },
+        }),
+        this.prisma.creditNote.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+            fullNumber: true,
+          },
+        }),
+        this.prisma.vendorCredit.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+            fullNumber: true,
+          },
+        }),
+        this.prisma.quote.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: { id: true, number: true, kind: true },
+        }),
+        this.prisma.goodsReceipt.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: { id: true, number: true },
+        }),
+        this.prisma.stockTransfer.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: { id: true, number: true },
+        }),
+      ]);
+      for (const t of transfers) docs.set(t.id, transferNumber(t.number));
       for (const g of receipts) docs.set(g.id, grnNumber(g.number));
       for (const q of challans)
         docs.set(q.id, quoteNumber(q.number, q.kind as QuoteKind));
@@ -1723,6 +1868,8 @@ export class InventoryService {
               : null,
         },
         undone: r.kind === 'adjustment' && undone.has(r.id),
+        /** Where (once the organisation keeps warehouses) */
+        warehouse: r.warehouse,
         onHand: qtyText(q),
         valueOnHand: Number(v),
       };

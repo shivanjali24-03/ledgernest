@@ -9,7 +9,7 @@ import { serialsSchema } from './serials.js';
  * each movement out (an invoice, an adjustment down) takes the quantity at the average cost of what is on hand,
  * so taking everything clears the value exactly. Quantities are in ten-thousandths, like invoice lines.
  */
-export const STOCK_MOVEMENT_KINDS = ['bill', 'bill_void', 'invoice', 'invoice_void', 'credit_note', 'credit_note_void', 'debit_note', 'debit_note_void', 'challan_out', 'challan_back', 'grn', 'adjustment', 'adjustment_undo'] as const;
+export const STOCK_MOVEMENT_KINDS = ['bill', 'bill_void', 'invoice', 'invoice_void', 'credit_note', 'credit_note_void', 'debit_note', 'debit_note_void', 'challan_out', 'challan_back', 'grn', 'transfer', 'adjustment', 'adjustment_undo'] as const;
 export type StockMovementKind = (typeof STOCK_MOVEMENT_KINDS)[number];
 
 /** The value of some of what's on hand, at its average cost (rounded half up) */
@@ -45,6 +45,8 @@ export const stockAdjustmentSchema = z
     ...batchFieldShape,
     /** For goods with serial numbers: the units counted in or written off */
     serials: serialsSchema,
+    /** Where the stock is counted; omitted = the main warehouse */
+    warehouseId: z.uuid().nullable().optional().default(null),
   })
   .strict()
   .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE });
@@ -57,6 +59,8 @@ export * from './serials.js';
 /** Opening stock for many items on the day the books start, each at what one unit cost */
 export const openingStockSchema = z.object({
   date: isoDaySchema,
+  /** Where it all is; omitted = the main warehouse */
+  warehouseId: z.uuid().nullable().optional().default(null),
   lines: z
     .array(
       z
