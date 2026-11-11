@@ -42,7 +42,8 @@
       "recurringBills": "Recurring bills",
       "debitNotes": "Debit notes",
       "collections": "Collections",
-      "yearEnd": "Year-end close"
+      "yearEnd": "Year-end close",
+      "purchaseOrders": "Purchase orders"
     },
     "soon": "Soon"
   },
@@ -5102,5 +5103,70 @@
     "ifscHint": "The bank and branch fill in from the IFSC",
     "unknownIfsc": "No branch found for this IFSC: type the bank and branch",
     "looking": "Looking up the branch…"
+  },
+  "purchaseOrders": {
+    "title": "Purchase orders",
+    "description": "What you’ve ordered from vendors, what’s still to come, and what’s been billed.",
+    "new": "New purchase order",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "open": "Open",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "search": "Search by number, vendor or reference",
+    "empty": "No purchase orders yet",
+    "emptyBody": "Order from a vendor, record goods as they arrive, and make the bill from what came.",
+    "noMatches": "No purchase orders match",
+    "lines": "Order lines",
+    "save": "Save order",
+    "saved": "{{number}} saved",
+    "issue": "Issue to vendor",
+    "receive": "Record goods received",
+    "makeBill": "Make the bill",
+    "close": "Close (no more to come)",
+    "cancel": "Cancel order",
+    "delete": "Delete draft",
+    "billed": "Bill drafted from what came",
+    "received": "{{number}} recorded",
+    "receiveTitle": "Goods received against {{number}}",
+    "recordReceipt": "Record receipt",
+    "receiveLine": "{{description}} (up to {{left}})",
+    "statuses": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "fields": {
+      "orderDate": "Order date",
+      "expectedDate": "Expected by",
+      "reference": "Your reference",
+      "receivedOn": "Received on",
+      "challan": "Vendor’s challan or LR no."
+    },
+    "columns": {
+      "number": "Order",
+      "item": "Item",
+      "description": "Description",
+      "quantity": "Qty",
+      "price": "Price",
+      "tax": "Tax",
+      "account": "Account",
+      "ordered": "Ordered",
+      "receivedCol": "Received",
+      "billedCol": "Billed",
+      "amount": "Amount"
+    },
+    "errors": {
+      "not_draft": "Only a draft order can be changed or deleted.",
+      "bad_move": "The order can’t move that way now.",
+      "not_issued": "Issue the order to the vendor first.",
+      "over_received": "More than is still to come on a line (up to {{toReceive}}).",
+      "nothing_to_bill": "Nothing has come in that isn’t billed yet. Record goods received first.",
+      "before_order": "Goods can’t come before they’re ordered.",
+      "not_vendor": "Choose a vendor."
+    }
   }
 }

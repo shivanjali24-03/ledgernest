@@ -68,6 +68,10 @@ export const TENANT_MODELS = new Set<string>([
   'Quote',
   'BalanceConfirmation',
   'QuoteLine',
+  'PurchaseOrder',
+  'PurchaseOrderLine',
+  'GoodsReceipt',
+  'GoodsReceiptLine',
   'RecurringBill',
 ]);
 

@@ -998,7 +998,19 @@ export class BillsService {
     });
   }
 
-  async createDraft(input: DraftIn, ctx: Ctx) {
+  /** A draft's lines checked and priced as a bill would be, without saving anything (for purchase orders) */
+  price(organizationId: string, input: DraftIn) {
+    return this.prisma.$transaction((tx) =>
+      this.prepare(tx, organizationId, input),
+    );
+  }
+
+  /** `after` runs in the same transaction once the bill exists (a purchase order marking its lines billed) */
+  async createDraft(
+    input: DraftIn,
+    ctx: Ctx,
+    after?: (tx: Tx, billId: string) => Promise<void>,
+  ) {
     const organizationId = ctx.tenant.organizationId;
     const id = await this.prisma.$transaction(async (tx) => {
       await this.lock(tx, organizationId);
@@ -1049,6 +1061,7 @@ export class BillsService {
         },
         tx,
       );
+      if (after) await after(tx, i.id);
       return i.id;
     });
     return this.get(organizationId, id);

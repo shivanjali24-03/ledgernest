@@ -189,6 +189,11 @@ model Organization {
   balanceConfirmations BalanceConfirmation[]
   recurringBills       RecurringBill[]
 
+  purchaseOrders     PurchaseOrder[]
+  purchaseOrderLines PurchaseOrderLine[]
+  goodsReceipts      GoodsReceipt[]
+  goodsReceiptLines  GoodsReceiptLine[]
+
   @@map("organizations")
 }
 
@@ -276,6 +281,8 @@ model Account {
 
   billPayables Bill[]     @relation("BillPayable")
   billExpenses BillLine[] @relation("BillLineAccount")
+
+  purchaseOrderLines PurchaseOrderLine[] @relation("PurchaseOrderLineAccount")
 
   @@unique([organizationId, id])
   @@unique([organizationId, code])
@@ -650,6 +657,8 @@ model TaxGroup {
   billLines    BillLine[]
   rcmBillLines BillLine[] @relation("BillLineRcmGroup")
 
+  purchaseOrderLines PurchaseOrderLine[]
+
   @@unique([organizationId, id])
   @@unique([organizationId, gstSlabId, supply])
   @@map("tax_groups")
@@ -773,6 +782,8 @@ model Contact {
 
   bills Bill[]
 
+  purchaseOrders PurchaseOrder[]
+
   @@unique([organizationId, id])
   @@index([organizationId, archivedAt])
   @@map("contacts")
@@ -834,6 +845,8 @@ model Item {
   quoteLines   QuoteLine[]
 
   billLines BillLine[]
+
+  purchaseOrderLines PurchaseOrderLine[]
 
   @@unique([organizationId, id])
   @@unique([organizationId, sku])
@@ -1081,6 +1094,8 @@ model Bill {
   selfInvoiceNumber String?   @map("self_invoice_number")
   /// Goods imported: the bill of entry customs assessed { number, date, portCode }; its taxed lines are the assessable value (IGST on it goes to customs, the value to the supplier), its untaxed lines the duties
   billOfEntry       Json?     @map("bill_of_entry")
+  /// The purchase order it was made from
+  purchaseOrderId   String?   @map("purchase_order_id") @db.Uuid
   /// When it's entered in the books
   billDate          DateTime  @map("bill_date") @db.Date
   dueDate           DateTime  @map("due_date") @db.Date
@@ -1115,6 +1130,8 @@ model Bill {
 
   allocations PaymentAllocation[]
   recurring   RecurringBill?      @relation(fields: [organizationId, recurringBillId], references: [organizationId, id], onDelete: NoAction)
+
+  purchaseOrder PurchaseOrder? @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -2228,4 +2245,103 @@ model InterestWaiver {
   @@unique([organizationId, id])
   @@index([organizationId, invoiceId])
   @@map("interest_waivers")
+}
+
+/// An order for goods or services from a vendor (PO-0001): drafted, issued, then received against and billed
+model PurchaseOrder {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  number         Int
+  contactId      String    @map("contact_id") @db.Uuid
+  /// draft | issued | closed | cancelled
+  status         String    @default("draft")
+  orderDate      DateTime  @map("order_date") @db.Date
+  expectedDate   DateTime? @map("expected_date") @db.Date
+  currency       String?   @db.Char(3)
+  placeOfSupply  String?   @map("place_of_supply") @db.Char(2)
+  reference      String?
+  notes          String?
+  subtotal       BigInt    @default(0)
+  taxTotal       BigInt    @default(0) @map("tax_total")
+  total          BigInt    @default(0)
+  createdById    String?   @map("created_by_id") @db.Uuid
+  issuedAt       DateTime? @map("issued_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact      Contact             @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
+  lines        PurchaseOrderLine[]
+  receipts     GoodsReceipt[]
+  bills        Bill[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, number])
+  @@index([organizationId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id              String  @id @default(uuid()) @db.Uuid
+  organizationId  String  @map("organization_id") @db.Uuid
+  purchaseOrderId String  @map("purchase_order_id") @db.Uuid
+  lineNo          Int     @map("line_no")
+  itemId          String? @map("item_id") @db.Uuid
+  description     String
+  quantity        Decimal @db.Decimal(13, 4)
+  unitPrice       BigInt  @map("unit_price")
+  discountPpm     Int     @default(0) @map("discount_ppm")
+  taxGroupId      String? @map("tax_group_id") @db.Uuid
+  accountId       String? @map("account_id") @db.Uuid
+  amount          BigInt
+  taxAmount       BigInt  @default(0) @map("tax_amount")
+  /// How much has come in on receipt notes, and been billed
+  received        Decimal @default(0) @db.Decimal(13, 4)
+  billed          Decimal @default(0) @db.Decimal(13, 4)
+
+  organization  Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder      @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: Cascade)
+  item          Item?              @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
+  taxGroup      TaxGroup?          @relation(fields: [organizationId, taxGroupId], references: [organizationId, id], onDelete: NoAction)
+  account       Account?           @relation("PurchaseOrderLineAccount", fields: [organizationId, accountId], references: [organizationId, id], onDelete: NoAction)
+  receipts      GoodsReceiptLine[]
+
+  @@unique([organizationId, id])
+  @@unique([purchaseOrderId, lineNo])
+  @@map("purchase_order_lines")
+}
+
+/// Goods received against a purchase order (GRN-0001): what came, when, on whose challan
+model GoodsReceipt {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  number          Int
+  purchaseOrderId String   @map("purchase_order_id") @db.Uuid
+  date            DateTime @db.Date
+  reference       String?
+  notes           String?
+  createdById     String?  @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization  Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder      @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: Cascade)
+  lines         GoodsReceiptLine[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, number])
+  @@map("goods_receipts")
+}
+
+model GoodsReceiptLine {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  goodsReceiptId String  @map("goods_receipt_id") @db.Uuid
+  poLineId       String  @map("po_line_id") @db.Uuid
+  quantity       Decimal @db.Decimal(13, 4)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  goodsReceipt GoodsReceipt      @relation(fields: [organizationId, goodsReceiptId], references: [organizationId, id], onDelete: Cascade)
+  poLine       PurchaseOrderLine @relation(fields: [organizationId, poLineId], references: [organizationId, id], onDelete: Cascade)
+
+  @@map("goods_receipt_lines")
 }
