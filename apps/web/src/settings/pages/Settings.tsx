@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useBlocker } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, ty
 import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
 import TallyCard from '../TallyCard';
+import IndianAddressFields, { type IndianAddress } from '../../geo/IndianAddressFields';
 import DeleteOrganizationCard from '../DeleteOrganizationCard';
 import ReminderPolicyCard from '../../invoices/ReminderPolicyCard';
 import type { OrganizationSettings, SettingsApi } from '../types';
@@ -65,6 +66,11 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
     setV((x) => ({ ...x, [k]: e.target.value }));
     setErrors((x) => ({ ...x, [k]: undefined }));
   };
+
+  const setAddress = useCallback((patch: Partial<IndianAddress>) => {
+    setV((x) => ({ ...x, ...patch }));
+    setErrors((x) => ({ ...x, ...Object.fromEntries(Object.keys(patch).map((k) => [k, undefined])) }));
+  }, []);
 
   const save = useMutation({
     mutationFn: () => api.update(diff),
@@ -126,11 +132,17 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
       </Section>
 
       <Section title={t('settings.address.title')}>
-        <div className="sm:col-span-2">{text('line1', t('settings.fields.line1'), { autoComplete: 'address-line1', dir: 'auto' })}</div>
-        <div className="sm:col-span-2">{text('line2', t('settings.fields.line2'), { autoComplete: 'address-line2', dir: 'auto' })}</div>
-        {text('city', t('settings.fields.city'), { autoComplete: 'address-level2', dir: 'auto' })}
-        {text('region', t('settings.fields.region'), { autoComplete: 'address-level1', dir: 'auto' })}
-        {text('postalCode', t('settings.fields.postalCode'), { autoComplete: 'postal-code', dir: 'ltr' })}
+        {v.country === 'IN' ? (
+          <IndianAddressFields value={v} onChange={setAddress} error={(f) => errors[f] as string | undefined} disabled={!canManage} autoComplete />
+        ) : (
+          <>
+            <div className="sm:col-span-2">{text('line1', t('settings.fields.line1'), { autoComplete: 'address-line1', dir: 'auto' })}</div>
+            <div className="sm:col-span-2">{text('line2', t('settings.fields.line2'), { autoComplete: 'address-line2', dir: 'auto' })}</div>
+            {text('city', t('settings.fields.city'), { autoComplete: 'address-level2', dir: 'auto' })}
+            {text('region', t('settings.fields.region'), { autoComplete: 'address-level1', dir: 'auto' })}
+            {text('postalCode', t('settings.fields.postalCode'), { autoComplete: 'postal-code', dir: 'ltr' })}
+          </>
+        )}
         <SelectField label={t('settings.fields.country')} value={v.country} onChange={set('country')} disabled={!canManage} options={countryOptions(locale, t('platform.form.noCountry'))} />
       </Section>
 

@@ -70,6 +70,39 @@ describe('customers and vendors', () => {
     expect(within(await row('Tamil Textiles')).getByText(/Tamil Nadu/)).toBeInTheDocument();
   });
 
+  it('fills an Indian address from the PIN code: the state, then the city and area to pick', async () => {
+    renderApp();
+    await row('Kumar Logistics');
+    await userEvent.click(screen.getByRole('button', { name: 'Add contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New contact' }, { timeout: 5000 });
+    await userEvent.type(within(dialog).getByLabelText('Name'), 'Baner Traders');
+    const billing = within(dialog).getAllByRole('group')[0]!;
+    await userEvent.type(within(billing).getByLabelText('PIN code'), '411045');
+    await waitFor(() => expect(within(billing).getByLabelText('State')).toHaveValue('Maharashtra'), { timeout: 5000 });
+    const city = within(billing).getByLabelText('City or town');
+    expect(city.tagName).toBe('SELECT');
+    expect(city).toHaveValue('Pune');
+    expect(within(billing).getByLabelText('Area or locality')).toHaveValue('N.I.A.');
+    await userEvent.selectOptions(within(billing).getByLabelText('Area or locality'), 'Baner Gaon');
+    await userEvent.type(within(billing).getByLabelText('Building, street'), '12 Baner Road');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add contact' }));
+    expect(await screen.findByText('Baner Traders added', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(within(await row('Baner Traders')).getByText(/Pune, Maharashtra/)).toBeInTheDocument();
+  }, 30_000);
+
+  it('lets the city be typed when India Post doesn’t know the PIN', async () => {
+    renderApp();
+    await row('Kumar Logistics');
+    await userEvent.click(screen.getByRole('button', { name: 'Add contact' }));
+    const again = await screen.findByRole('dialog', { name: 'New contact' }, { timeout: 5000 });
+    const b = within(again).getAllByRole('group')[0]!;
+    await userEvent.type(within(b).getByLabelText('PIN code'), '799001');
+    expect(await within(b).findByText(/India Post doesn’t know this PIN code/, {}, { timeout: 15_000 })).toBeInTheDocument();
+    expect(within(b).getByLabelText('City or town').tagName).toBe('INPUT');
+    await userEvent.type(within(b).getByLabelText('PIN code'), '1');
+    expect(within(b).getByLabelText('PIN code')).toHaveValue('799001');
+  }, 30_000);
+
   it('archives and restores a contact', async () => {
     renderApp();
     await userEvent.click(within(await row('Sharma Office Supplies')).getByRole('button', { name: 'Actions for Sharma Office Supplies' }));

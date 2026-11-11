@@ -59,6 +59,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Feature | What it means | Status |
 |---|---|---|
 | Customers and vendors | Contacts with addresses, tax IDs (GSTIN checked, giving the state of supply), currency, payment terms, and what each owes or is owed | ✅ #64 |
+| Addresses from the PIN code | Indian addresses for contacts and the organisation start from the PIN code: India Post's directory (through the API, which keeps each answer for 30 days) fills the state from the GST list, and the city or town and the area are picked from its taluks and post offices instead of typed. Typing is offered only when the PIN isn't known or the directory can't be reached. Addresses outside India stay free text | ✅ |
 | Products and services | Items with prices, tax defaults, HSN/SAC codes and income/expense accounts | ✅ #65 |
 | Invoices | Printable (PDF) GST invoices with your terms and bank details at the foot, emailed to the customer as a PDF, numbering, due dates, place of supply; receipts against one or many invoices, with advances and realised exchange differences | ✅ #66, #69 |
 | Pay by UPI | Set the organisation's UPI ID once: every rupee invoice with something still owed then carries a UPI QR code for the balance (on screen, in the PDF, in the emailed invoice and in reminders) that Google Pay, PhonePe, Paytm, BHIM or any bank app scans with the amount and invoice number filled in. No gateway, no fees, money straight to the bank | ✅ |
