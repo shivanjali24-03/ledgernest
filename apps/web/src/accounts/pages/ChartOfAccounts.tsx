@@ -199,18 +199,18 @@ export default function ChartOfAccounts() {
                             onClick={() => toggle(a.id)}
                             aria-expanded={!effectiveCollapsed.has(a.id)}
                             aria-label={t(effectiveCollapsed.has(a.id) ? 'accounts.expand' : 'accounts.collapse', { name: a.name })}
-                            className="grid size-6 place-items-center rounded-md text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800"
+                            className="grid size-8 place-items-center rounded-md text-ink-400 hover:bg-ink-100 hover:text-ink-700 dark:hover:bg-ink-800"
                           >
                             <ChevronRight className={clsx('size-4 transition-transform rtl:-scale-x-100', !effectiveCollapsed.has(a.id) && 'rotate-90 rtl:-rotate-90')} aria-hidden />
                           </button>
                         ) : (
-                          <span className="size-6" aria-hidden />
+                          <span className="size-8 shrink-0" aria-hidden />
                         )}
-                        <code className="w-24 shrink-0 truncate text-xs text-ink-500" dir="ltr">
+                        <code className="w-12 shrink-0 truncate text-xs text-ink-500 sm:w-24" dir="ltr">
                           {a.code}
                         </code>
                         <span className="min-w-0 flex-1">
-                          <span className={clsx('block truncate text-sm', depth === 0 && 'font-semibold')} dir="auto">
+                          <span className={clsx('block text-sm sm:truncate', depth === 0 && 'font-semibold')} dir="auto">
                             {a.name}
                           </span>
                           {a.description && (

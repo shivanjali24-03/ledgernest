@@ -99,7 +99,7 @@ export default function Recurring() {
           }
         />
       </motion.div>
-      <motion.div variants={fadeUp} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <motion.div variants={fadeUp} className="grid grid-cols-[minmax(0,1fr)] gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card className="overflow-hidden">
           {list.isPending ? (
             <SkeletonRows rows={4} />

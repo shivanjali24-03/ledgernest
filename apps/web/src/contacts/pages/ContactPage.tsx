@@ -127,9 +127,10 @@ export default function ContactPage() {
                   rel="noopener noreferrer"
                   // Noted as chased, for the Collections list
                   onClick={() => void api?.chased(c.id, 'whatsapp').then(() => qc.invalidateQueries({ queryKey: ['contacts'] }), () => {})}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]"
+                  // Secondary, like the email reminder: the page keeps one primary action
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-ink-200 bg-white px-4 text-sm font-semibold text-ink-800 hover:bg-ink-50 dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:bg-ink-800"
                 >
-                  <MessageCircle className="size-4" aria-hidden /> {t('contacts.page.whatsappRemind')}
+                  <MessageCircle className="size-4 text-[#137a3c] dark:text-[#3ccf7a]" aria-hidden /> {t('contacts.page.whatsappRemind')}
                 </a>
               )}
               {c.isCustomer && can('invoices.manage') && (
