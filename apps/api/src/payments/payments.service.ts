@@ -230,8 +230,16 @@ export class PaymentsService {
     return p;
   }
 
-  async get(organizationId: string, id: string) {
-    return this.view(await this.find(this.prisma, organizationId, id));
+  async get(
+    organizationId: string,
+    id: string,
+    visible: readonly PaymentKind[] = ['receipt', 'payment'],
+  ) {
+    const p = await this.find(this.prisma, organizationId, id);
+    // A vendor payment to someone without bills access (or a receipt without invoices access) isn't there
+    if (!visible.includes(p.kind as PaymentKind))
+      throw new NotFoundException('Payment not found.');
+    return this.view(p);
   }
 
   async list(
@@ -242,10 +250,13 @@ export class PaymentsService {
       page: number;
       pageSize: number;
     },
+    /** The kinds the caller may see: receipts with invoices.view, vendor payments with bills.view */
+    visible: readonly PaymentKind[] = ['receipt', 'payment'],
   ) {
+    const kinds = q.kind ? visible.filter((k) => k === q.kind) : visible;
     const where: Prisma.PaymentWhereInput = {
       organizationId,
-      ...(q.kind && { kind: q.kind }),
+      kind: { in: [...kinds] },
       ...(q.contactId && { contactId: q.contactId }),
     };
     const [total, rows] = await Promise.all([

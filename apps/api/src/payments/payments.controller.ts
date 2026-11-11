@@ -22,6 +22,7 @@ import {
 import {
   invoiceEmailSchema,
   PAYMENT_KINDS,
+  type PaymentKind,
   paymentVoidSchema,
   receiptSchema,
   vendorPaymentSchema,
@@ -44,6 +45,12 @@ import { PaymentReceiptsService } from './payment-receipts.service.js';
 import { PaymentsService } from './payments.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
+/** Receipts go with sales (invoices.view), vendor payments with purchases (bills.view) */
+const visibleKinds = (tenant: Tenant): PaymentKind[] => [
+  ...(tenant.permissions.has('invoices.view') ? (['receipt'] as const) : []),
+  ...(tenant.permissions.has('bills.view') ? (['payment'] as const) : []),
+];
+
 const listQuery = z.object({
   kind: z.enum(PAYMENT_KINDS).optional(),
   contactId: z.uuid().optional(),
@@ -72,7 +79,7 @@ export class PaymentsController {
     @Query(new ZodValidationPipe(listQuery)) q: z.output<typeof listQuery>,
     @CurrentTenant() tenant: Tenant,
   ) {
-    return this.payments.list(tenant.organizationId, q);
+    return this.payments.list(tenant.organizationId, q, visibleKinds(tenant));
   }
 
   /** Cash receipts and payments that crossed the Income-tax limits (s.269ST, s.40A(3)), by person and day */
@@ -155,7 +162,11 @@ export class PaymentsController {
   @Get(':id')
   @RequirePermission('invoices.view')
   get(@Param('id', id) paymentId: string, @CurrentTenant() tenant: Tenant) {
-    return this.payments.get(tenant.organizationId, paymentId);
+    return this.payments.get(
+      tenant.organizationId,
+      paymentId,
+      visibleKinds(tenant),
+    );
   }
 
   @Post('receipts')
