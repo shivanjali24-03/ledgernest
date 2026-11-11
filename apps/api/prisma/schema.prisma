@@ -193,6 +193,8 @@ model Organization {
   purchaseOrderLines PurchaseOrderLine[]
   goodsReceipts      GoodsReceipt[]
   goodsReceiptLines  GoodsReceiptLine[]
+  warehouses         Warehouse[]
+  stockTransfers     StockTransfer[]
 
   @@map("organizations")
 }
@@ -1768,7 +1770,7 @@ model StockMovement {
   organizationId String   @map("organization_id") @db.Uuid
   itemId         String   @map("item_id") @db.Uuid
   date           DateTime @db.Date
-  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | challan_out | challan_back | grn | adjustment | adjustment_undo
+  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | challan_out | challan_back | grn | transfer | adjustment | adjustment_undo
   kind           String
   /// The bill or invoice it came from; for an undo, the movement it undoes
   sourceId       String?  @map("source_id") @db.Uuid
@@ -1785,13 +1787,17 @@ model StockMovement {
   sourceLineId   String?  @map("source_line_id") @db.Uuid
   /// The serial numbers of the units it moved (goods with serial numbers)
   serials        String[] @default([])
+  /// Where the goods were; null until the organisation keeps more than one place (then the main one)
+  warehouseId    String?  @map("warehouse_id") @db.Uuid
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   item         Item          @relation(fields: [organizationId, itemId], references: [organizationId, id], onDelete: NoAction)
   journalEntry JournalEntry? @relation(fields: [organizationId, journalEntryId], references: [organizationId, id], onDelete: NoAction)
   batch        StockBatch?   @relation(fields: [organizationId, batchId], references: [organizationId, id], onDelete: NoAction)
+  warehouse    Warehouse?    @relation(fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
+  @@index([organizationId, warehouseId, itemId])
   @@index([organizationId, itemId, date])
   @@index([organizationId, sourceId])
   @@index([organizationId, batchId])
@@ -2379,4 +2385,49 @@ model GoodsReceiptLine {
   poLine       PurchaseOrderLine @relation(fields: [organizationId, poLineId], references: [organizationId, id], onDelete: Cascade)
 
   @@map("goods_receipt_lines")
+}
+
+/// A place stock is kept: a godown, shop or branch. The first one made brings a main warehouse with it, which takes
+/// all the stock there was; each keeps its own quantities and average cost.
+model Warehouse {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String
+  code           String
+  /// { line1, line2, city, region, postalCode, country }
+  address        Json?
+  isDefault      Boolean   @default(false) @map("is_default")
+  archivedAt     DateTime? @map("archived_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movements    StockMovement[]
+  transfersOut StockTransfer[] @relation("TransferFrom")
+  transfersIn  StockTransfer[] @relation("TransferTo")
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, code])
+  @@map("warehouses")
+}
+
+/// Goods moved from one warehouse to another (TR-0001): no entry, the value moves with them
+model StockTransfer {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  number          Int
+  date            DateTime @db.Date
+  fromWarehouseId String   @map("from_warehouse_id") @db.Uuid
+  toWarehouseId   String   @map("to_warehouse_id") @db.Uuid
+  reference       String?
+  notes           String?
+  createdById     String?  @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  from         Warehouse    @relation("TransferFrom", fields: [organizationId, fromWarehouseId], references: [organizationId, id], onDelete: NoAction)
+  to           Warehouse    @relation("TransferTo", fields: [organizationId, toWarehouseId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, number])
+  @@map("stock_transfers")
 }

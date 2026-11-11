@@ -1,9 +1,9 @@
-import { averageUnitCost, costOfQuantity, formatQuantity, parseQuantity, stockAdjustmentSchema, todayIn, type EnteredLine, type StockMovementKind } from '@ledgernest/shared';
+import { averageUnitCost, costOfQuantity, formatQuantity, parseQuantity, stockAdjustmentSchema, stockTransferSchema, todayIn, transferNumber, warehouseCodeFrom, warehouseSchema, type EnteredLine, type StockMovementKind } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoItemRows } from '../items/demoItemsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
-import type { InventoryApi, StockMovement } from './types';
+import type { InventoryApi, StockMovement, StockTransfer, Warehouse } from './types';
 
 /**
  * Stock in demo mode, kept in this browser with the same rules as the API: weighted average cost, bills in,
@@ -116,6 +116,45 @@ export function demoUndoDocument(kind: 'bill' | 'invoice' | 'credit_note', sourc
 
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 120));
 
+/**
+ * Warehouses in the demo: the places and the transfers between them, kept in this browser. Documents and adjustments
+ * here use the main warehouse; what each other place holds is what was moved to it.
+ */
+type DemoPlaces = { warehouses: Omit<Warehouse, 'items' | 'value'>[]; transfers: StockTransfer[] };
+const PLACES_KEY = 'ledgernest.demo.warehouses.v1';
+const loadPlaces = (): DemoPlaces => {
+  try {
+    return (JSON.parse(localStorage.getItem(PLACES_KEY) ?? 'null') as DemoPlaces | null) ?? { warehouses: [], transfers: [] };
+  } catch {
+    return { warehouses: [], transfers: [] };
+  }
+};
+const savePlaces = (p: DemoPlaces) => localStorage.setItem(PLACES_KEY, JSON.stringify(p));
+export const resetDemoWarehouses = () => localStorage.removeItem(PLACES_KEY);
+/** What one place holds of each item: the main one all that isn't elsewhere */
+function placeStock(p: DemoPlaces, warehouseId: string) {
+  const out = new Map<string, { quantity: bigint; value: bigint }>();
+  const add = (itemId: string, qty: bigint, value: bigint) => {
+    const s = out.get(itemId) ?? { quantity: 0n, value: 0n };
+    out.set(itemId, { quantity: s.quantity + qty, value: s.value + value });
+  };
+  const main = p.warehouses.find((w) => w.isDefault);
+  // The main warehouse holds all there is, less what was moved elsewhere (and plus what came back)
+  if (main?.id === warehouseId)
+    for (const i of itemsOf().filter((x) => x.trackStock)) {
+      const s = demoStockOf(i.id);
+      add(i.id, s.quantity, s.value);
+    }
+  for (const t of p.transfers)
+    for (const l of t.lines) {
+      const qn = parseQuantity(l.quantity)!;
+      const v = BigInt(l.value);
+      if (t.to.id === warehouseId) add(l.item.id, qn, v);
+      if (t.from.id === warehouseId) add(l.item.id, -qn, -v);
+    }
+  return out;
+}
+
 export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
   const guard = () => {
     if (!canPost()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['journals.post'] });
@@ -140,7 +179,82 @@ export function createDemoInventoryApi(canPost: () => boolean): InventoryApi {
     }
     return out;
   };
+  const placeView = (p: DemoPlaces, w: DemoPlaces['warehouses'][number]): Warehouse => {
+    const held = [...placeStock(p, w.id).values()].filter((s) => s.quantity !== 0n);
+    return { ...w, items: held.length, value: Number(held.reduce((t, s) => t + s.value, 0n)) };
+  };
   const api: InventoryApi = {
+    warehouses: () => wait(() => { const p = loadPlaces(); return { warehouses: p.warehouses.map((w) => placeView(p, w)) }; }),
+    createWarehouse: (input) =>
+      wait(() => {
+        guard();
+        const d = warehouseSchema.parse(input);
+        const p = loadPlaces();
+        if (!p.warehouses.length) p.warehouses.push({ id: crypto.randomUUID(), name: 'Main warehouse', code: 'MAIN', address: null, isDefault: true, archived: false });
+        if (p.warehouses.some((w) => w.name.toLowerCase() === d.name.toLowerCase())) throw refuse(409, 'name_taken', { field: 'name' });
+        let code = d.code ?? warehouseCodeFrom(d.name);
+        for (let n = 2; p.warehouses.some((w) => w.code === code); n++) code = `${warehouseCodeFrom(d.name)}${n}`;
+        const w = { id: crypto.randomUUID(), name: d.name, code, address: d.address ?? null, isDefault: false, archived: false };
+        p.warehouses.push(w);
+        savePlaces(p);
+        return placeView(p, w);
+      }),
+    updateWarehouse: (id, input) =>
+      wait(() => {
+        guard();
+        const p = loadPlaces();
+        const w = p.warehouses.find((x) => x.id === id);
+        if (!w) throw refuse(404, 'not_found');
+        if (input.isDefault) for (const x of p.warehouses) x.isDefault = x.id === id;
+        if (input.name) w.name = input.name;
+        savePlaces(p);
+        return placeView(p, w);
+      }),
+    archiveWarehouse: (id) =>
+      wait(() => {
+        guard();
+        const p = loadPlaces();
+        const w = p.warehouses.find((x) => x.id === id);
+        if (!w) throw refuse(404, 'not_found');
+        if (w.isDefault) throw refuse(409, 'warehouse_default');
+        if ([...placeStock(p, id).values()].some((s) => s.quantity !== 0n)) throw refuse(409, 'warehouse_has_stock');
+        w.archived = true;
+        savePlaces(p);
+      }),
+    warehouseStock: (id) =>
+      wait(() => {
+        const p = loadPlaces();
+        const items = itemsOf();
+        return {
+          items: [...placeStock(p, id)]
+            .filter(([, s]) => s.quantity !== 0n)
+            .map(([itemId, s]) => ({ itemId, name: items.find((i) => i.id === itemId)?.name ?? '', unit: null, quantity: qtyText(s.quantity), value: Number(s.value) }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+        };
+      }),
+    transfers: () => wait(() => ({ transfers: [...loadPlaces().transfers].reverse() })),
+    transfer: (input) =>
+      wait(() => {
+        guard();
+        const d = stockTransferSchema.parse(input);
+        const p = loadPlaces();
+        const from = p.warehouses.find((w) => w.id === d.fromWarehouseId && !w.archived);
+        const to = p.warehouses.find((w) => w.id === d.toWarehouseId && !w.archived);
+        if (!from) throw refuse(400, 'warehouse_invalid', { field: 'fromWarehouseId' });
+        if (!to) throw refuse(400, 'warehouse_invalid', { field: 'toWarehouseId' });
+        const there = placeStock(p, from.id);
+        const items = itemsOf();
+        const lines = d.lines.map((l) => {
+          const s = there.get(l.itemId) ?? { quantity: 0n, value: 0n };
+          const qn = parseQuantity(l.quantity)!;
+          if (qn > s.quantity) throw refuse(409, 'insufficient_stock', { itemId: l.itemId, onHand: qtyText(s.quantity) });
+          return { item: { id: l.itemId, name: items.find((i) => i.id === l.itemId)?.name ?? '' }, quantity: qtyText(qn), value: Number(costOfQuantity(s.quantity, s.value, qn)) };
+        });
+        const t: StockTransfer = { id: crypto.randomUUID(), number: transferNumber(p.transfers.length + 1), date: d.date, reference: d.reference, notes: d.notes, from: { id: from.id, name: from.name }, to: { id: to.id, name: to.name }, lines, value: lines.reduce((x, l) => x + l.value, 0) };
+        p.transfers.push(t);
+        savePlaces(p);
+        return t;
+      }),
     // The demo company counts opening stock against its capital; it keeps no batches or serial numbers
     openingStock: async (input) => {
       const equity = demoAccountRows().find((a) => a.type === 'equity' && a.subtype === 'owner_equity')!;

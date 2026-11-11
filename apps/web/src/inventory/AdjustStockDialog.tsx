@@ -43,6 +43,10 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
   const [batchNo, setBatchNo] = useState('');
   const [mfgDate, setMfgDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
+  // Where it's counted, once stock is kept in more than one place
+  const places = useQuery({ queryKey: ['inventory', session.organizationId, 'warehouses'], queryFn: () => api.warehouses() });
+  const active = (places.data?.warehouses ?? []).filter((w) => !w.archived);
+  const [warehouseId, setWarehouse] = useState('');
   const batched = !!item?.trackBatches;
   const serialed = !!item?.trackSerials;
   const [serials, setSerials] = useState('');
@@ -55,7 +59,7 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
   const cost = unitCost.trim() ? toMinor(unitCost, money.digits) : null;
   const problem = !item ? 'item' : !qtyOk ? 'quantity' : unitCost.trim() && cost === null ? 'unitCost' : batched && !batchNo.trim() ? 'batch' : serialed && !parseSerials(serials).length ? 'serials' : !account ? 'account' : reason.trim().length < 3 ? 'reason' : null;
   const save = useMutation({
-    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim(), ...(batched ? { batchNo: batchNo.trim(), mfgDate: direction === 'in' ? mfgDate || null : null, expiryDate: direction === 'in' ? expiryDate || null : null } : {}), ...(serialed ? { serials: parseSerials(serials) } : {}) }),
+    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim(), ...(batched ? { batchNo: batchNo.trim(), mfgDate: direction === 'in' ? mfgDate || null : null, expiryDate: direction === 'in' ? expiryDate || null : null } : {}), ...(serialed ? { serials: parseSerials(serials) } : {}), ...(warehouseId ? { warehouseId } : {}) }),
     onSuccess: (m) => {
       for (const k of ['inventory', 'items', 'journals', 'reports']) void qc.invalidateQueries({ queryKey: [k] });
       toast(t(direction === 'in' ? 'inventory.addedToast' : 'inventory.writtenOffToast', { quantity: m.quantity.replace(/^-/, ''), item: m.item }));
@@ -101,6 +105,7 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
           />
         </div>
         <TextField label={t('inventory.fields.date')} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        {active.length > 0 && <SelectField label={t('warehouses.fields.warehouse')} value={warehouseId || (active.find((w) => w.isDefault)?.id ?? '')} onChange={(e) => setWarehouse(e.target.value)} options={active.map((w) => ({ value: w.id, label: `${w.name} (${w.code})` }))} />}
         <TextField label={t('inventory.fields.quantity')} value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="decimal" dir="ltr" className="text-end font-mono" data-autofocus />
         {direction === 'in' && (
           <TextField
