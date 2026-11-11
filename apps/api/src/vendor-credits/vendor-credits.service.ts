@@ -463,6 +463,14 @@ export class VendorCreditsService {
       const label = vendorCreditNumber(year.name, number);
       const billLabelText = billLabel(bill)!;
 
+      // A composition dealer took no input tax credit on the bill, so its GST comes back off the cost
+      const noCredit =
+        (
+          await tx.organization.findUniqueOrThrow({
+            where: { id: organizationId },
+            select: { gstScheme: true },
+          })
+        ).gstScheme === 'composition';
       // The bill's entry the other way round: less owed to the vendor, the expense and its input tax credited back
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -483,8 +491,10 @@ export class VendorCreditsService {
                 accountId: l.src.accountId!,
                 description: l.src.description,
                 debit: 0,
-                credit: amounts.lines[n]!.net,
-                taxGroupId: l.src.taxGroupId,
+                credit:
+                  amounts.lines[n]!.net +
+                  (noCredit ? amounts.lines[n]!.tax : 0),
+                taxGroupId: noCredit ? null : l.src.taxGroupId,
                 taxInclusive: false,
                 costCentreId: l.src.costCentreId,
               }))
