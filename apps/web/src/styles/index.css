@@ -185,3 +185,15 @@ th a.font-mono {
     grid-column: 1 / -1;
   }
 }
+
+/*
+ * Devanagari needs more size than Latin to read at the same comfort: the smallest text steps up a little in
+ * Hindi and Marathi (12px → 13px, 11px → 12px).
+ */
+:is(:lang(hi), :lang(mr)) .text-xs {
+  font-size: 0.8125rem;
+  line-height: 1.15rem;
+}
+:is(:lang(hi), :lang(mr)) .text-\[11px\] {
+  font-size: 0.75rem;
+}
