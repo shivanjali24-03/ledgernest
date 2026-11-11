@@ -94,6 +94,19 @@ describe('products and services', () => {
     expect(screen.getByText('Assam Tea 250g')).toBeInTheDocument();
   }, 30_000);
 
+  it('fills in the usual inventory and cost of sales accounts when stock is tracked', async () => {
+    renderApp();
+    await row('Software development');
+    await userEvent.click(screen.getByRole('button', { name: 'Add item' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New product or service' });
+    await userEvent.selectOptions(within(dialog).getByLabelText('Type'), 'goods');
+    expect(within(dialog).getByLabelText('Income account (sales)')).toHaveDisplayValue('Main sales account');
+    await within(dialog).findByRole('option', { name: '5050 · Cost of goods sold' });
+    await userEvent.click(within(dialog).getByLabelText(/Track stock/));
+    expect(within(dialog).getByLabelText('Inventory account')).toHaveDisplayValue('1600 · Stock in trade');
+    expect(within(dialog).getByLabelText('Cost of sales account')).toHaveDisplayValue('5050 · Cost of goods sold');
+  });
+
   it('refuses a second item with the same SKU', async () => {
     renderApp();
     await row('Software development');

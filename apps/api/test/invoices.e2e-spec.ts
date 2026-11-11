@@ -102,10 +102,13 @@ describe('Sales invoices (e2e)', () => {
     expect(i.taxBreakdown).toEqual([{ name: 'IGST 18%', amount: 101_250 }]);
   });
 
-  it('refuses vendors, lines without an income account, and the wrong kind of account', async () => {
+  it('refuses vendors and the wrong kind of account; a line without one goes to sales', async () => {
     const reason = async (body: object) => (await as().post('/invoices', { issueDate: '2026-05-06', contactId: contact.kumar, ...body }).expect(400)).body.details.reason;
     expect(await reason({ contactId: contact.sharma, lines: [{ description: 'x', quantity: 1, unitPrice: 1, accountId: acc.sales }] })).toBe('not_customer');
-    expect(await reason({ lines: [{ description: 'x', quantity: 1, unitPrice: 1 }] })).toBe('account_required');
+    // A line with no account, and no item that has one, goes to the main sales account
+    const free = (await as().post('/invoices', { issueDate: '2026-05-06', contactId: contact.kumar, lines: [{ description: 'x', quantity: 1, unitPrice: 1 }] }).expect(201)).body as Invoice & { lines: { account: { id: string } }[] };
+    expect(free.lines[0]!.account.id).toBe(acc.sales);
+    await as().delete(`/invoices/${free.id}`).expect(204);
     expect(await reason({ lines: [{ description: 'x', quantity: 1, unitPrice: 1, accountId: acc.rent }] })).toBe('not_income');
   });
 

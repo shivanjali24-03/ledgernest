@@ -61,7 +61,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const pick = (key: string, itemId: string) => {
     const item = items.data?.find((x) => x.id === itemId);
-    set(key, item ? { itemId, description: item.name, unitPrice: item.purchasePrice !== null ? (item.purchasePrice / 100).toFixed(2) : '', taxGroupId: item.taxGroupId ?? '', accountId: item.expenseAccountId ?? '' } : { itemId: '' });
+    set(key, item ? { itemId, description: item.name, unitPrice: item.purchasePrice !== null ? (item.purchasePrice / 100).toFixed(2) : '', taxGroupId: item.taxGroupId ?? '', accountId: (item.trackStock ? item.inventoryAccountId : item.expenseAccountId) ?? '' } : { itemId: '' });
   };
   const filled = lines.filter((l) => l.description.trim() || l.unitPrice.trim());
   const invalid = !contactId || !filled.length || filled.some((l) => !l.description.trim() || toMinor(l.unitPrice) === null || parseQuantity(l.quantity) === null);
