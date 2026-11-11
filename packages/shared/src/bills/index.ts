@@ -24,9 +24,18 @@ const text = (max: number) =>
 
 /** A bill line: as an invoice line, but its account is an expense or an asset (e.g. equipment) */
 /** A bill line; goods kept in batches also say which batch came in, with its dates */
+/**
+ * Input tax credit on a bill line (CGST Act s.16-17): eligible; blocked under s.17(5) (motor vehicles, food and
+ * beverages, club and health memberships, works contracts for immovable property, goods for personal use, gifts…);
+ * or otherwise ineligible (used for exempt supplies or outside the business). Credit that isn't eligible is cost.
+ */
+export const ITC_KINDS = ['eligible', 'blocked', 'ineligible'] as const;
+export type ItcKind = (typeof ITC_KINDS)[number];
+
 export const billLineSchema = invoiceLineSchema
   .omit({ batchId: true })
   .extend(batchFieldShape)
+  .extend({ itc: z.enum(ITC_KINDS).optional().default('eligible') })
   .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE });
 
 export const billDraftSchema = z

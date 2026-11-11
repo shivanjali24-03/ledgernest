@@ -177,6 +177,8 @@ export interface Gstr3b {
   /** 3.1(d): bought under reverse charge, and the GST on it (paid in cash) */
   inwardReverseCharge?: { taxable: number } & GstHeads;
   itc: GstHeads;
+  /** 4(B)(1): credit not taken: blocked under s.17(5), and otherwise ineligible */
+  itcReversed?: { blocked: GstHeads; ineligible: GstHeads };
   inwardTaxable: number;
   setOff: { cash: GstHeads; carriedForward: GstHeads; used: Record<'igst' | 'cgst' | 'sgst' | 'cess', GstHeads> };
   payable: GstHeads;

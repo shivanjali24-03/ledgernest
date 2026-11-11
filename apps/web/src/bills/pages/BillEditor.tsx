@@ -4,7 +4,7 @@ import { formatDate } from '../../lib/format';
 import { ApiError } from '../../auth/client';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, dueDateFor, parseSerials, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
+import { ITC_KINDS, type ItcKind, currencyDigits, dueDateFor, parseSerials, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
 import { ArrowLeft, Ban, BookCheck, FileDown, FileMinus, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
 import { saveBlob } from '../../lib/saveBlob';
 import DebitNoteDialog from '../../debit-notes/DebitNoteDialog';
@@ -58,6 +58,7 @@ type Line = {
   expiryDate: string;
   serials: string;
   inAltUnit: boolean;
+  itc: ItcKind;
 };
 const blankLine = (): Line => ({
   key: crypto.randomUUID(),
@@ -74,6 +75,7 @@ const blankLine = (): Line => ({
   expiryDate: '',
   serials: '',
   inAltUnit: false,
+  itc: 'eligible',
 });
 
 /** A draft: choose the vendor, add what was bought and where it's booked, see input GST as you type, save or record. */
@@ -149,6 +151,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           expiryDate: l.expiryDate ?? '',
           serials: (l.serials ?? []).join('\n'),
           inAltUnit: l.inAltUnit ?? false,
+          itc: (l as { itc?: ItcKind }).itc ?? 'eligible',
         }))
       : [blankLine()],
   );
@@ -181,6 +184,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
             taxGroupId: item.taxGroupId ?? '',
             accountId: item.expenseAccountId ?? '',
             inAltUnit: false,
+            itc: item.itcBlocked ? 'blocked' : 'eligible',
           }
         : { itemId: '', inAltUnit: false },
     );
@@ -246,6 +250,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
       accountId: l.accountId || null,
       costCentreId: l.costCentreId || null,
       inAltUnit: l.inAltUnit,
+      itc: l.itc,
       ...(batched(l.itemId) ? { batchNo: l.batchNo.trim() || null, mfgDate: l.mfgDate || null, expiryDate: l.expiryDate || null } : {}),
       ...(serialed(l.itemId) ? { serials: parseSerials(l.serials) } : {}),
     })),
@@ -457,6 +462,15 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                             </option>
                           ))}
                       </select>
+                      {india && l.group && (
+                        <select aria-label={t('bills.lineItc', { n: n + 1 })} value={l.itc} disabled={!canManage || !!items.data?.find((x) => x.id === l.itemId)?.itcBlocked} onChange={(e) => set(l.key, { itc: e.target.value as ItcKind })} className={clsx(cell, 'mt-1 text-xs')}>
+                          {ITC_KINDS.map((k) => (
+                            <option key={k} value={k}>
+                              {t(`bills.itc.${k}`)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="px-3 py-2.5 text-end font-mono tabular-nums" dir="ltr">
                       {amount !== undefined ? plain(amount) : ''}

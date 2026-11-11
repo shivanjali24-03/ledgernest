@@ -23,6 +23,8 @@ export interface Item {
   trackBatches?: boolean;
   /** Tracked goods whose every unit has its own serial number */
   trackSerials?: boolean;
+  /** Input tax credit on buying it is blocked (s.17(5)) */
+  itcBlocked?: boolean;
   /** A second unit it's also sold or bought in, and how many of the main unit make one */
   altUnit?: string | null;
   altFactor?: string | null;

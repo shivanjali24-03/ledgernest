@@ -1,4 +1,4 @@
-import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase, type BillStatus, possibleDuplicateBills } from '@ledgernest/shared';
+import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase, type BillStatus, type ItcKind, possibleDuplicateBills } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -29,6 +29,8 @@ type StoredLine = {
   taxGroupId: string | null;
   /** Under reverse charge: the GST we pay on the line */
   rcmTaxGroupId?: string | null;
+  /** Input tax credit: eligible, blocked (s.17(5)) or ineligible */
+  itc?: ItcKind;
   accountId: string;
   costCentreId?: string | null;
 };
@@ -324,6 +326,7 @@ function view(i: Stored): Bill {
         account: acc ? { id: acc.id, code: acc.code, name: acc.name } : null,
         taxGroup: g ? { id: g.id, name: g.name, supply: g.supply } : null,
         rcmTaxGroup: rcmGroups[n] ? { id: rcmGroups[n].id, name: rcmGroups[n].name, supply: rcmGroups[n].supply } : null,
+        itc: l.itc ?? 'eligible',
       };
     }),
   };
@@ -392,6 +395,8 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
         discountPpm: l.discount,
         taxGroupId: rcm ? null : (group?.id ?? null),
         rcmTaxGroupId: rcm ? (group?.id ?? null) : null,
+        // An item whose credit is blocked (s.17(5)) is always so
+        itc: item?.itcBlocked ? 'blocked' : (l.itc ?? 'eligible'),
         accountId,
         costCentreId: l.costCentreId ?? null,
       };
@@ -528,15 +533,22 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
         const journals = createDemoJournalsApi(() => true);
         // Foreign bills keep the payable in their currency; costs are in rupees at the same rate
         const toInr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor);
+        const blocked = (l: (typeof v.lines)[number]) => !!l.itc && l.itc !== 'eligible';
+        // Under reverse charge: the GST we owe on a line, in rupees
+        const rcmTaxInr = (l: (typeof v.lines)[number]) => {
+          const g = l.rcmTaxGroup ? groupOf(l.rcmTaxGroup.id) : null;
+          return g ? splitTax(toInr(l.amount), false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.reduce((t, x) => t + x.amount, 0) : 0;
+        };
         const lines = [
           ...v.lines
             .filter((l) => l.amount > 0)
             .map((l) => ({
               accountId: l.account!.id,
               description: l.description,
-              debit: toInr(l.amount),
+              // GST that can't be claimed (blocked or ineligible) is cost
+              debit: toInr(l.amount + (blocked(l) ? l.taxAmount : 0)) + (blocked(l) ? rcmTaxInr(l) : 0),
               // Reverse charge GST is ours to pay and claim, on imports too
-              taxGroupId: l.rcmTaxGroup ? l.rcmTaxGroup.id : i.currency ? null : (l.taxGroup?.id ?? null),
+              taxGroupId: blocked(l) ? null : l.rcmTaxGroup ? l.rcmTaxGroup.id : i.currency ? null : (l.taxGroup?.id ?? null),
               costCentreId: l.costCentre?.id ?? null,
             })),
           i.currency

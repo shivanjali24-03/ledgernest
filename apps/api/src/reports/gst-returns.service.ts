@@ -135,6 +135,73 @@ export class GstReturnsService {
       const h = r.kind ? head(r.kind) : null;
       if (h) reverseCharge[h] += Number(r.tax ?? 0);
     }
+    // 4(B)(1): credit on bills that can't be taken: blocked under s.17(5) or otherwise ineligible (its GST went to cost)
+    const reversed = { blocked: zeroHeads(), ineligible: zeroHeads() };
+    const noCredit = await this.prisma.bill.findMany({
+      where: {
+        organizationId,
+        status: { in: ['open', 'void'] },
+        billDate: { gte: range[0], lte: range[1] },
+        lines: { some: { itc: { not: 'eligible' } } },
+      },
+      select: {
+        status: true,
+        currency: true,
+        rate: true,
+        voidEntry: { select: { date: true } },
+        lines: {
+          where: { itc: { not: 'eligible' } },
+          select: {
+            itc: true,
+            amount: true,
+            taxGroup: {
+              select: {
+                rates: {
+                  select: {
+                    rate: { select: { id: true, kind: true, ratePpm: true } },
+                  },
+                },
+              },
+            },
+            rcmTaxGroup: {
+              select: {
+                rates: {
+                  select: {
+                    rate: { select: { id: true, kind: true, ratePpm: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    for (const b of noCredit) {
+      if (b.status === 'void' && (!b.voidEntry || b.voidEntry.date <= range[1]))
+        continue;
+      for (const l of b.lines) {
+        const net =
+          b.currency && b.rate
+            ? toBase(
+                Number(l.amount),
+                b.rate.toString(),
+                currencyDigits(b.currency),
+                currencyDigits(org.baseCurrency),
+              )
+            : Number(l.amount);
+        const rates = (l.taxGroup ?? l.rcmTaxGroup)?.rates ?? [];
+        splitTax(
+          net,
+          false,
+          rates.map((r) => ({ rateId: r.rate.id, ratePpm: r.rate.ratePpm })),
+        ).taxes.forEach((t, k) => {
+          const h = head(rates[k]!.rate.kind);
+          if (h)
+            reversed[l.itc === 'blocked' ? 'blocked' : 'ineligible'][h] +=
+              t.amount;
+        });
+      }
+    }
     const output = zeroHeads();
     const itc = zeroHeads();
     for (const t of taxes) {
@@ -168,8 +235,10 @@ export class GstReturnsService {
       outwardUntaxed: Number(v.untaxed_out ?? 0),
       /** 3.1(d): inward supplies liable to reverse charge, and the GST on them (paid in cash) */
       inwardReverseCharge: reverseCharge,
-      /** 4(A)(5): input tax credit on purchases (4(A)(3) reverse charge included) */
+      /** 4(A)(5): input tax credit on purchases (4(A)(3) reverse charge included), net of 4(B) */
       itc,
+      /** 4(B)(1): credit not taken: blocked under s.17(5), and otherwise ineligible (rules 42 and 43) */
+      itcReversed: reversed,
       inwardTaxable: Number(v.taxed_in ?? 0),
       /** 6.1: how the credit is used, what's paid in cash, and what's carried forward */
       setOff,
