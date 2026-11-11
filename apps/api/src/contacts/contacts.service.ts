@@ -45,6 +45,7 @@ const select = {
   msmeCategory: true,
   gstTreatment: true,
   pan: true,
+  bankDetails: true,
   udyamNumber: true,
   interestRateBp: true,
   notes: true,
@@ -75,6 +76,7 @@ type Values = {
   interestRateBp?: number | null;
   gstTreatment?: string | null;
   pan?: string | null;
+  bankDetails?: unknown;
   notes: string | null;
 };
 
@@ -96,6 +98,7 @@ const EDITABLE = [
   'interestRateBp',
   'gstTreatment',
   'pan',
+  'bankDetails',
   'notes',
 ] as const;
 
@@ -349,6 +352,10 @@ export class ContactsService {
         v.shippingAddress === null
           ? Prisma.DbNull
           : (v.shippingAddress as Prisma.InputJsonValue),
+      bankDetails:
+        v.bankDetails === null || v.bankDetails === undefined
+          ? Prisma.DbNull
+          : (v.bankDetails as Prisma.InputJsonValue),
     };
   }
 

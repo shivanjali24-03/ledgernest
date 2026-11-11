@@ -1,4 +1,4 @@
-import type { BusinessType } from '@ledgernest/shared';
+import type { BankDetails, BusinessType } from '@ledgernest/shared';
 import type { LogoType, OrganizationSettingsInput } from '@ledgernest/shared';
 
 export interface OrganizationSettings {
@@ -48,6 +48,8 @@ export interface OrganizationSettings {
   tan?: string | null;
   cin?: string | null;
   iec?: string | null;
+  /** The account customers pay into, printed on invoices */
+  bankDetails?: BankDetails | null;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */

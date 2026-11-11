@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines, hsnSummary, supplyDeclaration, isExport } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, rupeesInWords, upiPayUri, batchLabel, dispatchLines, hsnSummary, supplyDeclaration, isExport, bankDetailsLine } from '@ledgernest/shared';
 import { Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -255,6 +255,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
       {i.notes && (
         <p className="mt-8 whitespace-pre-line border-t border-ink-200 pt-4 text-ink-600 dark:border-ink-700 dark:text-ink-300" dir="auto">
           {i.notes}
+        </p>
+      )}
+      {org?.bankDetails && (
+        <p className="mt-6 text-xs text-ink-600 dark:text-ink-300" dir="ltr" data-testid="invoice-bank">
+          {bankDetailsLine(org.bankDetails)}
         </p>
       )}
       {org?.invoiceTerms && (

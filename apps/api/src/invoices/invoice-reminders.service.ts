@@ -14,6 +14,8 @@ import {
   dispatchLines,
   hsnSummary,
   supplyDeclaration,
+  bankDetailsLine,
+  type BankDetails,
   daysBetween,
   DEFAULT_REMINDER_POLICY,
   findIndianState,
@@ -376,6 +378,7 @@ export class InvoiceRemindersService
         lutNumber: true,
         pan: true,
         cin: true,
+        bankDetails: true,
       },
     });
     const composition = !!org.taxId && org.gstScheme === 'composition';
@@ -511,6 +514,10 @@ export class InvoiceRemindersService
             ? [
                 `Includes a discount of ${currency} ${(inv.discountTotal / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))} on the invoice, before tax.`,
               ]
+            : []),
+          // Where to pay
+          ...(org.bankDetails
+            ? [bankDetailsLine(org.bankDetails as unknown as BankDetails)]
             : []),
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
           // What an export or zero-rated invoice must declare

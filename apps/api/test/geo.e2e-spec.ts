@@ -21,6 +21,24 @@ function indiaPost(): Promise<{
     if (down.value) return void res.writeHead(503).end();
     res.setHeader('Content-Type', 'application/json');
     const pin = req.url!.split('/').pop();
+    // The IFSC directory's answers
+    if (pin === 'HDFC0001234')
+      return void res.end(
+        JSON.stringify({
+          BANK: 'HDFC Bank',
+          IFSC: 'HDFC0001234',
+          BRANCH: 'BANER',
+          ADDRESS: 'Baner Road, Pune 411045',
+          CITY: 'PUNE',
+          STATE: 'MAHARASHTRA',
+          UPI: true,
+          NEFT: true,
+          RTGS: true,
+          IMPS: true,
+        }),
+      );
+    if (pin === 'HDFC0009999')
+      return void res.writeHead(404).end('"Not Found"');
     if (pin === '411045')
       return void res.end(
         JSON.stringify([
@@ -75,6 +93,7 @@ describe('Addresses from the PIN code (e2e)', () => {
   const run = randomUUID().slice(0, 8);
   let token = '';
   const PINS = ['411045', '999998', '560001'];
+  const IFSCS = ['HDFC0001234', 'HDFC0009999'];
 
   const get = (p: string, auth = true) => {
     const r = request(app.getHttpServer()).get(`/api/v1${p}`);
@@ -84,6 +103,7 @@ describe('Addresses from the PIN code (e2e)', () => {
   beforeAll(async () => {
     stub = await indiaPost();
     process.env.INDIA_POST_URL = stub.url;
+    process.env.IFSC_URL = stub.url;
     const { AppModule } = await import('../src/app.module.js');
     const { PrismaService } = await import('../src/prisma/prisma.service.js');
     const { setupApp } = await import('../src/setup-app.js');
@@ -94,6 +114,7 @@ describe('Addresses from the PIN code (e2e)', () => {
     await app.init();
     prisma = app.get(PrismaService);
     await prisma.pincodeCache.deleteMany({ where: { pin: { in: PINS } } });
+    await prisma.ifscCache.deleteMany({ where: { ifsc: { in: IFSCS } } });
     // Someone who has just signed up and has no organisation yet
     const u = await prisma.user.create({
       data: {
@@ -109,6 +130,7 @@ describe('Addresses from the PIN code (e2e)', () => {
 
   afterAll(async () => {
     await prisma.pincodeCache.deleteMany({ where: { pin: { in: PINS } } });
+    await prisma.ifscCache.deleteMany({ where: { ifsc: { in: IFSCS } } });
     await prisma.user.deleteMany({
       where: { email: { endsWith: `-${run}@test.ledgernest.local` } },
     });
@@ -182,5 +204,26 @@ describe('Addresses from the PIN code (e2e)', () => {
       ).toMatchObject({ reason: 'invalid_pin' });
     expect(stub.calls.length).toBe(before);
     await get('/geo/pincode/411045', false).expect(401);
+  });
+
+  it('fills a bank branch from its IFSC, asking the directory once, and refuses anything that isn’t one', async () => {
+    const before = stub.calls.length;
+    const b = (await get('/geo/ifsc/hdfc0001234').expect(200)).body;
+    expect(b).toMatchObject({
+      ifsc: 'HDFC0001234',
+      bank: 'HDFC Bank',
+      branch: 'BANER',
+      upi: true,
+    });
+    await get('/geo/ifsc/HDFC0001234').expect(200);
+    expect(stub.calls.length - before).toBe(1);
+    expect(
+      (await get('/geo/ifsc/HDFC0009999').expect(404)).body.details,
+    ).toMatchObject({ reason: 'unknown_ifsc' });
+    // Nothing that isn't an IFSC reaches the directory
+    expect(
+      (await get('/geo/ifsc/..%2F..%2Fetc').expect(400)).body.details,
+    ).toMatchObject({ reason: 'invalid_ifsc' });
+    await get('/geo/ifsc/HDFC0001234', false).expect(401);
   });
 });

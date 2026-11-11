@@ -19,4 +19,14 @@ export class GeoController {
   pincode(@Param('pin') pin: string) {
     return this.geo.pincode(pin);
   }
+
+  @Get('ifsc/:ifsc')
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @ApiOkResponse({
+    description:
+      'The bank, branch and address for an IFSC, from Razorpay’s IFSC directory (the RBI list)',
+  })
+  ifsc(@Param('ifsc') ifsc: string) {
+    return this.geo.ifsc(ifsc);
+  }
 }

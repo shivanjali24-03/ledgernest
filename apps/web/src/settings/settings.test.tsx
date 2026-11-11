@@ -221,4 +221,16 @@ describe('GST scheme settings', () => {
     expect(await screen.findByText('Settings saved')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings).toMatchObject({ businessType: 'partnership', pan: 'AAPFN1234C', tan: 'PNEN12345A' });
   }, 20_000);
+
+  it('keeps the bank account for invoices, filling the bank and branch from the IFSC', async () => {
+    renderApp();
+    await userEvent.type(await screen.findByLabelText('Account name', {}, { timeout: 4000 }), 'Nest Demo Pvt Ltd');
+    await userEvent.type(screen.getByLabelText('Account number'), '50100123456789');
+    await userEvent.type(screen.getByLabelText('IFSC'), 'hdfc0001234');
+    await waitFor(() => expect(screen.getByLabelText('Bank')).toHaveValue('HDFC Bank'));
+    expect(screen.getByLabelText('Branch')).toHaveValue('BANER');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Settings saved')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.bankDetails).toMatchObject({ accountNumber: '50100123456789', ifsc: 'HDFC0001234', bankName: 'HDFC Bank' });
+  }, 20_000);
 });

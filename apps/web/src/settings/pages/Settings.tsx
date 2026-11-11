@@ -17,11 +17,12 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import { Field, inputClass, SelectField, TextField } from '../../ui/Field';
 import { Card, EmptyState, ErrorState, PageHeader, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
-import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField } from '../form';
+import { changes, fieldOf, fiscalYearSpan, timeIn, timeZoneOptions, toValues, type SettingsErrors, type SettingsField, type SettingsValues } from '../form';
 import LogoCard from '../LogoCard';
 import BackupsCard from '../../backups/BackupsCard';
 import TallyCard from '../TallyCard';
 import NumberSeriesCard from '../../numbering/NumberSeriesCard';
+import BankDetailsFields from '../../bank/BankDetailsFields';
 import IndianAddressFields, { type IndianAddress } from '../../geo/IndianAddressFields';
 import DeleteOrganizationCard from '../DeleteOrganizationCard';
 import ReminderPolicyCard from '../../invoices/ReminderPolicyCard';
@@ -68,6 +69,10 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
     setErrors((x) => ({ ...x, [k]: undefined }));
   };
 
+  const setMany = (patch: Partial<SettingsValues>) => {
+    setV((x) => ({ ...x, ...patch }));
+    setErrors((x) => ({ ...x, ...Object.fromEntries(Object.keys(patch).map((k) => [k, undefined])) }));
+  };
   const setAddress = useCallback((patch: Partial<IndianAddress>) => {
     setV((x) => ({ ...x, ...patch }));
     setErrors((x) => ({ ...x, ...Object.fromEntries(Object.keys(patch).map((k) => [k, undefined])) }));
@@ -198,6 +203,14 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
           </span>
         </label>
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
+        {v.country === 'IN' && (
+          <BankDetailsFields
+            value={{ accountName: v.bankAccountName, accountNumber: v.bankAccountNumber, ifsc: v.bankIfsc, bankName: v.bankName, branch: v.bankBranch }}
+            onChange={(b) => setMany({ bankAccountName: b.accountName, bankAccountNumber: b.accountNumber, bankIfsc: b.ifsc, bankName: b.bankName, bankBranch: b.branch })}
+            errors={{ accountName: errors.bankAccountName, accountNumber: errors.bankAccountNumber, ifsc: errors.bankIfsc }}
+            disabled={!canManage}
+          />
+        )}
       </Section>
 
       {v.country === 'IN' && (

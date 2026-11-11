@@ -1,4 +1,4 @@
-import type { ContactAddress, ContactCreateInput, ContactUpdateInput, MsmeCategory, GstTreatment } from '@ledgernest/shared';
+import type { ContactAddress, ContactCreateInput, ContactUpdateInput, MsmeCategory, GstTreatment, BankDetails } from '@ledgernest/shared';
 
 export interface Contact {
   id: string;
@@ -27,6 +27,8 @@ export interface Contact {
   gstTreatment?: GstTreatment | null;
   /** Their PAN, for TDS; null = from the GSTIN */
   pan?: string | null;
+  /** The account they're paid into */
+  bankDetails?: BankDetails | null;
   udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;
