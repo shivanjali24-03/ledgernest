@@ -8,7 +8,7 @@ import { isoDaySchema } from '../periods/index.js';
  * The browser reads the CSV or XLSX and maps its columns to these fields (guessed from the headers, then
  * corrected); the API checks every row, saving nothing until all of them are right.
  */
-export const IMPORT_KINDS = ['accounts', 'contacts', 'items', 'opening_balances'] as const;
+export const IMPORT_KINDS = ['accounts', 'contacts', 'items', 'opening_balances', 'opening_invoices', 'opening_bills'] as const;
 export type ImportKind = (typeof IMPORT_KINDS)[number];
 export const MAX_IMPORT_ROWS = 2000;
 
@@ -65,10 +65,39 @@ export const IMPORT_FIELDS: Record<ImportKind, ImportField[]> = {
     { key: 'debit', aliases: ['debit', 'dr', 'debit balance'] },
     { key: 'credit', aliases: ['credit', 'cr', 'credit balance'] },
   ],
+  // What customers and vendors owed when the books started here, invoice by invoice (Tally's bill-wise outstanding)
+  opening_invoices: [
+    { key: 'party', required: true, aliases: ['customer', 'customer name', 'party', 'party name', 'party\'s name', 'name', 'debtor', 'ledger', 'ledger name'] },
+    { key: 'number', required: true, aliases: ['invoice', 'invoice no', 'invoice number', 'number', 'no', 'ref no', 'ref', 'reference', 'voucher no', 'bill no', 'bill number'] },
+    { key: 'date', required: true, aliases: ['date', 'invoice date', 'voucher date', 'bill date'] },
+    { key: 'dueDate', aliases: ['due date', 'due', 'due on'] },
+    { key: 'amount', required: true, aliases: ['amount', 'balance', 'outstanding', 'pending', 'pending amount', 'amount due', 'balance due', 'closing balance'] },
+  ],
+  opening_bills: [
+    { key: 'party', required: true, aliases: ['vendor', 'vendor name', 'supplier', 'supplier name', 'party', 'party name', 'party\'s name', 'name', 'creditor', 'ledger', 'ledger name'] },
+    { key: 'number', required: true, aliases: ['bill', 'bill no', 'bill number', 'invoice', 'invoice no', 'invoice number', 'number', 'no', 'ref no', 'ref', 'reference', 'voucher no'] },
+    { key: 'date', required: true, aliases: ['date', 'bill date', 'invoice date', 'voucher date'] },
+    { key: 'dueDate', aliases: ['due date', 'due', 'due on'] },
+    { key: 'amount', required: true, aliases: ['amount', 'balance', 'outstanding', 'pending', 'pending amount', 'amount due', 'balance due', 'closing balance'] },
+  ],
 };
 
+/** A date as spreadsheets write it in India: 2026-03-31, 31/03/2026, 31-03-2026 or 31.03.2026 (and two-digit years) */
+export function parseImportDate(v: string): string | null {
+  const t = v.trim();
+  let y: number, m: number, d: number;
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+  const dmy = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/.exec(t);
+  if (iso) [y, m, d] = [Number(iso[1]), Number(iso[2]), Number(iso[3])];
+  else if (dmy) [d, m, y] = [Number(dmy[1]), Number(dmy[2]), Number(dmy[3]!.length === 2 ? `20${dmy[3]}` : dmy[3])];
+  else return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return null;
+  return date.toISOString().slice(0, 10);
+}
+
 /** Who may import each kind */
-export const IMPORT_PERMISSIONS: Record<ImportKind, OrganizationPermission> = { accounts: 'accounts.manage', contacts: 'contacts.manage', items: 'invoices.manage', opening_balances: 'journals.create' };
+export const IMPORT_PERMISSIONS: Record<ImportKind, OrganizationPermission> = { accounts: 'accounts.manage', contacts: 'contacts.manage', items: 'invoices.manage', opening_balances: 'journals.create', opening_invoices: 'invoices.manage', opening_bills: 'bills.manage' };
 
 const norm = (h: string) => h.toLowerCase().replace(/[_*.:]/g, ' ').replace(/\s+/g, ' ').trim();
 

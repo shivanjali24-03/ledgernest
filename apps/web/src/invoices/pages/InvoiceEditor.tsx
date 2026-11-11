@@ -152,6 +152,7 @@ export default function InvoiceEditor() {
           actions={
             invoice ? (
               <>
+                {invoice.opening && <Pill tone="neutral">{t('imports.openingPill')}</Pill>}
                 <Pill tone={invoice.status === 'issued' ? 'brand' : 'neutral'}>
                   <span className={stateTone(invoice.state)}>{t(`invoices.states.${invoice.state}`)}</span>
                 </Pill>

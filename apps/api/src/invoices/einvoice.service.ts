@@ -58,6 +58,7 @@ const invoiceSelect = {
   supplyKind: true,
   exportDetails: true,
   reverseCharge: true,
+  opening: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -261,6 +262,12 @@ export class EinvoiceService {
         message: 'Only issued invoices have an e-invoice.',
         details: { reason: 'not_issued' },
       });
+    if (i.opening)
+      throw new ConflictException({
+        message:
+          'This invoice was owed from before the books started here: it was reported then.',
+        details: { reason: 'opening_invoice' },
+      });
     const input = this.input(i, await this.seller(organizationId));
     const problems = einvoiceProblems(input);
     if (problems.length)
@@ -290,6 +297,12 @@ export class EinvoiceService {
       throw new ConflictException({
         message: 'Only issued invoices have an e-way bill.',
         details: { reason: 'not_issued' },
+      });
+    if (i.opening)
+      throw new ConflictException({
+        message:
+          'This invoice was owed from before the books started here: its goods moved then.',
+        details: { reason: 'opening_invoice' },
       });
     const input = this.input(i, await this.seller(organizationId));
     const problems = ewayProblems(input, transport);
@@ -372,6 +385,7 @@ export class EinvoiceService {
         where: {
           organizationId,
           status: 'issued',
+          opening: false,
           issueDate: { gte: asDate(from), lte: asDate(to) },
           contact: { taxId: { not: null } },
         },

@@ -57,7 +57,12 @@ export class SalesReportService {
     if (side === 'sales') {
       const [invoices, notes] = await Promise.all([
         this.prisma.invoice.findMany({
-          where: { organizationId, status: 'issued', issueDate: range },
+          where: {
+            organizationId,
+            status: 'issued',
+            opening: false,
+            issueDate: range,
+          },
           select: {
             id: true,
             currency: true,
@@ -67,7 +72,12 @@ export class SalesReportService {
           },
         }),
         this.prisma.creditNote.findMany({
-          where: { organizationId, status: 'issued', date: range },
+          where: {
+            organizationId,
+            status: 'issued',
+            date: range,
+            invoice: { opening: false },
+          },
           select: {
             id: true,
             currency: true,
@@ -114,7 +124,12 @@ export class SalesReportService {
       }
     } else {
       const bills = await this.prisma.bill.findMany({
-        where: { organizationId, status: 'open', billDate: range },
+        where: {
+          organizationId,
+          status: 'open',
+          opening: false,
+          billDate: range,
+        },
         select: {
           id: true,
           currency: true,

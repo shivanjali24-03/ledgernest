@@ -5,6 +5,7 @@ import { AlertTriangle, Building2, CheckCircle2, Download, FileUp, Upload } from
 import clsx from 'clsx';
 import { csvCell, guessImportMapping, IMPORT_FIELDS, IMPORT_KINDS, IMPORT_PERMISSIONS, mapImportRows, MAX_IMPORT_ROWS, todayIn, type ImportKind } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
+import { ApiError } from '../../auth/client';
 import { Link } from 'react-router';
 import { readSpreadsheet } from '../../lib/readSheet';
 import { useMoney } from '../../lib/useMoney';
@@ -32,6 +33,12 @@ export default function Imports() {
   const settings = useOrganizationSettings().data;
   const kinds = IMPORT_KINDS.filter((k) => session.permissions.has(IMPORT_PERMISSIONS[k]));
   const [kind, setKind] = useState<ImportKind>(kinds[0] ?? 'contacts');
+  // Kinds that are as of the day the books start
+  const dated = kind === 'opening_balances' || kind === 'opening_invoices' || kind === 'opening_bills';
+  const importError = (e: unknown) => {
+    const reason = e instanceof ApiError ? e.details?.reason : undefined;
+    return typeof reason === 'string' && ['demo_opening', 'no_period', 'no_receivable_account', 'no_payable_account'].includes(reason) ? t(`imports.errors.${reason}`) : t('imports.failed');
+  };
   const [file, setFile] = useState<{ name: string; headers: string[]; rows: string[][] } | null>(null);
   const [mapping, setMapping] = useState<Record<string, number | null>>({});
   const [date, setDate] = useState(() => todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
@@ -69,12 +76,12 @@ export default function Imports() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const preview = useMutation({
-    mutationFn: () => api!.preview(kind, rows, kind === 'opening_balances' ? date : undefined),
+    mutationFn: () => api!.preview(kind, rows, dated ? date : undefined),
     onSuccess: (result) => setChecked({ result, key: stateKey }),
-    onError: () => toast(t('imports.failed'), 'error'),
+    onError: (e) => toast(importError(e), 'error'),
   });
   const run = useMutation({
-    mutationFn: () => api!.run(kind, rows, kind === 'opening_balances' ? date : undefined),
+    mutationFn: () => api!.run(kind, rows, dated ? date : undefined),
     onSuccess: (result) => {
       setChecked({ result, key: stateKey });
       if (!result.saved) return toast(t('imports.notSaved'), 'error');
@@ -82,7 +89,7 @@ export default function Imports() {
       toast(t(kind === 'opening_balances' ? 'imports.openingDone' : 'imports.done', { count: result.rows }));
       setFile(null);
     },
-    onError: () => toast(t('imports.failed'), 'error'),
+    onError: (e) => toast(importError(e), 'error'),
   });
 
   if (!api || !kinds.length) {
@@ -134,7 +141,7 @@ export default function Imports() {
               <p className="text-sm text-ink-500">{t('imports.matchBody')}</p>
             </div>
             <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-              {kind === 'opening_balances' && <TextField label={t('imports.asOf')} type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />}
+              {dated && <TextField label={t('imports.asOf')} type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />}
               {fields.map((f) => (
                 <SelectField
                   key={f.key}
@@ -199,10 +206,13 @@ export default function Imports() {
               {problems.length ? <AlertTriangle className="size-4" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}
               {result.saved ? t('imports.saved', { count: result.rows }) : problems.length ? t('imports.someWrong', { bad: problems.length, count: result.rows }) : t('imports.allRight', { count: result.rows })}
             </p>
-            {result.summary && (
+            {result.summary && 'debit' in result.summary && (
               <p className="mt-2 text-sm text-ink-600 dark:text-ink-300">
                 {t('imports.openingTotals', { debit: money.format(result.summary.debit), credit: money.format(result.summary.credit) })} {result.summary.difference !== 0 && t('imports.openingDifference', { amount: money.format(Math.abs(result.summary.difference)) })}
               </p>
+            )}
+            {result.summary && 'count' in result.summary && (
+              <p className="mt-2 text-sm text-ink-600 dark:text-ink-300">{t(`imports.owedTotal.${kind}`, { count: result.summary.count, amount: money.format(result.summary.total) })}</p>
             )}
             {result.saved && result.journalEntry && (
               <Link to={`/journals/${result.journalEntry.id}`} className="mt-2 inline-block text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">

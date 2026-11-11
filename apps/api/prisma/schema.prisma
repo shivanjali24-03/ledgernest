@@ -912,6 +912,8 @@ model Invoice {
   exportDetails       Json?     @map("export_details")
   /// The buyer pays the GST under reverse charge (CGST Act s.9(3)): none is charged here
   reverseCharge       Boolean   @default(false) @map("reverse_charge")
+  /// Owed from before the books started here (brought in on import): no sales, GST or income, just the receivable
+  opening             Boolean   @default(false)
   total               BigInt    @default(0)
   amountPaid          BigInt    @default(0) @map("amount_paid")
   journalEntryId      String?   @map("journal_entry_id") @db.Uuid
@@ -1096,6 +1098,8 @@ model Bill {
   selfInvoiceNumber String?   @map("self_invoice_number")
   /// Goods imported: the bill of entry customs assessed { number, date, portCode }; its taxed lines are the assessable value (IGST on it goes to customs, the value to the supplier), its untaxed lines the duties
   billOfEntry       Json?     @map("bill_of_entry")
+  /// Owed from before the books started here (brought in on import): no purchases or GST, just the payable
+  opening           Boolean   @default(false)
   /// The purchase order it was made from
   purchaseOrderId   String?   @map("purchase_order_id") @db.Uuid
   /// Goods received on the order that recording this bill cleared from "goods received, not yet billed":

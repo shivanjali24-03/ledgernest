@@ -283,6 +283,8 @@ export class GstReturnsService {
         where: {
           organizationId,
           status: { in: ['issued', 'void'] },
+          // Owed from before the books started here: filed in the returns of the time
+          opening: false,
           issueDate: { gte: asDate(from), lte: asDate(to) },
         },
         orderBy: [{ issueDate: 'asc' }, { number: 'asc' }],
@@ -309,7 +311,11 @@ export class GstReturnsService {
         },
       }),
       this.prisma.creditNote.findMany({
-        where: { organizationId, date: { gte: asDate(from), lte: asDate(to) } },
+        where: {
+          organizationId,
+          date: { gte: asDate(from), lte: asDate(to) },
+          invoice: { opening: false },
+        },
         orderBy: [{ date: 'asc' }, { number: 'asc' }],
         select: {
           id: true,
@@ -936,6 +942,7 @@ export class GstReturnsService {
       where: {
         organizationId,
         status: { in: ['open', 'void'] },
+        opening: false,
         billDate: { gte: asDate(from), lte: asDate(to) },
       },
       orderBy: [{ billDate: 'asc' }, { number: 'asc' }],
@@ -1115,6 +1122,7 @@ export class GstReturnsService {
         where: {
           organizationId,
           status: 'issued',
+          opening: false,
           currency: null,
           issueDate: range,
         },
@@ -1124,6 +1132,7 @@ export class GstReturnsService {
         where: {
           organizationId,
           status: 'issued',
+          opening: false,
           currency: { not: null },
           issueDate: range,
         },
@@ -1198,12 +1207,22 @@ export class GstReturnsService {
     const anything = async (from: string, to: string, bills: boolean) => {
       const range = { gte: asDate(from), lte: asDate(to) };
       const invoices = await this.prisma.invoice.count({
-        where: { organizationId, status: 'issued', issueDate: range },
+        where: {
+          organizationId,
+          status: 'issued',
+          opening: false,
+          issueDate: range,
+        },
       });
       if (invoices || !bills) return invoices > 0;
       return (
         (await this.prisma.bill.count({
-          where: { organizationId, status: 'open', billDate: range },
+          where: {
+            organizationId,
+            status: 'open',
+            opening: false,
+            billDate: range,
+          },
         })) > 0
       );
     };

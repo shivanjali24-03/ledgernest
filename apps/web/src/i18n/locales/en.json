@@ -4096,7 +4096,12 @@
       "expenseAccountCode": "Expense account code",
       "accountCode": "Account code",
       "debit": "Debit",
-      "credit": "Credit"
+      "credit": "Credit",
+      "party": "Customer or vendor",
+      "number": "Invoice or bill number",
+      "date": "Date",
+      "dueDate": "Due date",
+      "amount": "Amount owed"
     },
     "title": "Import",
     "description": "Bring your existing books in from a spreadsheet. Every row is checked before anything is saved.",
@@ -4105,13 +4110,17 @@
       "accounts": "Chart of accounts",
       "contacts": "Contacts",
       "items": "Items",
-      "opening_balances": "Opening balances"
+      "opening_balances": "Opening balances",
+      "opening_invoices": "Unpaid invoices (opening)",
+      "opening_bills": "Unpaid bills (opening)"
     },
     "about": {
       "accounts": "Code, name and type for each account (asset, liability, equity, income or expense), with a sub-type and a parent code if it’s a sub-account.",
       "contacts": "A row per customer or vendor: name, whether they’re a customer, vendor or both, and any GSTIN, email, address and payment terms.",
       "items": "Products and services with their prices, HSN or SAC code and the codes of the accounts they post to.",
-      "opening_balances": "Each account’s balance on the day you start: a debit or a credit per row. They become one draft journal entry to look over and post; any difference goes to Opening balance equity."
+      "opening_balances": "Each account’s balance on the day you start: a debit or a credit per row. They become one draft journal entry to look over and post; any difference goes to Opening balance equity.",
+      "opening_invoices": "What each customer owed on the day you start, invoice by invoice (Tally’s bill-wise outstanding works): customer, invoice number, date, due date and the amount still owed. Each becomes an invoice that ages, gets reminders, earns interest and takes payments, but isn’t a sale here: no income or GST. Leave the debtors account out of the opening balances if you do this.",
+      "opening_bills": "What you owed each vendor on the day you start, bill by bill: vendor, their bill number, date, due date and the amount still owed. Each becomes a bill (OB/…) to pay as usual, with no purchase or GST here. Leave the creditors account out of the opening balances if you do this."
     },
     "chooseFile": "Choose a CSV or Excel file",
     "template": "Download a template",
@@ -4164,6 +4173,17 @@
       "done": "Imported from Tally.",
       "finished": "Imported from Tally.",
       "review": "Review the opening balances"
+    },
+    "owedTotal": {
+      "opening_invoices": "{{count}} invoices, {{amount}} owed to you",
+      "opening_bills": "{{count}} bills, {{amount}} you owe"
+    },
+    "openingPill": "Opening balance",
+    "errors": {
+      "demo_opening": "The demo checks the file but doesn’t keep opening invoices or bills. Your own books will.",
+      "no_period": "There’s no financial year for the day the books start. Add it under Financial years.",
+      "no_receivable_account": "There’s no receivable account. Add one to the chart of accounts.",
+      "no_payable_account": "There’s no payable account. Add one to the chart of accounts."
     }
   },
   "integrations": {

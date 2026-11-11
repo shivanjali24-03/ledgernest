@@ -67,6 +67,8 @@ export interface Invoice {
   pricesIncludeTax?: boolean;
   /** The buyer pays the GST under reverse charge, and how much */
   reverseCharge?: boolean;
+  /** Owed from before the books started here (imported): not a sale of this period */
+  opening?: boolean;
   reverseChargeTax?: { name: string; amount: number }[];
   /** An ordinary supply, an export or SEZ supply, or a deemed export; and an export's shipping bill */
   supplyKind?: SupplyKind;

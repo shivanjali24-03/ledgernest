@@ -647,6 +647,7 @@ export default function BillEditor() {
           actions={
             bill ? (
               <>
+                {bill.opening && <Pill tone="neutral">{t('imports.openingPill')}</Pill>}
                 <Pill tone={bill.status === 'open' ? 'brand' : 'neutral'}>
                   <span className={stateTone(bill.state)}>{t(`bills.states.${bill.state}`)}</span>
                 </Pill>

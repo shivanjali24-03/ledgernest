@@ -145,6 +145,7 @@ const select = {
   supplyKind: true,
   exportDetails: true,
   reverseCharge: true,
+  opening: true,
   total: true,
   amountPaid: true,
   issuedAt: true,
@@ -378,6 +379,8 @@ export class InvoicesService {
       exportDetails: (i.exportDetails as ExportDetails | null) ?? null,
       /** The buyer pays the GST under reverse charge, and how much it is */
       reverseCharge: i.reverseCharge,
+      /** Owed from before the books started here (imported): not a sale or purchase of this period */
+      opening: i.opening,
       reverseChargeTax: [...rcmBreakdown].map(([name, value]) => ({
         name,
         amount: value,

@@ -70,6 +70,22 @@ describe('imports', () => {
   }, 40_000);
 });
 
+describe('opening invoices', () => {
+  it('reads a bill-wise outstanding report, checks the customers, dates and amounts, and says what’s owed', async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('radio', { name: 'Unpaid invoices (opening)' }, { timeout: 4000 }));
+    const csv = "Date,Ref. No.,Party's Name,Pending Amount\n15/02/2026,BW/118,Bluewave Clinics,\"1,18,000.00\"\n31/02/2026,X-1,Nobody & Co,100\n";
+    await userEvent.upload(screen.getByTestId('import-file'), new File([csv], 'outstanding.csv', { type: 'text/csv' }));
+    expect(await screen.findByText('outstanding.csv: 2 rows', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByLabelText('Balances as of')).toBeInTheDocument();
+    expect(screen.getByLabelText('Customer or vendor *')).toHaveDisplayValue("Party's Name");
+    expect(screen.getByLabelText('Amount owed *')).toHaveDisplayValue('Pending Amount');
+    await userEvent.click(screen.getByRole('button', { name: 'Check 2 rows' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 of 2 rows need fixing'), { timeout: 4000 });
+    expect(screen.getByText(/There’s no customer called “Nobody & Co”/)).toBeInTheDocument();
+  }, 40_000);
+});
+
 describe('moving from Tally', () => {
   const GSTIN = `27AAKCK4821R1Z${gstinCheckChar('27AAKCK4821R1Z')}`;
   const XML = `<ENVELOPE><BODY><IMPORTDATA><REQUESTDATA>

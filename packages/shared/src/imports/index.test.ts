@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { guessImportMapping, importAccountType, importContactKind, importSubtype, mapImportRows } from './index.js';
+import { guessImportMapping, parseImportDate, importAccountType, importContactKind, importSubtype, mapImportRows } from './index.js';
 
 describe('imports', () => {
   it('guesses the columns from the headers, each used once', () => {
@@ -17,5 +17,20 @@ describe('imports', () => {
     expect(importContactKind('Supplier')).toEqual({ isCustomer: false, isVendor: true });
     expect(importContactKind('')).toEqual({ isCustomer: true, isVendor: false });
     expect(importContactKind('friend')).toBeNull();
+  });
+});
+
+describe('parseImportDate', () => {
+  it('reads the dates spreadsheets write in India, and refuses ones that don’t exist', () => {
+    expect(parseImportDate('2026-03-31')).toBe('2026-03-31');
+    expect(parseImportDate('31/03/2026')).toBe('2026-03-31');
+    expect(parseImportDate('5-4-26')).toBe('2026-04-05');
+    expect(parseImportDate('29.02.2028')).toBe('2028-02-29');
+    expect(parseImportDate('31/02/2026')).toBeNull();
+    expect(parseImportDate('March 31')).toBeNull();
+  });
+
+  it('guesses the columns of a Tally bill-wise outstanding report', () => {
+    expect(guessImportMapping(['Date', 'Ref. No.', "Party's Name", 'Pending Amount', 'Due on'], 'opening_invoices')).toEqual({ party: 2, number: 1, date: 0, dueDate: 4, amount: 3 });
   });
 });

@@ -1,4 +1,9 @@
-import { ForbiddenException, HttpException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  Injectable,
+} from '@nestjs/common';
 import {
   contactCreateSchema,
   currencyDigits,
@@ -7,7 +12,10 @@ import {
   importAccountType,
   importContactKind,
   importSubtype,
+  interestTermsFor,
   itemCreateSchema,
+  parseImportDate,
+  type InterestMethod,
   todayIn,
   toMinor,
   type ImportKind,
@@ -24,6 +32,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
+const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
 type Tx = Prisma.TransactionClient;
 type Row = Record<string, string>;
 export type RowResult = {
@@ -117,6 +126,8 @@ export class ImportsService {
     for (const r of results) r.ok = !r.errors.length;
     if (kind === 'opening_balances')
       return this.openings(rows, results, ctx, opts);
+    if (kind === 'opening_invoices' || kind === 'opening_bills')
+      return this.openDocuments(kind, rows, results, ctx, opts);
 
     let saved = false;
     try {
@@ -460,6 +471,335 @@ export class ImportsService {
       results,
       summary,
       journalEntry: entry && { id: entry.id },
+    };
+  }
+
+  /**
+   * What customers owed (or was owed to vendors) when the books started here, invoice by invoice: each comes in as
+   * an issued invoice (or recorded bill) dated as it was, due as it was, so aging, statements, reminders, interest
+   * and payments work on it, posted on the day the books start against opening balance equity. Nothing of it is a
+   * sale or purchase here: no income, GST or returns. Invoices keep their own numbers; bills are numbered OB/...
+   * with the vendor's number as their reference.
+   */
+  private async openDocuments(
+    kind: 'opening_invoices' | 'opening_bills',
+    rows: Row[],
+    results: RowResult[],
+    ctx: Ctx,
+    opts: { commit: boolean; date?: string },
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    const sales = kind === 'opening_invoices';
+    const org = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: {
+        baseCurrency: true,
+        timeZone: true,
+        locale: true,
+        interestRateBp: true,
+        interestMethod: true,
+        interestGraceDays: true,
+      },
+    });
+    const digits = currencyDigits(org.baseCurrency);
+    const asOf = opts.date ?? todayIn(org.timeZone);
+    const year = await this.prisma.fiscalYear.findFirst({
+      where: {
+        organizationId,
+        startDate: { lte: asDate(asOf) },
+        endDate: { gte: asDate(asOf) },
+      },
+      select: { id: true, name: true },
+    });
+    if (!year)
+      throw new ConflictException({
+        message: `There is no financial year for ${asOf}, the day the books start. Add it under Financial years.`,
+        details: { reason: 'no_period' },
+      });
+    const contacts = new Map(
+      (
+        await this.prisma.contact.findMany({
+          where: {
+            organizationId,
+            archivedAt: null,
+            ...(sales ? { isCustomer: true } : { isVendor: true }),
+          },
+          select: {
+            id: true,
+            name: true,
+            currency: true,
+            paymentTermsDays: true,
+            interestRateBp: true,
+          },
+        })
+      ).map((c) => [c.name.trim().toLowerCase(), c]),
+    );
+    // Numbers already used: an invoice's in this financial year; a vendor's bill number once per vendor
+    const taken = new Set(
+      sales
+        ? (
+            await this.prisma.invoice.findMany({
+              where: {
+                organizationId,
+                fiscalYearId: year.id,
+                fullNumber: { not: null },
+              },
+              select: { fullNumber: true },
+            })
+          ).map((i) => i.fullNumber!.toUpperCase())
+        : (
+            await this.prisma.bill.findMany({
+              where: { organizationId, opening: true },
+              select: { contactId: true, vendorReference: true },
+            })
+          ).map(
+            (b) => `${b.contactId}|${(b.vendorReference ?? '').toUpperCase()}`,
+          ),
+    );
+    const ready: {
+      contact: { id: string; name: string; interestRateBp: number | null };
+      number: string;
+      date: string;
+      dueDate: string;
+      amount: number;
+    }[] = [];
+    for (const [n, r] of rows.entries()) {
+      const res = results[n]!;
+      if (!res.ok) continue;
+      const fail = (message: string, field: string) => (
+        (res.ok = false),
+        res.errors.push({ field, message })
+      );
+      const c = contacts.get(r.party!.trim().toLowerCase());
+      const number = r.number!.trim();
+      const date = parseImportDate(r.date!);
+      const due = r.dueDate?.trim() ? parseImportDate(r.dueDate) : null;
+      const amount = toMinor(r.amount!.replace(/,/g, '').trim(), digits);
+      if (!c)
+        fail(
+          `There’s no ${sales ? 'customer' : 'vendor'} called “${r.party!.trim()}”. Import the contacts first.`,
+          'party',
+        );
+      else if (c.currency)
+        fail(
+          `${c.name} deals in ${c.currency}: bring foreign-currency balances in by hand.`,
+          'party',
+        );
+      if (number.length > 40)
+        fail('Keep the number to 40 characters.', 'number');
+      const key = sales
+        ? number.toUpperCase()
+        : `${c?.id ?? ''}|${number.toUpperCase()}`;
+      if (c && taken.has(key))
+        fail(
+          sales
+            ? `Invoice ${number} is already in the books.`
+            : `${c.name}’s bill ${number} is already in the books.`,
+          'number',
+        );
+      if (!date) fail(`“${r.date}” isn’t a date.`, 'date');
+      else if (date > asOf)
+        fail(`It’s dated after ${asOf}, the day the books start.`, 'date');
+      if (r.dueDate?.trim() && !due)
+        fail(`“${r.dueDate}” isn’t a date.`, 'dueDate');
+      else if (due && date && due < date)
+        fail('It can’t be due before its date.', 'dueDate');
+      if (!amount || amount <= 0)
+        fail(`“${r.amount}” isn’t an amount owed.`, 'amount');
+      if (res.ok && c && date && amount) {
+        taken.add(key);
+        const d = new Date(`${date}T00:00:00Z`);
+        d.setUTCDate(d.getUTCDate() + c.paymentTermsDays);
+        ready.push({
+          contact: c,
+          number,
+          date,
+          dueDate: due ?? d.toISOString().slice(0, 10),
+          amount,
+        });
+        res.label = `${c.name} · ${number}`;
+      }
+    }
+    const summary = {
+      count: ready.length,
+      total: ready.reduce((t, x) => t + x.amount, 0),
+    };
+    let saved = false;
+    if (opts.commit && results.every((r) => r.ok) && ready.length) {
+      await this.prisma.$transaction(async (tx) => {
+        await AccountsService.createSystemAccounts(
+          tx,
+          organizationId,
+          org.locale,
+        );
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${(sales ? 'invoices:' : 'bills:') + organizationId}))`;
+        const equity = await tx.account.findFirstOrThrow({
+          where: { organizationId, systemKey: 'opening_balance_equity' },
+          select: { id: true },
+        });
+        const control = await tx.account.findFirst({
+          where: {
+            organizationId,
+            archivedAt: null,
+            currency: null,
+            ...(sales
+              ? { type: 'asset', subtype: 'accounts_receivable' }
+              : { type: 'liability', subtype: 'accounts_payable' }),
+          },
+          orderBy: { code: 'asc' },
+          select: { id: true },
+        });
+        if (!control)
+          throw new ConflictException({
+            message: `There is no ${sales ? 'receivable' : 'payable'} account. Add one to the chart of accounts.`,
+            details: {
+              reason: sales ? 'no_receivable_account' : 'no_payable_account',
+            },
+          });
+        // Below zero, so they never take a number from the series
+        const lowest = sales
+          ? (
+              await tx.invoice.aggregate({
+                where: { organizationId, fiscalYearId: year.id, opening: true },
+                _min: { number: true },
+              })
+            )._min.number
+          : (
+              await tx.bill.aggregate({
+                where: { organizationId, fiscalYearId: year.id, opening: true },
+                _min: { number: true },
+              })
+            )._min.number;
+        let next = Math.min(lowest ?? 0, 0) - 1;
+        for (const d of ready) {
+          const description = `Opening balance: ${sales ? 'invoice' : 'bill'} ${d.number} of ${d.date}`;
+          const entry = await this.journals.postEntryInTx(
+            tx,
+            organizationId,
+            {
+              date: asOf,
+              memo: `${description} · ${d.contact.name}`,
+              reference: d.number.slice(0, 64),
+              lines: sales
+                ? [
+                    {
+                      accountId: control.id,
+                      description,
+                      debit: d.amount,
+                      credit: 0,
+                    },
+                    {
+                      accountId: equity.id,
+                      description,
+                      debit: 0,
+                      credit: d.amount,
+                    },
+                  ]
+                : [
+                    {
+                      accountId: equity.id,
+                      description,
+                      debit: d.amount,
+                      credit: 0,
+                    },
+                    {
+                      accountId: control.id,
+                      description,
+                      debit: 0,
+                      credit: d.amount,
+                    },
+                  ],
+            },
+            ctx.actor.userId,
+          );
+          const line = {
+            organizationId,
+            lineNo: 1,
+            description,
+            quantity: '1',
+            unitPrice: BigInt(d.amount),
+            amount: BigInt(d.amount),
+            accountId: equity.id,
+          };
+          if (sales) {
+            const terms = interestTermsFor(
+              {
+                rateBp: org.interestRateBp,
+                method: org.interestMethod as InterestMethod,
+                graceDays: org.interestGraceDays,
+              },
+              { rateBp: d.contact.interestRateBp },
+            );
+            const inv = await tx.invoice.create({
+              data: {
+                organizationId,
+                contactId: d.contact.id,
+                status: 'issued',
+                opening: true,
+                number: next--,
+                fullNumber: d.number,
+                fiscalYearId: year.id,
+                issueDate: asDate(d.date),
+                dueDate: asDate(d.dueDate),
+                receivableAccountId: control.id,
+                subtotal: BigInt(d.amount),
+                total: BigInt(d.amount),
+                journalEntryId: entry.id,
+                issuedAt: new Date(),
+                interestRateBp: terms?.rateBp ?? 0,
+                interestMethod: terms?.method ?? null,
+                interestGraceDays: terms?.graceDays ?? null,
+              },
+              select: { id: true },
+            });
+            await tx.invoiceLine.create({
+              data: { ...line, invoiceId: inv.id },
+            });
+          } else {
+            const bill = await tx.bill.create({
+              data: {
+                organizationId,
+                contactId: d.contact.id,
+                status: 'open',
+                opening: true,
+                number: next--,
+                fiscalYearId: year.id,
+                vendorReference: d.number,
+                billDate: asDate(d.date),
+                dueDate: asDate(d.dueDate),
+                payableAccountId: control.id,
+                subtotal: BigInt(d.amount),
+                total: BigInt(d.amount),
+                journalEntryId: entry.id,
+                recordedAt: new Date(),
+              },
+              select: { id: true },
+            });
+            await tx.billLine.create({ data: { ...line, billId: bill.id } });
+          }
+        }
+        await this.audit.record(
+          {
+            action: `org.import.${kind}`,
+            actorId: ctx.actor.userId,
+            organizationId,
+            entityType: 'import',
+            entityId: kind,
+            after: { rows: ready.length, total: summary.total, asOf },
+            req: ctx.req,
+          },
+          tx,
+        );
+      });
+      saved = true;
+    }
+    return {
+      kind,
+      saved,
+      rows: results.length,
+      valid: results.filter((r) => r.ok).length,
+      results,
+      summary,
     };
   }
 }
