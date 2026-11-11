@@ -19,7 +19,7 @@ export default function TwoFactorGate({ organization }: { organization: string |
         <ShieldCheck className="size-6" aria-hidden />
       </div>
       <h1 className="mt-4 text-xl font-semibold">{t('twoFactor.gate.title')}</h1>
-      <p className="mt-2 text-sm text-ink-500">{t('twoFactor.gate.body', { organization: organization ?? '' })}</p>
+      <p className="mt-2 text-sm text-ink-500">{t('twoFactor.gate.body', { organization: organization ?? 'LedgerNest' })}</p>
       <div className="mt-6 flex justify-center gap-2">
         <Button onClick={() => setOpen(true)} disabled={!client}>
           {t('twoFactor.setUp')}

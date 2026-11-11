@@ -1,3 +1,4 @@
+import { platformTwoFactorRequired } from '../access/platform-2fa.js';
 import { randomUUID } from 'node:crypto';
 import { ForbiddenException, HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -190,6 +191,8 @@ export class AuthService {
     return {
       user: { id: user.id, email: user.email, name: user.name, locale: user.locale, isSuperAdmin: user.isSuperAdmin, twoFactorEnabled: !!user.totpEnabledAt },
       platformPermissions: user.isSuperAdmin ? ALL_PERMISSIONS.filter((p) => p.startsWith('platform.')) : [],
+      /** A Super Admin without two-factor sign-in must set it up first */
+      platformTwoFactorRequired: user.isSuperAdmin && platformTwoFactorRequired() && !user.totpEnabledAt,
       organizations,
     };
   }

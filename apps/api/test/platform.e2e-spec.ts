@@ -301,4 +301,25 @@ describe('Super Admin console and invitations (e2e)', () => {
       await as('regular').get('/platform/stats').expect(403);
     });
   });
+
+  describe('two-factor sign-in for Super Admins', () => {
+    afterEach(() => {
+      delete process.env.PLATFORM_REQUIRE_2FA;
+    });
+
+    it('when required, keeps the console and support access closed until two-factor is on', async () => {
+      const created = await createOrg({ name: `Support ${run}`, owner: { email: users.existingOwner!.email } });
+      expect(created.status).toBe(201);
+      const org = created.body.organization.id as string;
+      process.env.PLATFORM_REQUIRE_2FA = 'true';
+      const denied = await as('super').get('/platform/stats').expect(403);
+      expect(denied.body.details).toMatchObject({ reason: 'two_factor_required' });
+      expect((await as('super').get('/auth/me').expect(200)).body.platformTwoFactorRequired).toBe(true);
+      expect((await as('super').get('/accounts').set('X-Organization-Id', org).expect(403)).body.details).toMatchObject({ reason: 'two_factor_required' });
+      await prisma.user.update({ where: { id: users.super!.id }, data: { totpEnabledAt: new Date() } });
+      await as('super').get('/platform/stats').expect(200);
+      expect((await as('super').get('/auth/me').expect(200)).body.platformTwoFactorRequired).toBe(false);
+      await prisma.user.update({ where: { id: users.super!.id }, data: { totpEnabledAt: null } });
+    });
+  });
 });

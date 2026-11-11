@@ -17,7 +17,7 @@ import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { checkWebhookUrl } from './webhook-url.js';
+import { checkWebhookUrl, postWebhook } from './webhook-url.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Input = z.output<typeof webhookSchema>;
@@ -200,11 +200,9 @@ export class WebhooksService
     else {
       const body = JSON.stringify(d.payload);
       try {
-        const res = await fetch(checkWebhookUrl(d.endpoint.url), {
-          method: 'POST',
-          redirect: 'manual',
-          signal: AbortSignal.timeout(10_000),
-          headers: {
+        status = await postWebhook(
+          checkWebhookUrl(d.endpoint.url),
+          {
             'Content-Type': 'application/json',
             'User-Agent': 'LedgerNest-Webhooks/1',
             'X-LedgerNest-Event': d.event,
@@ -216,10 +214,9 @@ export class WebhooksService
             ),
           },
           body,
-        });
-        status = res.status;
-        if (!res.ok) error = `The endpoint answered ${res.status}.`;
-        await res.body?.cancel();
+        );
+        if (status < 200 || status >= 300)
+          error = `The endpoint answered ${status}.`;
       } catch (e) {
         error = errorText(e);
       }

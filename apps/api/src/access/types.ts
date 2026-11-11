@@ -6,6 +6,8 @@ export interface Actor {
   userId: string;
   email: string;
   isSuperAdmin: boolean;
+  /** Two-factor sign-in is on for this person */
+  twoFactor?: boolean;
   /** Set when the call comes with an API key: it acts for the person who made it, in its organisation, within its scopes */
   apiKey?: {
     id: string;

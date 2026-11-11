@@ -1,3 +1,4 @@
+import { platformTwoFactorRequired } from './platform-2fa.js';
 import { Injectable } from '@nestjs/common';
 import { ORGANIZATION_PERMISSIONS, isBuiltInRole } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -79,6 +80,10 @@ export class AccessService {
         role: { type: 'support' },
         permissions: new Set(ORGANIZATION_PERMISSIONS),
         supportAccess: true,
+        // Support access into any organisation: two-factor sign-in when the platform requires it, or the organisation does
+        twoFactorMissing:
+          (platformTwoFactorRequired() || org.requireTwoFactor) &&
+          !actor.twoFactor,
       };
     return null;
   }
