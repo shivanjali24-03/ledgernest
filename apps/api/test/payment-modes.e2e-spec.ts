@@ -235,4 +235,28 @@ describe('Payment modes (e2e)', () => {
       ['40A(3)', '2026-06-20', 11_000_00, 2],
     ]);
   });
+
+  it('lets a goods transporter be paid up to ₹35,000 in cash a day (s.40A(3A))', async () => {
+    const truck = (
+      await contact({
+        name: 'Sai Goods Carriers',
+        isCustomer: false,
+        goodsTransporter: true,
+      }).expect(201)
+    ).body as { id: string; goodsTransporter: boolean };
+    expect(truck.goodsTransporter).toBe(true);
+    const pay = (amount: number) =>
+      post('/payments/payments', {
+        contactId: truck.id,
+        date: '2026-06-25',
+        bankAccountId: cash,
+        amount,
+      });
+    await pay(30_000_00).expect(201);
+    expect((await pay(6_000_00).expect(409)).body.details).toMatchObject({
+      section: '40A(3)',
+      limit: 35_000_00,
+      total: 36_000_00,
+    });
+  });
 });

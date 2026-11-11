@@ -50,6 +50,7 @@ const select = {
   persons: true,
   shipAddresses: true,
   tdsSection: true,
+  goodsTransporter: true,
   udyamNumber: true,
   interestRateBp: true,
   notes: true,
@@ -85,6 +86,7 @@ type Values = {
   persons?: unknown[];
   shipAddresses?: unknown[];
   tdsSection?: string | null;
+  goodsTransporter?: boolean;
   notes: string | null;
 };
 
@@ -111,6 +113,7 @@ const EDITABLE = [
   'persons',
   'shipAddresses',
   'tdsSection',
+  'goodsTransporter',
   'notes',
 ] as const;
 

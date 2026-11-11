@@ -74,6 +74,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [phone, setPhone] = useState(contact?.phone ?? '');
   const [whatsapp, setWhatsapp] = useState(contact?.whatsapp ?? '');
   const [tdsSection, setTdsSection] = useState<TdsSection | ''>(contact?.tdsSection ?? '');
+  const [transporter, setTransporter] = useState(contact?.goodsTransporter ?? false);
   const [persons, setPersons] = useState<PersonForm[]>((contact?.persons ?? []).map((p) => ({ name: p.name, designation: p.designation ?? '', email: p.email ?? '', phone: p.phone ?? '', whatsapp: p.whatsapp ?? '', primary: p.primary })));
   const [shipAddresses, setShipAddresses] = useState<ShipAddressForm[]>((contact?.shipAddresses ?? []).map((a) => ({ label: a.label, line1: a.line1 ?? '', line2: a.line2 ?? '', city: a.city ?? '', region: a.region ?? '', postalCode: a.postalCode ?? '' })));
   const [billing, setBilling] = useState<Address>(() => toForm(contact?.billingAddress ?? { line1: null, line2: null, city: null, region: null, postalCode: null, country: 'IN' }));
@@ -124,6 +125,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     bankDetails: isVendor ? bankValue(bank) : null,
     whatsapp: whatsapp || null,
     tdsSection: isVendor && tdsSection ? tdsSection : null,
+    goodsTransporter: isVendor && transporter,
     persons: persons.map((p) => ({ name: p.name, designation: p.designation || null, email: p.email || null, phone: p.phone || null, whatsapp: p.whatsapp || null, primary: p.primary })),
     shipAddresses: shipAddresses.map((a) => ({ label: a.label, line1: a.line1 || null, line2: a.line2 || null, city: a.city || null, region: a.region || null, postalCode: a.postalCode || null, country: 'IN' })),
     notes,
@@ -230,6 +232,13 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
               <SelectField label={t('contacts.fields.msme')} value={msme} onChange={(e) => setMsme(e.target.value as MsmeCategory | '')} hint={t('contacts.hints.msme')} options={[{ value: '', label: t('contacts.msme.none') }, ...MSME_CATEGORIES.map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
               <TextField label={t('contacts.fields.udyam')} value={udyam} onChange={(e) => setUdyam(e.target.value)} error={errors.udyamNumber} placeholder="UDYAM-MH-26-0012345" dir="ltr" className="font-mono uppercase" />
               <BankDetailsFields value={bank} onChange={setBank} errors={{ accountName: errors['bankDetails.accountName'], accountNumber: errors['bankDetails.accountNumber'], ifsc: errors['bankDetails.ifsc'] }} />
+              <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                <input type="checkbox" checked={transporter} onChange={(e) => setTransporter(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+                <span>
+                  <span className="font-medium">{t('contacts.fields.goodsTransporter')}</span>
+                  <span className="block text-xs text-ink-500">{t('contacts.hints.goodsTransporter')}</span>
+                </span>
+              </label>
             </>
           )}
         </div>

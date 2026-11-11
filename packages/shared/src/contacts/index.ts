@@ -164,6 +164,8 @@ const fields = {
   shipAddresses: z.array(shipAddressSchema).max(20, 'Keep it to 20 addresses.').optional().default([]),
   /** The TDS section their payments usually fall under (vendors) */
   tdsSection: z.enum(TDS_SECTION_CODES).nullable().optional().default(null),
+  /** Plies, hires or leases goods carriages (vendors): cash paid to them may go to ₹35,000 a day, not ₹10,000 */
+  goodsTransporter: z.boolean().optional().default(false),
   notes: text(1000),
 };
 
@@ -232,6 +234,7 @@ export const contactUpdateSchema = z
     persons: z.array(contactPersonSchema).max(10, 'Keep it to 10 people.'),
     shipAddresses: z.array(shipAddressSchema).max(20, 'Keep it to 20 addresses.'),
     tdsSection: z.enum(TDS_SECTION_CODES).nullable(),
+    goodsTransporter: z.boolean(),
     notes: z
       .string()
       .trim()

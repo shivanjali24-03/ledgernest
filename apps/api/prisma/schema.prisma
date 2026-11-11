@@ -752,6 +752,8 @@ model Contact {
   shipAddresses    Json      @default("[]") @map("ship_addresses")
   /// The TDS section their payments usually fall under
   tdsSection       String?   @map("tds_section")
+  /// Plies, hires or leases goods carriages: cash paid to them may go to ₹35,000 a day (Income-tax s.40A(3A))
+  goodsTransporter Boolean   @default(false) @map("goods_transporter")
   udyamNumber      String?   @map("udyam_number")
   /// Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none
   interestRateBp   Int?      @map("interest_rate_bp")
