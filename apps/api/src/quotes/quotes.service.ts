@@ -29,6 +29,7 @@ import { WebhooksService } from '../integrations/webhooks.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { InvoicesService, type DraftIn } from '../invoices/invoices.service.js';
 import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationReplyTo } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -614,6 +615,7 @@ export class QuotesService {
       );
     const { org, pdf, currency } = await this.pdf(organizationId, q);
     const sent = await this.mail.send({
+      replyTo: await organizationReplyTo(this.prisma, organizationId),
       to: [to],
       subject: `Quote ${q.number} from ${org.name}`,
       text: [

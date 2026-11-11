@@ -27,6 +27,7 @@ import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { organizationReplyTo } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -308,6 +309,7 @@ export class StatementsService {
           .join('\n')
       : 'Nothing moved in these dates.';
     const sent = await this.mail.send({
+      replyTo: await organizationReplyTo(this.prisma, organizationId),
       to: [to],
       subject: `${statementTitle(s.side)} from ${name}, ${s.from} to ${s.to}`,
       text: `Dear ${s.contact.name},\n\n${input.message ? `${input.message}\n\n` : ''}Your ${statementTitle(s.side).toLowerCase()} with ${name} for ${s.from} to ${s.to} is attached.\n\n${balances}\n\n${name}`,
