@@ -116,7 +116,7 @@ export default function Collections() {
           ) : !rows.length ? (
             <EmptyState icon={<CheckCircle2 className="size-5" />} title={t('collections.emptyTitle')} body={t('collections.emptyBody')} />
           ) : (
-            <table className="w-full text-sm">
+            <table className="stack-sm w-full text-sm">
               <caption className="sr-only">{t('collections.title')}</caption>
               <thead className="text-xs uppercase tracking-wide text-ink-400">
                 <tr>
@@ -136,9 +136,9 @@ export default function Collections() {
                       </Link>
                       <span className="block text-xs text-ink-500">{t('collections.invoices', { count: r.count, days: r.oldest })}</span>
                     </th>
-                    <td className="px-4 py-2.5 text-end font-mono font-semibold tabular-nums text-expense" dir="ltr">{money.format(r.overdue)}</td>
+                    <td className="px-4 py-2.5 text-end font-mono font-semibold tabular-nums text-expense" dir="ltr" data-end>{money.format(r.overdue)}</td>
                     {withInterest && (
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums text-ink-600 dark:text-ink-300" dir="ltr">
+                      <td className="px-4 py-2.5 text-end font-mono tabular-nums text-ink-600 max-sm:text-xs dark:text-ink-300" dir="ltr" data-end data-label={t('collections.cols.interest')}>
                         {r.a.interest ? money.format(r.a.interest) : '–'}
                       </td>
                     )}
@@ -146,17 +146,17 @@ export default function Collections() {
                       {r.contact?.lastChasedAt ? t('collections.chasedAgo', { when: formatRelative(r.contact.lastChasedAt, locale) }) : t('collections.notChased')}
                       {!!r.contact?.share?.views && <span className="block">{t('collections.opened', { count: r.contact.share.views })}</span>}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-2.5 max-sm:pt-2" data-full>
                       {canChase && (
-                        <span className="flex justify-end gap-2">
-                          <Button variant="secondary" size="sm" icon={<MessageCircle className="size-4 text-[#1fa855]" />} loading={whatsapp.isPending && whatsapp.variables?.a.contact.id === r.a.contact.id} onClick={() => whatsapp.mutate(r)} aria-label={t('collections.whatsapp', { name: r.a.contact.name })}>
-                            WhatsApp
-                          </Button>
+                        <span className="flex justify-end gap-2 max-sm:justify-start">
                           {r.contact?.email && (
                             <Button variant="ghost" size="sm" icon={<Mail className="size-4" />} loading={email.isPending && email.variables === r.a.contact.id} onClick={() => email.mutate(r.a.contact.id)} aria-label={t('collections.email', { name: r.a.contact.name })}>
                               {t('collections.emailShort')}
                             </Button>
                           )}
+                          <Button variant="secondary" size="sm" icon={<MessageCircle className="size-4 text-[#1fa855]" />} loading={whatsapp.isPending && whatsapp.variables?.a.contact.id === r.a.contact.id} onClick={() => whatsapp.mutate(r)} aria-label={t('collections.whatsapp', { name: r.a.contact.name })}>
+                            WhatsApp
+                          </Button>
                         </span>
                       )}
                     </td>

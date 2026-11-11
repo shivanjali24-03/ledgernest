@@ -97,7 +97,7 @@ export default function Inventory() {
             />
           ) : (
             <div className="relative overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="stack-sm w-full text-sm">
                 <caption className="sr-only">{t('inventory.valuation')}</caption>
                 <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>
@@ -134,14 +134,14 @@ export default function Inventory() {
                           </span>
                         )}
                       </th>
-                      <td className={clsx(num, r.quantity.startsWith('-') && 'text-expense')} dir="ltr">
+                      <td className={clsx(num, r.quantity.startsWith('-') && 'text-expense')} dir="ltr" data-end data-label={t('inventory.columns.onHand')}>
                         {r.quantity}
                         {r.unit && <span className="ms-1 text-xs text-ink-500">{r.unit}</span>}
                       </td>
-                      <td className={num} dir="ltr">
+                      <td className={clsx(num, 'max-sm:text-xs')} dir="ltr" data-end data-label={t('inventory.columns.averageCost')}>
                         {r.averageCost !== null ? money.plain(r.averageCost) : '—'}
                       </td>
-                      <td className={num} dir="ltr">
+                      <td className={clsx(num, 'max-sm:text-xs')} dir="ltr" data-end data-label={t('inventory.columns.value')}>
                         {money.plain(r.value)}
                       </td>
                     </tr>

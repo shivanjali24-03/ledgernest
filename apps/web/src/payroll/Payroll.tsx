@@ -111,7 +111,7 @@ function EmployeesTable({ employees, canManage, onEdit }: { employees: Employee[
   const { t } = useTranslation();
   const money = useMoney();
   return (
-    <table className="w-full min-w-[640px] text-sm" aria-label={t('payroll.tabs.employees', { count: employees.length })}>
+    <table className="stack-sm w-full min-w-[640px] text-sm" aria-label={t('payroll.tabs.employees', { count: employees.length })}>
       <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
         <tr>
           <th className="px-4 py-2.5 text-start font-semibold">{t('payroll.columns.employee')}</th>
@@ -127,14 +127,14 @@ function EmployeesTable({ employees, canManage, onEdit }: { employees: Employee[
               <span className="font-medium" dir="auto">
                 {e.name}
               </span>{' '}
-              <span className="font-mono text-xs text-ink-500">{e.code}</span>
+              <span className="whitespace-nowrap font-mono text-xs text-ink-500">{e.code}</span>
               {e.designation && <span className="block text-xs text-ink-500">{e.designation}</span>}
             </td>
-            <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{e.dateOfJoining}</td>
-            <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+            <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300" data-label={t('payroll.columns.joined')}>{e.dateOfJoining}</td>
+            <td className="px-4 py-2.5 text-end font-mono font-semibold tabular-nums sm:font-normal" dir="ltr" data-end>
               {money.format(e.gross)}
             </td>
-            <td className="px-2 text-end">
+            <td className="px-2 text-end" data-end>
               {canManage && !e.archived && <Button size="sm" variant="ghost" icon={<Pencil className="size-4" />} aria-label={t('payroll.edit', { name: e.name })} onClick={() => onEdit(e)} />}
             </td>
           </tr>
@@ -187,7 +187,7 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
         )}
       </div>
       <div className="relative overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm" aria-label={t('payroll.payslipsOf', { month: monthOf(run.month) })}>
+        <table className="stack-sm w-full min-w-[640px] text-sm" aria-label={t('payroll.payslipsOf', { month: monthOf(run.month) })}>
           <thead className="text-xs uppercase tracking-wide text-ink-400">
             <tr>
               <th className="px-4 py-2 text-start font-semibold">{t('payroll.columns.employee')}</th>
@@ -202,22 +202,22 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
             {run.payslips.map((p) => (
               <tr key={p.id}>
                 <td className="px-4 py-2" dir="auto">
-                  {p.employee.name} <span className="font-mono text-xs text-ink-500">{p.employee.code}</span>
+                  {p.employee.name} <span className="whitespace-nowrap font-mono text-xs text-ink-500">{p.employee.code}</span>
                   <span className="block text-xs text-ink-500">{p.deductions.map((d) => `${t(`payroll.lines.${d.code}`, { defaultValue: d.label })} ${money.plain(d.amount)}`).join(' · ')}</span>
                 </td>
-                <td className="px-4 py-2 text-end font-mono" dir="ltr">
+                <td className="px-4 py-2 text-end font-mono max-sm:text-start" dir="ltr" data-label={t('payroll.columns.days')}>
                   {p.daysPaid}/{p.daysInMonth}
                 </td>
-                <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                <td className="px-4 py-2 text-end font-mono tabular-nums max-sm:text-xs" dir="ltr" data-end data-label={t('payroll.columns.gross')}>
                   {money.plain(p.gross)}
                 </td>
-                <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                <td className="px-4 py-2 text-end font-mono tabular-nums max-sm:text-xs" dir="ltr" data-end data-label={t('payroll.columns.deductions')}>
                   {money.plain(p.totalDeductions)}
                 </td>
-                <td className="px-4 py-2 text-end font-mono font-semibold tabular-nums" dir="ltr">
+                <td className="px-4 py-2 text-end font-mono font-semibold tabular-nums" dir="ltr" data-end data-label={t('payroll.columns.net')}>
                   {money.plain(p.net)}
                 </td>
-                <td className="px-2 text-end">
+                <td className="px-2 text-end" data-end>
                   <Button size="sm" variant="ghost" icon={<FileDown className="size-4" />} aria-label={t('payroll.payslipFor', { name: p.employee.name })} onClick={() => slip.mutate(p.id)} />
                 </td>
               </tr>
