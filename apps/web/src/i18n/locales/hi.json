@@ -4445,23 +4445,40 @@
       "all": "सभी",
       "quote": "कोटेशन",
       "proforma": "प्रोफ़ॉर्मा बीजक",
-      "sales_order": "बिक्री ऑर्डर"
+      "sales_order": "बिक्री ऑर्डर",
+      "delivery_challan": "डिलीवरी चालान"
     },
     "newKind": {
       "quote": "नया कोटेशन",
       "proforma": "नया प्रोफ़ॉर्मा बीजक",
-      "sales_order": "नया बिक्री ऑर्डर"
+      "sales_order": "नया बिक्री ऑर्डर",
+      "delivery_challan": "नया डिलीवरी चालान"
     },
     "newKindTitle": {
       "quote": "नया कोटेशन",
       "proforma": "नया प्रोफ़ॉर्मा बीजक",
-      "sales_order": "नया बिक्री ऑर्डर"
+      "sales_order": "नया बिक्री ऑर्डर",
+      "delivery_challan": "नया डिलीवरी चालान"
     },
     "copyAs": {
       "proforma": "प्रोफ़ॉर्मा बीजक बनाएँ",
-      "sales_order": "बिक्री ऑर्डर बनाएँ"
+      "sales_order": "बिक्री ऑर्डर बनाएँ",
+      "delivery_challan": "डिलीवरी चालान बनाएँ"
     },
-    "copied": "इससे {{number}} का मसौदा बना"
+    "copied": "इससे {{number}} का मसौदा बना",
+    "challan": {
+      "purpose": "माल क्यों जा रहा है",
+      "choosePurpose": "उद्देश्य चुनें",
+      "date": "चालान तारीख",
+      "purposes": {
+        "job_work": "जॉब वर्क के लिए",
+        "approval": "अनुमोदन / बिक्री या वापसी पर",
+        "branch_transfer": "दूसरी शाखा को स्थानांतरण",
+        "exhibition": "प्रदर्शनी के लिए",
+        "unknown_quantity": "मात्रा डिलीवरी पर ही पता",
+        "other": "अन्य आवाजाही, आपूर्ति नहीं"
+      }
+    }
   },
   "emailDialog": {
     "send": "भेजें",

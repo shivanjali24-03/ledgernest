@@ -24,6 +24,8 @@ import {
 import {
   quoteConvertSchema,
   quoteCopySchema,
+  INVOICE_COPIES,
+  type InvoiceCopy,
   quoteDraftSchema,
   quoteEmailSchema,
   quoteListQuerySchema,
@@ -74,9 +76,15 @@ export class QuotesController {
   async pdf(
     @Param('id', new ParseUUIDPipe({ version: '4' })) quoteId: string,
     @CurrentTenant() tenant: Tenant,
+    /** A delivery challan's copy: original, duplicate (transporter) or triplicate */
+    @Query('copy') copy: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const f = await this.quotes.download(tenant.organizationId, quoteId);
+    const f = await this.quotes.download(
+      tenant.organizationId,
+      quoteId,
+      copy && copy in INVOICE_COPIES ? (copy as InvoiceCopy) : undefined,
+    );
     res.setHeader('Cache-Control', 'private, no-store');
     return new StreamableFile(f.data, {
       type: 'application/pdf',

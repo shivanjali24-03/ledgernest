@@ -1,4 +1,4 @@
-import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_TITLES, QUOTE_VALID_DAYS, todayIn, type QuoteKind, type QuoteStatus } from '@ledgernest/shared';
+import { currencyDigits, invoiceAmounts, pdfTableBytes, quoteRows, QUOTE_MOVES, quoteDraftSchema, quoteEmailSchema, quoteEditable, quoteNumber, quoteState, QUOTE_TITLES, QUOTE_VALID_DAYS, todayIn, type QuoteKind, type QuoteStatus, type ChallanPurpose, CHALLAN_PURPOSE_TEXT } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
@@ -13,6 +13,7 @@ type Stored = {
   id: string;
   number: number;
   kind?: QuoteKind;
+  purpose?: ChallanPurpose | null;
   status: QuoteStatus;
   contactId: string;
   quoteDate: string;
@@ -100,6 +101,7 @@ async function view(q: Stored): Promise<Quote> {
   return {
     id: q.id,
     kind: q.kind ?? 'quote',
+    purpose: q.purpose ?? null,
     number: quoteNumber(q.number, q.kind ?? 'quote'),
     status,
     state: quoteState({ status, expiryDate: q.expiryDate }, today()),
@@ -185,7 +187,7 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
     const raw = input as { lines: unknown[] };
     const d = p.data;
     const s = demoPrepareSale({ contactId: d.contactId, issueDate: d.quoteDate, dueDate: d.expiryDate, reference: d.reference, notes: d.notes, placeOfSupply: d.placeOfSupply, lines: raw.lines });
-    return { kind: d.kind, contactId: s.contactId, quoteDate: d.quoteDate, expiryDate: d.expiryDate, currency: s.currency, placeOfSupply: s.placeOfSupply, reference: d.reference, notes: d.notes, lines: s.lines };
+    return { kind: d.kind, purpose: d.kind === 'delivery_challan' ? d.purpose : null, contactId: s.contactId, quoteDate: d.quoteDate, expiryDate: d.expiryDate, currency: s.currency, placeOfSupply: s.placeOfSupply, reference: d.reference, notes: d.notes, lines: s.lines };
   };
   return {
     pdf: (id) =>
@@ -193,7 +195,7 @@ export function createDemoQuotesApi(canManage: () => boolean): QuotesApi {
         const q = await view(find(load(), id));
         const cur = q.currency ?? 'INR';
         const kind = q.kind ?? 'quote';
-        const bytes = pdfTableBytes({ title: `${QUOTE_TITLES[kind]} ${q.number}`, subtitle: `Nest Demo Pvt. Ltd. for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, after: kind === 'proforma' ? ['This is a proforma invoice, not a tax invoice. A tax invoice follows on supply.'] : undefined, footer: `Nest Demo Pvt. Ltd. · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) });
+        const bytes = pdfTableBytes({ title: `${QUOTE_TITLES[kind]} ${q.number}`, subtitle: `Nest Demo Pvt. Ltd. for ${q.contact.name} · ${q.quoteDate}, valid until ${q.expiryDate}`, after: kind === 'proforma' ? ['This is a proforma invoice, not a tax invoice. A tax invoice follows on supply.'] : kind === 'delivery_challan' ? [`Purpose: ${q.purpose ? CHALLAN_PURPOSE_TEXT[q.purpose] : 'Movement of goods'}`, 'Not a tax invoice: goods moved on a delivery challan under rule 55 of the CGST Rules.', '', 'For Nest Demo Pvt. Ltd.', '', '', 'Authorised signatory'] : undefined, footer: `Nest Demo Pvt. Ltd. · ${q.number}`, rows: quoteRows({ ...q, currency: cur }, currencyDigits(cur)) });
         return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `${kind.replace('_', '-')}-${q.number.toLowerCase()}.pdf` };
       }),
     list: (q) =>

@@ -4445,23 +4445,40 @@
       "all": "All",
       "quote": "Quote",
       "proforma": "Proforma invoice",
-      "sales_order": "Sales order"
+      "sales_order": "Sales order",
+      "delivery_challan": "Delivery challan"
     },
     "newKind": {
       "quote": "New quote",
       "proforma": "New proforma invoice",
-      "sales_order": "New sales order"
+      "sales_order": "New sales order",
+      "delivery_challan": "New delivery challan"
     },
     "newKindTitle": {
       "quote": "New quote",
       "proforma": "New proforma invoice",
-      "sales_order": "New sales order"
+      "sales_order": "New sales order",
+      "delivery_challan": "New delivery challan"
     },
     "copyAs": {
       "proforma": "Make a proforma invoice",
-      "sales_order": "Make a sales order"
+      "sales_order": "Make a sales order",
+      "delivery_challan": "Make a delivery challan"
     },
-    "copied": "{{number}} drafted from it"
+    "copied": "{{number}} drafted from it",
+    "challan": {
+      "purpose": "Why the goods are moving",
+      "choosePurpose": "Choose the purpose",
+      "date": "Challan date",
+      "purposes": {
+        "job_work": "Sent for job work",
+        "approval": "On approval / sale or return",
+        "branch_transfer": "Transfer to another branch",
+        "exhibition": "For an exhibition",
+        "unknown_quantity": "Quantity known only on delivery",
+        "other": "Other movement, not a supply"
+      }
+    }
   },
   "emailDialog": {
     "send": "Send",

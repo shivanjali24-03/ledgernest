@@ -4445,23 +4445,40 @@
       "all": "सर्व",
       "quote": "कोटेशन",
       "proforma": "प्रोफॉर्मा बीजक",
-      "sales_order": "विक्री ऑर्डर"
+      "sales_order": "विक्री ऑर्डर",
+      "delivery_challan": "डिलिव्हरी चलन"
     },
     "newKind": {
       "quote": "नवीन कोटेशन",
       "proforma": "नवीन प्रोफॉर्मा बीजक",
-      "sales_order": "नवीन विक्री ऑर्डर"
+      "sales_order": "नवीन विक्री ऑर्डर",
+      "delivery_challan": "नवीन डिलिव्हरी चलन"
     },
     "newKindTitle": {
       "quote": "नवीन कोटेशन",
       "proforma": "नवीन प्रोफॉर्मा बीजक",
-      "sales_order": "नवीन विक्री ऑर्डर"
+      "sales_order": "नवीन विक्री ऑर्डर",
+      "delivery_challan": "नवीन डिलिव्हरी चलन"
     },
     "copyAs": {
       "proforma": "प्रोफॉर्मा बीजक बनवा",
-      "sales_order": "विक्री ऑर्डर बनवा"
+      "sales_order": "विक्री ऑर्डर बनवा",
+      "delivery_challan": "डिलिव्हरी चलन बनवा"
     },
-    "copied": "यावरून {{number}} चा मसुदा तयार"
+    "copied": "यावरून {{number}} चा मसुदा तयार",
+    "challan": {
+      "purpose": "माल का जात आहे",
+      "choosePurpose": "उद्देश निवडा",
+      "date": "चलन तारीख",
+      "purposes": {
+        "job_work": "जॉब वर्कसाठी",
+        "approval": "मंजुरीवर / विक्री किंवा परत",
+        "branch_transfer": "दुसऱ्या शाखेत हस्तांतरण",
+        "exhibition": "प्रदर्शनासाठी",
+        "unknown_quantity": "नग फक्त डिलिव्हरीवर कळतात",
+        "other": "इतर वाहतूक, पुरवठा नाही"
+      }
+    }
   },
   "emailDialog": {
     "send": "पाठवा",
