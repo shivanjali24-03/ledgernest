@@ -48,6 +48,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { InterestService } from '../interest/interest.service.js';
 import { CashForecastService } from './cash-forecast.service.js';
 import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
@@ -106,6 +107,7 @@ export class ReportsController {
     private readonly tally: TallyExportService,
     private readonly tds: TdsReportService,
     private readonly msme: MsmeReportService,
+    private readonly interest: InterestService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -543,6 +545,23 @@ export class ReportsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.tds.report(tenant.organizationId, q.from, q.to, q.side);
+  }
+
+  @Get('interest')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Interest on late payment on a day (default today): each invoice with interest accrued, invoiced, waived and left to charge, and the totals',
+  })
+  async interestReport(
+    @Query(new ZodValidationPipe(z.object({ date: isoDaySchema.optional() })))
+    q: { date?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.interest.report(
+      tenant.organizationId,
+      q.date ?? (await this.today(tenant.organizationId)),
+    );
   }
 
   @Get('msme')

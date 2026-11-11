@@ -99,4 +99,96 @@ export class InterestService {
     }
     return out;
   }
+
+  /**
+   * Interest on late payment across the books on a day: each invoice with interest terms that has accrued any,
+   * with what's been invoiced for it and waived, and what's left to charge; by customer, and in total.
+   */
+  async report(organizationId: string, asOf: string) {
+    const accrued = await this.forInvoices(organizationId, {}, asOf);
+    const ids = [...accrued.keys()];
+    const [invoices, charged, waived] = await Promise.all([
+      this.prisma.invoice.findMany({
+        where: { organizationId, id: { in: ids } },
+        select: {
+          id: true,
+          fullNumber: true,
+          dueDate: true,
+          total: true,
+          amountPaid: true,
+          contact: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.invoice.groupBy({
+        by: ['interestOnInvoiceId'],
+        where: {
+          organizationId,
+          interestOnInvoiceId: { in: ids },
+          status: { not: 'void' },
+          issueDate: { lte: asDate(asOf) },
+        },
+        _sum: { subtotal: true },
+      }),
+      this.prisma.interestWaiver.groupBy({
+        by: ['invoiceId'],
+        where: {
+          organizationId,
+          invoiceId: { in: ids },
+          date: { lte: asDate(asOf) },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+    const chargedOn = new Map(
+      charged.map((c) => [
+        c.interestOnInvoiceId!,
+        Number(c._sum.subtotal ?? 0),
+      ]),
+    );
+    const waivedOn = new Map(
+      waived.map((w) => [w.invoiceId, Number(w._sum.amount ?? 0)]),
+    );
+    const rows = invoices
+      .map((i) => {
+        const a = accrued.get(i.id)!;
+        const c = chargedOn.get(i.id) ?? 0;
+        const w = waivedOn.get(i.id) ?? 0;
+        return {
+          invoiceId: i.id,
+          number: i.fullNumber,
+          contact: i.contact,
+          currency: a.currency,
+          dueDate: iso(i.dueDate),
+          daysLate: a.daysLate,
+          rateBp: a.rateBp,
+          balance: Number(i.total - i.amountPaid),
+          accrued: a.accrued,
+          perDay: a.perDay,
+          charged: c,
+          waived: w,
+          chargeable: Math.max(0, a.accrued - c - w),
+        };
+      })
+      .filter((r) => r.accrued > 0 || r.charged > 0 || r.waived > 0)
+      .sort(
+        (x, y) =>
+          x.contact.name.localeCompare(y.contact.name) ||
+          x.dueDate.localeCompare(y.dueDate),
+      );
+    const sum = (
+      k: 'accrued' | 'charged' | 'waived' | 'chargeable' | 'perDay',
+    ) => rows.filter((r) => !r.currency).reduce((s, r) => s + r[k], 0);
+    return {
+      asOf,
+      rows,
+      /** Base-currency invoices together (foreign-currency ones are listed but not added in) */
+      totals: {
+        accrued: sum('accrued'),
+        charged: sum('charged'),
+        waived: sum('waived'),
+        chargeable: sum('chargeable'),
+        perDay: sum('perDay'),
+      },
+    };
+  }
 }

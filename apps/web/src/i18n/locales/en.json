@@ -1961,6 +1961,27 @@
       "daysLate_other": "{{count}} days late",
       "daysLeft_one": "1 day left",
       "daysLeft_other": "{{count}} days left"
+    },
+    "interest": {
+      "title": "Interest",
+      "hint": "Interest on late payment on each invoice, under its own terms: accrued to the day, invoiced, waived and left to charge.",
+      "emptyTitle": "No interest on late payment",
+      "emptyBody": "Set an interest rate in Settings, and invoices issued after carry it.",
+      "setTerms": "Set interest terms",
+      "totals": {
+        "accrued": "Accrued",
+        "charged": "Invoiced",
+        "waived": "Waived",
+        "chargeable": "Left to charge"
+      },
+      "perDay": "Growing by {{amount}} a day on what's still unpaid.",
+      "cols": {
+        "customer": "Customer",
+        "invoice": "Invoice",
+        "daysLate": "Days late",
+        "rate": "Rate"
+      },
+      "csv": "Download CSV"
     }
   },
   "taxes": {

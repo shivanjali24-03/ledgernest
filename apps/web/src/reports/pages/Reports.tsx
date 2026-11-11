@@ -22,6 +22,7 @@ import GstHealthPanel from '../GstHealthPanel';
 import CashForecastPanel from '../CashForecastPanel';
 import TdsPanel from '../TdsPanel';
 import MsmePanel from '../MsmePanel';
+import InterestReportPanel from '../InterestReportPanel';
 import ConfirmationsPanel from '../ConfirmationsPanel';
 import EinvoiceBatchButton from '../EinvoiceBatchButton';
 import { Card, EmptyState, ErrorState, PageHeader, Segmented, SkeletonRows } from '../../ui/Kit';
@@ -37,7 +38,7 @@ import TaxSummaryPanel from '../TaxSummaryPanel';
 import ScheduledReportsPanel from '../../scheduled-reports/ScheduledReportsPanel';
 import { useReportsApi } from '../useReportsApi';
 
-type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'forecast' | 'gst' | 'tds' | 'msme' | 'confirmations' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
+type Tab = 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow' | 'forecast' | 'gst' | 'tds' | 'msme' | 'interest' | 'confirmations' | 'ledger' | 'tax' | 'aging' | 'statement' | 'sales' | 'scheduled';
 
 function saveBlob({ blob, filename }: { blob: Blob; filename: string }) {
   const url = URL.createObjectURL(blob);
@@ -76,7 +77,7 @@ export default function Reports() {
   const salesSide = (params.get('sside') as SalesReportSide | null) ?? 'sales';
   const salesBy = (params.get('by') as SalesReportBy | null) ?? 'contact';
   const canExport = session.permissions.has('reports.export');
-  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), forecast: t('reports.forecast.title'), gst: t('reports.gst.title'), tds: t('reports.tds.title'), msme: t('reports.msme.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), confirmations: t('confirmations.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
+  const reportTitle = { 'trial-balance': t('reports.trialBalance'), pnl: t('reports.statements.pnlTitle'), 'balance-sheet': t('reports.statements.bsTitle'), 'cash-flow': t('reports.cashFlow.title'), forecast: t('reports.forecast.title'), gst: t('reports.gst.title'), tds: t('reports.tds.title'), msme: t('reports.msme.title'), interest: t('reports.interest.title'), ledger: t('reports.ledger'), tax: t('reports.tax.title'), aging: t('reports.aging.title'), statement: t('reports.statement.title'), confirmations: t('confirmations.title'), sales: t('reports.sales.title'), scheduled: t('scheduledReports.tab') }[tab];
   const set = (patch: Record<string, string | null>) =>
     setParams(
       (p) => {
@@ -100,6 +101,7 @@ export default function Reports() {
   const bs = useQuery({ queryKey: [...key, 'bs', asOf, compareAsOf], queryFn: () => api!.balanceSheet(asOf, compareAsOf), enabled: !!api && tab === 'balance-sheet', placeholderData: keepPreviousData });
   const method = (params.get('method') as 'indirect' | 'direct' | null) ?? 'indirect';
   const tdsSide = (params.get('side') as 'payable' | 'receivable' | null) ?? 'payable';
+  const interestReport = useQuery({ queryKey: [...key, 'interest', asOf], queryFn: () => api!.interest(asOf), enabled: !!api && tab === 'interest', placeholderData: keepPreviousData });
   const msmeReport = useQuery({ queryKey: [...key, 'msme', asOf], queryFn: () => api!.msme(asOf), enabled: !!api && tab === 'msme', placeholderData: keepPreviousData });
   const tdsReport = useQuery({ queryKey: [...key, 'tds', from, to, tdsSide], queryFn: () => api!.tds(from, to, tdsSide), enabled: !!api && tab === 'tds' && from <= to, placeholderData: keepPreviousData });
   const forecast = useQuery({ queryKey: [...key, 'forecast'], queryFn: () => api!.cashForecast(13), enabled: !!api && tab === 'forecast' });
@@ -154,7 +156,7 @@ export default function Reports() {
           title={t('reports.title')}
           description={t('reports.description', { currency: money.currency })}
           actions={
-            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || tab === 'confirmations' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health'))) && 'hidden')}>
+            <div className={clsx('flex flex-wrap gap-2 print:hidden', (tab === 'scheduled' || tab === 'forecast' || tab === 'tds' || tab === 'msme' || tab === 'interest' || tab === 'confirmations' || (tab === 'gst' && (gstReturn === 'gstr-2b' || gstReturn === 'health'))) && 'hidden')}>
               <Button variant="ghost" icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={(tab === 'ledger' && !accountId) || (tab === 'statement' && !contactId)}>
                 {t('reports.print')}
               </Button>
@@ -191,6 +193,7 @@ export default function Reports() {
             { value: 'cash-flow', label: t('reports.cashFlow.title') },
             { value: 'forecast', label: t('reports.forecast.title') },
             ...(india ? [{ value: 'gst' as const, label: t('reports.gst.title') }, { value: 'tds' as const, label: t('reports.tds.title') }, { value: 'msme' as const, label: t('reports.msme.title') }] : []),
+            { value: 'interest', label: t('reports.interest.title') },
             { value: 'ledger', label: t('reports.ledger') },
             { value: 'tax', label: t('reports.tax.title') },
             { value: 'aging', label: t('reports.aging.title') },
@@ -385,6 +388,16 @@ export default function Reports() {
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.msme.hint')}</p>
           </div>
           <MsmePanel data={msmeReport.data} isPending={msmeReport.isPending} isError={msmeReport.isError} onRetry={() => void msmeReport.refetch()} />
+        </motion.div>
+      ) : tab === 'interest' ? (
+        <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">
+          <div className="flex flex-wrap items-end gap-4 print:hidden">
+            <div className="w-44">
+              <TextField label={t('reports.asOf')} type="date" value={asOf} onChange={(e) => e.target.value && set({ asOf: e.target.value })} />
+            </div>
+            <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.interest.hint')}</p>
+          </div>
+          <InterestReportPanel data={interestReport.data} isPending={interestReport.isPending} isError={interestReport.isError} onRetry={() => void interestReport.refetch()} />
         </motion.div>
       ) : tab === 'forecast' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

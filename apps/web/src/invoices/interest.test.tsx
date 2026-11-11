@@ -86,4 +86,16 @@ describe('interest on late payment', () => {
     expect(status).toMatchObject({ charged: before.accrued - 100_00, chargeable: 0 });
     expect(status.charges).toHaveLength(1);
   }, 30_000);
+
+  it('reports interest on every invoice with it, with totals', async () => {
+    await createDemoSettingsApi(() => true).update({ interestRateBp: 1800, interestMethod: 'simple', interestGraceDays: 0 });
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const d = await api.create({ contactId: kumar.id, issueDate: daysAgo(40), dueDate: daysAgo(30), lines: [{ description: 'Freight', quantity: '1', unitPrice: 1_00_000_00, accountId: sampleId('4100.01') }] });
+    const inv = await api.issue(d.id);
+    renderApp('/reports?tab=interest');
+    const row = (await screen.findByRole('link', { name: inv.number! }, { timeout: 10_000 })).closest('tr')!;
+    expect(row).toHaveTextContent(/Kumar Logistics.*30.*18%/);
+    expect(screen.getByTestId('interest-total-accrued').textContent).toBe(screen.getByTestId('interest-total-chargeable').textContent);
+  }, 30_000);
 });
