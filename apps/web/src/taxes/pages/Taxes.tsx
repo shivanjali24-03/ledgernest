@@ -13,6 +13,7 @@ import { Card, EmptyState, ErrorState, PageHeader, Pill, SkeletonRows } from '..
 import RowMenu from '../../ui/RowMenu';
 import { useToast } from '../../ui/toastContext';
 import { GroupDialog, GstSetupDialog, RateDialog } from '../TaxDialogs';
+import CessCard from '../CessCard';
 import { taxErrorMessage } from '../errors';
 import type { TaxGroup, TaxRate } from '../types';
 import { useTaxesApi } from '../useTaxesApi';
@@ -130,6 +131,12 @@ export default function Taxes() {
                   {pending.length > 0 && <p className="text-sm text-warning">{t('taxes.gst.pending', { count: pending.length, rates: pending.map((s) => s.rate).join(', ') })}</p>}
                 </div>
               </Card>
+            </motion.div>
+          )}
+
+          {gst && api && (
+            <motion.div variants={fadeUp}>
+              <CessCard api={api} rates={data!.rates} canManage={canManage} />
             </motion.div>
           )}
 

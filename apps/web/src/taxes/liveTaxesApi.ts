@@ -7,6 +7,7 @@ export function createLiveTaxesApi(client: AuthClient, organizationId: string): 
   return {
     list: () => r(''),
     setupGst: (slabIds) => r('/gst-setup', { method: 'POST', json: slabIds ? { slabIds } : {} }),
+    addCess: (input) => r('/gst-cess', { method: 'POST', json: input }),
     createRate: (input) => r('/rates', { method: 'POST', json: input }),
     updateRate: (id, patch) => r(`/rates/${id}`, { method: 'PATCH', json: patch }),
     archiveRate: (id, archive) => r(`/rates/${id}/${archive ? 'archive' : 'restore'}`, { method: 'POST' }),

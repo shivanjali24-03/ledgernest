@@ -155,3 +155,15 @@ describe('GST slabs (Super Admin)', () => {
     expect(screen.queryByRole('link', { name: 'GST slabs' })).not.toBeInTheDocument();
   });
 });
+
+describe('compensation cess', () => {
+  it('adds cess on top of a GST rate as a group within the state and one between states', async () => {
+    renderApp();
+    const heading = await screen.findByRole('heading', { name: 'Compensation cess' }, { timeout: 10_000 });
+    const card = heading.closest('div')!.parentElement as HTMLElement;
+    await userEvent.type(within(card).getByLabelText('Cess, %'), '12');
+    await userEvent.click(within(card).getByRole('button', { name: 'Add cess' }));
+    expect(await screen.findByText(/Added: GST \d+% \+ Cess 12%, IGST \d+% \+ Cess 12%/, {}, { timeout: 10_000 })).toBeInTheDocument();
+  }, 30_000);
+});
+

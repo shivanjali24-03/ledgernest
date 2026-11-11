@@ -9,8 +9,7 @@ import {
   type GstSetupInput,
   type TaxGroupCreateInput,
   type TaxRateCreateInput,
-  type TaxRateUpdateInput,
-} from '@ledgernest/shared';
+  type TaxRateUpdateInput, gstCessSchema } from '@ledgernest/shared';
 import type { Request } from 'express';
 import { CurrentActor, CurrentTenant, RequirePermission } from '../access/decorators.js';
 import type { Actor, Tenant } from '../access/types.js';
@@ -40,6 +39,14 @@ export class TaxesController {
   @ApiOkResponse({ description: 'What was created (accounts, rates, groups), then the full list' })
   setupGst(@Body(new ZodValidationPipe(gstSetupSchema)) body: GstSetupInput, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
     return this.taxes.setupGst(body.slabIds, { actor, tenant, req });
+  }
+
+  @Post('gst-cess')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('taxes.manage')
+  @ApiOkResponse({ description: 'Compensation cess added to a GST rate: the groups made, then the full list' })
+  addCess(@Body(new ZodValidationPipe(gstCessSchema)) body: { gstRatePpm: number; cessRatePpm: number }, @CurrentActor() actor: Actor, @CurrentTenant() tenant: Tenant, @Req() req: Request) {
+    return this.taxes.addCess(body, { actor, tenant, req });
   }
 
   @Post('rates')

@@ -165,6 +165,31 @@ export function createDemoTaxesApi(canManage: () => boolean): TaxesApi {
         save(s);
         return { created: { state: REGION, utgst: false, accounts: [], ...created }, ...respond(s) };
       }),
+    addCess: (input) =>
+      wait(() => {
+        guard();
+        const s = load();
+        const live = s.rates.filter((r) => !r.archivedAt);
+        const cgst = live.find((r) => r.kind === 'cgst' && r.ratePpm === input.gstRatePpm / 2);
+        const sgst = live.find((r) => r.kind === 'sgst' && r.ratePpm === input.gstRatePpm / 2);
+        const igst = live.find((r) => r.kind === 'igst' && r.ratePpm === input.gstRatePpm);
+        if (!cgst || !sgst || !igst) throw refuse(409, 'gst_not_set_up');
+        const pct = (ppm: number) => `${ppm / 10_000}%`;
+        let cess = live.find((r) => r.kind === 'cess' && r.ratePpm === input.cessRatePpm);
+        if (!cess) {
+          cess = { id: crypto.randomUUID(), name: `Cess ${pct(input.cessRatePpm)}`, kind: 'cess', ratePpm: input.cessRatePpm, outputAccountId: igst.outputAccountId, inputAccountId: igst.inputAccountId, archivedAt: null };
+          s.rates.push(cess);
+        }
+        const groups: string[] = [];
+        for (const supply of ['intra', 'inter'] as const) {
+          const name = `${supply === 'intra' ? 'GST' : 'IGST'} ${pct(input.gstRatePpm)} + Cess ${pct(input.cessRatePpm)}`;
+          if (s.groups.some((g) => g.name.toLowerCase() === name.toLowerCase())) continue;
+          s.groups.push({ id: crypto.randomUUID(), name, gstSlabId: null, supply, archivedAt: null, rateIds: supply === 'intra' ? [cgst.id, sgst.id, cess.id] : [igst.id, cess.id] });
+          groups.push(name);
+        }
+        save(s);
+        return { created: { groups }, ...respond(s) };
+      }),
     createRate: (input: TaxRateCreateInput) =>
       wait(() => {
         guard();

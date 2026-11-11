@@ -8,8 +8,7 @@ import {
   slabInForce,
   templateLanguage,
   todayIn,
-  type TaxKind,
-} from '@ledgernest/shared';
+  type TaxKind, CESS_ACCOUNTS, CESS_ACCOUNT_NAMES } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -352,4 +351,55 @@ export class TaxesService {
     });
     return { created: result, ...(await this.list(organizationId)) };
   }
+
+  /**
+   * GST compensation cess on top of a GST rate: cess accounts beside GST's (made if needed), the cess rate, and
+   * two groups with it added, one within the state (CGST + SGST + cess) and one between states (IGST + cess).
+   * GST must be set up first for the rate.
+   */
+  async addCess(input: { gstRatePpm: number; cessRatePpm: number }, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const result = await this.prisma.$transaction(async (tx) => {
+      await this.lockAccounts(tx, organizationId);
+      await this.lock(tx, organizationId);
+      const org = await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { country: true, region: true, locale: true } });
+      if (org.country !== 'IN') throw refuse(ConflictException, 'Cess is part of GST, for organisations in India.', 'not_india');
+      const local = findIndianState(org.region)?.utgst ? 'utgst' : 'sgst';
+      const find = (kind: string, ratePpm: number) => tx.taxRate.findFirst({ where: { organizationId, kind, ratePpm, archivedAt: null }, orderBy: { createdAt: 'asc' }, select: { id: true } });
+      const [cgst, sgst, igst] = await Promise.all([find('cgst', input.gstRatePpm / 2), find(local, input.gstRatePpm / 2), find('igst', input.gstRatePpm)]);
+      if (!cgst || !sgst || !igst) throw refuse(ConflictException, `Set up GST at ${formatRate(input.gstRatePpm)} first.`, 'gst_not_set_up');
+      // Accounts, under GST's when they're there
+      const lang = templateLanguage(org.locale);
+      const accountFor: Record<string, string> = {};
+      for (const spec of CESS_ACCOUNTS) {
+        const names = CESS_ACCOUNT_NAMES[spec.key as 'cess_input' | 'cess_output'];
+        let a = await tx.account.findFirst({ where: { organizationId, code: spec.code }, select: { id: true, type: true } });
+        if (a && a.type !== spec.type) throw refuse(ConflictException, `Account ${spec.code} is already used for something else. Change its code, then try again.`, 'code_taken', { code: spec.code });
+        if (!a) {
+          const parent = spec.parent ? await tx.account.findFirst({ where: { organizationId, code: spec.parent }, select: { id: true } }) : null;
+          a = await tx.account.create({ data: { organizationId, code: spec.code, name: names[lang] ?? names.en, type: spec.type, subtype: spec.subtype, parentId: parent?.id ?? null }, select: { id: true, type: true } });
+        }
+        accountFor[spec.role!] = a.id;
+      }
+      let cess = await find('cess', input.cessRatePpm);
+      if (!cess) {
+        let name = `Cess ${formatRate(input.cessRatePpm)}`;
+        if (await tx.taxRate.findFirst({ where: { organizationId, name: { equals: name, mode: 'insensitive' } }, select: { id: true } })) name = `${name} (GST)`;
+        cess = await tx.taxRate.create({ data: { organizationId, name, kind: 'cess', ratePpm: input.cessRatePpm, outputAccountId: accountFor.output!, inputAccountId: accountFor.input! }, select: { id: true } });
+      }
+      const groups: string[] = [];
+      for (const supply of ['intra', 'inter'] as const) {
+        const name = `${supply === 'intra' ? 'GST' : 'IGST'} ${formatRate(input.gstRatePpm)} + Cess ${formatRate(input.cessRatePpm)}`;
+        if (await tx.taxGroup.findFirst({ where: { organizationId, name: { equals: name, mode: 'insensitive' } }, select: { id: true } })) continue;
+        const rateIds = supply === 'intra' ? [cgst.id, sgst.id, cess.id] : [igst.id, cess.id];
+        const g = await tx.taxGroup.create({ data: { organizationId, name, supply }, select: { id: true } });
+        await tx.taxGroupRate.createMany({ data: rateIds.map((id, position) => ({ organizationId, groupId: g.id, rateId: id, position })) });
+        groups.push(name);
+      }
+      await this.audit.record({ action: 'org.tax_setup.cess', actorId: ctx.actor.userId, organizationId, entityType: 'organization', entityId: organizationId, after: { ...input, groups }, req: ctx.req }, tx);
+      return { groups };
+    });
+    return { created: result, ...(await this.list(organizationId)) };
+  }
 }
+
