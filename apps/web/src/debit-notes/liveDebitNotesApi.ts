@@ -12,6 +12,10 @@ export function createLiveDebitNotesApi(client: AuthClient, organizationId: stri
       return r(`?${p}`);
     },
     get: (id) => r(`/${id}`),
+    pdf: async (id) => {
+      const { blob, filename } = await client.download(`/debit-notes/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
+      return { blob, filename: filename ?? 'debit-note.pdf' };
+    },
     creditable: (billId) => r(`/creditable/${billId}`),
     create: (input) => r('', { method: 'POST', json: input }),
     apply: (id, input) => r(`/${id}/apply`, { method: 'POST', json: input }),

@@ -58,15 +58,30 @@ describe('debit notes', () => {
     expect(row()).toHaveTextContent('their SOS-CN-12');
     expect(row()).toHaveTextContent('₹53,100.00');
     // Open the row's menu, retried: the list can re-render as it loads
+    // The PDF for the vendor
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
     await waitFor(
       () => {
-        if (!screen.queryByRole('menuitem', { name: 'Void debit note' })) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
-        expect(screen.getByRole('menuitem', { name: 'Void debit note' })).toBeInTheDocument();
+        const item = screen.queryByRole('menuitem', { name: 'Download PDF' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
+        expect(saved).toBeDefined();
       },
-      { timeout: 6000 },
+      { timeout: 8000 },
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Void debit note' }));
-    const confirm = await screen.findByRole('dialog', { name: /^Void DN\/.*\?$/ });
+    expect(new TextDecoder('latin1').decode(await saved!.arrayBuffer())).toMatch(/\(Debit note DN\/.*\) Tj/);
+    // Open the menu and pick Void in one retried step: the menu may still be closing from the download
+    await waitFor(
+      () => {
+        const item = screen.queryByRole('menuitem', { name: 'Void debit note' });
+        if (item) fireEvent.click(item);
+        else if (!screen.queryByRole('menu')) fireEvent.click(within(row()).getByRole('button', { name: /^Actions for DN\// }));
+        expect(screen.getByRole('dialog', { name: /^Void DN\/.*\?$/ })).toBeInTheDocument();
+      },
+      { timeout: 8000 },
+    );
+    const confirm = screen.getByRole('dialog', { name: /^Void DN\/.*\?$/ });
     await userEvent.click(within(confirm).getByRole('button', { name: 'Void debit note' }));
     expect(await screen.findByText(/^DN\/.*\/0001 voided$/, {}, { timeout: 4000 })).toBeInTheDocument();
 

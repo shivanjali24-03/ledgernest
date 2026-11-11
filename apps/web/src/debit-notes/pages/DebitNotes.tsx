@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Banknote, Building2, FileMinus, Forward } from 'lucide-react';
+import { Ban, Banknote, Building2, FileDown, FileMinus, Forward } from 'lucide-react';
+import { saveBlob } from '../../lib/saveBlob';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../../i18n';
@@ -118,16 +119,15 @@ export default function DebitNotes() {
                   <span className="font-mono font-semibold tabular-nums" dir="ltr">
                     {amount(c, c.total)}
                   </span>
-                  {c.status === 'issued' && (canManage || canRefund) && (
-                    <RowMenu
-                      label={t('payments.actionsFor', { number: c.number })}
-                      items={[
-                        ...(canManage && c.remaining > 0 ? [{ key: 'apply', label: t('debitNotes.applyAction'), icon: Forward, onSelect: () => setApplying(c) }] : []),
-                        ...(canRefund && c.remaining > 0 ? [{ key: 'refund', label: t('debitNotes.refundAction'), icon: Banknote, onSelect: () => setRefunding(c) }] : []),
-                        ...(canManage ? [{ key: 'void', label: t('debitNotes.void'), icon: Ban, danger: true, onSelect: () => setVoiding(c) }] : []),
-                      ]}
-                    />
-                  )}
+                  <RowMenu
+                    label={t('payments.actionsFor', { number: c.number })}
+                    items={[
+                      { key: 'pdf', label: t('common.downloadPdf'), icon: FileDown, onSelect: () => void api!.pdf(c.id).then(saveBlob, (e: unknown) => toast(debitNoteErrorMessage(e, t), 'error')) },
+                      ...(c.status === 'issued' && canManage && c.remaining > 0 ? [{ key: 'apply', label: t('debitNotes.applyAction'), icon: Forward, onSelect: () => setApplying(c) }] : []),
+                      ...(c.status === 'issued' && canRefund && c.remaining > 0 ? [{ key: 'refund', label: t('debitNotes.refundAction'), icon: Banknote, onSelect: () => setRefunding(c) }] : []),
+                      ...(c.status === 'issued' && canManage ? [{ key: 'void', label: t('debitNotes.void'), icon: Ban, danger: true, onSelect: () => setVoiding(c) }] : []),
+                    ]}
+                  />
                 </li>
               ))}
             </ul>
