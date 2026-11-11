@@ -279,13 +279,19 @@ export interface PdfText {
   bold?: boolean;
   /** Spacing between characters (points), e.g. to fill date boxes */
   spacing?: number;
+  /** Turned anticlockwise by this many degrees, e.g. along a cheque's crossing */
+  angle?: number;
 }
 
 /** One page of positioned text and straight lines, any size, for forms printed onto stationery */
 export function pdfPageBytes(page: { width: number; height: number; texts: PdfText[]; lines?: { x1: number; y1: number; x2: number; y2: number; width?: number }[] }): Uint8Array {
   let s = '0 g 0 G\n';
   for (const l of page.lines ?? []) s += `${num(l.width ?? 0.8)} w ${num(l.x1)} ${num(l.y1)} m ${num(l.x2)} ${num(l.y2)} l S\n`;
-  for (const t of page.texts) s += `BT /${t.bold ? 'F2' : 'F1'} ${num(t.size ?? 10)} Tf ${num(t.spacing ?? 0)} Tc ${num(t.x)} ${num(t.y)} Td ${literal(encode(t.text))} Tj ET\n`;
+  for (const t of page.texts) {
+    const r = ((t.angle ?? 0) * Math.PI) / 180;
+    const place = t.angle ? `${num(Math.cos(r))} ${num(Math.sin(r))} ${num(-Math.sin(r))} ${num(Math.cos(r))} ${num(t.x)} ${num(t.y)} Tm` : `${num(t.x)} ${num(t.y)} Td`;
+    s += `BT /${t.bold ? 'F2' : 'F1'} ${num(t.size ?? 10)} Tf ${num(t.spacing ?? 0)} Tc ${place} ${literal(encode(t.text))} Tj ET\n`;
+  }
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
