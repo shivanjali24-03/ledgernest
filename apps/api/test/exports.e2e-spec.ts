@@ -207,4 +207,70 @@ describe('Exports and SEZ supplies (e2e)', () => {
     });
     expect(j.b2b.flatMap((c) => c.inv.map((i) => i.inv_typ))).toEqual(['SEWP']);
   });
+
+  it('makes an e-invoice for an export billed in dollars, every value in rupees at the invoice’s rate', async () => {
+    await prisma.organization.update({
+      where: { id: org },
+      data: {
+        addressLine1: 'Plot 4, Hinjewadi Phase 1',
+        city: 'Pune',
+        postalCode: '411057',
+      },
+    });
+    await post('/currencies', { code: 'USD' }).expect(201);
+    await auth(http().put('/api/v1/currencies/USD/rates/2026-06-01'))
+      .send({ rate: '85' })
+      .expect(200);
+    await post('/accounts', {
+      name: `usd debtors ${run}`,
+      code: '1250',
+      type: 'asset',
+      subtype: 'accounts_receivable',
+      currency: 'USD',
+    }).expect(201);
+    const contoso = (
+      await post('/contacts', {
+        name: 'Contoso LLC',
+        isCustomer: true,
+        isVendor: false,
+        currency: 'USD',
+        billingAddress: { line1: '1 Main St', city: 'Seattle', country: 'US' },
+      }).expect(201)
+    ).body.id as string;
+    const dev = (
+      await post('/items', {
+        name: 'Software development',
+        kind: 'service',
+        hsnSac: '998314',
+      }).expect(201)
+    ).body.id as string;
+    const inv = (
+      await post('/invoices', {
+        contactId: contoso,
+        issueDate: '2026-06-10',
+        supplyKind: 'export_lut',
+        lines: [
+          {
+            itemId: dev,
+            description: 'Software development',
+            quantity: 2,
+            unitPrice: 500_00,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as Inv;
+    await post(`/invoices/${inv.id}/issue`).expect(200);
+    const res = await get(`/invoices/${inv.id}/e-invoice`);
+    expect(res.status).toBe(200);
+    const j = res.body as {
+      ValDtls: { AssVal: number; TotInvVal: number };
+      ItemList: { UnitPrice: number; AssAmt: number }[];
+      ExpDtls: { ForCur: string };
+    };
+    // $1,000 at ₹85
+    expect(j.ItemList[0]).toMatchObject({ UnitPrice: 42_500, AssAmt: 85_000 });
+    expect(j.ValDtls).toMatchObject({ AssVal: 85_000, TotInvVal: 85_000 });
+    expect(j.ExpDtls.ForCur).toBe('USD');
+  });
 });
