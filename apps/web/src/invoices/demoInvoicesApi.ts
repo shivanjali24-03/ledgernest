@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms, INTEREST_MIN_CHARGE, splitInterest, instalmentInterest, instalmentStatus, instalmentsProblem, type Instalment } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -36,6 +36,8 @@ type Stored = {
   interestTerms?: InterestTerms | null;
   /** For an invoice raised for interest: the invoice it's on */
   interestOnInvoiceId?: string | null;
+  /** Paid in instalments */
+  instalments?: Instalment[] | null;
   /** Interest on late payment let off, and why */
   interestWaivers?: { id: string; amount: number; reason: string; date: string }[];
   status: InvoiceStatus;
@@ -317,12 +319,15 @@ function view(i: Stored): Invoice {
   };
   // Interest on paying late, under the terms it was issued with, to today
   const t = i.status === 'issued' ? i.interestTerms : null;
-  const accrued = t ? accruedInterest(t, { total: a.total, dueDate: i.dueDate }, [...base.payments, ...base.credits].map((x) => ({ date: x.date, amount: x.amount })), today()) : null;
+  const plan = i.instalments?.length ? i.instalments : null;
+  const events = [...base.payments, ...base.credits].map((x) => ({ date: x.date, amount: x.amount }));
+  const accrued = t ? (plan ? instalmentInterest(t, plan, events, today()) : accruedInterest(t, { total: a.total, dueDate: i.dueDate }, events, today())) : null;
   return {
     ...base,
     interestRateBp: i.status === 'draft' ? (i.interestRateBp ?? null) : null,
     interest: t && accrued ? { ...t, text: interestTermsText(t), accrued: accrued.interest, perDay: accrued.perDay, daysLate: accrued.daysLate, inGrace: accrued.inGrace } : null,
-    state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today()),
+    instalments: plan ? instalmentStatus(plan, i.amountPaid, today()) : null,
+    state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate, instalments: plan }, today()),
   };
 }
 
@@ -351,7 +356,7 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
     if (group) group = groupForSupply(group, supply, groups);
     return { itemId: l.itemId, description: l.description, quantity: l.quantity, unitPrice: l.unitPrice, discountPpm: l.discount, taxGroupId: group?.id ?? null, accountId, costCentreId: l.costCentreId ?? null };
   });
-  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines };
+  return { contactId: contact.id, issueDate: d.issueDate, dueDate: d.instalments?.at(-1)?.dueDate ?? d.dueDate ?? dueDateFor(d.issueDate, contact.paymentTermsDays), currency: contact.currency, rate: d.rate, placeOfSupply, reference: d.reference, notes: d.notes, lines, instalments: d.instalments?.length ? d.instalments : null };
 };
 
 export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
@@ -488,6 +493,9 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         if (i.status !== 'draft') throw refuse(409, 'not_draft');
         const v = view(i);
         if (v.total <= 0) throw refuse(400, 'zero_total');
+        const plan = i.instalments?.length ? i.instalments : null;
+        const planProblem = plan && instalmentsProblem(plan, v.total, i.issueDate);
+        if (planProblem) throw refuse(400, `instalments_${planProblem}`, { field: 'instalments' });
         const receivable = v.receivableAccount;
         if (!receivable) throw refuse(409, 'no_receivable_account', { currency: i.currency });
         const { years } = await createDemoPeriodsApi(() => true).list();

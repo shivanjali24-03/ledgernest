@@ -6,7 +6,7 @@ export interface CustomerAccount {
   organization: { name: string; taxId: string | null; email: string | null; phone: string | null };
   customer: { name: string };
   /** msmeInterest: what the business may charge for paying late (MSMED Act s.16), when it is a micro or small enterprise */
-  invoices: { id: string; number: string; issueDate: string; dueDate: string; currency: string; total: number; balance: number; state: string; msmeInterest?: number; interest?: number }[];
+  invoices: { id: string; number: string; issueDate: string; dueDate: string; currency: string; total: number; balance: number; state: string; msmeInterest?: number; interest?: number; nextInstalment?: { n: number; dueDate: string; balance: number } | null }[];
   totals: { currency: string; balance: number }[];
   overdue: number;
   upi: { upiId: string; amount: number; link: string } | null;
@@ -40,7 +40,7 @@ async function demoAccount(token: string): Promise<CustomerAccountSource | null>
   const charges = msmeCovered(msme.msmeCategory) && !!msme.msmeBankRateBp;
   const today = todayIn('Asia/Kolkata');
   const views = (await demoInvoiceViews()).filter((i) => i.contact.id === c.id && i.status === 'issued' && i.balance > 0);
-  const invoices = views.map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency ?? 'INR', total: i.total, balance: i.balance, state: invoiceState({ status: 'issued', total: i.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today), msmeInterest: charges && !i.currency ? msmeLateInterest(i.balance, i.issueDate, i.dueDate, today, msme.msmeBankRateBp!) : 0, interest: i.interest?.accrued ?? 0 }));
+  const invoices = views.map((i) => ({ id: i.id, number: i.number!, issueDate: i.issueDate, dueDate: i.dueDate, currency: i.currency ?? 'INR', total: i.total, balance: i.balance, state: invoiceState({ status: 'issued', total: i.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today), msmeInterest: charges && !i.currency ? msmeLateInterest(i.balance, i.issueDate, i.dueDate, today, msme.msmeBankRateBp!) : 0, interest: i.interest?.accrued ?? 0, nextInstalment: i.instalments?.find((x) => (x.balance ?? 0) > 0) ? { n: i.instalments.find((x) => (x.balance ?? 0) > 0)!.n ?? 1, dueDate: i.instalments.find((x) => (x.balance ?? 0) > 0)!.dueDate, balance: i.instalments.find((x) => (x.balance ?? 0) > 0)!.balance ?? 0 } : null }));
   const totals = [...new Set(invoices.map((i) => i.currency))].map((currency) => ({ currency, balance: invoices.filter((i) => i.currency === currency).reduce((s, i) => s + i.balance, 0) }));
   const rupees = invoices.filter((i) => i.currency === 'INR');
   const inr = rupees.reduce((s, i) => s + i.balance, 0);

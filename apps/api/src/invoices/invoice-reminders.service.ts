@@ -431,6 +431,17 @@ export class InvoiceRemindersService
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
           // The interest terms it was issued with
           ...(inv.interest ? [inv.interest.text] : []),
+          // Paid in instalments: each one's day and amount
+          ...(inv.instalments
+            ? [
+                '',
+                'Payable in instalments:',
+                ...inv.instalments.map(
+                  (x) =>
+                    `${x.n}. ${x.dueDate}: ${currency} ${(x.amount / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))}`,
+                ),
+              ]
+            : []),
           // What a GST tax invoice must also say (CGST Rules, rule 46): reverse charge, and the supplier's signature
           ...(org.taxId
             ? [

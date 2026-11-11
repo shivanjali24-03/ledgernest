@@ -808,6 +808,8 @@ model Invoice {
   interestGraceDays   Int?      @map("interest_grace_days")
   /// For an invoice raised for interest on late payment: the invoice the interest is on
   interestOnInvoiceId String?   @map("interest_on_invoice_id") @db.Uuid
+  /// Paid in instalments: [{ dueDate, amount }], adding up to the total; null = all on the due date
+  instalments         Json?
   fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
   status              String    @default("draft") /// draft | issued | void
   issueDate           DateTime  @map("issue_date") @db.Date

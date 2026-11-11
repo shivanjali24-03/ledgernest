@@ -98,4 +98,36 @@ describe('interest on late payment', () => {
     expect(row).toHaveTextContent(/Kumar Logistics.*30.*18%/);
     expect(screen.getByTestId('interest-total-accrued').textContent).toBe(screen.getByTestId('interest-total-chargeable').textContent);
   }, 30_000);
+
+  it('splits an invoice into monthly instalments, and shows where each stands once issued', async () => {
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoInvoicesApi(() => true);
+    const plan = [
+      { dueDate: daysAgo(20), amount: 50_000_00 },
+      { dueDate: daysAgo(-10), amount: 50_000_00 },
+    ];
+    await expect(api.issue((await api.create({ contactId: kumar.id, issueDate: daysAgo(40), instalments: [plan[0]!, { ...plan[1]!, amount: 1 }], lines: [{ description: 'Freight', quantity: '1', unitPrice: 1_00_000_00, accountId: sampleId('4100.01') }] })).id)).rejects.toMatchObject({ details: { reason: 'instalments_total' } });
+    const d = await api.create({ contactId: kumar.id, issueDate: daysAgo(40), instalments: plan, lines: [{ description: 'Freight', quantity: '1', unitPrice: 1_00_000_00, accountId: sampleId('4100.01') }] });
+    expect(d.dueDate).toBe(plan[1]!.dueDate);
+    const inv = await api.issue(d.id);
+    expect(inv.state).toBe('overdue');
+    renderApp(`/invoices/${inv.id}`);
+    const table = await screen.findByTestId('invoice-instalments', {}, { timeout: 10_000 });
+    expect(within(table).getAllByRole('row').map((r) => r.textContent)).toEqual([expect.stringMatching(/1\..*Overdue/), expect.stringMatching(/2\..*Due/)]);
+  }, 30_000);
+
+  it('offers equal monthly instalments on a new invoice, checking they add up', async () => {
+    renderApp('/invoices/new');
+    await screen.findByRole('heading', { name: 'New invoice' }, { timeout: 10_000 });
+    await userEvent.type(screen.getByLabelText('Description on line 1'), 'Machine');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '900');
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Paid in instalments' }));
+    expect(screen.getAllByLabelText(/Due date of instalment/)).toHaveLength(3);
+    expect(screen.getByText('Adds up to the invoice total. The last one is the due date.')).toBeInTheDocument();
+    const second = screen.getByLabelText('Amount of instalment 2');
+    await userEvent.clear(second);
+    await userEvent.type(second, '100');
+    await userEvent.tab();
+    expect(await screen.findByText(/The instalments add up to/)).toBeInTheDocument();
+  }, 30_000);
 });

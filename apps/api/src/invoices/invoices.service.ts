@@ -24,6 +24,10 @@ import {
   interestTermsText,
   type InterestMethod,
   type InterestTerms,
+  instalmentInterest,
+  instalmentStatus,
+  instalmentsProblem,
+  type Instalment,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -31,7 +35,7 @@ import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { AuditService } from '../audit/audit.service.js';
 import { allPages, major, toCsv } from '../common/list-export.js';
 import { rateOn, rateText } from '../currencies/rate-on.js';
-import type { Prisma } from '../generated/prisma/client.js';
+import { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
@@ -65,6 +69,8 @@ export type DraftIn = {
   interestRateBp?: number | null;
   /** For an invoice charging interest on late payment: the invoice it's on */
   interestOnInvoiceId?: string | null;
+  /** Paid in instalments: each one's day and amount (the last is the due date) */
+  instalments?: Instalment[] | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -131,6 +137,7 @@ const select = {
   interestRateBp: true,
   interestMethod: true,
   interestGraceDays: true,
+  instalments: true,
   contact: {
     select: {
       id: true,
@@ -430,17 +437,21 @@ export class InvoicesService {
             graceDays: i.interestGraceDays ?? 0,
           }
         : null;
+    const plan = (i.instalments as Instalment[] | null) ?? null;
+    const paidEvents = [...v.payments, ...v.credits].map((x) => ({
+      date: x.date,
+      amount: x.amount,
+    }));
     const accrued =
       terms &&
-      accruedInterest(
-        terms,
-        { total: v.total, dueDate: v.dueDate },
-        [...v.payments, ...v.credits].map((x) => ({
-          date: x.date,
-          amount: x.amount,
-        })),
-        today,
-      );
+      (plan?.length
+        ? instalmentInterest(terms, plan, paidEvents, today)
+        : accruedInterest(
+            terms,
+            { total: v.total, dueDate: v.dueDate },
+            paidEvents,
+            today,
+          ));
     return {
       ...v,
       state: invoiceState(
@@ -449,9 +460,14 @@ export class InvoicesService {
           total: v.total,
           amountPaid: v.amountPaid,
           dueDate: v.dueDate,
+          instalments: plan,
         },
         today,
       ),
+      /** Paid in instalments: each with what's been paid on it and where it stands today */
+      instalments: plan?.length
+        ? instalmentStatus(plan, v.amountPaid, today)
+        : null,
       /** On a draft: a rate chosen for it (null = the customer's or organisation's, 0 = none) */
       interestRateBp: i.status === 'draft' ? i.interestRateBp : null,
       /** Once issued: its interest terms, and what's accrued to today */
@@ -902,12 +918,31 @@ export class InvoicesService {
           })
         )?.id ?? null;
     }
+    // Paid in instalments: they must add up to the total, from the invoice's date on; the last one is the due date
+    if (input.instalments?.length) {
+      const problem = instalmentsProblem(
+        input.instalments,
+        amounts.total,
+        input.issueDate,
+      );
+      if (problem)
+        throw refuse(
+          BadRequestException,
+          problem === 'total'
+            ? 'The instalments must add up to the invoice total.'
+            : 'The first instalment can’t fall due before the invoice date.',
+          `instalments_${problem}`,
+          { field: 'instalments' },
+        );
+    }
     return {
       contactId: contact.id,
       currency,
       placeOfSupply,
       dueDate:
-        input.dueDate ?? dueDateFor(input.issueDate, contact.paymentTermsDays),
+        input.instalments?.at(-1)?.dueDate ??
+        input.dueDate ??
+        dueDateFor(input.issueDate, contact.paymentTermsDays),
       receivableAccountId,
       lines,
       amounts,
@@ -999,6 +1034,9 @@ export class InvoicesService {
           notes: input.notes,
           interestRateBp: input.interestRateBp ?? null,
           interestOnInvoiceId: input.interestOnInvoiceId ?? null,
+          instalments: input.instalments?.length
+            ? (input.instalments as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -1058,6 +1096,9 @@ export class InvoicesService {
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
           interestRateBp: input.interestRateBp ?? null,
+          instalments: input.instalments?.length
+            ? (input.instalments as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
@@ -1142,6 +1183,7 @@ export class InvoicesService {
         placeOfSupply: i.placeOfSupply,
         receivableAccountId: i.receivableAccountId,
         rate: i.rate && rateText(i.rate),
+        instalments: (i.instalments as Instalment[] | null) ?? null,
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
           description: l.description,

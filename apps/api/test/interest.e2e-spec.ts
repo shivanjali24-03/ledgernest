@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
+import { instalmentInterest, todayIn } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { MailService } from '../src/mail/mail.service.js';
@@ -259,6 +260,100 @@ describe('Interest on late payments (e2e)', () => {
     expect(pdf.status).toBe(200);
     expect((pdf.body as Buffer).toString('latin1')).toContain(
       'Interest at 24% a year',
+    );
+  });
+
+  it('takes an invoice in instalments: they add up to the total, are cleared oldest first, and bear interest from their own days', async () => {
+    const plan = [
+      { dueDate: '2026-06-01', amount: 10_000_00 },
+      { dueDate: '2026-07-01', amount: 10_000_00 },
+      { dueDate: '2026-08-01', amount: 10_000_00 },
+    ];
+    const body = (instalments: object[]) => ({
+      contactId: who.usual,
+      issueDate: '2026-05-01',
+      instalments,
+      lines: [
+        {
+          description: 'Machine on a plan',
+          quantity: 1,
+          unitPrice: 30_000_00,
+          accountId: acc.sales,
+        },
+      ],
+    });
+    expect(
+      (
+        await post(
+          '/invoices',
+          body([plan[0]!, { ...plan[1]!, amount: 1 }]),
+        ).expect(400)
+      ).body.details,
+    ).toMatchObject({ reason: 'instalments_total' });
+    expect(
+      (
+        await post(
+          '/invoices',
+          body([
+            { ...plan[0]!, dueDate: '2026-04-01', amount: 15_000_00 },
+            { ...plan[1]!, amount: 15_000_00 },
+          ]),
+        ).expect(400)
+      ).body.details,
+    ).toMatchObject({ reason: 'instalments_before_issue' });
+    const d = (await post('/invoices', body(plan)).expect(201)).body as {
+      id: string;
+      dueDate: string;
+    };
+    expect(d.dueDate).toBe('2026-08-01');
+    const inv = (await post(`/invoices/${d.id}/issue`).expect(200)).body as {
+      id: string;
+      interest: Interest;
+    };
+    await post('/payments/receipts', {
+      contactId: who.usual,
+      date: '2026-06-15',
+      bankAccountId: acc.bank,
+      amount: 15_000_00,
+      allocations: [{ invoiceId: inv.id, amount: 15_000_00 }],
+    }).expect(201);
+    const v = (await get(`/invoices/${inv.id}`).expect(200)).body as {
+      state: string;
+      instalments: {
+        n: number;
+        paid: number;
+        balance: number;
+        state: string;
+      }[];
+      interest: Interest;
+    };
+    expect(v.state).toBe('overdue');
+    expect(v.instalments.map((x) => [x.paid, x.balance])).toEqual([
+      [10_000_00, 0],
+      [5_000_00, 5_000_00],
+      [0, 10_000_00],
+    ]);
+    const today = todayIn('Asia/Kolkata');
+    const expected = instalmentInterest(
+      {
+        rateBp: v.interest!.rateBp,
+        method: 'simple',
+        graceDays: v.interest!.graceDays,
+      },
+      plan,
+      [{ date: '2026-06-15', amount: 15_000_00 }],
+      today,
+    );
+    expect(v.interest!.accrued).toBe(expected.interest);
+    const pdf = await get(`/invoices/${inv.id}/pdf`)
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    expect((pdf.body as Buffer).toString('latin1')).toContain(
+      'Payable in instalments:',
     );
   });
 });

@@ -129,6 +129,7 @@ export default function CustomerAccount() {
                             <span className={clsx('block text-xs', i.state === 'overdue' ? 'text-expense' : 'text-ink-500')}>
                               {i.state === 'overdue' ? t('publicInvoice.overdueSince', { date: day(i.dueDate) }) : t('publicInvoice.dueOn', { date: day(i.dueDate) })}
                             </span>
+                            {i.nextInstalment && <span className="block text-xs text-ink-500">{t('customerAccount.nextInstalment', { n: i.nextInstalment.n, amount: money(i.nextInstalment.balance, i.currency), date: day(i.nextInstalment.dueDate) })}</span>}
                             {!!i.interest && <span className="block text-xs text-ink-500">{t('customerAccount.invoiceLateInterest', { amount: money(i.interest, i.currency) })}</span>}
                             {!!i.msmeInterest && <span className="block text-xs text-ink-500">{t('customerAccount.invoiceInterest', { amount: money(i.msmeInterest, i.currency) })}</span>}
                           </span>

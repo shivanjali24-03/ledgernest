@@ -2607,7 +2607,9 @@
       "nothing_to_charge": "There's no interest left to charge on this invoice.",
       "waive_too_much": "Waive no more than the interest left to charge.",
       "already_charged": "This interest has just been charged.",
-      "no_interest_terms": "Only an issued invoice with interest terms can be charged interest."
+      "no_interest_terms": "Only an issued invoice with interest terms can be charged interest.",
+      "instalments_total": "The instalments must add up to the invoice total.",
+      "instalments_before_issue": "The first instalment can’t fall due before the invoice date."
     },
     "reminder": {
       "action": "Send reminder",
@@ -4390,7 +4392,8 @@
     "invoiceInterest": "MSMED Act interest so far: {{amount}}",
     "statement": "Download your statement for this year",
     "lateInterest": "Interest for paying late, as the invoices say: {{amount}} so far.",
-    "invoiceLateInterest": "Interest so far: {{amount}}"
+    "invoiceLateInterest": "Interest so far: {{amount}}",
+    "nextInstalment": "Instalment {{n}}: {{amount}} by {{date}}"
   },
   "twoFactor": {
     "action": "Two-factor sign-in",
@@ -4773,5 +4776,24 @@
     "batchFor": "Batch of {{item}}",
     "expiryFor": "Expiry of {{item}}",
     "serialsFor": "Serial numbers of {{item}}"
+  },
+  "instalments": {
+    "toggle": "Paid in instalments",
+    "count": "Instalments",
+    "first": "First due",
+    "splitMonthly": "Split monthly",
+    "due": "Due",
+    "amount": "Amount",
+    "dueN": "Due date of instalment {{n}}",
+    "amountN": "Amount of instalment {{n}}",
+    "addsUp": "Adds up to the invoice total. The last one is the due date.",
+    "mismatch": "The instalments add up to {{sum}}, not the total of {{total}}.",
+    "payable": "Payable in instalments",
+    "states": {
+      "paid": "Paid",
+      "partly_paid": "Part paid",
+      "due": "Due",
+      "overdue": "Overdue"
+    }
   }
 }
