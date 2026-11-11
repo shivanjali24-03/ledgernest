@@ -2,7 +2,11 @@ import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { createHash } from 'node:crypto';
+import { JwtService } from '@nestjs/jwt';
+import { API_KEY_PREFIX } from '@ledgernest/shared';
 import { json, type NextFunction, type Request, type Response } from 'express';
+import { PrismaService } from './prisma/prisma.service.js';
 import { tenantContextMiddleware } from './access/tenant-context.js';
 import helmet from 'helmet';
 import { requestId } from './common/request-id.middleware.js';
@@ -18,13 +22,43 @@ export function setupApp(app: INestApplication) {
       app.getHttpAdapter().getInstance() as { set(k: string, v: unknown): void }
     ).set('trust proxy', hops);
   app.use(requestId);
+  // The larger bodies below are only read for a signed-in request (a valid access token or a live API key).
+  // Anyone else gets the default 100 KB parser, so an anonymous client can't make the server parse
+  // megabytes just to be told to sign in.
+  const jwt = app.get(JwtService);
+  const prisma = app.get(PrismaService);
+  const signedIn = async (req: Request) => {
+    const [scheme, token] = (req.headers.authorization ?? '').split(' ');
+    if (scheme !== 'Bearer' || !token) return false;
+    if (token.startsWith(API_KEY_PREFIX))
+      return !!(await prisma.apiKey.findFirst({
+        where: {
+          hash: createHash('sha256').update(token).digest('hex'),
+          revokedAt: null,
+        },
+        select: { id: true },
+      }));
+    return jwt.verifyAsync(token).then(
+      () => true,
+      () => false,
+    );
+  };
+  const bigBody = async (
+    parser: (req: Request, res: Response, next: NextFunction) => void,
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    if (await signedIn(req)) parser(req, res, next);
+    else next();
+  };
   // Logo uploads (base64, up to 256 KB) are the one body allowed past the default 100 KB limit.
   // Wrapped in its own function: Nest skips installing its JSON parser if it finds one named "jsonParser".
   const logoJson = json({ limit: '400kb' });
   app.use(
     '/api/v1/organization/logo',
     function logoBodyParser(req: Request, res: Response, next: NextFunction) {
-      logoJson(req, res, next);
+      void bigBody(logoJson, req, res, next);
     },
   );
   // Journal attachments: up to 2 MB, about 2.8 MB as base64
@@ -36,7 +70,7 @@ export function setupApp(app: INestApplication) {
       res: Response,
       next: NextFunction,
     ) {
-      attachmentJson(req, res, next);
+      void bigBody(attachmentJson, req, res, next);
     },
   );
   // Receipts and PDFs kept with invoices, bills, payments and bank transactions: up to 2 MB as base64
@@ -47,7 +81,7 @@ export function setupApp(app: INestApplication) {
       res: Response,
       next: NextFunction,
     ) {
-      attachmentJson(req, res, next);
+      void bigBody(attachmentJson, req, res, next);
     },
   );
   // Restoring a backup: the whole organisation in one file
@@ -55,7 +89,7 @@ export function setupApp(app: INestApplication) {
   app.use(
     '/api/v1/backups/restore',
     function backupBodyParser(req: Request, res: Response, next: NextFunction) {
-      backupJson(req, res, next);
+      void bigBody(backupJson, req, res, next);
     },
   );
   // Spreadsheet imports: up to 2,000 rows
@@ -63,14 +97,14 @@ export function setupApp(app: INestApplication) {
   app.use(
     /^\/api\/v1\/imports\/[^/]+(\/preview)?$/,
     function importBodyParser(req: Request, res: Response, next: NextFunction) {
-      importJson(req, res, next);
+      void bigBody(importJson, req, res, next);
     },
   );
   // GSTR-2B from the GST portal: JSON files up to 4 MB, sent as text inside JSON (escaping adds a little)
   app.use(
     '/api/v1/reports/gst/gstr-2b',
     function gstr2bBodyParser(req: Request, res: Response, next: NextFunction) {
-      importJson(req, res, next);
+      void bigBody(importJson, req, res, next);
     },
   );
   // Bank statements: files up to 2 MB, sent as text
@@ -82,7 +116,7 @@ export function setupApp(app: INestApplication) {
       res: Response,
       next: NextFunction,
     ) {
-      statementJson(req, res, next);
+      void bigBody(statementJson, req, res, next);
     },
   );
   app.use(helmet());

@@ -1,3 +1,4 @@
+import { servableImageType } from '../common/servable-image.js';
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, Patch, Put, Req, Res, StreamableFile } from '@nestjs/common';
 import { z } from 'zod';
 import { ApiBearerAuth, ApiHeader, ApiNoContentResponse, ApiOkResponse, ApiProduces, ApiTags } from '@nestjs/swagger';
@@ -51,7 +52,7 @@ export class OrganizationController {
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('Content-Security-Policy', "default-src 'none'");
     res.setHeader('Last-Modified', logo.updatedAt.toUTCString());
-    return new StreamableFile(Buffer.from(logo.data), { type: logo.contentType, length: logo.data.length });
+    return new StreamableFile(Buffer.from(logo.data), { type: servableImageType(logo.data), length: logo.data.length });
   }
 
   /** Upload a PNG, JPEG or WebP logo (base64, up to 256 KB). SVG is refused. */
@@ -79,7 +80,7 @@ export class OrganizationController {
     if (!img) throw new NotFoundException(`This organisation has no ${kind}.`);
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('Content-Security-Policy', "default-src 'none'");
-    return new StreamableFile(Buffer.from(img.data), { type: img.contentType, length: img.data.length });
+    return new StreamableFile(Buffer.from(img.data), { type: servableImageType(img.data), length: img.data.length });
   }
 
   /** Upload the signature or seal: PNG (transparent background works best) or JPEG, base64, up to 256 KB */

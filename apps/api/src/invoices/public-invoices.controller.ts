@@ -1,3 +1,4 @@
+import { servableImageType } from '../common/servable-image.js';
 import { Controller, Get, Param, Res, StreamableFile } from '@nestjs/common';
 import { ApiProduces, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -50,10 +51,11 @@ export class PublicInvoicesController {
     const logo = await this.share.logo(token);
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
     // Shown by the web app, which lives on another origin
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     return new StreamableFile(Buffer.from(logo.data), {
-      type: logo.contentType,
+      type: servableImageType(logo.data),
       length: logo.data.length,
     });
   }

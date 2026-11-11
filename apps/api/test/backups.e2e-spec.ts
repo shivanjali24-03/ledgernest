@@ -290,12 +290,36 @@ describe('Backups (e2e)', () => {
         expect.stringMatching(/accounts point to missing accounts/),
       ]),
     );
+    // A "logo" that isn't an image is refused, as an upload would be
+    const forged = structuredClone(backup);
+    forged.tables.organization_logos = [
+      {
+        organization_id: org,
+        content_type: 'text/html',
+        data: Buffer.from('<script>alert(1)</script>').toString('base64'),
+        updated_at: new Date().toISOString(),
+      },
+    ];
+    expect(
+      (await as().post('/backups/restore', { backup: forged }).expect(400)).body
+        .details.problems,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/organization_logos isn’t the PNG, JPEG or WebP/),
+      ]),
+    );
     await as()
       .post('/backups/restore', {
         backup: { ...backup, format: 'something-else' },
       })
       .expect(400);
     await as('admin').post('/backups/restore', { backup }).expect(403);
+    // Without a session the large-body parser isn't used at all: a big body is turned away unread
+    await http()
+      .post('/api/v1/backups/restore')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ backup: 'x'.repeat(1_000_000) }))
+      .expect(413);
     expect(await prisma.organization.count()).toBe(before);
   });
 
