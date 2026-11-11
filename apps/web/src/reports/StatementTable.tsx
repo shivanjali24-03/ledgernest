@@ -20,7 +20,7 @@ export default function StatementTable({ columns, blocks, onAccount, caption }: 
   const delta = (a: number[]) => {
     const d = a[0]! - a[1]!;
     return (
-      <td className={clsx('px-4 py-1.5 text-end font-mono tabular-nums', d > 0 ? 'text-income' : d < 0 ? 'text-expense' : 'text-ink-400')} dir="ltr">
+      <td className={clsx('whitespace-nowrap px-4 py-1.5 text-end font-mono tabular-nums', d > 0 ? 'text-income' : d < 0 ? 'text-expense' : 'text-ink-400')} dir="ltr">
         {d ? `${d > 0 ? '+' : '−'}${money.plain(Math.abs(d))}` : '–'}
         {a[1] ? <span className="ms-1 text-xs text-ink-400">({Math.round((d / Math.abs(a[1]!)) * 100)}%)</span> : null}
       </td>
@@ -29,7 +29,7 @@ export default function StatementTable({ columns, blocks, onAccount, caption }: 
   const amounts = (a: number[], strong = false): ReactNode => (
     <>
       {a.map((n, k) => (
-        <td key={k} className={clsx('px-4 py-1.5 text-end font-mono tabular-nums', strong && 'font-semibold', n < 0 && 'text-expense')} dir="ltr">
+        <td key={k} className={clsx('whitespace-nowrap px-4 py-1.5 text-end font-mono tabular-nums', strong && 'font-semibold', n < 0 && 'text-expense')} dir="ltr">
           {cell(n)}
         </td>
       ))}
@@ -38,7 +38,7 @@ export default function StatementTable({ columns, blocks, onAccount, caption }: 
   );
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[560px] text-sm">
+      <table className={clsx('w-full text-sm', columns.length + (change ? 1 : 0) > 1 ? 'min-w-[560px]' : 'sm:min-w-[560px]')}>
         <caption className="sr-only">{caption}</caption>
         <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
           <tr>

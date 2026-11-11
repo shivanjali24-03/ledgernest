@@ -67,13 +67,13 @@ export function SearchInput({ value, onChange, label }: { value: string; onChang
 export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
   return (
     // Scrolls sideways instead of overflowing when the options don't fit (long labels, narrow phones)
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-xl border border-ink-200 bg-white p-1 dark:border-ink-700 dark:bg-ink-900">
+    <div role="radiogroup" aria-label={label} className="scroll-cue inline-flex max-w-full overflow-x-auto rounded-xl border border-ink-200 p-1 dark:border-ink-700">
       {options.map((o) => (
         <button
           key={o.value}
           role="radio"
           aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
+          onClick={(e) => (onChange(o.value), e.currentTarget.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }))}
           className={clsx(
             'h-8 shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors',
             value === o.value ? 'bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-100' : 'text-ink-500 hover:text-ink-800 dark:hover:text-ink-200',

@@ -232,17 +232,17 @@ export default function Reports() {
               <ErrorState onRetry={() => void tb.refetch()} />
             ) : (
               <div className="relative overflow-x-auto">
-                <table className="w-full min-w-[620px] text-sm">
+                <table className="w-full table-fixed text-xs sm:table-auto sm:min-w-[620px] sm:text-sm">
                   <caption className="sr-only">{t('reports.tbCaption', { date: day(asOf) })}</caption>
                   <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                     <tr>
-                      <th scope="col" className={`${th} text-start`}>
+                      <th scope="col" className={`${th} text-start max-sm:px-3`}>
                         {t('journals.fields.account')}
                       </th>
-                      <th scope="col" className={`${th} text-end`}>
+                      <th scope="col" className={`${th} w-[30%] text-end max-sm:px-2 sm:w-auto`}>
                         {t('journals.fields.debit')}
                       </th>
-                      <th scope="col" className={`${th} text-end`}>
+                      <th scope="col" className={`${th} w-[30%] text-end max-sm:px-2 sm:w-auto`}>
                         {t('journals.fields.credit')}
                       </th>
                     </tr>
@@ -259,18 +259,18 @@ export default function Reports() {
                         </tr>
                         {rows.map((r) => (
                           <tr key={r.accountId} className={r.balanceDebit || r.balanceCredit ? '' : 'text-ink-400'}>
-                            <th scope="row" className="px-4 py-2 text-start font-normal">
-                              <button type="button" className="text-start hover:underline" onClick={() => set({ tab: 'ledger', account: r.accountId })}>
+                            <th scope="row" className="px-3 py-2 text-start font-normal sm:px-4">
+                              <button type="button" className="-my-1.5 block min-h-8 py-1.5 text-start hover:underline" onClick={() => set({ tab: 'ledger', account: r.accountId })}>
                                 <code className="me-2 text-xs text-ink-400" dir="ltr">
                                   {r.code}
                                 </code>
                                 <span dir="auto">{r.name}</span>
                               </button>
                             </th>
-                            <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                            <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-4" dir="ltr">
                               {amount(r.balanceDebit)}
                             </td>
-                            <td className="px-4 py-2 text-end font-mono tabular-nums" dir="ltr">
+                            <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-4" dir="ltr">
                               {amount(r.balanceCredit)}
                             </td>
                           </tr>
@@ -283,10 +283,10 @@ export default function Reports() {
                       <th scope="row" className="px-4 py-2.5 text-start">
                         {t('journals.total')}
                       </th>
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                      <td className="whitespace-nowrap px-2 py-2.5 text-end font-mono tabular-nums sm:px-4" dir="ltr">
                         {money.format(tb.data.totals.balanceDebit)}
                       </td>
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                      <td className="whitespace-nowrap px-2 py-2.5 text-end font-mono tabular-nums sm:px-4" dir="ltr">
                         {money.format(tb.data.totals.balanceCredit)}
                       </td>
                     </tr>

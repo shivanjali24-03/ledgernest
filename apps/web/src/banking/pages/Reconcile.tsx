@@ -141,11 +141,11 @@ export default function Reconcile() {
                 </dd>
                 <dt className="text-ink-500">{t('banking.rec.inTransit')}</dt>
                 <dd className="text-end font-mono tabular-nums" dir="ltr">
-                  −{plain(data!.summary.outstandingIn)}
+                  {data!.summary.outstandingIn ? '−' : ''}{plain(data!.summary.outstandingIn)}
                 </dd>
                 <dt className="text-ink-500">{t('banking.rec.unpresented')}</dt>
                 <dd className="text-end font-mono tabular-nums" dir="ltr">
-                  +{plain(data!.summary.outstandingOut)}
+                  {data!.summary.outstandingOut ? '+' : ''}{plain(data!.summary.outstandingOut)}
                 </dd>
                 <dt className="border-t border-ink-200 pt-1.5 font-semibold dark:border-ink-700">{t('banking.rec.cleared')}</dt>
                 <dd className="border-t border-ink-200 pt-1.5 text-end font-mono font-semibold tabular-nums dark:border-ink-700" dir="ltr">

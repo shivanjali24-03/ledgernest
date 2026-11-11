@@ -72,7 +72,7 @@ function Keys({ api }: { api: IntegrationsApi }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 px-5 py-3 dark:border-ink-800">
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 basis-56">
           <h2 className="font-semibold">{t('integrations.keys.title')}</h2>
           <p className="text-sm text-ink-500">{t('integrations.keys.body')}</p>
         </span>
@@ -90,7 +90,7 @@ function Keys({ api }: { api: IntegrationsApi }) {
         <ul className="divide-y divide-ink-100 dark:divide-ink-800">
           {keys.data.map((k) => (
             <li key={k.id} className={clsx('flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3', k.status !== 'active' && 'opacity-60')}>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 basis-56">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-medium" dir="auto">
                     {k.name}
@@ -209,7 +209,7 @@ function Webhooks({ api }: { api: IntegrationsApi }) {
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 px-5 py-3 dark:border-ink-800">
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 basis-56">
           <h2 className="font-semibold">{t('integrations.hooks.title')}</h2>
           <p className="text-sm text-ink-500">{t('integrations.hooks.body')}</p>
         </span>
@@ -227,7 +227,7 @@ function Webhooks({ api }: { api: IntegrationsApi }) {
         <ul className="divide-y divide-ink-100 dark:divide-ink-800">
           {hooks.data.map((w) => (
             <li key={w.id} className={clsx('flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3', !w.active && 'opacity-60')}>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 basis-56">
                 <span className="flex flex-wrap items-center gap-2">
                   <code className="truncate text-sm font-medium" dir="ltr">
                     {w.url}

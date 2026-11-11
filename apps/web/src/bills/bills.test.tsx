@@ -57,7 +57,7 @@ describe('bills', () => {
     await userEvent.type(screen.getByLabelText('Price on line 1'), '6000');
     await choose('Tax on line 1', 'GST 18%');
     await waitFor(() => expect(totals()).toHaveTextContent('CGST 9%'));
-    expect(totals()).toHaveTextContent('INR 7,080.00');
+    expect(totals()).toHaveTextContent('₹7,080.00');
     // Without an account it can't be recorded
     expect(screen.getByRole('button', { name: 'Record bill' })).toBeDisabled();
     await choose('Account for line 1', '5300 · Office rent');
@@ -217,7 +217,7 @@ describe('bills', () => {
     await choose('Tax on line 1', 'GST 18%');
     await userEvent.click(screen.getByRole('checkbox', { name: /We pay GST/ }));
     await waitFor(() => expect(totals()).toHaveTextContent('GST we pay under reverse charge'));
-    expect(totals()).toHaveTextContent('INR 1,000.00');
+    expect(totals()).toHaveTextContent('₹1,000.00');
     expect(totals()).not.toHaveTextContent('CGST 9%');
   }, 20_000);
 

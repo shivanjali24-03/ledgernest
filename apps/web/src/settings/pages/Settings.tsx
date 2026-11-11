@@ -363,9 +363,9 @@ export default function Settings() {
             <ErrorState onRetry={() => void query.refetch()} />
           </Card>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
             {/* First on phones; the right-hand column on wide screens */}
-            <div className="lg:sticky lg:top-20 lg:order-last">
+            <div className="space-y-4 lg:order-last">
               <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} />
               {query.data.country === 'IN' && <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} kind="signature" />}
               {query.data.country === 'IN' && <LogoCard api={api} settings={query.data} canManage={canManage} queryKey={queryKey} kind="seal" />}
