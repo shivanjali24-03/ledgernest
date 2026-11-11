@@ -1,3 +1,4 @@
+import { QUOTE_KINDS, type QuoteKind } from '@ledgernest/shared';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
@@ -32,9 +33,9 @@ function quoteErrorMessage(e: unknown, t: (k: string) => string) {
 }
 
 /** `template`: a quote to copy into a new one (same customer, lines and notes; dated today) */
-function DraftForm({ quote, template, api }: { quote: Quote | null; template?: Quote; api: QuotesApi }) {
+function DraftForm({ quote, template, api, kind = 'quote' }: { quote: Quote | null; template?: Quote; api: QuotesApi; kind?: QuoteKind }) {
   const { t } = useTranslation();
-  const toQuote = (p: SalesDraftPayload) => ({ contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, lines: p.lines });
+  const toQuote = (p: SalesDraftPayload) => ({ kind: quote?.kind ?? kind, contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, lines: p.lines });
   return (
     <SalesDraftForm
       config={{
@@ -174,6 +175,7 @@ export default function QuoteEditor() {
   const quote = query.data;
   const [params] = useSearchParams();
   const copyId = isNew ? params.get('copy') : null;
+  const newKind: QuoteKind = QUOTE_KINDS.find((k) => k === params.get('kind')) ?? 'quote';
   const forContact = isNew ? params.get('contact') : null;
   const copy = useQuery({ queryKey: ['quotes', session.organizationId, 'one', copyId], queryFn: () => api!.get(copyId!), enabled: !!api && !!copyId });
   const canManage = session.permissions.has('invoices.manage');
@@ -190,6 +192,15 @@ export default function QuoteEditor() {
       queryClient.setQueryData(key, q);
       void queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast(t(`quotes.moved.${q.status}`, { number: q.number }));
+    },
+    onError: (e) => toast(quoteErrorMessage(e, t), 'error'),
+  });
+  const copyAs = useMutation({
+    mutationFn: (kind: QuoteKind) => api!.copy(quote!.id, kind),
+    onSuccess: (q) => {
+      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      toast(t('quotes.copied', { number: q.number }));
+      navigate(`/quotes/${q.id}`);
     },
     onError: (e) => toast(quoteErrorMessage(e, t), 'error'),
   });
@@ -212,7 +223,7 @@ export default function QuoteEditor() {
           <ArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden /> {t('quotes.title')}
         </Link>
         <PageHeader
-          title={isNew ? t('quotes.newTitle') : (quote?.number ?? '')}
+          title={isNew ? t(`quotes.newKindTitle.${newKind}`) : quote ? `${t(`quotes.kinds.${quote.kind ?? 'quote'}`)} ${quote.number}` : ''}
           description={isNew ? t('quotes.newHint') : undefined}
           actions={
             quote ? (
@@ -225,6 +236,12 @@ export default function QuoteEditor() {
                     {t('quotes.duplicate')}
                   </Button>
                 )}
+                {/* A quotation goes on to a sales order or a proforma; a proforma to a sales order */}
+                {canManage && quote.status !== 'declined' && (['sales_order', 'proforma'] as const).filter((k) => k !== (quote.kind ?? 'quote') && !(quote.kind === 'sales_order')).map((k) => (
+                  <Button key={k} variant="secondary" icon={<Copy className="size-4" />} loading={copyAs.isPending && copyAs.variables === k} onClick={() => copyAs.mutate(k)}>
+                    {t(`quotes.copyAs.${k}`)}
+                  </Button>
+                ))}
                 {!editable && (
                   <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
                     {t('invoices.print')}
@@ -273,14 +290,14 @@ export default function QuoteEditor() {
           canManage ? (
             copyId ? (
               copy.data ? (
-                <DraftForm key={`copy-${copyId}`} quote={null} template={copy.data} api={api} />
+                <DraftForm key={`copy-${copyId}`} quote={null} template={copy.data} api={api} kind={copy.data.kind ?? 'quote'} />
               ) : (
                 <Card>
                   <SkeletonRows rows={6} />
                 </Card>
               )
             ) : (
-              <DraftForm key={`new-${forContact ?? ''}`} quote={null} template={forContact ? ({ contact: { id: forContact }, lines: [], currency: null, notes: null, placeOfSupply: null, reference: null } as unknown as Quote) : undefined} api={api} />
+              <DraftForm key={`new-${newKind}-${forContact ?? ''}`} kind={newKind} quote={null} template={forContact ? ({ contact: { id: forContact }, lines: [], currency: null, notes: null, placeOfSupply: null, reference: null } as unknown as Quote) : undefined} api={api} />
             )
           ) : null
         ) : query.isPending ? (

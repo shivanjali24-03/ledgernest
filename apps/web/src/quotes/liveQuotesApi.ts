@@ -11,6 +11,7 @@ export function createLiveQuotesApi(client: AuthClient, organizationId: string):
     },
     list: (q) => {
       const p = new URLSearchParams({ page: String(q.page), pageSize: String(q.pageSize) });
+      if (q.kind) p.set('kind', q.kind);
       if (q.state) p.set('state', q.state);
       if (q.contactId) p.set('contactId', q.contactId);
       if (q.search) p.set('search', q.search);
@@ -22,6 +23,7 @@ export function createLiveQuotesApi(client: AuthClient, organizationId: string):
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
     move: (id, status) => r(`/${id}/status`, { method: 'POST', json: { status } }),
     convert: (id, input) => r(`/${id}/convert`, { method: 'POST', json: input }),
+    copy: (id, kind) => r(`/${id}/copy`, { method: 'POST', json: { kind } }),
     email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     share: (id) => r(`/${id}/share`, { method: 'POST' }),
     unshare: (id) => r(`/${id}/share`, { method: 'DELETE' }),

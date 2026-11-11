@@ -3,6 +3,16 @@ import { invoiceLineSchema, MAX_INVOICE_LINES } from '../invoices/index.js';
 import { isoDaySchema } from '../periods/index.js';
 
 /**
+ * The documents before an invoice: a quotation (an offer), a proforma invoice (asking for payment in advance; not a
+ * tax invoice) and a sales order (the order confirmed). Each kind numbers on its own.
+ */
+export const QUOTE_KINDS = ['quote', 'proforma', 'sales_order'] as const;
+export type QuoteKind = (typeof QUOTE_KINDS)[number];
+const QUOTE_PREFIX: Record<QuoteKind, string> = { quote: 'QT', proforma: 'PI', sales_order: 'SO' };
+export const QUOTE_TITLES: Record<QuoteKind, string> = { quote: 'Quotation', proforma: 'Proforma invoice', sales_order: 'Sales order' };
+
+
+/**
  * Quotes (estimates): priced like invoices, with the same lines and GST rules, but they post nothing. A quote is
  * drafted, sent, then accepted or declined; an accepted (or sent) one becomes a draft invoice with the same lines.
  * Past its expiry date an open quote shows as expired.
@@ -26,6 +36,8 @@ const text = (max: number) =>
 export const quoteDraftSchema = z
   .object({
     contactId: z.uuid(),
+    /** A quotation, proforma invoice or sales order */
+    kind: z.enum(QUOTE_KINDS).optional().default('quote'),
     quoteDate: isoDaySchema,
     expiryDate: isoDaySchema,
     reference: text(64),
@@ -67,6 +79,7 @@ export function quoteRows(q: { currency: string; lines: { description: string; q
 }
 
 export const quoteListQuerySchema = z.object({
+  kind: z.enum(QUOTE_KINDS).optional(),
   state: z.enum([...QUOTE_STATUSES, 'expired', 'open']).optional(),
   contactId: z.uuid().optional(),
   search: z.string().trim().max(100).optional(),
@@ -91,7 +104,17 @@ export function quoteState(q: { status: QuoteStatus; expiryDate: string }, today
   return (q.status === 'draft' || q.status === 'sent') && q.expiryDate < today ? 'expired' : q.status;
 }
 
-export const quoteNumber = (n: number) => `QT-${String(n).padStart(4, '0')}`;
+export const quoteNumber = (n: number, kind: QuoteKind = 'quote') => `${QUOTE_PREFIX[kind]}-${String(n).padStart(4, '0')}`;
+/** "PI-0012" → its kind and serial, for search */
+export function parseQuoteNumber(text: string): { kind: QuoteKind | null; number: number } | null {
+  const m = /^(?:(QT|PI|SO)-)?(\d+)$/i.exec(text.trim());
+  if (!m) return null;
+  const kind = m[1] ? ((Object.entries(QUOTE_PREFIX).find(([, p]) => p === m[1]!.toUpperCase())?.[0] as QuoteKind) ?? null) : null;
+  return { kind, number: Number(m[2]) };
+}
+
+/** Copying one into another kind: a quote accepted becomes a sales order or a proforma */
+export const quoteCopySchema = z.object({ kind: z.enum(QUOTE_KINDS) });
 
 /** A customer accepting or declining a quote from its link */
 export const quoteDecisionSchema = z.object({

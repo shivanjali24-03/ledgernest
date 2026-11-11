@@ -1,4 +1,4 @@
-import type { QuoteDraftInput, QuoteState, QuoteStatus } from '@ledgernest/shared';
+import type { QuoteDraftInput, QuoteState, QuoteStatus, QuoteKind } from '@ledgernest/shared';
 
 export interface QuoteLine {
   id: string;
@@ -18,6 +18,8 @@ export interface QuoteLine {
 
 export interface Quote {
   id: string;
+  /** A quotation, proforma invoice or sales order */
+  kind?: QuoteKind;
   number: string;
   status: QuoteStatus;
   state: QuoteState;
@@ -49,7 +51,7 @@ export type QuoteFilter = QuoteState | 'open';
 
 /** Quotes for customers. Live and demo both implement it. */
 export interface QuotesApi {
-  list(q: { state?: QuoteFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: QuoteSummary[] }>;
+  list(q: { kind?: QuoteKind; state?: QuoteFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: QuoteSummary[] }>;
   get(id: string): Promise<Quote>;
   /** The quote as a PDF file */
   pdf(id: string): Promise<{ blob: Blob; filename: string }>;
@@ -59,6 +61,8 @@ export interface QuotesApi {
   move(id: string, status: 'draft' | 'sent' | 'accepted' | 'declined'): Promise<Quote>;
   /** A draft invoice with the quote's lines */
   convert(id: string, input: { issueDate?: string }): Promise<{ quote: Quote; invoiceId: string }>;
+  /** A new draft of another kind with the same lines (quote → sales order or proforma) */
+  copy(id: string, kind: QuoteKind): Promise<Quote>;
   /** Emails it as a PDF (a draft becomes sent); the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string; quote: Quote }>;
   /** The customer's link to accept or decline (a draft becomes sent); the same until turned off */

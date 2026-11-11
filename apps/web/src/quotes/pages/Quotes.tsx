@@ -1,3 +1,4 @@
+import { QUOTE_KINDS, type QuoteKind } from '@ledgernest/shared';
 import { useDeferredValue, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
@@ -30,12 +31,14 @@ export default function Quotes() {
   const [params] = useSearchParams();
   const FILTERS = ['all', 'open', 'accepted', 'expired', 'invoiced', 'declined'] as const;
   const [filter, setFilter] = useState<Filter>(FILTERS.find((f) => f === params.get('state')) ?? 'all');
+  // Quotations, proforma invoices or sales orders
+  const [kind, setKind] = useState<QuoteKind | 'all'>(QUOTE_KINDS.find((k) => k === params.get('kind')) ?? 'all');
   const [search, setSearch] = useState('');
   const deferred = useDeferredValue(search);
   const [page, setPage] = useState(1);
   const query = useQuery({
-    queryKey: ['quotes', session.organizationId, session.role ?? session.customRoleName, filter, deferred, page],
-    queryFn: () => api!.list({ state: filter === 'all' ? undefined : filter, search: deferred || undefined, page, pageSize: PAGE_SIZE }),
+    queryKey: ['quotes', session.organizationId, session.role ?? session.customRoleName, kind, filter, deferred, page],
+    queryFn: () => api!.list({ kind: kind === 'all' ? undefined : kind, state: filter === 'all' ? undefined : filter, search: deferred || undefined, page, pageSize: PAGE_SIZE }),
     enabled: !!api,
     placeholderData: keepPreviousData,
   });
@@ -57,14 +60,20 @@ export default function Quotes() {
           description={t('quotes.description')}
           actions={
             canManage ? (
-              <Button icon={<Plus className="size-4" />} onClick={() => navigate('/quotes/new')}>
-                {t('quotes.new')}
+              <Button icon={<Plus className="size-4" />} onClick={() => navigate(`/quotes/new${kind !== 'all' && kind !== 'quote' ? `?kind=${kind}` : ''}`)}>
+                {t(`quotes.newKind.${kind === 'all' ? 'quote' : kind}`)}
               </Button>
             ) : undefined
           }
         />
       </motion.div>
       <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3">
+        <Segmented<QuoteKind | 'all'>
+          label={t('quotes.kindFilter')}
+          value={kind}
+          onChange={(v) => (setKind(v), setPage(1))}
+          options={(['all', ...QUOTE_KINDS] as const).map((v) => ({ value: v, label: t(`quotes.kinds.${v}`) }))}
+        />
         <Segmented<Filter>
           label={t('quotes.filter')}
           value={filter}

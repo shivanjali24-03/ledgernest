@@ -4438,7 +4438,29 @@
       "message": "प्रिय {{name}}, {{organization}} कडून {{amount}} चे कोटेशन {{number}}. तुम्ही ते येथे पाहून स्वीकारू शकता: {{link}}",
       "acceptedBy": "{{name}} यांनी कोटेशन लिंकवरून स्वीकारले.",
       "declinedBy": "{{name}} यांनी कोटेशन लिंकवरून नाकारले."
-    }
+    },
+    "kindFilter": "प्रकार",
+    "kinds": {
+      "all": "सर्व",
+      "quote": "कोटेशन",
+      "proforma": "प्रोफॉर्मा बीजक",
+      "sales_order": "विक्री ऑर्डर"
+    },
+    "newKind": {
+      "quote": "नवीन कोटेशन",
+      "proforma": "नवीन प्रोफॉर्मा बीजक",
+      "sales_order": "नवीन विक्री ऑर्डर"
+    },
+    "newKindTitle": {
+      "quote": "नवीन कोटेशन",
+      "proforma": "नवीन प्रोफॉर्मा बीजक",
+      "sales_order": "नवीन विक्री ऑर्डर"
+    },
+    "copyAs": {
+      "proforma": "प्रोफॉर्मा बीजक बनवा",
+      "sales_order": "विक्री ऑर्डर बनवा"
+    },
+    "copied": "यावरून {{number}} चा मसुदा तयार"
   },
   "emailDialog": {
     "send": "पाठवा",

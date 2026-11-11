@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   quoteNumber,
+  type QuoteKind,
   quoteState,
   todayIn,
   type QuoteStatus,
@@ -38,7 +39,7 @@ export class QuoteShareService {
     const organizationId = ctx.tenant.organizationId;
     const q = await this.prisma.quote.findFirst({
       where: { organizationId, id },
-      select: { status: true, number: true, shareToken: true },
+      select: { status: true, number: true, kind: true, shareToken: true },
     });
     if (!q) throw new NotFoundException('Quote not found.');
     if (q.status === 'invoiced' || q.status === 'declined')
@@ -68,7 +69,7 @@ export class QuoteShareService {
           organizationId,
           entityType: 'quote',
           entityId: id,
-          after: { number: quoteNumber(q.number) },
+          after: { number: quoteNumber(q.number, q.kind as QuoteKind) },
           req: ctx.req,
         },
         tx,

@@ -1986,6 +1986,8 @@ model Quote {
   id             String    @id @default(uuid()) @db.Uuid
   organizationId String    @map("organization_id") @db.Uuid
   number         Int
+  /// quote | proforma | sales_order, each numbered on its own
+  kind           String    @default("quote")
   contactId      String    @map("contact_id") @db.Uuid
   status         String    @default("draft") /// draft | sent | accepted | declined | invoiced
   quoteDate      DateTime  @map("quote_date") @db.Date
@@ -2018,7 +2020,7 @@ model Quote {
   lines        QuoteLine[]
 
   @@unique([organizationId, id])
-  @@unique([organizationId, number])
+  @@unique([organizationId, kind, number])
   @@index([organizationId, status])
   @@map("quotes")
 }

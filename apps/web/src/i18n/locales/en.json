@@ -4438,7 +4438,29 @@
       "message": "Dear {{name}}, here is quote {{number}} from {{organization}} for {{amount}}. You can see it and accept it here: {{link}}",
       "acceptedBy": "Accepted by {{name}} from the quote link.",
       "declinedBy": "Declined by {{name}} from the quote link."
-    }
+    },
+    "kindFilter": "Kind",
+    "kinds": {
+      "all": "All",
+      "quote": "Quote",
+      "proforma": "Proforma invoice",
+      "sales_order": "Sales order"
+    },
+    "newKind": {
+      "quote": "New quote",
+      "proforma": "New proforma invoice",
+      "sales_order": "New sales order"
+    },
+    "newKindTitle": {
+      "quote": "New quote",
+      "proforma": "New proforma invoice",
+      "sales_order": "New sales order"
+    },
+    "copyAs": {
+      "proforma": "Make a proforma invoice",
+      "sales_order": "Make a sales order"
+    },
+    "copied": "{{number}} drafted from it"
   },
   "emailDialog": {
     "send": "Send",

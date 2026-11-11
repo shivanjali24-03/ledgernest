@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import {
   quoteConvertSchema,
+  quoteCopySchema,
   quoteDraftSchema,
   quoteEmailSchema,
   quoteListQuerySchema,
@@ -142,6 +143,23 @@ export class QuotesController {
     @Req() req: Request,
   ) {
     return this.quotes.move(quoteId, body.status, { actor, tenant, req });
+  }
+
+  @Post(':id/copy')
+  @RequirePermission('invoices.manage')
+  @ApiOkResponse({
+    description:
+      'A new draft quotation, proforma invoice or sales order with the same lines',
+  })
+  copy(
+    @Param('id', id) quoteId: string,
+    @Body(new ZodValidationPipe(quoteCopySchema))
+    body: z.output<typeof quoteCopySchema>,
+    @CurrentActor() actor: Actor,
+    @CurrentTenant() tenant: Tenant,
+    @Req() req: Request,
+  ) {
+    return this.quotes.copy(quoteId, body.kind, { actor, tenant, req });
   }
 
   @Post(':id/convert')
