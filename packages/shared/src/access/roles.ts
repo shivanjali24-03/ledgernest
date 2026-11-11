@@ -61,6 +61,8 @@ export const BUILT_IN_ROLES: Record<BuiltInRoleId, RoleDefinition> = {
       'banking.reconcile',
       'reports.export',
       'audit.view',
+      'payroll.view',
+      'payroll.manage',
     ],
   },
   bookkeeper: {
@@ -79,7 +81,7 @@ export const BUILT_IN_ROLES: Record<BuiltInRoleId, RoleDefinition> = {
       'reports.export',
     ],
   },
-  auditor: { id: 'auditor', scope: 'organization', rank: 30, builtIn: true, permissions: [...READ_BOOKS, 'reports.export', 'audit.view'] },
+  auditor: { id: 'auditor', scope: 'organization', rank: 30, builtIn: true, permissions: [...READ_BOOKS, 'reports.export', 'audit.view', 'payroll.view'] },
   viewer: { id: 'viewer', scope: 'organization', rank: 10, builtIn: true, permissions: ['org.settings.view', 'accounts.view', 'reports.view'] },
 };
 

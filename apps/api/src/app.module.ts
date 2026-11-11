@@ -46,10 +46,12 @@ import { PrismaModule } from './prisma/prisma.module.js';
 
 import { PdfFontsModule } from './pdf-fonts/pdf-fonts.module.js';
 import { GstRegistrationsModule } from './gst-registrations/gst-registrations.module.js';
+import { PayrollModule } from './payroll/payroll.module.js';
 @Module({
   imports: [
     PdfFontsModule,
     GstRegistrationsModule,
+    PayrollModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,

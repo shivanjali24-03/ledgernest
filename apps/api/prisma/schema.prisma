@@ -196,6 +196,9 @@ model Organization {
   warehouses         Warehouse[]
   stockTransfers     StockTransfer[]
   gstRegistrations   GstRegistration[]
+  employees          Employee[]
+  payRuns            PayRun[]
+  payslips           Payslip[]
 
   @@map("organizations")
 }
@@ -2497,4 +2500,102 @@ model GstRegistration {
   @@unique([organizationId, id])
   @@unique([organizationId, gstin])
   @@map("gst_registrations")
+}
+
+/// Someone on the payroll, with their monthly salary structure and what's deducted from it
+model Employee {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  code              String
+  name              String
+  designation       String?
+  department        String?
+  email             String?
+  phone             String?
+  /// male | female | other (Maharashtra's professional tax exempts women up to ₹25,000)
+  gender            String?
+  dateOfJoining     DateTime  @map("date_of_joining") @db.Date
+  dateOfLeaving     DateTime? @map("date_of_leaving") @db.Date
+  pan               String?
+  uan               String?
+  esiNumber         String?   @map("esi_number")
+  /// The state worked in: its professional tax applies
+  stateCode         String?   @map("state_code")
+  /// Monthly salary, in the smallest unit
+  basic             BigInt
+  hra               BigInt    @default(0)
+  specialAllowance  BigInt    @default(0) @map("special_allowance")
+  otherAllowance    BigInt    @default(0) @map("other_allowance")
+  pf                Boolean   @default(true)
+  pfCapped          Boolean   @default(true) @map("pf_capped")
+  esi               Boolean   @default(true)
+  pt                Boolean   @default(true)
+  /// new | old
+  taxRegime         String    @default("new") @map("tax_regime")
+  monthlyTds        BigInt?   @map("monthly_tds")
+  bankAccountName   String?   @map("bank_account_name")
+  bankAccountNumber String?   @map("bank_account_number")
+  ifsc              String?
+  archivedAt        DateTime? @map("archived_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payslips     Payslip[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, code])
+  @@map("employees")
+}
+
+/// A month's salaries: drafted, posted to the books at the month's end, then paid
+model PayRun {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  /// YYYY-MM
+  month          String
+  /// draft | posted | paid
+  status         String    @default("draft")
+  gross          BigInt    @default(0)
+  deductions     BigInt    @default(0)
+  net            BigInt    @default(0)
+  employerCost   BigInt    @default(0) @map("employer_cost")
+  journalEntryId String?   @map("journal_entry_id") @db.Uuid
+  paidOn         DateTime? @map("paid_on") @db.Date
+  payEntryId     String?   @map("pay_entry_id") @db.Uuid
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payslips     Payslip[]
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, month])
+  @@map("pay_runs")
+}
+
+/// One employee's pay for a month: what was earned, deducted and added by the employer
+model Payslip {
+  id              String  @id @default(uuid()) @db.Uuid
+  organizationId  String  @map("organization_id") @db.Uuid
+  payRunId        String  @map("pay_run_id") @db.Uuid
+  employeeId      String  @map("employee_id") @db.Uuid
+  daysInMonth     Int     @map("days_in_month")
+  daysPaid        Decimal @map("days_paid") @db.Decimal(4, 1)
+  /// [{ code, label, amount }]
+  earnings        Json
+  deductions      Json
+  employer        Json
+  gross           BigInt
+  totalDeductions BigInt  @map("total_deductions")
+  net             BigInt
+  employerCost    BigInt  @map("employer_cost")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payRun       PayRun       @relation(fields: [organizationId, payRunId], references: [organizationId, id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: NoAction)
+
+  @@unique([organizationId, id])
+  @@unique([payRunId, employeeId])
+  @@map("payslips")
 }

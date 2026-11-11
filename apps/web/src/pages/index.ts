@@ -49,6 +49,7 @@ export const FixedAssets = lazy(() => import('../assets/pages/FixedAssets'));
 export const Budgets = lazy(() => import('../budgets/pages/Budgets'));
 export const CostCentres = lazy(() => import('../cost-centres/pages/CostCentres'));
 export const Inventory = lazy(() => import('../inventory/pages/Inventory'));
+export const Payroll = lazy(() => import('../payroll/Payroll'));
 export const Approvals = lazy(() => import('../approvals/pages/Approvals'));
 export const Imports = lazy(() => import('../imports/pages/Imports'));
 export const Integrations = lazy(() => import('../integrations/pages/Integrations'));

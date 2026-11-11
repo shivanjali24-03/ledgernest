@@ -6,7 +6,7 @@ import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
 import RouteError from './pages/RouteError';
-import { AcceptInvite, BalanceConfirmation, LegalPage, PublicQuote, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, PurchaseOrders, PurchaseOrderEditor, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team, Collections, YearEnd } from './pages';
+import { AcceptInvite, BalanceConfirmation, LegalPage, PublicQuote, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, Payroll, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, PurchaseOrders, PurchaseOrderEditor, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team, Collections, YearEnd } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -37,6 +37,7 @@ const BUILT: RouteObject[] = [
   { path: 'budgets', element: page(<Budgets />, 'reports.view') },
   { path: 'cost-centres', element: page(<CostCentres />, 'accounts.view') },
   { path: 'inventory', element: page(<Inventory />, 'reports.view') },
+  { path: 'payroll', element: page(<Payroll />, 'payroll.view') },
   { path: 'approvals', element: page(<Approvals />, 'journals.view') },
   { path: 'imports', element: page(<Imports />, 'org.settings.view') },
   { path: 'integrations', element: page(<Integrations />, 'integrations.manage') },

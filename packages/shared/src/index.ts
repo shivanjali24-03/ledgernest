@@ -61,3 +61,4 @@ export * from './numbering/index.js';
 export * from './interest/index.js';
 export * from './warehouses/index.js';
 export * from './gst-registrations/index.js';
+export * from './payroll/index.js';

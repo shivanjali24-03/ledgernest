@@ -47,6 +47,9 @@ export const ORGANIZATION_PERMISSIONS = [
   // approvals
   'approvals.manage',
   'approvals.approve',
+  // payroll (salaries are private: not a bookkeeper's)
+  'payroll.view',
+  'payroll.manage',
   // banking
   'banking.view',
   'banking.manage',
