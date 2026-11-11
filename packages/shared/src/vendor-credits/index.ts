@@ -2,10 +2,14 @@ import { z } from 'zod';
 import { invoiceNumber, parseQuantity } from '../invoices/index.js';
 import { MAX_LINE_AMOUNT } from '../journals/index.js';
 import { isoDaySchema } from '../periods/index.js';
+import { serialsSchema } from '../inventory/serials.js';
+import { rateSchema } from '../currencies/index.js';
 
 /**
  * Debit notes to vendors: goods sent back or a price cut, some of a bill's lines credited with their input tax. The
- * credit comes off the bill; any more stays with the vendor for their other bills, or they refund it.
+ * credit comes off the bill; any more stays with the vendor for their other bills, or they refund it. Bills in another
+ * currency, under reverse charge or with a bill of entry are credited the way they were posted; goods kept in stock go
+ * back out of stock.
  */
 const amount = z.number().int().positive('Enter an amount above 0.').max(MAX_LINE_AMOUNT);
 const text = (max: number) =>
@@ -34,6 +38,8 @@ export const vendorCreditSchema = z.object({
           .string()
           .trim()
           .refine((q) => (parseQuantity(q) ?? 0n) > 0n, 'Enter a quantity above 0.'),
+        /** Goods kept by serial number: which units go back */
+        serials: serialsSchema,
       }),
     )
     .min(1, 'Credit at least one line.'),
@@ -45,7 +51,8 @@ export const vendorCreditApplySchema = z.object({ billId: z.uuid(), amount, date
 export type VendorCreditApplyInput = z.input<typeof vendorCreditApplySchema>;
 
 /** The vendor pays some of the remaining credit back */
-export const vendorCreditRefundSchema = z.object({ date: isoDaySchema, bankAccountId: z.uuid(), amount, reference: text(100) });
+/** For credit in another currency, the rate it comes back at (omitted = the day's rate) */
+export const vendorCreditRefundSchema = z.object({ date: isoDaySchema, bankAccountId: z.uuid(), amount, rate: rateSchema.nullable().optional().default(null), reference: text(100) });
 export type VendorCreditRefundInput = z.input<typeof vendorCreditRefundSchema>;
 
 export const vendorCreditVoidSchema = z.object({ date: isoDaySchema.optional(), reason: z.string().trim().max(500).optional() });

@@ -126,7 +126,6 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
           const src = bill.lines.find((x) => x.id === l.billLineId);
           if (!src) throw refuse(400, 'line_not_found', { line: n + 1 });
           const room = left.find((x) => x.billLineId === src.id)!;
-          if (room.stock) throw refuse(400, 'stock_line', { line: n + 1 });
           if (parseQuantity(l.quantity)! > parseQuantity(room.quantity)!) throw refuse(409, 'over_credited', { line: n + 1, left: room.quantity });
           return { src, quantity: formatQuantity(parseQuantity(l.quantity)!), rates: ratesOf(src.taxGroup?.id) };
         });
@@ -191,7 +190,6 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
         if (!bill || bill.contact.id !== c.contact.id) throw refuse(400, 'bill_not_found');
         if (bill.status !== 'open') throw refuse(409, 'bill_not_open');
         if (bill.currency) throw refuse(400, 'bill_currency');
-        if (bill.reverseCharge) throw refuse(400, 'bill_reverse_charge');
         if (p.data.amount > c.remaining) throw refuse(409, 'over_applied');
         if (p.data.amount > bill.balance) throw refuse(409, 'over_allocated');
         const date = p.data.date ?? todayIn('Asia/Kolkata');

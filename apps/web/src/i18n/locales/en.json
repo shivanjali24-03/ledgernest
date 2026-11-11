@@ -3915,7 +3915,9 @@
       "adjustment": "Adjustment",
       "adjustment_undo": "Adjustment undone",
       "credit_note": "Credit note",
-      "credit_note_void": "Credit note voided"
+      "credit_note_void": "Credit note voided",
+      "debit_note": "Debit note",
+      "debit_note_void": "Debit note voided"
     },
     "onHandPill": "On hand: {{quantity}} {{unit}}",
     "track": "Track stock",
@@ -4599,7 +4601,7 @@
     "issue": "Raise debit note",
     "issued": "Raised {{number}}",
     "creditLine": "Quantity to send back for {{description}}",
-    "stockLine": "kept in stock: use a stock adjustment",
+    "stockLine": "goes back out of stock",
     "reasonPlaceholder": "Damaged, wrong item, overcharged…",
     "fields": {
       "vendorReference": "Their credit note number",
@@ -4646,10 +4648,16 @@
       "over_applied": "That’s more credit than is left on this note.",
       "has_refunds": "The vendor refunded some of this credit, so it can’t be voided.",
       "before_vendor_credit": "A refund can’t be dated before its debit note.",
-      "stock_line": "Goods kept in stock go back with a stock adjustment instead.",
-      "bill_currency": "Debit notes are for bills in rupees for now.",
+      "stock_line": "Goods kept in stock can’t be sent back in the demo.",
+      "bill_currency": "In the demo, debit notes are for bills in rupees.",
       "bill_not_open": "Only recorded bills can be credited.",
-      "bill_reverse_charge": "Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again."
+      "bill_reverse_charge": "In the demo, debit notes aren’t raised against bills under reverse charge.",
+      "serial_not_bought": "A serial number ticked didn’t come in on this bill line.",
+      "insufficient_stock": "There isn’t that much of the item left in stock to send back.",
+      "insufficient_batch": "There isn’t that much left in the batch it came in to send back.",
+      "serials_count": "Tick one serial number for each unit going back.",
+      "bank_currency": "That account is kept in another currency than the credit.",
+      "no_rate": "There is no exchange rate for that day. Add one under Currencies."
     },
     "email": {
       "action": "Email debit note",
@@ -4659,7 +4667,8 @@
       "sent": "Sent to {{email}}.",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}",
       "noEmail": "This vendor has no email address. Enter one to send it to."
-    }
+    },
+    "serialsBack": "Serial numbers going back on {{description}}"
   },
   "account": {
     "delete": {
@@ -5038,7 +5047,8 @@
       "in_stock": "In stock",
       "sold": "Sold",
       "written_off": "Written off",
-      "removed": "Bill voided"
+      "removed": "Bill voided",
+      "returned": "Returned to the supplier"
     },
     "errors": {
       "serials_not_whole": "Goods with serial numbers come in whole units, each with its serial.",

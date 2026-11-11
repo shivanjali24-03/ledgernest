@@ -14,7 +14,7 @@ import { useToast } from '../ui/toastContext';
 import { debitNoteErrorMessage } from './errors';
 import type { DebitNote, DebitNotesApi } from './types';
 
-/** Send back or get credit for some of a bill's lines: how much of each, worked out with its tax as you type. Goods kept in stock go back with a stock adjustment instead. */
+/** Send back or get credit for some of a bill's lines: how much of each, worked out with its tax as you type. Goods kept in stock go back out of stock; units with serial numbers are ticked. */
 export default function DebitNoteDialog({ bill, api, onClose, onDone }: { bill: Bill; api: DebitNotesApi; onClose: () => void; onDone: (c: DebitNote) => void }) {
   const { t } = useTranslation();
   const locale = useIntlLocale();
@@ -25,7 +25,7 @@ export default function DebitNoteDialog({ bill, api, onClose, onDone }: { bill: 
   const taxesApi = useTaxesApi();
   const taxes = useQuery({ queryKey: ['taxes', session.organizationId, session.role ?? session.customRoleName], queryFn: () => taxesApi!.list(), enabled: !!taxesApi });
   const left = useQuery({ queryKey: ['debit-notes', session.organizationId, 'creditable', bill.id], queryFn: () => api.creditable(bill.id) });
-  const code = settings?.baseCurrency ?? 'INR';
+  const code = bill.currency ?? settings?.baseCurrency ?? 'INR';
   const digits = currencyDigits(code);
   const plain = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
   const [qty, setQty] = useState<Record<string, string>>({});
@@ -34,7 +34,15 @@ export default function DebitNoteDialog({ bill, api, onClose, onDone }: { bill: 
   const [vendorReference, setVendorReference] = useState('');
 
   const stock = (lineId: string) => !!left.data?.find((l) => l.billLineId === lineId)?.stock;
-  const room = (lineId: string) => (stock(lineId) ? 0n : (parseQuantity(left.data?.find((l) => l.billLineId === lineId)?.quantity ?? '0') ?? 0n));
+  const room = (lineId: string) => parseQuantity(left.data?.find((l) => l.billLineId === lineId)?.quantity ?? '0') ?? 0n;
+  // Units with serial numbers going back: ticked from those that came in on the line
+  const [back, setBack] = useState<Record<string, string[]>>({});
+  const toggle = (lineId: string, serial: string) =>
+    setBack((b) => {
+      const now = b[lineId]?.includes(serial) ? b[lineId]!.filter((x) => x !== serial) : [...(b[lineId] ?? []), serial];
+      setQty((q) => ({ ...q, [lineId]: now.length ? String(now.length) : '' }));
+      return { ...b, [lineId]: now };
+    });
   const rows = bill.lines.map((l) => {
     const typed = qty[l.id]?.trim() ?? '';
     const q = typed ? parseQuantity(typed) : 0n;
@@ -46,7 +54,7 @@ export default function DebitNoteDialog({ bill, api, onClose, onDone }: { bill: 
   const problem = rows.some((r) => r.invalid) ? 'quantity' : !chosen.length ? 'nothing' : null;
 
   const save = useMutation({
-    mutationFn: () => api.create({ billId: bill.id, date, reason: reason || null, vendorReference: vendorReference || null, lines: chosen.map((r) => ({ billLineId: r.line.id, quantity: formatQuantity(r.q!) })) }),
+    mutationFn: () => api.create({ billId: bill.id, date, reason: reason || null, vendorReference: vendorReference || null, lines: chosen.map((r) => ({ billLineId: r.line.id, quantity: formatQuantity(r.q!), ...(r.line.item?.trackSerials ? { serials: back[r.line.id] ?? [] } : {}) })) }),
     onSuccess: (c) => {
       for (const k of ['debit-notes', 'bills', 'contacts', 'journals', 'reports']) void queryClient.invalidateQueries({ queryKey: [k] });
       toast(t('debitNotes.issued', { number: c.number }));
@@ -118,6 +126,17 @@ export default function DebitNoteDialog({ bill, api, onClose, onDone }: { bill: 
                       {r.line.taxGroup && ` · ${r.line.taxGroup.name}`}
                       {stock(r.line.id) && ` · ${t('debitNotes.stockLine')}`}
                     </span>
+                    {r.line.item?.trackSerials && (r.line.serials?.length ?? 0) > 0 && (
+                      <fieldset className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                        <legend className="sr-only">{t('debitNotes.serialsBack', { description: r.line.description })}</legend>
+                        {r.line.serials!.map((sn) => (
+                          <label key={sn} className="flex items-center gap-1 font-mono text-xs" dir="ltr">
+                            <input type="checkbox" checked={back[r.line.id]?.includes(sn) ?? false} onChange={() => toggle(r.line.id, sn)} className="size-3.5 rounded accent-brand-600" />
+                            {sn}
+                          </label>
+                        ))}
+                      </fieldset>
+                    )}
                   </td>
                   <td className="py-1.5 text-end font-mono tabular-nums" dir="ltr">
                     {left.data ? formatQuantity(room(r.line.id)) : '…'}

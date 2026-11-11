@@ -6,11 +6,13 @@ import {
 } from '@nestjs/common';
 import {
   billNumber,
+  currencyDigits,
   formatQuantity,
   invoiceAmounts,
   journalNumber,
   parseQuantity,
   splitTax,
+  toBase,
   todayIn,
   vendorCreditNumber,
   type VendorCreditApplyInput,
@@ -24,6 +26,9 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NumberingService } from '../numbering/numbering.service.js';
+import { ensureFxAccount } from '../accounts/system-accounts.js';
+import { rateOn, rateText } from '../currencies/rate-on.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
@@ -64,6 +69,8 @@ const select = {
   date: true,
   vendorReference: true,
   reason: true,
+  currency: true,
+  rate: true,
   subtotal: true,
   taxTotal: true,
   total: true,
@@ -110,6 +117,7 @@ const select = {
       id: true,
       date: true,
       amount: true,
+      rate: true,
       reference: true,
       bill: billRef,
       journalEntry: entryRef,
@@ -124,7 +132,9 @@ type Row = Prisma.VendorCreditGetPayload<{ select: typeof select }>;
  * bill lines it takes back, so expenses (or assets) and input tax come down and so does what's owed to the vendor.
  * The credit goes onto the bill first; what's left is the vendor's to settle, on another bill or as a refund.
  *
- * For now: bills in the base currency, and lines without goods tracked in stock (record a stock adjustment for those).
+ * Every bill is credited the way it was posted: in its own currency at the rate it was posted at; under reverse
+ * charge, the GST we owed comes off with its input credit; a bill of entry's assessable value is taken back off; GST
+ * that couldn't be claimed comes off the cost. Goods kept in stock go back out of stock at what they cost on the bill.
  */
 @Injectable()
 export class VendorCreditsService {
@@ -133,6 +143,7 @@ export class VendorCreditsService {
     private readonly audit: AuditService,
     private readonly journals: JournalsService,
     private readonly numbering: NumberingService,
+    private readonly inventory: InventoryService,
   ) {}
 
   /** Bills first (credit changes what they have left to pay), then payments: the order everything takes them in */
@@ -180,6 +191,9 @@ export class VendorCreditsService {
       vendorReference: c.vendorReference,
       reason: c.reason,
       payableAccount: c.payableAccount,
+      /** The bill's currency (null = base), and the rate it was posted at */
+      currency: c.currency,
+      rate: c.rate && rateText(c.rate),
       subtotal: Number(c.subtotal),
       taxTotal: Number(c.taxTotal),
       total: Number(c.total),
@@ -222,6 +236,7 @@ export class VendorCreditsService {
               kind: 'refund' as const,
               date: iso(a.date),
               amount: Number(a.amount),
+              rate: a.rate && rateText(a.rate),
               reference: a.reference,
               bankAccount: a.bankAccount,
               journalEntry: a.journalEntry && {
@@ -333,6 +348,7 @@ export class VendorCreditsService {
           status: true,
           billDate: true,
           currency: true,
+          rate: true,
           reverseCharge: true,
           billOfEntry: true,
           total: true,
@@ -350,9 +366,21 @@ export class VendorCreditsService {
               discountPpm: true,
               accountId: true,
               taxGroupId: true,
+              rcmTaxGroupId: true,
+              itc: true,
+              itemId: true,
+              inAltUnit: true,
               costCentreId: true,
               item: { select: { trackStock: true } },
               taxGroup: {
+                select: {
+                  rates: {
+                    orderBy: { position: 'asc' },
+                    select: { rate: { select: { id: true, ratePpm: true } } },
+                  },
+                },
+              },
+              rcmTaxGroup: {
                 select: {
                   rates: {
                     orderBy: { position: 'asc' },
@@ -383,19 +411,6 @@ export class VendorCreditsService {
           'Only recorded bills can be credited.',
           'bill_not_open',
         );
-      if (bill.currency)
-        throw refuse(
-          BadRequestException,
-          'Debit notes are for bills in the base currency for now.',
-          'bill_currency',
-        );
-      // Its GST was ours to pay: putting it right means a journal for the tax as well
-      if (bill.reverseCharge || bill.billOfEntry)
-        throw refuse(
-          BadRequestException,
-          'Debit notes aren’t raised against bills under reverse charge or bills of entry yet: void the bill and record it again.',
-          'bill_reverse_charge',
-        );
       if (input.date < iso(bill.billDate))
         throw refuse(
           BadRequestException,
@@ -414,13 +429,6 @@ export class VendorCreditsService {
             { line: n + 1 },
           );
         seen.add(src.id);
-        if (src.item?.trackStock)
-          throw refuse(
-            BadRequestException,
-            `Line ${n + 1} is goods kept in stock: send them back with a stock adjustment.`,
-            'stock_line',
-            { line: n + 1 },
-          );
         const left =
           parseQuantity(src.quantity.toFixed(4))! -
           src.credited.reduce(
@@ -434,7 +442,11 @@ export class VendorCreditsService {
             'over_credited',
             { line: n + 1, left: formatQuantity(left > 0n ? left : 0n) },
           );
-        return { src, quantity: formatQuantity(parseQuantity(l.quantity)!) };
+        return {
+          src,
+          quantity: formatQuantity(parseQuantity(l.quantity)!),
+          serials: l.serials ?? [],
+        };
       });
       const amounts = invoiceAmounts(
         lines.map((l) => ({
@@ -480,15 +492,145 @@ export class VendorCreditsService {
       );
       const billLabelText = billLabel(bill)!;
 
-      // A composition dealer took no input tax credit on the bill, so its GST comes back off the cost
-      const noCredit =
-        (
-          await tx.organization.findUniqueOrThrow({
-            where: { id: organizationId },
-            select: { gstScheme: true },
-          })
-        ).gstScheme === 'composition';
-      // The bill's entry the other way round: less owed to the vendor, the expense and its input tax credited back
+      const org = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { gstScheme: true, baseCurrency: true },
+      });
+      // The bill's own rate, so the payable comes down by what it went up by: no exchange difference
+      const rate = bill.rate && rateText(bill.rate);
+      if (bill.currency && !rate)
+        throw refuse(
+          ConflictException,
+          'This bill has no exchange rate recorded.',
+          'no_rate',
+        );
+      const base = (minor: number) =>
+        rate
+          ? toBase(
+              minor,
+              rate,
+              currencyDigits(bill.currency!),
+              currencyDigits(org.baseCurrency),
+            )
+          : minor;
+      type Rates = { rates: { rate: { id: string; ratePpm: number } }[] };
+      const ratesOf = (g: Rates | null) =>
+        (g?.rates ?? []).map((r) => ({
+          rateId: r.rate.id,
+          ratePpm: r.rate.ratePpm,
+        }));
+      const taxOn = (amount: number, g: Rates | null) =>
+        g
+          ? splitTax(amount, false, ratesOf(g)).taxes.reduce(
+              (t, x) => t + x.amount,
+              0,
+            )
+          : 0;
+      // Under reverse charge: the GST we'd owe on what's credited, which comes off with its input credit
+      const rcmTaxOf = (n: number) =>
+        taxOn(base(amounts.lines[n]!.net), lines[n]!.src.rcmTaxGroup);
+      // No credit was taken on the line (blocked, ineligible, or a composition dealer): its GST comes off the cost
+      const lineNoCredit = (n: number) =>
+        org.gstScheme === 'composition' || lines[n]!.src.itc !== 'eligible';
+      // The bill's entry the other way round: less owed to the vendor, the expense (or stock) and its input tax back
+      const expense = lines.map((l, n) => ({
+        accountId: l.src.accountId!,
+        description: l.src.description,
+        debit: 0,
+        credit:
+          base(
+            amounts.lines[n]!.net +
+              (lineNoCredit(n) ? amounts.lines[n]!.tax : 0),
+          ) + (lineNoCredit(n) ? rcmTaxOf(n) : 0),
+        taxGroupId: lineNoCredit(n)
+          ? null
+          : (l.src.taxGroupId ?? l.src.rcmTaxGroupId),
+        taxInclusive: false,
+        costCentreId: l.src.costCentreId,
+      }));
+      const entryLines: Record<string, unknown>[] = [
+        bill.currency
+          ? {
+              accountId: bill.payableAccountId!,
+              description: label,
+              debit: 0,
+              credit: 0,
+              currency: bill.currency,
+              foreignDebit: amounts.total,
+              foreignCredit: 0,
+              rate,
+            }
+          : {
+              accountId: bill.payableAccountId!,
+              description: label,
+              debit: amounts.total,
+              credit: 0,
+            },
+        ...expense.filter((l) => l.credit > 0),
+      ];
+      // A bill of entry: the assessable value it took straight back off goes back on
+      const boe = bill.billOfEntry as { number?: string } | null;
+      let boeBack = 0;
+      if (boe)
+        lines.forEach((l, n) => {
+          if (l.src.taxGroupId && expense[n]!.credit > 0) {
+            const v = base(amounts.lines[n]!.net);
+            boeBack += v;
+            entryLines.push({
+              accountId: l.src.accountId!,
+              description: `${l.src.description} (assessable value, bill of entry ${boe.number ?? ''})`,
+              debit: v,
+              credit: 0,
+            });
+          }
+        });
+      const rcmTotal = lines.reduce((t, _l, n) => t + rcmTaxOf(n), 0);
+      if (rcmTotal > 0)
+        entryLines.push({
+          accountId: await ensureFxAccount(tx, organizationId, 'rcm_payable'),
+          description: `${label} GST under reverse charge`,
+          debit: rcmTotal,
+          credit: 0,
+        });
+      if (bill.currency) {
+        // Converting the parts and the total separately can differ by a paisa or two: an exchange difference
+        const credits = expense.reduce(
+          (s, l, n) =>
+            s +
+            l.credit +
+            (l.taxGroupId
+              ? taxOn(
+                  l.credit,
+                  lines[n]!.src.taxGroup ?? lines[n]!.src.rcmTaxGroup,
+                )
+              : 0),
+          0,
+        );
+        const diff = base(amounts.total) - (credits - rcmTotal - boeBack);
+        if (diff)
+          entryLines.push({
+            accountId: await ensureFxAccount(tx, organizationId, 'fx_realised'),
+            description: `${label} rounding`,
+            debit: diff < 0 ? -diff : 0,
+            credit: diff > 0 ? diff : 0,
+          });
+      }
+      // Goods kept in stock go back out at what they cost on the bill
+      const returned = await this.inventory.purchaseReturns(
+        tx,
+        organizationId,
+        bill.id,
+        lines.map((l, n) => ({
+          billLineId: l.src.id,
+          itemId: l.src.itemId,
+          quantity: l.quantity,
+          value: expense[n]!.credit,
+          serials: l.serials,
+          inAltUnit: l.src.inAltUnit,
+          costCentreId: l.src.costCentreId,
+        })),
+      );
+      entryLines.push(...(returned.journal as never[]));
       const entry = await this.journals.postEntryInTx(
         tx,
         organizationId,
@@ -496,27 +638,7 @@ export class VendorCreditsService {
           date: input.date,
           memo: `Debit note ${label} · ${bill.contact.name} · ${billLabelText}`,
           reference: input.vendorReference ?? label,
-          lines: [
-            {
-              accountId: bill.payableAccountId!,
-              description: label,
-              debit: amounts.total,
-              credit: 0,
-            },
-            ...lines
-              .map((l, n) => ({
-                accountId: l.src.accountId!,
-                description: l.src.description,
-                debit: 0,
-                credit:
-                  amounts.lines[n]!.net +
-                  (noCredit ? amounts.lines[n]!.tax : 0),
-                taxGroupId: noCredit ? null : l.src.taxGroupId,
-                taxInclusive: false,
-                costCentreId: l.src.costCentreId,
-              }))
-              .filter((l) => l.credit > 0),
-          ] as never,
+          lines: entryLines as never,
         },
         ctx.actor.userId,
       );
@@ -537,6 +659,8 @@ export class VendorCreditsService {
           vendorReference: input.vendorReference,
           reason: input.reason,
           payableAccountId: bill.payableAccountId!,
+          currency: bill.currency,
+          rate,
           subtotal: BigInt(amounts.subtotal),
           taxTotal: BigInt(amounts.tax),
           total: BigInt(amounts.total),
@@ -562,6 +686,18 @@ export class VendorCreditsService {
           taxAmount: BigInt(amounts.lines[n]!.tax),
         })),
       });
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'debit_note',
+          sourceId: note.id,
+          date: input.date,
+          journalEntryId: entry.id,
+          actorId: ctx.actor.userId,
+        },
+        returned.movements,
+      );
       if (onBill > 0) {
         await tx.vendorCreditApplication.create({
           data: {
@@ -645,7 +781,10 @@ export class VendorCreditsService {
           'Only recorded bills can take credit.',
           'bill_not_open',
         );
-      if (bill.currency || bill.payableAccountId !== c.payableAccount.id)
+      if (
+        (bill.currency ?? null) !== (c.currency ?? null) ||
+        bill.payableAccountId !== c.payableAccount.id
+      )
         throw refuse(
           BadRequestException,
           'That bill is in another currency or payable account.',
@@ -705,7 +844,8 @@ export class VendorCreditsService {
   /** The vendor pays remaining credit back into a bank or cash account */
   async refund(
     id: string,
-    input: Omit<Required<VendorCreditRefundInput>, 'reference'> & {
+    input: Omit<Required<VendorCreditRefundInput>, 'rate' | 'reference'> & {
+      rate: string | null;
       reference: string | null;
     },
     ctx: Ctx,
@@ -747,17 +887,51 @@ export class VendorCreditsService {
         !bank ||
         bank.type !== 'asset' ||
         !['bank', 'cash'].includes(bank.subtype) ||
-        bank.archivedAt ||
-        bank.currency
+        bank.archivedAt
       )
         throw refuse(
           BadRequestException,
-          'Choose an active bank or cash account in the base currency.',
+          'Choose an active bank or cash account.',
           'bank_invalid',
           { field: 'bankAccountId' },
         );
+      if (bank.currency && bank.currency !== c.currency)
+        throw refuse(
+          BadRequestException,
+          `This account is kept in ${bank.currency}; the credit is in ${c.currency ?? 'the base currency'}.`,
+          'bank_currency',
+          { field: 'bankAccountId' },
+        );
+      const { baseCurrency } = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: { baseCurrency: true },
+      });
+      let rate: string | null = null;
+      if (c.currency) {
+        rate =
+          input.rate ??
+          (await rateOn(tx, organizationId, c.currency, input.date))?.rate ??
+          null;
+        if (!rate)
+          throw refuse(
+            BadRequestException,
+            `There is no ${c.currency} rate on or before ${input.date}. Add one under Currencies, or type the rate.`,
+            'no_rate',
+            { currency: c.currency, date: input.date },
+          );
+      }
       const label =
         c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number);
+      const inBase = (minor: number) =>
+        c.currency
+          ? toBase(
+              minor,
+              rate!,
+              currencyDigits(c.currency),
+              currencyDigits(baseCurrency),
+            )
+          : minor;
+      const description = `${label} refund`;
       // Money into the bank against the vendor's payable, which the debit note had left in debit
       const entry = await this.journals.postEntryInTx(
         tx,
@@ -767,18 +941,40 @@ export class VendorCreditsService {
           memo: `Refund of ${label} · ${c.contact.name}`,
           reference: input.reference ?? label,
           lines: [
-            {
-              accountId: bank.id,
-              description: `${label} refund`,
-              debit: input.amount,
-              credit: 0,
-            },
-            {
-              accountId: c.payableAccount.id,
-              description: `${label} refund`,
-              debit: 0,
-              credit: input.amount,
-            },
+            bank.currency
+              ? {
+                  accountId: bank.id,
+                  description,
+                  debit: 0,
+                  credit: 0,
+                  currency: bank.currency,
+                  foreignDebit: input.amount,
+                  foreignCredit: 0,
+                  rate,
+                }
+              : {
+                  accountId: bank.id,
+                  description,
+                  debit: inBase(input.amount),
+                  credit: 0,
+                },
+            c.currency
+              ? {
+                  accountId: c.payableAccount.id,
+                  description,
+                  debit: 0,
+                  credit: 0,
+                  currency: c.currency,
+                  foreignDebit: 0,
+                  foreignCredit: input.amount,
+                  rate,
+                }
+              : {
+                  accountId: c.payableAccount.id,
+                  description,
+                  debit: 0,
+                  credit: input.amount,
+                },
           ] as never,
         },
         ctx.actor.userId,
@@ -791,6 +987,7 @@ export class VendorCreditsService {
           bankAccountId: bank.id,
           date: asDate(input.date),
           amount: BigInt(input.amount),
+          rate,
           reference: input.reference,
           createdById: ctx.actor.userId,
         },
@@ -806,7 +1003,12 @@ export class VendorCreditsService {
           organizationId,
           entityType: 'vendor_credit',
           entityId: id,
-          after: { number: label, amount: input.amount, entry: entry.number },
+          after: {
+            number: label,
+            amount: input.amount,
+            currency: c.currency,
+            entry: entry.number,
+          },
           req: ctx.req,
         },
         tx,
@@ -851,6 +1053,16 @@ export class VendorCreditsService {
           where: { id: a.bill!.id },
           data: { amountPaid: { decrement: a.amount } },
         });
+      // Goods it sent back come back into stock
+      await this.inventory.undoDocument(
+        tx,
+        organizationId,
+        'debit_note',
+        id,
+        input.date ?? today,
+        r.id,
+        ctx.actor.userId,
+      );
       await tx.vendorCredit.update({
         where: { id },
         data: { status: 'void', voidEntryId: r.id, voidedAt: new Date() },
