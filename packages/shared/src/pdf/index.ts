@@ -24,6 +24,11 @@ export interface PdfTable {
   qr2?: PdfQr;
   /** The organisation's logo at the top left of the first page, the heading under it */
   logo?: PdfImage | null;
+  /**
+   * A signature and a seal, drawn by the line of `after` that reads `anchor` (e.g. "Authorised signatory"): the
+   * signature just above it, the seal beside it
+   */
+  signature?: { anchor: string; image?: PdfImage | null; seal?: PdfImage | null };
 }
 
 /** A QR code's modules, its size in points (88 by default, quiet zone included) and a line or two of caption */
@@ -212,7 +217,18 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   const lastRows = pages[pages.length - 1]!.length;
   const lastTop = pages.length === 1 ? firstY : top;
   const room = lastTop - rowH - lastRows * rowH - (margin + 24);
-  const afterOwnPage = after.length > 0 && room < 12 + after.length * 11;
+  // The signature and seal, by their line
+  const sigAt = table.signature ? after.indexOf(encode(table.signature.anchor)) : -1;
+  const sig = sigAt >= 0 ? (table.signature!.image ?? null) : null;
+  const seal = sigAt >= 0 ? (table.signature!.seal ?? null) : null;
+  const fit = (img: PdfImage, w: number, h: number) => {
+    const k = Math.min(w / img.width, h / img.height);
+    return { w: img.width * k, h: img.height * k };
+  };
+  // Between the "For …" line and the anchor: the two blank lines' height
+  const sigBox = sig ? fit(sig, 110, 20) : null;
+  const sealBox = seal ? fit(seal, 60, 60) : null;
+  const afterOwnPage = after.length > 0 && room < 12 + after.length * 11 + (sealBox ? 30 : 0);
   if (afterOwnPage) pages.push([]);
 
   const line = (cells: string[], y: number, bold: boolean) => {
@@ -273,10 +289,14 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
       }
       y -= 12;
     }
-    if (last)
+    if (last) {
       after.forEach((l, k) => {
         if (l) s += `0 g BT /F1 8.5 Tf ${margin} ${num(y - 9 - k * 11)} Td ${literal(l)} Tj ET\n`;
       });
+      const base = y - 9 - sigAt * 11;
+      if (sig && sigBox) s += `q ${num(sigBox.w)} 0 0 ${num(sigBox.h)} ${margin} ${num(base + 9)} cm /Im2 Do Q\n`;
+      if (seal && sealBox) s += `q ${num(sealBox.w)} 0 0 ${num(sealBox.h)} ${margin + 130} ${num(base - sealBox.h / 2 + 4)} cm /Im3 Do Q\n`;
+    }
     s += `0.4 g BT /F1 7 Tf ${margin} ${margin - 16} Td ${literal(encode(table.footer ?? ''))} Tj ET\n`;
     const pn = encode(`Page ${p + 1} of ${pages.length}`);
     s += `BT /F1 7 Tf ${num(pw - margin - width(pn, 7))} ${margin - 16} Td ${literal(pn)} Tj ET\n`;
@@ -290,19 +310,25 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`);
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  // The logo (and its soft mask) come after the pages
-  const imageId = 5 + streams.length * 2;
-  const xobject = logo ? ` /XObject << /Im1 ${imageId} 0 R >>` : '';
+  // The images (each with its soft mask) come after the pages: Im1 the logo, Im2 the signature, Im3 the seal
+  const images = ([['Im1', logo], ['Im2', sig], ['Im3', seal]] as [string, PdfImage | null][]).filter((x): x is [string, PdfImage] => !!x[1]);
+  let nextId = 5 + streams.length * 2;
+  const ids = images.map(([, img]) => {
+    const id = nextId;
+    nextId += img.smask ? 2 : 1;
+    return id;
+  });
+  const xobject = images.length ? ` /XObject << ${images.map(([name], i) => `/${name} ${ids[i]} 0 R`).join(' ')} >>` : '';
   streams.forEach((s, i) => {
     objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xobject} >> /Contents ${6 + i * 2} 0 R >>`);
     objects.push(`<< /Length ${s.length} >>\nstream\n${s}endstream`);
   });
-  if (logo) {
-    const parms = logo.decodeParms ? ` /DecodeParms ${logo.decodeParms}` : '';
-    const mask = logo.smask ? ` /SMask ${imageId + 1} 0 R` : '';
-    objects.push(`<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /${logo.colorSpace} /BitsPerComponent 8 /Filter /${logo.filter}${parms}${mask} /Length ${logo.data.length} >>\nstream\n${binary(logo.data)}\nendstream`);
-    if (logo.smask) objects.push(`<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${logo.smask.length} >>\nstream\n${binary(logo.smask)}\nendstream`);
-  }
+  images.forEach(([, img], i) => {
+    const parms = img.decodeParms ? ` /DecodeParms ${img.decodeParms}` : '';
+    const mask = img.smask ? ` /SMask ${ids[i]! + 1} 0 R` : '';
+    objects.push(`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /${img.colorSpace} /BitsPerComponent 8 /Filter /${img.filter}${parms}${mask} /Length ${img.data.length} >>\nstream\n${binary(img.data)}\nendstream`);
+    if (img.smask) objects.push(`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${img.smask.length} >>\nstream\n${binary(img.smask)}\nendstream`);
+  });
   let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
   const offsets: number[] = [];
   objects.forEach((o, i) => {

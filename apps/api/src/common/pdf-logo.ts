@@ -122,3 +122,42 @@ export async function organizationLogo(
   if (logo.contentType === 'image/png') return pngImage(bytes);
   return null;
 }
+
+/** The signatory's signature and the seal, ready for a PDF (each null when not uploaded or not readable) */
+export async function organizationSignature(
+  prisma: PrismaService,
+  organizationId: string,
+): Promise<{
+  anchor: string;
+  image: PdfImage | null;
+  seal: PdfImage | null;
+  /** The signatory's name and designation, for the line under "Authorised signatory" */
+  name: string | null;
+}> {
+  const [rows, org] = await Promise.all([
+    prisma.organizationImage.findMany({
+      where: { organizationId },
+      select: { kind: true, contentType: true, data: true },
+    }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { signatoryName: true, signatoryDesignation: true },
+    }),
+  ]);
+  const read = (kind: string) => {
+    const r = rows.find((x) => x.kind === kind);
+    if (!r) return null;
+    const bytes = Buffer.from(r.data);
+    return r.contentType === 'image/jpeg'
+      ? jpegImage(new Uint8Array(bytes))
+      : pngImage(bytes);
+  };
+  return {
+    anchor: 'Authorised signatory',
+    image: read('signature'),
+    seal: read('seal'),
+    name: org?.signatoryName
+      ? `${org.signatoryName}${org.signatoryDesignation ? `, ${org.signatoryDesignation}` : ''}`
+      : null,
+  };
+}

@@ -1,4 +1,4 @@
-import type { BankDetails, BusinessType } from '@ledgernest/shared';
+import type { BankDetails, BusinessType, SignatureImage } from '@ledgernest/shared';
 import type { LogoType, OrganizationSettingsInput } from '@ledgernest/shared';
 
 export interface OrganizationSettings {
@@ -52,6 +52,11 @@ export interface OrganizationSettings {
   bankDetails?: BankDetails | null;
   address: { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null };
   logo: { contentType: string; updatedAt: string } | null;
+  /** Whether there's a signature and a seal for invoices, and when each changed */
+  images?: Record<SignatureImage, { updatedAt: string } | null>;
+  /** Who signs invoices, printed under the signature */
+  signatoryName?: string | null;
+  signatoryDesignation?: string | null;
   /** Settings that can no longer change, e.g. the base currency once entries are posted */
   locks: { baseCurrency: boolean; fiscalYearStartMonth: boolean };
 }
@@ -66,4 +71,8 @@ export interface SettingsApi {
   remove(confirmName: string): Promise<void>;
   /** The logo image, or null when there is none */
   logo(): Promise<Blob | null>;
+  /** The signature or seal for invoices (PNG or JPEG) */
+  setImage(kind: SignatureImage, upload: { type: 'image/png' | 'image/jpeg'; data: string }): Promise<OrganizationSettings>;
+  removeImage(kind: SignatureImage): Promise<void>;
+  image(kind: SignatureImage): Promise<Blob | null>;
 }

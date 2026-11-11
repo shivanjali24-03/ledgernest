@@ -7,7 +7,7 @@ import {
   splitTax,
   toBase,
 } from '@ledgernest/shared';
-import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationLogo, organizationSignature } from '../common/pdf-logo.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -131,9 +131,11 @@ export class SelfInvoicePdfService {
     const us = org.legalName ?? org.name;
     const state = INDIAN_STATES.find((s) => s.code === bill.placeOfSupply);
     const number = bill.selfInvoiceNumber;
+    const signature = await organizationSignature(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
+        signature,
         title: `Self invoice ${number}${bill.status === 'void' ? ' (void)' : ''}`,
         subtitle: `${us}${org.taxId ? ` · GSTIN ${org.taxId}` : ''} (recipient)`,
         info: [
@@ -174,7 +176,14 @@ export class SelfInvoicePdfService {
           'Whether tax is payable on reverse charge: Yes',
           `GST payable in words: ${rupeesInWords(tax)}`,
           ...(org.taxId
-            ? ['', `For ${us}`, '', '', 'Authorised signatory']
+            ? [
+                '',
+                `For ${us}`,
+                '',
+                '',
+                'Authorised signatory',
+                ...(signature.name ? [signature.name] : []),
+              ]
             : []),
         ],
         footer: `${us} · ${number}`,

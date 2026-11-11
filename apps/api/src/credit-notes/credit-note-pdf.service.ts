@@ -9,7 +9,7 @@ import {
   pdfTableBytes,
   rupeesInWords,
 } from '@ledgernest/shared';
-import { organizationLogo } from '../common/pdf-logo.js';
+import { organizationLogo, organizationSignature } from '../common/pdf-logo.js';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -97,9 +97,11 @@ export class CreditNotePdfService {
     const pos = invoice.placeOfSupply
       ? findIndianState(invoice.placeOfSupply)
       : undefined;
+    const signature = await organizationSignature(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
+        signature,
         title: `Credit note ${cn.number}${cn.status === 'void' ? ' (void)' : ''}`,
         subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
         info: [
@@ -143,7 +145,14 @@ export class CreditNotePdfService {
             ? [`Amount in words: ${rupeesInWords(cn.total)}`]
             : []),
           ...(org.taxId
-            ? ['', `For ${seller}`, '', '', 'Authorised signatory']
+            ? [
+                '',
+                `For ${seller}`,
+                '',
+                '',
+                'Authorised signatory',
+                ...(signature.name ? [signature.name] : []),
+              ]
             : []),
         ],
         footer: `${seller} · ${cn.number}`,

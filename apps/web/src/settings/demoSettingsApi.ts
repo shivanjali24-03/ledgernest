@@ -1,4 +1,4 @@
-import { organizationIdProblems, organizationSettingsSchema, sniffLogoType } from '@ledgernest/shared';
+import { organizationIdProblems, organizationSettingsSchema, sniffLogoType, type SignatureImage } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import type { OrganizationSettings, SettingsApi } from './types';
 
@@ -8,7 +8,7 @@ import type { OrganizationSettings, SettingsApi } from './types';
  */
 
 const KEY = 'ledgernest.demo.settings';
-type Stored = { settings: OrganizationSettings; logo: { type: string; data: string } | null };
+type Stored = { settings: OrganizationSettings; logo: { type: string; data: string } | null; images?: Partial<Record<SignatureImage, { type: string; data: string }>> };
 
 function seed(): Stored {
   return {
@@ -118,6 +118,30 @@ export function createDemoSettingsApi(canManage: () => boolean): SettingsApi {
         s.logo = null;
         s.settings.logo = null;
         save(s);
+      }),
+    setImage: (kind, upload) =>
+      wait(() => {
+        if (!canManage()) throw forbidden();
+        const bytes = Uint8Array.from(atob(upload.data), (c) => c.charCodeAt(0));
+        if (sniffLogoType(bytes) !== upload.type) throw new ApiError('validation', 400, undefined, undefined, { reason: 'type_mismatch' });
+        const s = load();
+        s.images = { ...s.images, [kind]: upload };
+        s.settings.images = { signature: null, seal: null, ...s.settings.images, [kind]: { updatedAt: new Date().toISOString() } };
+        save(s);
+        return s.settings;
+      }),
+    removeImage: (kind) =>
+      wait(() => {
+        if (!canManage()) throw forbidden();
+        const s = load();
+        if (s.images) delete s.images[kind];
+        s.settings.images = { signature: null, seal: null, ...s.settings.images, [kind]: null };
+        save(s);
+      }),
+    image: (kind) =>
+      wait(() => {
+        const l = load().images?.[kind];
+        return l ? new Blob([Uint8Array.from(atob(l.data), (c) => c.charCodeAt(0))], { type: l.type }) : null;
       }),
     logo: () =>
       wait(() => {

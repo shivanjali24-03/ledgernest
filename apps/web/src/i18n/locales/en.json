@@ -1034,7 +1034,9 @@
       "tan": "TAN",
       "cin": "CIN",
       "llpin": "LLPIN",
-      "iec": "Importer-exporter code (IEC)"
+      "iec": "Importer-exporter code (IEC)",
+      "signatoryName": "Authorised signatory",
+      "signatoryDesignation": "Designation"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1056,7 +1058,9 @@
       "lutNumber": "Letter of undertaking (RFD-11) for exports and SEZ supplies without IGST",
       "tan": "For TDS returns and certificates",
       "cin": "Printed on invoices with the PAN",
-      "iec": "From DGFT; for most businesses it's the PAN"
+      "iec": "From DGFT; for most businesses it's the PAN",
+      "signatoryName": "Printed under the signature on invoices",
+      "signatoryDesignation": "Partner, Director, Proprietor…"
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -1091,7 +1095,7 @@
       "none": "No logo yet",
       "upload": "Upload logo",
       "replace": "Replace",
-      "remove": "Remove",
+      "remove": "Remove logo",
       "uploaded": "Logo updated",
       "removed": "Logo removed",
       "alt": "{{name}} logo",
@@ -1167,6 +1171,27 @@
       "cooperative": "Co-operative society",
       "aop": "Association of persons",
       "government": "Government body"
+    },
+    "signature": {
+      "title": "Signature",
+      "hint": "The authorised signatory’s signature, printed on invoices, credit and debit notes. PNG with a transparent background works best; JPEG too.",
+      "alt": "Signature for {{name}}",
+      "none": "No signature",
+      "upload": "Upload signature",
+      "uploaded": "Signature uploaded",
+      "removed": "Signature removed",
+      "remove": "Remove signature",
+      "noWebp": "Use a PNG or JPEG: PDFs can’t hold WebP images."
+    },
+    "seal": {
+      "title": "Seal",
+      "hint": "The business’s seal or stamp, printed beside the signature.",
+      "alt": "Seal of {{name}}",
+      "none": "No seal",
+      "upload": "Upload seal",
+      "uploaded": "Seal uploaded",
+      "removed": "Seal removed",
+      "remove": "Remove seal"
     }
   },
   "accounts": {

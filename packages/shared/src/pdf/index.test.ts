@@ -108,3 +108,18 @@ describe('Logos in PDFs', () => {
     expect(text.trimEnd().endsWith('%%EOF')).toBe(true);
   });
 });
+
+describe('signature and seal', () => {
+  it('draws them by the signatory line, as images of their own', async () => {
+    const { pdfTableBytes } = await import('./index.js');
+    const img = { width: 2, height: 1, filter: 'FlateDecode' as const, colorSpace: 'DeviceGray' as const, data: new Uint8Array([120, 156, 99, 96, 0, 0, 0, 2, 0, 1]) };
+    const pdf = new TextDecoder('latin1').decode(pdfTableBytes({ title: 'Tax invoice INV/1', rows: [['A'], ['b']], after: ['', 'For Nest', '', '', 'Authorised signatory'], logo: img, signature: { anchor: 'Authorised signatory', image: img, seal: img } }));
+    expect(pdf).toContain('/XObject << /Im1');
+    expect(pdf).toContain('/Im2 Do');
+    expect(pdf).toContain('/Im3 Do');
+    expect(pdf.match(/\/Subtype \/Image/g)).toHaveLength(3);
+    // Without the line, nothing is drawn
+    const none = new TextDecoder('latin1').decode(pdfTableBytes({ title: 'X', rows: [['A']], after: ['Thanks'], signature: { anchor: 'Authorised signatory', image: img } }));
+    expect(none).not.toContain('/Im2');
+  });
+});

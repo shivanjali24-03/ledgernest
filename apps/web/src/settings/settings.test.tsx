@@ -171,9 +171,22 @@ describe('logo', () => {
     expect(await screen.findByText('Logo updated')).toBeInTheDocument();
     expect(await screen.findByRole('img', { name: 'Nest Demo Pvt. Ltd. logo' })).toHaveAttribute('src', 'blob:logo');
 
-    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
     expect(await screen.findByText('Logo removed')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('img', { name: /logo/ })).not.toBeInTheDocument());
+  });
+
+  it('uploads the signature for invoices, refusing a WebP image', async () => {
+    renderApp();
+    await screen.findByRole('button', { name: 'Upload signature' }, { timeout: 4000 });
+    const inputs = () => [...document.querySelectorAll('input[type=file]')] as HTMLInputElement[];
+    const webp = new File([new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 1])], 'sign.webp', { type: 'image/webp' });
+    fireEvent.change(inputs()[1]!, { target: { files: [webp] } });
+    expect(await screen.findByText('Use a PNG or JPEG: PDFs can’t hold WebP images.')).toBeInTheDocument();
+    fireEvent.change(inputs()[1]!, { target: { files: [png] } });
+    expect(await screen.findByText('Signature uploaded')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings.images.signature).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Remove signature' })).toBeInTheDocument();
   });
 
   it('refuses an SVG or a renamed file before sending anything', async () => {

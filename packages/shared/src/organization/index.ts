@@ -169,6 +169,9 @@ export const organizationSettingsSchema = z
     iec: idField(/^[A-Z0-9]{10}$/, 'An IEC is 10 letters and digits.'),
     /** The account customers pay into, printed on invoices */
     bankDetails: bankDetailsSchema.nullable(),
+    /** Who signs invoices for the business, printed under the signature */
+    signatoryName: optionalText(120),
+    signatoryDesignation: optionalText(80),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
@@ -217,6 +220,12 @@ export const logoUploadSchema = z.object({
     .max(Math.ceil(LOGO_MAX_BYTES / 3) * 4, 'Use an image under 256 KB.'),
 });
 export type LogoUpload = z.infer<typeof logoUploadSchema>;
+
+/** The signatory's signature and the business's seal, printed on invoices: PNG (best with a transparent background) or JPEG, which PDFs can hold */
+export const SIGNATURE_IMAGES = ['signature', 'seal'] as const;
+export type SignatureImage = (typeof SIGNATURE_IMAGES)[number];
+export const signatureUploadSchema = logoUploadSchema.extend({ type: z.enum(['image/png', 'image/jpeg'], 'Use a PNG or JPEG image.') });
+export type SignatureUpload = z.infer<typeof signatureUploadSchema>;
 
 /** Checks a file's first bytes really are the image type it claims to be. */
 export function sniffLogoType(bytes: Uint8Array): LogoType | null {

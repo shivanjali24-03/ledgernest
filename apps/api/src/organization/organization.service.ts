@@ -9,6 +9,9 @@ import {
   type LogoUpload,
   type OrganizationSettingsUpdate,
   organizationIdProblems,
+  SIGNATURE_IMAGES,
+  type SignatureImage,
+  type SignatureUpload,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import { Prisma } from '../generated/prisma/client.js';
@@ -72,6 +75,9 @@ const select = {
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
+  images: { select: { kind: true, updatedAt: true } },
+  signatoryName: true,
+  signatoryDesignation: true,
 } as const;
 
 /** Settings stored as columns, keyed the way the audit log records them. */
@@ -113,6 +119,8 @@ type Columns = Partial<{
   tan: string | null;
   cin: string | null;
   iec: string | null;
+  signatoryName: string | null;
+  signatoryDesignation: string | null;
   bankDetails: unknown;
 }>;
 
@@ -157,6 +165,7 @@ export class OrganizationService {
       region,
       postalCode,
       logo,
+      images,
       lutFrom,
       lutTo,
       ...rest
@@ -177,6 +186,15 @@ export class OrganizationService {
         contentType: logo.contentType,
         updatedAt: logo.updatedAt,
       },
+      /** Whether there's a signature and a seal, and when each changed */
+      images: Object.fromEntries(
+        SIGNATURE_IMAGES.map((k) => [
+          k,
+          images.find((i) => i.kind === k)
+            ? { updatedAt: images.find((i) => i.kind === k)!.updatedAt }
+            : null,
+        ]),
+      ) as Record<SignatureImage, { updatedAt: Date } | null>,
       locks: await this.locks(organizationId),
     };
   }
@@ -357,6 +375,62 @@ export class OrganizationService {
     return this.tenantPrisma.db.organizationLogo.findFirst({
       select: { contentType: true, data: true, updatedAt: true },
     });
+  }
+
+  /** The signature or seal image */
+  image(kind: SignatureImage) {
+    return this.tenantPrisma.db.organizationImage.findFirst({
+      where: { kind },
+      select: { contentType: true, data: true, updatedAt: true },
+    });
+  }
+
+  /** A signature or seal: a PNG or JPEG under 256 KB whose bytes are what it says */
+  async setImage(kind: SignatureImage, upload: SignatureUpload, ctx: Ctx) {
+    const bytes = Buffer.from(upload.data, 'base64');
+    if (!bytes.length || bytes.length > LOGO_MAX_BYTES)
+      throw refuse(
+        BadRequestException,
+        'Use an image under 256 KB.',
+        'too_large',
+      );
+    if (sniffLogoType(bytes) !== upload.type)
+      throw refuse(
+        BadRequestException,
+        'That file isn’t the image type it claims to be.',
+        'type_mismatch',
+      );
+    const organizationId = ctx.tenant.organizationId;
+    await this.tenantPrisma.db.organizationImage.upsert({
+      where: { organizationId_kind: { organizationId, kind } },
+      create: { organizationId, kind, contentType: upload.type, data: bytes },
+      update: { contentType: upload.type, data: bytes },
+    });
+    await this.audit.record({
+      action: `org.${kind}.update`,
+      actorId: ctx.actor.userId,
+      organizationId,
+      entityType: 'organization',
+      entityId: organizationId,
+      after: { contentType: upload.type, bytes: bytes.length },
+      req: ctx.req,
+    });
+    return this.get(organizationId);
+  }
+
+  async removeImage(kind: SignatureImage, ctx: Ctx) {
+    const { count } = await this.tenantPrisma.db.organizationImage.deleteMany({
+      where: { kind },
+    });
+    if (count)
+      await this.audit.record({
+        action: `org.${kind}.remove`,
+        actorId: ctx.actor.userId,
+        organizationId: ctx.tenant.organizationId,
+        entityType: 'organization',
+        entityId: ctx.tenant.organizationId,
+        req: ctx.req,
+      });
   }
 
   /**

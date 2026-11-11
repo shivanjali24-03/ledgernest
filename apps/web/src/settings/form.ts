@@ -55,6 +55,8 @@ export interface SettingsValues {
   bankIfsc: string;
   bankName: string;
   bankBranch: string;
+  signatoryName: string;
+  signatoryDesignation: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -104,6 +106,8 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   bankIfsc: s.bankDetails?.ifsc ?? '',
   bankName: s.bankDetails?.bankName ?? '',
   bankBranch: s.bankDetails?.branch ?? '',
+  signatoryName: s.signatoryName ?? '',
+  signatoryDesignation: s.signatoryDesignation ?? '',
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -135,7 +139,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
   if (path[0] === 'bankDetails') return ({ accountName: 'bankAccountName', accountNumber: 'bankAccountNumber', ifsc: 'bankIfsc', bankName: 'bankName', branch: 'bankBranch' } as const)[key as 'ifsc'] ?? null;
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme', 'interestMethod', 'interestGraceDays', 'lutNumber', 'lutFrom', 'lutTo', 'businessType', 'pan', 'tan', 'cin', 'iec'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : key === 'interestRateBp' ? 'interestRate' : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme', 'interestMethod', 'interestGraceDays', 'lutNumber', 'lutFrom', 'lutTo', 'businessType', 'pan', 'tan', 'cin', 'iec', 'signatoryName', 'signatoryDesignation'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : key === 'interestRateBp' ? 'interestRate' : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */
