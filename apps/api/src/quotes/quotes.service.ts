@@ -20,6 +20,11 @@ import {
   type quoteEmailSchema,
   type QuoteStatus,
   parseQuoteNumber,
+  CHALLAN_PURPOSE_TEXT,
+  INDIAN_STATES,
+  INVOICE_COPIES,
+  type ChallanPurpose,
+  type InvoiceCopy,
   QUOTE_TITLES,
   type QuoteKind,
 } from '@ledgernest/shared';
@@ -52,6 +57,7 @@ const select = {
   id: true,
   number: true,
   kind: true,
+  purpose: true,
   status: true,
   quoteDate: true,
   expiryDate: true,
@@ -135,6 +141,8 @@ export class QuotesService {
       id: q.id,
       /** A quotation, proforma invoice or sales order */
       kind: q.kind as QuoteKind,
+      /** A delivery challan's reason (Rule 55) */
+      purpose: (q.purpose as ChallanPurpose | null) ?? null,
       number: quoteNumber(q.number, q.kind as QuoteKind),
       status,
       state: quoteState({ status, expiryDate }, today),
@@ -327,6 +335,7 @@ export class QuotesService {
           organizationId,
           number,
           kind,
+          purpose: kind === 'delivery_challan' ? input.purpose : null,
           contactId: p.contactId,
           quoteDate: asDate(input.quoteDate),
           expiryDate: asDate(input.expiryDate),
@@ -387,6 +396,9 @@ export class QuotesService {
         where: { id },
         data: {
           contactId: p.contactId,
+          ...(now.kind === 'delivery_challan' && input.purpose
+            ? { purpose: input.purpose }
+            : {}),
           quoteDate: asDate(input.quoteDate),
           expiryDate: asDate(input.expiryDate),
           currency: p.currency,
@@ -515,6 +527,8 @@ export class QuotesService {
       {
         contactId: q.contact.id,
         kind,
+        // A challan made from another document says why the goods move; it can be changed while a draft
+        purpose: kind === 'delivery_challan' ? 'other' : null,
         quoteDate: today,
         expiryDate: iso(new Date(asDate(today).getTime() + days * 86_400_000)),
         reference: quoteNumber(q.number, q.kind as QuoteKind),
@@ -617,19 +631,44 @@ export class QuotesService {
   private async pdf(
     organizationId: string,
     q: Awaited<ReturnType<QuotesService['get']>>,
+    copy?: InvoiceCopy,
   ) {
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { name: true, baseCurrency: true, invoiceTerms: true },
+      select: {
+        name: true,
+        legalName: true,
+        taxId: true,
+        baseCurrency: true,
+        invoiceTerms: true,
+      },
     });
+    const challan = q.kind === 'delivery_challan';
+    const pos = INDIAN_STATES.find((x) => x.code === q.placeOfSupply);
     const currency = q.currency ?? org.baseCurrency;
     const logo = await organizationLogo(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
         title: `${QUOTE_TITLES[q.kind]} ${q.number}`,
-        subtitle: `${org.name} for ${q.contact.name} · ${q.quoteDate}${q.kind === 'sales_order' ? '' : `, valid until ${q.expiryDate}`}${q.reference ? ` · ${q.reference}` : ''}`,
+        subtitle: challan
+          ? // Rule 55: the consignor and consignee with their GSTINs, the date, and each copy marked
+            `${org.legalName ?? org.name}${org.taxId ? ` · GSTIN ${org.taxId}` : ''} to ${q.contact.name} · ${q.quoteDate}${copy ? ` · ${INVOICE_COPIES[copy].replace('RECIPIENT', 'CONSIGNEE').replace('SUPPLIER', 'CONSIGNOR')}` : ''}`
+          : `${org.name} for ${q.contact.name} · ${q.quoteDate}${q.kind === 'sales_order' ? '' : `, valid until ${q.expiryDate}`}${q.reference ? ` · ${q.reference}` : ''}`,
         after: [
+          ...(challan
+            ? [
+                `Purpose: ${q.purpose ? CHALLAN_PURPOSE_TEXT[q.purpose] : 'Movement of goods'}`,
+                ...(pos ? [`Place of supply: ${pos.name} (${pos.code})`] : []),
+                'Not a tax invoice: goods moved on a delivery challan under rule 55 of the CGST Rules.',
+                ...(q.reference ? [`Reference: ${q.reference}`] : []),
+                '',
+                `For ${org.legalName ?? org.name}`,
+                '',
+                '',
+                'Authorised signatory',
+              ]
+            : []),
           // A proforma asks for payment: it isn't a tax invoice, which follows when the goods or services are supplied
           ...(q.kind === 'proforma'
             ? [
@@ -646,9 +685,9 @@ export class QuotesService {
   }
 
   /** The PDF of a quote, to download */
-  async download(organizationId: string, id: string) {
+  async download(organizationId: string, id: string, copy?: InvoiceCopy) {
     const q = await this.get(organizationId, id);
-    const { pdf } = await this.pdf(organizationId, q);
+    const { pdf } = await this.pdf(organizationId, q, copy);
     return {
       data: pdf,
       fileName: `${q.kind.replace('_', '-')}-${q.number.toLowerCase()}.pdf`,

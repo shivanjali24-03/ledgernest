@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
-import { resetDemoAccounts } from '../accounts/demoAccountsApi';
+import { resetDemoAccounts, sampleId } from '../accounts/demoAccountsApi';
 import { resetDemoContacts } from '../contacts/demoContactsApi';
 import { resetDemoCurrencies } from '../currencies/demoCurrenciesApi';
 import { resetDemoInvoices } from '../invoices/demoInvoicesApi';
@@ -168,5 +168,17 @@ describe('quotes', () => {
     const pi = await api.copy(first.id, 'proforma');
     expect(pi.number).toBe('PI-0001');
     expect((await api.pdf(pi.id)).filename).toBe('proforma-pi-0001.pdf');
+  }, 30_000);
+
+  it('drafts a delivery challan, asking why the goods move', async () => {
+    renderApp('/quotes/new?kind=delivery_challan');
+    await userEvent.selectOptions(await screen.findByLabelText('Why the goods are moving', {}, { timeout: 10_000 }), 'job_work');
+    const { createDemoQuotesApi } = await import('./demoQuotesApi');
+    const api = createDemoQuotesApi(() => true);
+    const first = (await api.list({ page: 1, pageSize: 10 })).items[0]!;
+    await expect(api.create({ contactId: first.contact.id, kind: 'delivery_challan', quoteDate: '2026-10-01', expiryDate: '2026-10-01', lines: [{ description: 'Dies for machining', quantity: '5', unitPrice: 1_000_00, accountId: sampleId('4100.01') }] })).rejects.toMatchObject({ details: { fields: [expect.objectContaining({ path: ['purpose'] })] } });
+    const dc = await api.create({ contactId: first.contact.id, kind: 'delivery_challan', purpose: 'job_work', quoteDate: '2026-10-01', expiryDate: '2026-10-01', lines: [{ description: 'Dies for machining', quantity: '5', unitPrice: 1_000_00, accountId: sampleId('4100.01') }] });
+    expect(dc).toMatchObject({ number: 'DC-0001', purpose: 'job_work' });
+    expect((await api.pdf(dc.id)).filename).toBe('delivery-challan-dc-0001.pdf');
   }, 30_000);
 });

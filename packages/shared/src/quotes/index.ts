@@ -6,10 +6,26 @@ import { isoDaySchema } from '../periods/index.js';
  * The documents before an invoice: a quotation (an offer), a proforma invoice (asking for payment in advance; not a
  * tax invoice) and a sales order (the order confirmed). Each kind numbers on its own.
  */
-export const QUOTE_KINDS = ['quote', 'proforma', 'sales_order'] as const;
+export const QUOTE_KINDS = ['quote', 'proforma', 'sales_order', 'delivery_challan'] as const;
 export type QuoteKind = (typeof QUOTE_KINDS)[number];
-const QUOTE_PREFIX: Record<QuoteKind, string> = { quote: 'QT', proforma: 'PI', sales_order: 'SO' };
-export const QUOTE_TITLES: Record<QuoteKind, string> = { quote: 'Quotation', proforma: 'Proforma invoice', sales_order: 'Sales order' };
+const QUOTE_PREFIX: Record<QuoteKind, string> = { quote: 'QT', proforma: 'PI', sales_order: 'SO', delivery_challan: 'DC' };
+export const QUOTE_TITLES: Record<QuoteKind, string> = { quote: 'Quotation', proforma: 'Proforma invoice', sales_order: 'Sales order', delivery_challan: 'Delivery challan' };
+
+/**
+ * Why goods move on a delivery challan rather than an invoice (CGST Rule 55): sent for job work, on approval or sale
+ * or return, to another branch, to an exhibition, goods whose quantity is known only on delivery (liquid gas), or
+ * other movements that aren't a supply.
+ */
+export const CHALLAN_PURPOSES = ['job_work', 'approval', 'branch_transfer', 'exhibition', 'unknown_quantity', 'other'] as const;
+export type ChallanPurpose = (typeof CHALLAN_PURPOSES)[number];
+export const CHALLAN_PURPOSE_TEXT: Record<ChallanPurpose, string> = {
+  job_work: 'Goods sent for job work (section 143)',
+  approval: 'Goods sent on approval or sale or return',
+  branch_transfer: 'Transfer to another place of business',
+  exhibition: 'Goods sent for exhibition',
+  unknown_quantity: 'Supply where the quantity is known only on delivery',
+  other: 'Movement other than by way of supply',
+};
 
 
 /**
@@ -38,6 +54,8 @@ export const quoteDraftSchema = z
     contactId: z.uuid(),
     /** A quotation, proforma invoice or sales order */
     kind: z.enum(QUOTE_KINDS).optional().default('quote'),
+    /** A delivery challan's reason (Rule 55) */
+    purpose: z.enum(CHALLAN_PURPOSES).nullable().optional().default(null),
     quoteDate: isoDaySchema,
     expiryDate: isoDaySchema,
     reference: text(64),
@@ -50,7 +68,8 @@ export const quoteDraftSchema = z
       .default(null),
     lines: z.array(invoiceLineSchema).min(1, 'Add at least one line.').max(MAX_INVOICE_LINES),
   })
-  .refine((v) => v.expiryDate >= v.quoteDate, { path: ['expiryDate'], message: 'The quote can’t expire before its date.' });
+  .refine((v) => v.expiryDate >= v.quoteDate, { path: ['expiryDate'], message: 'The quote can’t expire before its date.' })
+  .refine((v) => v.kind !== 'delivery_challan' || !!v.purpose, { path: ['purpose'], message: 'Say why the goods are moving.' });
 export type QuoteDraftInput = z.input<typeof quoteDraftSchema>;
 
 /** Moving a quote on: sent, accepted or declined (or back to draft from sent) */

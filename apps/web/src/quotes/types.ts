@@ -1,4 +1,4 @@
-import type { QuoteDraftInput, QuoteState, QuoteStatus, QuoteKind } from '@ledgernest/shared';
+import type { QuoteDraftInput, QuoteState, QuoteStatus, QuoteKind, ChallanPurpose } from '@ledgernest/shared';
 
 export interface QuoteLine {
   id: string;
@@ -20,6 +20,8 @@ export interface Quote {
   id: string;
   /** A quotation, proforma invoice or sales order */
   kind?: QuoteKind;
+  /** A delivery challan's reason (Rule 55) */
+  purpose?: ChallanPurpose | null;
   number: string;
   status: QuoteStatus;
   state: QuoteState;

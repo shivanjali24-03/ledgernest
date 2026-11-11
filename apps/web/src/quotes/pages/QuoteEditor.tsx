@@ -1,4 +1,4 @@
-import { QUOTE_KINDS, type QuoteKind } from '@ledgernest/shared';
+import { CHALLAN_PURPOSES, QUOTE_KINDS, type ChallanPurpose, type QuoteKind } from '@ledgernest/shared';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
@@ -16,6 +16,7 @@ import { useOrganizationSettings } from '../../settings/useOrganizationSettings'
 import { useSession } from '../../layout/session';
 import { fadeUp, stagger } from '../../motion/tokens';
 import Button from '../../ui/Button';
+import { SelectField } from '../../ui/Field';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import EmailQuoteDialog from '../EmailQuoteDialog';
@@ -35,8 +36,17 @@ function quoteErrorMessage(e: unknown, t: (k: string) => string) {
 /** `template`: a quote to copy into a new one (same customer, lines and notes; dated today) */
 function DraftForm({ quote, template, api, kind = 'quote' }: { quote: Quote | null; template?: Quote; api: QuotesApi; kind?: QuoteKind }) {
   const { t } = useTranslation();
-  const toQuote = (p: SalesDraftPayload) => ({ kind: quote?.kind ?? kind, contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, lines: p.lines });
+  const docKind = quote?.kind ?? kind;
+  // A delivery challan says why the goods move (Rule 55)
+  const [purpose, setPurpose] = useState<ChallanPurpose | ''>(quote?.purpose ?? '');
+  const toQuote = (p: SalesDraftPayload) => ({ kind: docKind, purpose: docKind === 'delivery_challan' ? purpose || null : null, contactId: p.contactId, quoteDate: p.date, expiryDate: p.until ?? addDays(p.date, QUOTE_VALID_DAYS), reference: p.reference, notes: p.notes, placeOfSupply: p.placeOfSupply, lines: p.lines });
   return (
+    <>
+    {docKind === 'delivery_challan' && (
+      <Card className="mb-4 p-5">
+        <SelectField label={t('quotes.challan.purpose')} value={purpose} onChange={(e) => setPurpose(e.target.value as ChallanPurpose | '')} options={[{ value: '', label: t('quotes.challan.choosePurpose') }, ...CHALLAN_PURPOSES.map((p) => ({ value: p, label: t(`quotes.challan.purposes.${p}`) }))]} />
+      </Card>
+    )}
     <SalesDraftForm
       config={{
         initial: quote ? { ...quote, contactId: quote.contact.id, date: quote.quoteDate, until: quote.expiryDate } : template ? { ...template, contactId: template.contact.id, date: undefined, until: null } : null,
@@ -52,9 +62,10 @@ function DraftForm({ quote, template, api, kind = 'quote' }: { quote: Quote | nu
         invalidate: ['quotes'],
         autoUntil: (date) => addDays(date, QUOTE_VALID_DAYS),
         untilHint: () => t('quotes.expiryHint', { days: QUOTE_VALID_DAYS }),
-        labels: { date: t('quotes.fields.quoteDate'), until: t('quotes.fields.expiryDate'), save: t('quotes.save'), extra: quote?.status === 'sent' ? t('quotes.saveSent') : t('quotes.saveAndSend'), delete: t('quotes.delete'), deleteTitle: t('quotes.deleteTitle'), deleteBody: t('quotes.deleteBody'), deleted: t('quotes.deleted') },
+        labels: { date: t(docKind === 'delivery_challan' ? 'quotes.challan.date' : 'quotes.fields.quoteDate'), until: t('quotes.fields.expiryDate'), save: t('quotes.save'), extra: quote?.status === 'sent' ? t('quotes.saveSent') : t('quotes.saveAndSend'), delete: t('quotes.delete'), deleteTitle: t('quotes.deleteTitle'), deleteBody: t('quotes.deleteBody'), deleted: t('quotes.deleted') },
       }}
     />
+    </>
   );
 }
 
@@ -237,7 +248,7 @@ export default function QuoteEditor() {
                   </Button>
                 )}
                 {/* A quotation goes on to a sales order or a proforma; a proforma to a sales order */}
-                {canManage && quote.status !== 'declined' && (['sales_order', 'proforma'] as const).filter((k) => k !== (quote.kind ?? 'quote') && !(quote.kind === 'sales_order')).map((k) => (
+                {canManage && quote.status !== 'declined' && (['sales_order', 'proforma', 'delivery_challan'] as const).filter((k) => k !== (quote.kind ?? 'quote') && (quote.kind === 'sales_order' ? k === 'delivery_challan' : quote.kind !== 'delivery_challan')).map((k) => (
                   <Button key={k} variant="secondary" icon={<Copy className="size-4" />} loading={copyAs.isPending && copyAs.variables === k} onClick={() => copyAs.mutate(k)}>
                     {t(`quotes.copyAs.${k}`)}
                   </Button>

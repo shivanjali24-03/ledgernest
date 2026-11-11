@@ -166,4 +166,65 @@ describe('Proforma invoices and sales orders (e2e)', () => {
     expect(text).toContain(`Proforma invoice ${pi.number}`);
     expect(text).toContain('not a tax invoice');
   });
+
+  it('moves goods on a delivery challan with its purpose, in three copies, and invoices it later', async () => {
+    const bad = await post('/quotes', {
+      contactId: customer,
+      kind: 'delivery_challan',
+      quoteDate: '2026-06-03',
+      expiryDate: '2026-06-03',
+      lines: [
+        {
+          description: 'Pumps on approval',
+          quantity: '2',
+          unitPrice: 25_000_00,
+          accountId: sales,
+        },
+      ],
+    }).expect(400);
+    expect(bad.body.details.map((d: { field: string }) => d.field)).toContain(
+      'purpose',
+    );
+    const dc = (
+      await post('/quotes', {
+        contactId: customer,
+        kind: 'delivery_challan',
+        purpose: 'approval',
+        quoteDate: '2026-06-03',
+        expiryDate: '2026-06-03',
+        lines: [
+          {
+            description: 'Pumps on approval',
+            quantity: '2',
+            unitPrice: 25_000_00,
+            accountId: sales,
+          },
+        ],
+      }).expect(201)
+    ).body as Q & { purpose: string };
+    expect(dc).toMatchObject({
+      number: 'DC-0001',
+      kind: 'delivery_challan',
+      purpose: 'approval',
+    });
+    const pdf = await auth(
+      http().get(`/api/v1/quotes/${dc.id}/pdf?copy=duplicate`),
+    )
+      .buffer(true)
+      .parse((res, cb) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => cb(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('Delivery challan DC-0001');
+    expect(text).toContain('DUPLICATE FOR TRANSPORTER');
+    expect(text).toContain('Goods sent on approval or sale or return');
+    expect(text).toContain('Not a tax invoice');
+    // The customer keeps them: the challan becomes the invoice
+    const done = (await post(`/quotes/${dc.id}/convert`, {}).expect(200))
+      .body as { quote: Q };
+    expect(done.quote.status).toBe('invoiced');
+  });
 });
