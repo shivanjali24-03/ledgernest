@@ -314,4 +314,100 @@ describe('Warehouses (e2e)', () => {
       ['Pune shop', 'TR-0002'],
     ]);
   });
+
+  it('lets each document say which warehouse its goods leave or come into', async () => {
+    const nashik = (
+      await post('/warehouses', { name: 'Nashik depot' }).expect(201)
+    ).body as Wh;
+    // A bill brings five tins into Nashik
+    const b = (
+      await post('/bills', {
+        contactId: vendor,
+        billDate: '2026-06-15',
+        warehouseId: nashik.id,
+        lines: [
+          {
+            itemId: oil,
+            description: 'Groundnut oil',
+            quantity: 5,
+            unitPrice: 100_00,
+            accountId: acc.stock,
+          },
+        ],
+      }).expect(201)
+    ).body as { id: string; warehouse: { name: string } | null };
+    expect(b.warehouse?.name).toBe('Nashik depot');
+    await post(`/bills/${b.id}/record`).expect(200);
+    expect((await stockIn(nashik)).map((i) => i.quantity)).toEqual(['5']);
+    // Sold from Nashik: only what's there
+    const sell = async (quantity: number, warehouseId?: string) => {
+      const id = (
+        await post('/invoices', {
+          contactId: customer,
+          issueDate: '2026-06-16',
+          ...(warehouseId ? { warehouseId } : {}),
+          lines: [
+            {
+              itemId: oil,
+              description: 'Groundnut oil',
+              quantity,
+              unitPrice: 150_00,
+              accountId: acc.sales,
+            },
+          ],
+        }).expect(201)
+      ).body.id as string;
+      return post(`/invoices/${id}/issue`);
+    };
+    expect((await sell(3, nashik.id)).status).toBe(200);
+    expect(
+      ((await sell(3, nashik.id)).body as { details: object }).details,
+    ).toMatchObject({ reason: 'insufficient_stock', onHand: '2' });
+    // With none said, the main warehouse (Bhiwandi now, empty)
+    expect(((await sell(1)).body as { details: object }).details).toMatchObject(
+      { reason: 'insufficient_stock', onHand: '0' },
+    );
+    // A challan sends goods from the warehouse it names
+    const dc = (
+      await post('/quotes', {
+        contactId: customer,
+        kind: 'delivery_challan',
+        purpose: 'approval',
+        quoteDate: '2026-06-17',
+        expiryDate: '2026-06-17',
+        warehouseId: main.id,
+        lines: [
+          {
+            itemId: oil,
+            description: 'Groundnut oil',
+            quantity: '2',
+            unitPrice: 150_00,
+            accountId: acc.sales,
+          },
+        ],
+      }).expect(201)
+    ).body as { id: string };
+    await post(`/quotes/${dc.id}/dispatch`, { date: '2026-06-17' }).expect(200);
+    expect(
+      (await stockIn(main)).find((i) => i.name === 'Groundnut oil')?.quantity,
+    ).toBe('7');
+    // Only a warehouse in use
+    expect(
+      (
+        await post('/invoices', {
+          contactId: customer,
+          issueDate: '2026-06-16',
+          warehouseId: pune.id,
+          lines: [
+            {
+              description: 'x',
+              quantity: 1,
+              unitPrice: 1_00,
+              accountId: acc.sales,
+            },
+          ],
+        }).expect(400)
+      ).body.details,
+    ).toMatchObject({ reason: 'warehouse_invalid' });
+  });
 });

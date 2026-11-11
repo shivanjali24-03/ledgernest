@@ -29,6 +29,8 @@ export interface Quote {
   expiryDate: string;
   currency: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods leave or come into (null: the main one) */
+  warehouse?: { id: string; name: string } | null;
   reference: string | null;
   notes: string | null;
   contact: { id: string; name: string; email: string | null };

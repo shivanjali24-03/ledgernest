@@ -17,6 +17,7 @@ import { fadeUp, stagger } from '../../motion/tokens';
 import { useTaxesApi } from '../../taxes/useTaxesApi';
 import Button from '../../ui/Button';
 import { inputClass, SelectField, TextField } from '../../ui/Field';
+import WarehouseSelect from '../../inventory/WarehouseSelect';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import Modal from '../../ui/Modal';
 import { useToast } from '../../ui/toastContext';
@@ -55,6 +56,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
   const [expectedDate, setExpectedDate] = useState(order?.expectedDate ?? '');
   const [reference, setReference] = useState(order?.reference ?? '');
   const [notes, setNotes] = useState(order?.notes ?? '');
+  const [warehouseId, setWarehouseId] = useState(order?.warehouse?.id ?? '');
   const [lines, setLines] = useState<Line[]>(order?.lines.length ? order.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: (l.unitPrice / 100).toFixed(2), taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '' })) : [blank()]);
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const pick = (key: string, itemId: string) => {
@@ -65,7 +67,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
   const invalid = !contactId || !filled.length || filled.some((l) => !l.description.trim() || toMinor(l.unitPrice) === null || parseQuantity(l.quantity) === null);
   const save = useMutation({
     mutationFn: () => {
-      const input = { contactId, orderDate, expectedDate: expectedDate || null, reference, notes, lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: toMinor(l.unitPrice)!, discount: 0, taxGroupId: l.taxGroupId || null, accountId: l.accountId || null })) };
+      const input = { contactId, orderDate, expectedDate: expectedDate || null, reference, notes, warehouseId: warehouseId || null, lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: toMinor(l.unitPrice)!, discount: 0, taxGroupId: l.taxGroupId || null, accountId: l.accountId || null })) };
       return order ? api.update(order.id, input) : api.create(input);
     },
     onSuccess: (o) => {
@@ -87,6 +89,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
         <TextField label={t('purchaseOrders.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} dir="auto" />
         <TextField label={t('purchaseOrders.fields.orderDate')} type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
         <TextField label={t('purchaseOrders.fields.expectedDate')} type="date" value={expectedDate} min={orderDate} onChange={(e) => setExpectedDate(e.target.value)} />
+        <WarehouseSelect value={warehouseId} onChange={setWarehouseId} label={t('purchaseOrders.fields.warehouse')} />
       </Card>
       <Card className="overflow-x-auto p-0">
         <table className="w-full min-w-[820px] text-sm" aria-label={t('purchaseOrders.lines')}>

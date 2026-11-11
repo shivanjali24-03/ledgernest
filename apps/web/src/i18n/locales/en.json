@@ -5230,7 +5230,8 @@
       "expectedDate": "Expected by",
       "reference": "Your reference",
       "receivedOn": "Received on",
-      "challan": "Vendor’s challan or LR no."
+      "challan": "Vendor’s challan or LR no.",
+      "warehouse": "Deliver to"
     },
     "columns": {
       "number": "Order",
@@ -5312,6 +5313,7 @@
       "not_tracked": "An item isn’t kept in stock.",
       "serials_count": "Goods with serial numbers move from the item’s page, unit by unit.",
       "failed": "That didn’t work. Try again."
-    }
+    },
+    "mainOption": "{{name}} (main)"
   }
 }

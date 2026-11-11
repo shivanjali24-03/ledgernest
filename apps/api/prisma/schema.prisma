@@ -892,6 +892,8 @@ model Invoice {
   rate                Decimal?  @db.Decimal(20, 10)
   /// GST state code of the place of supply
   placeOfSupply       String?   @map("place_of_supply") @db.Char(2)
+  /// The warehouse its goods leave or come into; null = the main one
+  warehouseId         String?   @map("warehouse_id") @db.Uuid
   reference           String?
   notes               String?
   receivableAccountId String?   @map("receivable_account_id") @db.Uuid
@@ -954,6 +956,8 @@ model Invoice {
   recurring   RecurringInvoice?   @relation(fields: [organizationId, recurringInvoiceId], references: [organizationId, id], onDelete: NoAction)
 
   interestWaivers InterestWaiver[]
+
+  warehouse Warehouse? @relation("InvoiceWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, fullNumber])
@@ -1113,6 +1117,8 @@ model Bill {
   currency          String?   @db.Char(3)
   rate              Decimal?  @db.Decimal(20, 10)
   placeOfSupply     String?   @map("place_of_supply") @db.Char(2)
+  /// The warehouse its goods leave or come into; null = the main one
+  warehouseId       String?   @map("warehouse_id") @db.Uuid
   notes             String?
   payableAccountId  String?   @map("payable_account_id") @db.Uuid
   subtotal          BigInt    @default(0)
@@ -1143,6 +1149,8 @@ model Bill {
   recurring   RecurringBill?      @relation(fields: [organizationId, recurringBillId], references: [organizationId, id], onDelete: NoAction)
 
   purchaseOrder PurchaseOrder? @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: NoAction)
+
+  warehouse Warehouse? @relation("BillWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -2033,6 +2041,8 @@ model Quote {
   expiryDate      DateTime  @map("expiry_date") @db.Date
   currency        String?   @db.Char(3)
   placeOfSupply   String?   @map("place_of_supply") @db.Char(2)
+  /// The warehouse its goods leave or come into; null = the main one
+  warehouseId     String?   @map("warehouse_id") @db.Uuid
   reference       String?
   notes           String?
   subtotal        BigInt    @default(0)
@@ -2064,6 +2074,8 @@ model Quote {
   contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
   invoice      Invoice?     @relation(fields: [organizationId, invoiceId], references: [organizationId, id], onDelete: NoAction)
   lines        QuoteLine[]
+
+  warehouse Warehouse? @relation("QuoteWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, kind, number])
@@ -2288,6 +2300,8 @@ model PurchaseOrder {
   expectedDate   DateTime? @map("expected_date") @db.Date
   currency       String?   @db.Char(3)
   placeOfSupply  String?   @map("place_of_supply") @db.Char(2)
+  /// The warehouse its goods leave or come into; null = the main one
+  warehouseId    String?   @map("warehouse_id") @db.Uuid
   reference      String?
   notes          String?
   subtotal       BigInt    @default(0)
@@ -2303,6 +2317,8 @@ model PurchaseOrder {
   lines        PurchaseOrderLine[]
   receipts     GoodsReceipt[]
   bills        Bill[]
+
+  warehouse Warehouse? @relation("PurchaseOrderWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, number])
@@ -2400,10 +2416,14 @@ model Warehouse {
   archivedAt     DateTime? @map("archived_at")
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  movements    StockMovement[]
-  transfersOut StockTransfer[] @relation("TransferFrom")
-  transfersIn  StockTransfer[] @relation("TransferTo")
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  movements      StockMovement[]
+  transfersOut   StockTransfer[] @relation("TransferFrom")
+  transfersIn    StockTransfer[] @relation("TransferTo")
+  invoices       Invoice[]       @relation("InvoiceWarehouse")
+  bills          Bill[]          @relation("BillWarehouse")
+  quotes         Quote[]         @relation("QuoteWarehouse")
+  purchaseOrders PurchaseOrder[] @relation("PurchaseOrderWarehouse")
 
   @@unique([organizationId, id])
   @@unique([organizationId, code])

@@ -29,6 +29,8 @@ export interface PurchaseOrder {
   expectedDate: string | null;
   currency: string | null;
   placeOfSupply: string | null;
+  /** The warehouse goods come into (null: the main one) */
+  warehouse?: { id: string; name: string } | null;
   reference: string | null;
   notes: string | null;
   contact: { id: string; name: string; email: string | null };

@@ -55,6 +55,8 @@ export interface Invoice {
   currency: string | null;
   rate: string | null;
   placeOfSupply: string | null;
+  /** The warehouse its goods leave or come into (null: the main one) */
+  warehouse?: { id: string; name: string } | null;
   /** The number series it's (to be) numbered from */
   seriesId?: string | null;
   /** A draft's own interest rate (basis points; null = the default, 0 = none) */
