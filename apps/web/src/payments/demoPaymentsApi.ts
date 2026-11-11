@@ -1,4 +1,4 @@
-import { currencyDigits, paymentNumber, pdfTableBytes, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind, chequePdfBytes } from '@ledgernest/shared';
+import { currencyDigits, paymentNumber, pdfTableBytes, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind, chequePdfBytes, type PaymentMode } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
@@ -53,7 +53,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['payments.manage'] });
   };
   /** Receipts credit invoices' receivables; payments debit bills' payables. The rest is an advance. */
-  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; notes: string | null; allocations: { documentId: string; amount: number }[]; tds?: { section: string; ratePpm: number; base: number; amount: number; accountId: string } | null }) => {
+  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; mode?: PaymentMode | null; instrumentNo?: string | null; instrumentDate?: string | null; drawnOn?: string | null; notes: string | null; allocations: { documentId: string; amount: number }[]; tds?: { section: string; ratePpm: number; base: number; amount: number; accountId: string } | null }) => {
     guard();
     const receipt = kind === 'receipt';
     const contact = demoContactRows().find((c) => c.id === d.contactId);
@@ -63,6 +63,10 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     const bank = demoAccountRows().find((a) => a.id === d.bankAccountId);
     if (!bank || bank.type !== 'asset' || bank.archivedAt) throw refuse(400, 'bank_invalid');
     if (bank.currency && bank.currency !== currency) throw refuse(400, 'bank_currency');
+    // Cash moves through a cash account, and only cash does
+    const mode = d.mode ?? (bank.subtype === 'cash' ? 'cash' : null);
+    if (mode && (mode === 'cash') !== (bank.subtype === 'cash')) throw refuse(400, 'mode_account', { field: mode === 'cash' ? 'bankAccountId' : 'mode' });
+    const instrument = mode === 'cheque' || mode === 'dd';
     // TDS: vendor payments in rupees, owed on a tax or current liability account
     const tds = d.tds ?? null;
     const tdsAccount = tds ? demoAccountRows().find((a) => a.id === tds.accountId) : undefined;
@@ -132,6 +136,10 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
       tds: tds && tdsAccount ? { section: tds.section, ratePpm: tds.ratePpm, base: tds.base, amount: tds.amount, account: { id: tdsAccount.id, code: tdsAccount.code, name: tdsAccount.name } } : null,
       bankAmount: d.amount - (tds?.amount ?? 0),
       reference: d.reference,
+      mode,
+      instrumentNo: mode === 'cash' ? null : (d.instrumentNo ?? null),
+      instrumentDate: instrument ? (d.instrumentDate ?? null) : null,
+      drawnOn: instrument ? (d.drawnOn ?? null) : null,
       notes: d.notes,
       journalEntry: { id: posted.id, number: posted.number },
       voidEntry: null,

@@ -1012,6 +1012,12 @@ model Payment {
   tdsAmount      BigInt    @default(0) @map("tds_amount")
   tdsAccountId   String?   @map("tds_account_id") @db.Uuid
   reference      String?
+  /// How the money moved: cash | cheque | dd | neft | rtgs | imps | upi | card | other
+  mode           String?
+  /// A cheque or DD's number, a transfer's UTR, a UPI reference; a cheque or DD's date and the bank it's drawn on
+  instrumentNo   String?   @map("instrument_no")
+  instrumentDate DateTime? @map("instrument_date") @db.Date
+  drawnOn        String?   @map("drawn_on")
   notes          String?
   journalEntryId String    @map("journal_entry_id") @db.Uuid
   voidEntryId    String?   @map("void_entry_id") @db.Uuid

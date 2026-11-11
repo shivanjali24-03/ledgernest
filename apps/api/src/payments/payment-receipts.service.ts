@@ -9,6 +9,7 @@ import {
   pdfTableBytes,
   type ChequeOptions,
   type PdfImage,
+  paymentModeText,
 } from '@ledgernest/shared';
 import { organizationLogo } from '../common/pdf-logo.js';
 import type { Request } from 'express';
@@ -76,6 +77,8 @@ export class PaymentReceiptsService {
           info: [
             `Paid to: ${contact.legalName ?? contact.name}`,
             `Date ${p.date} · ${currency} ${fmt(p.bankAmount)} to your bank${p.reference ? ` · Ref ${p.reference}` : ''}`,
+            // How it was paid: "Cheque 123456 dated … on HDFC Bank", "NEFT, UTR …"
+            ...(paymentModeText(p) ? [`By ${paymentModeText(p)}`] : []),
           ],
           after: p.tds
             ? [
@@ -114,6 +117,7 @@ export class PaymentReceiptsService {
         info: [
           `Received from: ${contact.legalName ?? contact.name}`,
           `Date ${p.date} · ${currency} ${fmt(p.amount)}${p.reference ? ` · Ref ${p.reference}` : ''}`,
+          ...(paymentModeText(p) ? [`By ${paymentModeText(p)}`] : []),
         ],
         footer: `${seller} · ${p.number}`,
         rows,
