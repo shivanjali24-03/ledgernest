@@ -87,12 +87,64 @@ const WIDTHS = [
 /** Windows-1252's characters in 0x80–0x9F */
 const CP1252: Record<string, number> = { '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86, '‡': 0x87, 'ˆ': 0x88, '‰': 0x89, 'Š': 0x8a, '‹': 0x8b, 'Œ': 0x8c, 'Ž': 0x8e, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97, '˜': 0x98, '™': 0x99, 'š': 0x9a, '›': 0x9b, 'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f };
 
-/** Text as Windows-1252 bytes (one char per byte), with what it can't show replaced */
+/**
+ * Scripts Helvetica can't show (Devanagari, for Hindi and Marathi) are shaped into the glyphs of an embedded TrueType
+ * font: conjuncts, half forms and matras placed as the font says. The server sets a shaper once (HarfBuzz with Noto
+ * Sans Devanagari); without one, those letters print as "?" as before.
+ */
+export interface PdfShaper {
+  /** The font's PostScript name, e.g. NotoSansDevanagari-Regular */
+  fontName: string;
+  /** The TrueType file, Flate-compressed, and its length before */
+  fontFile: Uint8Array;
+  fontLength: number;
+  unitsPerEm: number;
+  ascent: number;
+  descent: number;
+  capHeight: number;
+  bbox: [number, number, number, number];
+  /** One word's glyphs: id, advance and offsets, in font units */
+  shape(text: string): { gid: number; ax: number; dx: number; dy: number }[];
+}
+let shaper: PdfShaper | null = null;
+export const setPdfShaper = (s: PdfShaper | null) => {
+  shaper = s;
+};
+
+/**
+ * While a document is laid out, each shaped word stands in as one private-use character (so measuring, wrapping and
+ * escaping work as for any text); writing the page turns it into glyphs of the embedded font.
+ */
+type Cluster = { text: string; glyphs: { gid: number; ax: number; dx: number; dy: number }[]; width: number };
+let clusters: Cluster[] = [];
+let clusterAt = new Map<string, number>();
+const PUA = 0xe000;
+const SHAPED_RUN = /[\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF][\u0900-\u097F\uA8E0-\uA8FF\u1CD0-\u1CFF\u200C\u200D]*/g;
+function startDocument() {
+  clusters = [];
+  clusterAt = new Map();
+}
+const isCluster = (c: number) => c >= PUA && c < PUA + clusters.length;
+function cluster(text: string): string {
+  let n = clusterAt.get(text);
+  if (n === undefined) {
+    const glyphs = shaper!.shape(text);
+    n = clusters.length;
+    clusters.push({ text, glyphs, width: (glyphs.reduce((t, g) => t + g.ax, 0) * 1000) / shaper!.unitsPerEm });
+    clusterAt.set(text, n);
+  }
+  return String.fromCharCode(PUA + n);
+}
+
+/** Text as Windows-1252 bytes (one char per byte), shaped words as their stand-ins, with what it can't show replaced */
 function encode(text: string): string {
   let out = '';
-  for (const ch of text.replace(/₹\s?/g, 'Rs ').replace(/\s+/g, ' ')) {
+  let clean = text.replace(/₹\s?/g, 'Rs ').replace(/\s+/g, ' ');
+  if (shaper) clean = clean.replace(SHAPED_RUN, cluster);
+  for (const ch of clean) {
     const c = ch.codePointAt(0)!;
-    if (c >= 32 && c < 127) out += ch;
+    if (isCluster(c)) out += ch;
+    else if (c >= 32 && c < 127) out += ch;
     else if (c >= 0xa0 && c <= 0xff) out += ch;
     else if (CP1252[ch] !== undefined) out += String.fromCharCode(CP1252[ch]);
     else out += '?';
@@ -104,7 +156,7 @@ function width(encoded: string, size: number, bold = false) {
   let w = 0;
   for (let i = 0; i < encoded.length; i++) {
     const c = encoded.charCodeAt(i);
-    w += (c >= 32 && c < 127 ? WIDTHS[c - 32] : undefined) ?? 556;
+    w += isCluster(c) ? clusters[c - PUA]!.width : ((c >= 32 && c < 127 ? WIDTHS[c - 32] : undefined) ?? 556);
   }
   return (w * size * (bold ? 1.06 : 1)) / 1000;
 }
@@ -143,10 +195,93 @@ function wrapLines(encoded: string, max: number, size: number, bold = false): st
 }
 
 const literal = (encoded: string) => `(${encoded.replace(/[\\()]/g, (m) => `\\${m}`)})`;
+const hex4 = (n: number) => n.toString(16).padStart(4, '0');
+
+/**
+ * A page's text with its shaped words written out: each as glyphs of the embedded font (F3), placed by their advances
+ * and offsets, inside a span carrying the real text so it copies and searches as written. Records each glyph's width.
+ */
+function writeShaped(content: string, widths: Map<number, number>): string {
+  if (!clusters.length) return content;
+  const upem = shaper!.unitsPerEm;
+  let font = 'F1';
+  let size = '10';
+  const glyphs = (c: Cluster) => {
+    let ops = '';
+    let arr = '';
+    const flush = () => {
+      if (arr) ops += `[${arr.trim()}] TJ `;
+      arr = '';
+    };
+    for (const g of c.glyphs) {
+      const adv = (g.ax * 1000) / upem;
+      if (!widths.has(g.gid)) widths.set(g.gid, Math.round(adv));
+      const w = widths.get(g.gid)!;
+      const dx = (g.dx * 1000) / upem;
+      if (g.dy) {
+        flush();
+        ops += `${num((g.dy * Number(size)) / upem)} Ts `;
+      }
+      if (dx) arr += `${num(-dx)} `;
+      arr += `<${hex4(g.gid)}> `;
+      // The pen moved the glyph's width (and dx before it); it should have moved its advance
+      const back = dx + w - adv;
+      if (Math.abs(back) > 0.01) arr += `${num(back)} `;
+      if (g.dy) {
+        flush();
+        ops += '0 Ts ';
+      }
+    }
+    flush();
+    let utf16 = 'FEFF';
+    for (let i = 0; i < c.text.length; i++) utf16 += hex4(c.text.charCodeAt(i));
+    return `/Span << /ActualText <${utf16}> >> BDC /F3 ${size} Tf ${ops}/${font} ${size} Tf EMC `;
+  };
+  return content.replace(/\/(F[12]) ([\d.]+) Tf|\(((?:\\.|[^\\()])*)\) Tj/g, (m, f: string | undefined, sz: string | undefined, str: string | undefined) => {
+    if (f) {
+      font = f;
+      size = sz!;
+      return m;
+    }
+    if (!/[\uE000-\uF8FF]/.test(str!)) return m;
+    let out = '';
+    let latin = '';
+    const text = str!;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]!;
+      if (ch === '\\') {
+        latin += ch + (text[++i] ?? '');
+        continue;
+      }
+      const c = ch.charCodeAt(0);
+      if (isCluster(c)) {
+        if (latin) out += `(${latin}) Tj `;
+        latin = '';
+        out += glyphs(clusters[c - PUA]!);
+      } else latin += ch;
+    }
+    if (latin) out += `(${latin}) Tj `;
+    return out.trimEnd();
+  });
+}
+
+/** The embedded font's objects (Type0, its CID font, descriptor and file), numbered from `first`; F3 is `first` */
+function shapedFontObjects(first: number, widths: Map<number, number>): string[] {
+  const f = shaper!;
+  const k = 1000 / f.unitsPerEm;
+  const w = [...widths].sort((a, b) => a[0] - b[0]).map(([gid, width]) => `${gid} [${width}]`).join(' ');
+  return [
+    `<< /Type /Font /Subtype /Type0 /BaseFont /${f.fontName} /Encoding /Identity-H /DescendantFonts [${first + 1} 0 R] >>`,
+    `<< /Type /Font /Subtype /CIDFontType2 /BaseFont /${f.fontName} /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /FontDescriptor ${first + 2} 0 R /CIDToGIDMap /Identity /DW 1000 /W [${w}] >>`,
+    `<< /Type /FontDescriptor /FontName /${f.fontName} /Flags 32 /FontBBox [${f.bbox.map((v) => Math.round(v * k)).join(' ')}] /ItalicAngle 0 /Ascent ${Math.round(f.ascent * k)} /Descent ${Math.round(f.descent * k)} /CapHeight ${Math.round(f.capHeight * k)} /StemV 80 /FontFile2 ${first + 3} 0 R >>`,
+    `<< /Length ${f.fontFile.length} /Length1 ${f.fontLength} /Filter /FlateDecode >>\nstream\n${binary(f.fontFile)}\nendstream`,
+  ];
+}
 const num = (n: number) => (Math.round(n * 100) / 100).toString();
 const NUMERIC = /^[-−(]?(Rs\s?)?[\d,]+(\.\d+)?%?\)?$/;
 
 export function pdfTableBytes(table: PdfTable): Uint8Array {
+  startDocument();
   const size = 8;
   const rowH = 13;
   const margin = 40;
@@ -319,8 +454,12 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     return id;
   });
   const xobject = images.length ? ` /XObject << ${images.map(([name], i) => `/${name} ${ids[i]} 0 R`).join(' ')} >>` : '';
-  streams.forEach((s, i) => {
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xobject} >> /Contents ${6 + i * 2} 0 R >>`);
+  // Shaped words (Hindi, Marathi) in the embedded font, after the images
+  const glyphWidths = new Map<number, number>();
+  const written = streams.map((s) => writeShaped(s, glyphWidths));
+  const f3 = clusters.length ? ` /F3 ${nextId} 0 R` : '';
+  written.forEach((s, i) => {
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /Font << /F1 3 0 R /F2 4 0 R${f3} >>${xobject} >> /Contents ${6 + i * 2} 0 R >>`);
     objects.push(`<< /Length ${s.length} >>\nstream\n${s}endstream`);
   });
   images.forEach(([, img], i) => {
@@ -329,6 +468,7 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     objects.push(`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /${img.colorSpace} /BitsPerComponent 8 /Filter /${img.filter}${parms}${mask} /Length ${img.data.length} >>\nstream\n${binary(img.data)}\nendstream`);
     if (img.smask) objects.push(`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${img.smask.length} >>\nstream\n${binary(img.smask)}\nendstream`);
   });
+  if (clusters.length) objects.push(...shapedFontObjects(nextId, glyphWidths));
   let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
   const offsets: number[] = [];
   objects.forEach((o, i) => {
@@ -358,6 +498,7 @@ export interface PdfText {
 
 /** One page of positioned text and straight lines, any size, for forms printed onto stationery */
 export function pdfPageBytes(page: { width: number; height: number; texts: PdfText[]; lines?: { x1: number; y1: number; x2: number; y2: number; width?: number }[] }): Uint8Array {
+  startDocument();
   let s = '0 g 0 G\n';
   for (const l of page.lines ?? []) s += `${num(l.width ?? 0.8)} w ${num(l.x1)} ${num(l.y1)} m ${num(l.x2)} ${num(l.y2)} l S\n`;
   for (const t of page.texts) {
@@ -365,13 +506,16 @@ export function pdfPageBytes(page: { width: number; height: number; texts: PdfTe
     const place = t.angle ? `${num(Math.cos(r))} ${num(Math.sin(r))} ${num(-Math.sin(r))} ${num(Math.cos(r))} ${num(t.x)} ${num(t.y)} Tm` : `${num(t.x)} ${num(t.y)} Td`;
     s += `BT /${t.bold ? 'F2' : 'F1'} ${num(t.size ?? 10)} Tf ${num(t.spacing ?? 0)} Tc ${place} ${literal(encode(t.text))} Tj ET\n`;
   }
+  const widths = new Map<number, number>();
+  s = writeShaped(s, widths);
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${num(page.width)} ${num(page.height)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>`,
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${num(page.width)} ${num(page.height)}] /Resources << /Font << /F1 3 0 R /F2 4 0 R${clusters.length ? ' /F3 7 0 R' : ''} >> >> /Contents 6 0 R >>`,
     `<< /Length ${s.length} >>\nstream\n${s}endstream`,
+    ...(clusters.length ? shapedFontObjects(7, widths) : []),
   ];
   let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
   const offsets: number[] = [];
