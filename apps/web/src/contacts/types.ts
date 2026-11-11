@@ -36,6 +36,8 @@ export interface Contact {
   shipAddresses?: ShipAddress[];
   /** The TDS section their payments usually fall under */
   tdsSection?: TdsSection | null;
+  /** Plies, hires or leases goods carriages: cash to them may go to ₹35,000 a day */
+  goodsTransporter?: boolean;
   udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;

@@ -2083,7 +2083,7 @@
     },
     "cashLimits": {
       "title": "Cash over the Income-tax limits",
-      "hint": "Days a person paid you ₹2,00,000 or more in cash (s.269ST), or you paid them over ₹10,000 in cash (s.40A(3)): for the tax audit, Form 3CD.",
+      "hint": "Days a person paid you ₹2,00,000 or more in cash (s.269ST), or you paid them over ₹10,000 in cash (₹35,000 to a transporter, s.40A(3)): for the tax audit, Form 3CD.",
       "none": "No cash crossed the limits in these dates.",
       "section": "Rule",
       "date": "Day",
@@ -2394,7 +2394,8 @@
       "gstTreatment": "GST registration",
       "pan": "PAN",
       "whatsapp": "WhatsApp number",
-      "tdsSection": "Usual TDS section"
+      "tdsSection": "Usual TDS section",
+      "goodsTransporter": "Plies, hires or leases goods carriages"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
@@ -2405,7 +2406,8 @@
       "interestDefault": "As set for the organisation",
       "interestRate": "Blank uses the organisation's rate; 0 charges none.",
       "pan": "For TDS; worked out from the GSTIN when left blank",
-      "whatsapp": "When it isn’t the phone number; used for WhatsApp messages"
+      "whatsapp": "When it isn’t the phone number; used for WhatsApp messages",
+      "goodsTransporter": "A transporter may be paid up to ₹35,000 a day in cash, not ₹10,000 (Income-tax s.40A(3A))."
     },
     "address": {
       "line1": "Address",
@@ -3161,7 +3163,7 @@
     },
     "cashLimit": {
       "receipt": "This takes cash from them to {{amount}} in a day or for one invoice: receiving ₹2,00,000 or more in cash is barred (Income-tax Act s.269ST), with a penalty of the whole amount. Record it only if it really happened.",
-      "payment": "Cash paid to them today comes to {{amount}}, over ₹10,000: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.",
+      "payment": "Cash paid to them today comes to {{amount}}, over {{limit}}: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.",
       "recordAnyway": "It happened: record it"
     }
   },

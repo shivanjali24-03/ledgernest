@@ -359,7 +359,7 @@ export class PaymentsService {
         date: true,
         amount: true,
         fiscalYear: { select: { name: true } },
-        contact: { select: { id: true, name: true } },
+        contact: { select: { id: true, name: true, goodsTransporter: true } },
       },
     });
     const days = new Map<string, typeof rows>();
@@ -374,6 +374,7 @@ export class PaymentsService {
         kind: first.kind as PaymentKind,
         amount: total,
         sameDay: 0,
+        transporter: first.contact.goodsTransporter,
       });
       return breach
         ? [
@@ -381,7 +382,7 @@ export class PaymentsService {
               ...breach,
               kind: first.kind as PaymentKind,
               date: iso(first.date),
-              contact: first.contact,
+              contact: { id: first.contact.id, name: first.contact.name },
               payments: group.map((r) => ({
                 id: r.id,
                 number: paymentNumber(
@@ -568,18 +569,28 @@ export class PaymentsService {
                 }),
               )
             : [];
+        // A transporter of goods may be paid up to ₹35,000 a day in cash (s.40A(3A))
+        const transporter =
+          kind === 'payment' &&
+          !!(
+            await tx.contact.findFirst({
+              where: { organizationId, id: input.contactId },
+              select: { goodsTransporter: true },
+            })
+          )?.goodsTransporter;
         const breach = cashLimitBreach({
           kind,
           amount: input.amount,
           sameDay: Number(sameDay._sum.amount ?? 0),
           perInvoice,
+          transporter,
         });
         if (breach)
           throw refuse(
             ConflictException,
             breach.section === '269ST'
               ? 'This takes cash from them to ₹2,00,000 or more (Income-tax Act s.269ST: the penalty is the whole amount). Record it only if it really happened.'
-              : 'Cash paid to them today goes over ₹10,000: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.',
+              : `Cash paid to them today goes over ₹${transporter ? '35,000' : '10,000'}: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.`,
             'cash_limit',
             breach,
           );

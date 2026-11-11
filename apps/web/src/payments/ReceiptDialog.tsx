@@ -89,7 +89,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
   const problem = !contactId ? (receipt ? 'customer' : 'vendor') : !bank ? 'bank' : !amt ? 'amount' : parsedAllocs.some((i) => i.value === null || (i.value ?? 0) > i.balance) ? 'allocation' : allocated > amt ? 'over' : tdsProblem ? 'tds' : null;
 
   // A cash amount over an Income-tax limit: said, then recorded only when confirmed
-  const [cashLimit, setCashLimit] = useState<{ section: string; total: number } | null>(null);
+  const [cashLimit, setCashLimit] = useState<{ section: string; total: number; limit: number } | null>(null);
   const save = useMutation({
     mutationFn: (acknowledgeCashLimit: boolean = false) => {
       const instrument = mode === 'cheque' || mode === 'dd';
@@ -104,7 +104,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
       onDone(p);
     },
     onError: (e) => {
-      if (e instanceof ApiError && e.details?.reason === 'cash_limit') return setCashLimit({ section: String(e.details.section), total: Number(e.details.total) });
+      if (e instanceof ApiError && e.details?.reason === 'cash_limit') return setCashLimit({ section: String(e.details.section), total: Number(e.details.total), limit: Number(e.details.limit ?? 0) });
       if (!heldForApproval(e)) return toast(billErrorMessage(e, t), 'error');
       void queryClient.invalidateQueries({ queryKey: ['approvals'] });
       toast(heldMessage(e, t));
@@ -301,7 +301,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
         )}
         {cashLimit && (
           <div role="alert" className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
-            <p className="font-medium">{t(cashLimit.section === '269ST' ? 'payments.cashLimit.receipt' : 'payments.cashLimit.payment', { amount: plain(cashLimit.total) })}</p>
+            <p className="font-medium">{t(cashLimit.section === '269ST' ? 'payments.cashLimit.receipt' : 'payments.cashLimit.payment', { amount: plain(cashLimit.total), limit: plain(cashLimit.limit) })}</p>
             <Button type="button" variant="secondary" size="sm" className="mt-2" loading={save.isPending} onClick={() => save.mutate(true)}>
               {t('payments.cashLimit.recordAnyway')}
             </Button>

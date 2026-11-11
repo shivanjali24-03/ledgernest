@@ -72,7 +72,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
       const rows = load().filter((p) => p.status === 'posted' && p.kind === kind && p.contact.id === d.contactId && p.mode === 'cash');
       const sameDay = rows.filter((p) => p.date === d.date).reduce((t, p) => t + p.amount, 0);
       const perInvoice = receipt ? d.allocations.map((a) => rows.flatMap((p) => p.allocations).filter((x) => x.documentId === a.documentId).reduce((t, x) => t + x.amount, 0) + a.amount) : [];
-      const breach = cashLimitBreach({ kind, amount: d.amount, sameDay, perInvoice });
+      const breach = cashLimitBreach({ kind, amount: d.amount, sameDay, perInvoice, transporter: !receipt && !!contact?.goodsTransporter });
       if (breach) throw new ApiError('conflict', 409, undefined, undefined, { reason: 'cash_limit', ...breach });
     }
     // TDS: vendor payments in rupees, owed on a tax or current liability account
