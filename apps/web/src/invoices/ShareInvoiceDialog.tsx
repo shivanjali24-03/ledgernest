@@ -100,7 +100,7 @@ export default function ShareInvoiceDialog({ api, invoice, onClose }: { api: Inv
           <p className="whitespace-pre-line rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600 dark:bg-ink-800/60 dark:text-ink-300" data-testid="share-message" dir="auto">
             {message}
           </p>
-          <a href={whatsappLink(message, invoice.contact.phone)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]">
+          <a href={whatsappLink(message, invoice.contact.whatsapp ?? invoice.contact.phone)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]">
             <MessageCircle className="size-4" aria-hidden /> {t('invoices.share.whatsapp')}
           </a>
           <p className="text-xs text-ink-500">{t('invoices.share.whatsappHint')}</p>

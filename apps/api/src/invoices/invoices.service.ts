@@ -177,6 +177,7 @@ const select = {
       taxId: true,
       email: true,
       phone: true,
+      whatsapp: true,
       billingAddress: true,
       shippingAddress: true,
       stateCode: true,

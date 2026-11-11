@@ -506,6 +506,20 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
           </label>
           {shipTo && (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {!!customer?.shipAddresses?.length && (
+                <div className="sm:col-span-2">
+                  <SelectField
+                    label={t('shipTo.saved')}
+                    value=""
+                    onChange={(e) => {
+                      const a = customer.shipAddresses![Number(e.target.value)];
+                      if (a) setShipTo({ name: a.label, line1: a.line1, line2: a.line2, city: a.city, region: a.region, postalCode: a.postalCode, country: a.country ?? 'IN' });
+                    }}
+                    disabled={!canManage}
+                    options={[{ value: '', label: t('shipTo.pickSaved') }, ...customer.shipAddresses.map((a, n) => ({ value: String(n), label: `${a.label}${a.city ? ` · ${a.city}` : ''}` }))]}
+                  />
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <TextField label={t('shipTo.name')} value={shipTo.name ?? ''} onChange={(e) => setShipTo({ ...shipTo, name: e.target.value || null })} disabled={!canManage} dir="auto" placeholder={customer?.name} />
               </div>

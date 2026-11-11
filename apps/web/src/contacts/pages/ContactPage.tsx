@@ -122,7 +122,7 @@ export default function ContactPage() {
               )}
               {c.isCustomer && can('invoices.manage') && !!overdue.data?.items.length && (
                 <a
-                  href={whatsappLink(overdueMessage(overdue.data.items), c.phone)}
+                  href={whatsappLink(overdueMessage(overdue.data.items), c.whatsapp ?? c.phone)}
                   target="_blank"
                   rel="noopener noreferrer"
                   // Noted as chased, for the Collections list

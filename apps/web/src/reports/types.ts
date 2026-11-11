@@ -308,7 +308,7 @@ export type MsmeReportView = Omit<import('@ledgernest/shared').MsmeReport, 'bill
 
 export interface ConfirmationRow {
   id: string;
-  contact: { id: string; name: string; phone: string | null };
+  contact: { id: string; name: string; phone: string | null; whatsapp?: string | null };
   currency: string;
   balance: number;
   status: 'pending' | 'agreed' | 'disputed';

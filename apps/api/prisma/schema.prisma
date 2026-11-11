@@ -716,6 +716,14 @@ model Contact {
   pan              String?
   /// The account they're paid into { accountName, accountNumber, ifsc, bankName, branch, accountType }
   bankDetails      Json?     @map("bank_details")
+  /// The number to WhatsApp them on, when it isn't the phone
+  whatsapp         String?
+  /// People to deal with there [{ name, designation, email, phone, whatsapp, primary }]
+  persons          Json      @default("[]")
+  /// More delivery addresses, each with a label
+  shipAddresses    Json      @default("[]") @map("ship_addresses")
+  /// The TDS section their payments usually fall under
+  tdsSection       String?   @map("tds_section")
   udyamNumber      String?   @map("udyam_number")
   /// Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none
   interestRateBp   Int?      @map("interest_rate_bp")

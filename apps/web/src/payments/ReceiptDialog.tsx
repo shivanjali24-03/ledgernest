@@ -133,7 +133,16 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
           <SelectField
             label={t(receipt ? 'invoices.fields.customer' : 'bills.fields.vendor')}
             value={contactId}
-            onChange={(e) => setContactId(e.target.value)}
+            onChange={(e) => {
+              setContactId(e.target.value);
+              // The vendor's usual TDS section, with its first rate
+              const usual = customers.data?.items.find((c) => c.id === e.target.value)?.tdsSection;
+              if (usual) {
+                setSection(usual);
+                setRatePct(String(TDS_SECTIONS.find((x) => x.code === usual)!.rates[0].ppm / 10_000));
+                setTdsTouched(false);
+              }
+            }}
             disabled={!!fixedContact}
             options={[{ value: '', label: t(receipt ? 'invoices.chooseCustomer' : 'bills.chooseVendor') }, ...(customers.data?.items ?? []).map((c) => ({ value: c.id, label: c.currency ? `${c.name} (${c.currency})` : c.name }))]}
           />

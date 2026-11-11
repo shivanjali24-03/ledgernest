@@ -82,7 +82,7 @@ export interface Invoice {
   instalments?: { dueDate: string; amount: number; n?: number; paid?: number; balance?: number; state?: 'paid' | 'partly_paid' | 'due' | 'overdue' }[] | null;
   reference: string | null;
   notes: string | null;
-  contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; phone?: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };
+  contact: { id: string; name: string; legalName: string | null; taxId: string | null; email: string | null; phone?: string | null; whatsapp?: string | null; billingAddress: Record<string, string | null>; shippingAddress: Record<string, string | null> | null; stateCode: string | null };
   receivableAccount: { id: string; code: string; name: string } | null;
   subtotal: number;
   taxTotal: number;
