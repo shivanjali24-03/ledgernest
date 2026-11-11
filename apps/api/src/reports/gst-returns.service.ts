@@ -936,11 +936,14 @@ export class GstReturnsService {
         minor(h.sgst),
         minor(h.cess),
       ]);
+    // Only a plain number may start with a minus; any other text starting with = + - @ is defused
+    // ("-1+HYPERLINK(...)" in a contact's name would otherwise run as a formula)
     const cell = (v: string | number) => {
       const s = String(v);
-      return /^[=+\-@\t\r]/.test(s) && !/^-?\d/.test(s)
-        ? `"'${s}"`
-        : `"${s.replace(/"/g, '""')}"`;
+      const quoted = s.replace(/"/g, '""');
+      return /^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)
+        ? `"'${quoted}"`
+        : `"${quoted}"`;
     };
     return `﻿${rows.map((r) => r.map(cell).join(',')).join('\r\n')}\r\n`;
   }

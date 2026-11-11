@@ -33,6 +33,7 @@ export default function ChangePasswordDialog({ auth, onClose }: { auth: Auth; on
     },
   });
   const wrong = change.error instanceof ApiError && change.error.details?.reason === 'wrong_password';
+  const locked = change.error instanceof ApiError && change.error.details?.reason === 'locked';
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setTried(true);
@@ -56,7 +57,7 @@ export default function ChangePasswordDialog({ auth, onClose }: { auth: Auth; on
       }
     >
       <form id="change-password-form" onSubmit={submit} noValidate className="grid gap-3">
-        <TextField label={t('password.current')} type="password" autoComplete="current-password" dir="ltr" value={current} onChange={(e) => setCurrent(e.target.value)} error={wrong ? t('password.errors.wrongCurrent') : tried ? errors.current : undefined} data-autofocus />
+        <TextField label={t('password.current')} type="password" autoComplete="current-password" dir="ltr" value={current} onChange={(e) => setCurrent(e.target.value)} error={locked ? t('password.errors.locked') : wrong ? t('password.errors.wrongCurrent') : tried ? errors.current : undefined} data-autofocus />
         <div>
           <TextField label={t('password.newPassword')} type="password" autoComplete="new-password" dir="ltr" value={next} onChange={(e) => setNext(e.target.value)} error={tried ? errors.next : undefined} aria-describedby={rulesId} />
           <PasswordRules password={next} id={rulesId} />

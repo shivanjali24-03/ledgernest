@@ -85,6 +85,28 @@ export function setupApp(app: INestApplication) {
       statementJson(req, res, next);
     },
   );
+  // The refresh cookie goes with cross-site requests (SameSite=None in production), so the two endpoints that
+  // act on it refuse a browser request from any site but the web app's: no forced sign-out or rotation
+  const webOrigins = new Set<string>(
+    config.get('CORS_ORIGINS', { infer: true }),
+  );
+  app.use(
+    ['/api/v1/auth/refresh', '/api/v1/auth/logout'],
+    function cookieOriginCheck(
+      req: Request,
+      res: Response,
+      next: NextFunction,
+    ) {
+      const origin = req.headers.origin;
+      if (origin && !webOrigins.has(origin)) {
+        res
+          .status(403)
+          .json({ statusCode: 403, message: 'Not allowed from this site.' });
+        return;
+      }
+      next();
+    },
+  );
   app.use(helmet());
   app.use(cookieParser());
   app.use(tenantContextMiddleware);
@@ -105,8 +127,15 @@ export function setupApp(app: INestApplication) {
     .setVersion('0.1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('docs', app, () =>
-    SwaggerModule.createDocument(app, doc),
-  );
+  // A map of every endpoint is useful while building, and to an attacker in production: opt in there
+  const docs = config.get('API_DOCS', { infer: true });
+  if (
+    docs
+      ? docs === 'true'
+      : config.get('NODE_ENV', { infer: true }) !== 'production'
+  )
+    SwaggerModule.setup('docs', app, () =>
+      SwaggerModule.createDocument(app, doc),
+    );
   return app;
 }

@@ -232,7 +232,7 @@
     "errors": {
       "emailInvalid": "Enter a valid email address.",
       "passwordRequired": "Enter your password.",
-      "invalid": "Email or password is incorrect.",
+      "invalid": "Email or password is incorrect. After 5 wrong tries, sign-in pauses for 15 minutes.",
       "locked": "Too many failed attempts. Try again in {{minutes}} min.",
       "suspended": "This account is suspended. Contact your administrator.",
       "rateLimited": "Too many attempts from this device. Wait a minute and try again.",
@@ -4630,7 +4630,8 @@
       "mismatch": "The two passwords don’t match.",
       "current": "Enter your current password.",
       "same": "Choose a password different from the current one.",
-      "wrongCurrent": "Your current password isn’t right."
+      "wrongCurrent": "Your current password isn’t right.",
+      "locked": "Too many wrong passwords. Try again in 15 minutes."
     },
     "backToSignIn": "Back to sign in",
     "demo": "In the demo there are no real passwords, so nothing changed and no email was sent."

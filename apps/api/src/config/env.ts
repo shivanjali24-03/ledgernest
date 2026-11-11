@@ -38,6 +38,8 @@ export const envSchema = z
      * audit log is the connecting address; behind a proxy that would be the proxy's for everyone.
      */
     TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+    /** The interactive API docs at /docs: on by default except in production, where API_DOCS=true turns them on */
+    API_DOCS: z.enum(['true', 'false']).optional(),
     /** Sign-in attempts allowed per IP per minute */
     LOGIN_RATE_LIMIT: z.coerce.number().int().min(1).default(10),
     /** Reset-link requests per minute from one address */
