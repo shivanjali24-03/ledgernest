@@ -94,6 +94,8 @@ model Organization {
   udyamNumber          String?            @map("udyam_number")
   /// The RBI bank rate the interest is three times, in basis points
   msmeBankRateBp       Int?               @map("msme_bank_rate_bp")
+  /// regular | composition: a composition dealer charges no GST and issues bills of supply
+  gstScheme            String             @default("regular") @map("gst_scheme")
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")

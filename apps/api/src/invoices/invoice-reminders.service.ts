@@ -353,8 +353,10 @@ export class InvoiceRemindersService
         baseCurrency: true,
         invoiceTerms: true,
         upiId: true,
+        gstScheme: true,
       },
     });
+    const composition = !!org.taxId && org.gstScheme === 'composition';
     const currency = inv.currency ?? org.baseCurrency;
     const digits = currencyDigits(currency);
     const upi = this.upiLink(org, inv, currency);
@@ -388,9 +390,15 @@ export class InvoiceRemindersService
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
-        title: `${org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
+        title: `${composition ? 'Bill of supply' : org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
         subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
         info: [
+          // What a composition dealer's bill must say at the top
+          ...(composition
+            ? [
+                'Composition taxable person, not eligible to collect tax on supplies',
+              ]
+            : []),
           address({
             line1: org.addressLine1,
             line2: org.addressLine2,
@@ -419,7 +427,9 @@ export class InvoiceRemindersService
           ...(org.taxId
             ? [
                 '',
-                'Whether tax is payable on reverse charge: No',
+                ...(composition
+                  ? []
+                  : ['Whether tax is payable on reverse charge: No']),
                 '',
                 `For ${seller}`,
                 '',

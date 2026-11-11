@@ -72,6 +72,26 @@ describe('invoices', () => {
     expect(screen.getByRole('button', { name: 'Print or save as PDF' })).toBeInTheDocument();
   }, 20_000);
 
+  it('charges no GST under the composition scheme, even for an item that usually carries it', async () => {
+    const { createDemoSettingsApi, resetDemoSettings } = await import('../settings/demoSettingsApi');
+    await createDemoSettingsApi(() => true).update({ gstScheme: 'composition' });
+    try {
+      renderApp('/invoices/new');
+      const customer = (await screen.findByLabelText('Customer')) as HTMLSelectElement;
+      await waitFor(() => expect(customer.options.length).toBeGreaterThan(2));
+      await userEvent.selectOptions(customer, [...customer.options].find((o) => o.textContent === 'Kumar Logistics')!.value);
+      const item = screen.getByLabelText('Item on line 1') as HTMLSelectElement;
+      await waitFor(() => expect(item.options.length).toBeGreaterThan(2));
+      await userEvent.selectOptions(item, [...item.options].find((o) => o.textContent === 'Software development')!.value);
+      const tax = screen.getByLabelText('Tax on line 1') as HTMLSelectElement;
+      await waitFor(() => expect(tax).toBeDisabled());
+      expect(tax.value).toBe('');
+      expect(totals()).not.toHaveTextContent('CGST');
+    } finally {
+      resetDemoSettings();
+    }
+  }, 20_000);
+
   it('fills a line from an item and charges CGST + SGST within Maharashtra', async () => {
     renderApp('/invoices/new');
     const customer = (await screen.findByLabelText('Customer')) as HTMLSelectElement;

@@ -49,3 +49,17 @@ describe('GST late fees and interest', () => {
     expect(gstInterest(0, 30)).toBe(0);
   });
 });
+
+describe('Due dates under the composition scheme', () => {
+  it('has CMP-08 for the quarter and GSTR-4 for the year, and no GSTR-1, 3B or 9', () => {
+    const october = complianceDueDates('2026-10-10', { gst: true, scheme: 'composition' });
+    expect(october.filter((i) => i.kind === 'cmp08').map((i) => [i.from, i.to, i.due])).toEqual([['2026-07-01', '2026-09-30', '2026-10-18']]);
+    expect(october.some((i) => ['gstr1', 'gstr3b', 'gstr9'].includes(i.kind))).toBe(false);
+    // The year to March 2026: GSTR-4 by 30 April 2026
+    const april = complianceDueDates('2026-04-10', { gst: true, scheme: 'composition' });
+    expect(april.filter((i) => i.kind === 'gstr4' || i.kind === 'cmp08').map((i) => [i.kind, i.from, i.due])).toEqual([
+      ['cmp08', '2026-01-01', '2026-04-18'],
+      ['gstr4', '2025-04-01', '2026-04-30'],
+    ]);
+  });
+});

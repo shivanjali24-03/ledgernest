@@ -581,8 +581,18 @@ export class InvoicesService {
       );
     const org = await tx.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { country: true, region: true },
+      select: { country: true, region: true, gstScheme: true },
     });
+    // A composition dealer can't charge GST: its sales are bills of supply
+    if (
+      org.gstScheme === 'composition' &&
+      input.lines.some((l) => l.taxGroupId)
+    )
+      throw refuse(
+        BadRequestException,
+        'Under the composition scheme no GST is charged: take the tax off the lines.',
+        'composition_no_tax',
+      );
     const orgState =
       org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
     const placeOfSupply = input.placeOfSupply ?? contact.stateCode;

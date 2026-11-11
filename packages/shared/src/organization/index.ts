@@ -121,6 +121,8 @@ export const organizationSettingsSchema = z
       .nullable(),
     /** The RBI bank rate in basis points (550 = 5.50%), for MSMED Act interest at three times it */
     msmeBankRateBp: z.number().int().min(1).max(2000).nullable(),
+    /** Regular GST, or the composition scheme (no GST charged; bills of supply; CMP-08 and GSTR-4) */
+    gstScheme: z.enum(['regular', 'composition']),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

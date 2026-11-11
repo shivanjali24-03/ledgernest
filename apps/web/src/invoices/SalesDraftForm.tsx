@@ -77,6 +77,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const settings = useOrganizationSettings().data;
+  // A composition dealer charges no GST: lines carry no tax
+  const composition = settings?.gstScheme === 'composition' && !!settings?.taxId;
   const contactsApi = useContactsApi();
   const itemsApi = useItemsApi();
   const taxesApi = useTaxesApi();
@@ -113,7 +115,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const pickItem = (key: string, itemId: string) => {
     const item = items.data?.find((x) => x.id === itemId);
     // An item fills in its description, price, tax and account; prices are in the base currency
-    set(key, item ? { itemId, description: item.name, unitPrice: item.salePrice !== null && !customer?.currency ? plain(item.salePrice) : '', taxGroupId: item.taxGroupId ?? '', accountId: item.incomeAccountId ?? '' } : { itemId: '' });
+    set(key, item ? { itemId, description: item.name, unitPrice: item.salePrice !== null && !customer?.currency ? plain(item.salePrice) : '', taxGroupId: composition ? '' : (item.taxGroupId ?? ''), accountId: item.incomeAccountId ?? '' } : { itemId: '' });
   };
 
   const parsed = lines.map((l) => {
@@ -263,7 +265,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                       <input aria-label={t('invoices.lineDiscount', { n: n + 1 })} value={l.discount} disabled={!canManage} onChange={(e) => set(l.key, { discount: e.target.value })} inputMode="decimal" dir="ltr" placeholder="0" className={clsx(cell, 'text-end font-mono', l.disc === null && 'border-expense')} />
                     </td>
                     <td className="px-3 py-1.5">
-                      <select aria-label={t('invoices.lineTax', { n: n + 1 })} value={l.group?.id ?? ''} disabled={!canManage} onChange={(e) => set(l.key, { taxGroupId: e.target.value })} className={cell}>
+                      <select aria-label={t('invoices.lineTax', { n: n + 1 })} value={l.group?.id ?? ''} disabled={!canManage || composition} title={composition ? t('settings.gstSchemes.composition') : undefined} onChange={(e) => set(l.key, { taxGroupId: e.target.value })} className={cell}>
                         <option value="">{t('journals.tax.none')}</option>
                         {groups
                           .filter((g) => !g.archived && (!supply || !g.supply || g.supply === supply))

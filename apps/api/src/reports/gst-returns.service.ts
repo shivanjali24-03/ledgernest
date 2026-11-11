@@ -903,12 +903,13 @@ export class GstReturnsService {
   async compliance(organizationId: string, now = new Date()) {
     const org = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
-      select: { country: true, taxId: true, timeZone: true },
+      select: { country: true, taxId: true, timeZone: true, gstScheme: true },
     });
     if (org.country !== 'IN') return { today: null, items: [] };
     const today = todayIn(org.timeZone, now);
     const items: ComplianceItem[] = complianceDueDates(today, {
       gst: !!org.taxId,
+      scheme: org.gstScheme === 'composition' ? 'composition' : 'regular',
     });
     // TDS kept back in the last few months, due by the 7th of the next
     const back = new Date(Date.parse(`${today}T00:00:00Z`));

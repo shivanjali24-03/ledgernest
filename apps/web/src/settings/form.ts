@@ -28,6 +28,7 @@ export interface SettingsValues {
   udyamNumber: string;
   /** The bank rate as a percentage, like 5.50 */
   msmeBankRate: string;
+  gstScheme: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -57,6 +58,7 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   msmeCategory: s.msmeCategory ?? '',
   udyamNumber: s.udyamNumber ?? '',
   msmeBankRate: s.msmeBankRateBp ? (s.msmeBankRateBp / 100).toFixed(2) : '',
+  gstScheme: s.gstScheme ?? 'regular',
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -81,7 +83,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
-  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : null;
+  return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : null;
 };
 
 /** Every time zone the browser knows, labelled with its current UTC offset: "Asia/Kolkata · GMT+5:30". */

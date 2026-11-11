@@ -179,6 +179,12 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
       </Section>
 
       {v.country === 'IN' && (
+        <Section title={t('settings.gst.title')} description={t('settings.gst.description')}>
+          <SelectField label={t('settings.fields.gstScheme')} value={v.gstScheme} onChange={set('gstScheme')} disabled={!canManage} hint={v.gstScheme === 'composition' ? t('settings.hints.composition') : undefined} options={[{ value: 'regular', label: t('settings.gstSchemes.regular') }, { value: 'composition', label: t('settings.gstSchemes.composition') }]} />
+        </Section>
+      )}
+
+      {v.country === 'IN' && (
         <Section title={t('settings.msme.title')} description={t('settings.msme.description')}>
           <SelectField label={t('settings.fields.msmeCategory')} value={v.msmeCategory} onChange={set('msmeCategory')} disabled={!canManage} options={[{ value: '', label: t('contacts.msme.none') }, ...(['micro', 'small', 'medium'] as const).map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
           {text('udyamNumber', t('settings.fields.udyamNumber'), { dir: 'ltr', placeholder: 'UDYAM-MH-26-0012345', className: 'font-mono uppercase' })}
