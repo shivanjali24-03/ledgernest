@@ -13,6 +13,7 @@ import {
   toBase,
   type PaymentKind,
   type PaymentMode,
+  cashLimitBreach,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -38,6 +39,8 @@ type SettleIn = {
   instrumentNo?: string | null;
   instrumentDate?: string | null;
   drawnOn?: string | null;
+  /** Recorded although it crosses a cash limit (s.269ST, s.40A(3)) */
+  acknowledgeCashLimit?: boolean;
   notes: string | null;
   allocations: { documentId: string; amount: number }[];
   /** Vendor payments only: tax deducted at source, kept back from the bank */
@@ -335,6 +338,72 @@ export class PaymentsService {
     }));
   }
 
+  /** Cash receipts and payments in rupees that crossed a limit (s.269ST, s.40A(3)), each person's day together */
+  async cashLimits(organizationId: string, from: string, to: string) {
+    const rows = await this.prisma.payment.findMany({
+      where: {
+        organizationId,
+        mode: 'cash',
+        status: 'posted',
+        currency: null,
+        date: {
+          gte: new Date(`${from}T00:00:00Z`),
+          lte: new Date(`${to}T00:00:00Z`),
+        },
+      },
+      orderBy: [{ date: 'asc' }, { number: 'asc' }],
+      select: {
+        id: true,
+        kind: true,
+        number: true,
+        date: true,
+        amount: true,
+        fiscalYear: { select: { name: true } },
+        contact: { select: { id: true, name: true } },
+      },
+    });
+    const days = new Map<string, typeof rows>();
+    for (const r of rows) {
+      const k = `${r.kind}|${r.contact.id}|${iso(r.date)}`;
+      days.set(k, [...(days.get(k) ?? []), r]);
+    }
+    const items = [...days.values()].flatMap((group) => {
+      const first = group[0]!;
+      const total = group.reduce((s, r) => s + Number(r.amount), 0);
+      const breach = cashLimitBreach({
+        kind: first.kind as PaymentKind,
+        amount: total,
+        sameDay: 0,
+      });
+      return breach
+        ? [
+            {
+              ...breach,
+              kind: first.kind as PaymentKind,
+              date: iso(first.date),
+              contact: first.contact,
+              payments: group.map((r) => ({
+                id: r.id,
+                number: paymentNumber(
+                  r.kind as PaymentKind,
+                  r.fiscalYear.name,
+                  r.number,
+                ),
+                amount: Number(r.amount),
+              })),
+            },
+          ]
+        : [];
+    });
+    items.sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.section.localeCompare(b.section) ||
+        a.contact.name.localeCompare(b.contact.name),
+    );
+    return { from, to, items };
+  }
+
   receive(
     input: Omit<SettleIn, 'allocations'> & {
       allocations: { invoiceId: string; amount: number }[];
@@ -469,6 +538,52 @@ export class PaymentsService {
           'mode_account',
           { field: mode === 'cash' ? 'bankAccountId' : 'mode' },
         );
+      // Cash in rupees: s.269ST for receipts (₹2 lakh a day, or for one invoice), s.40A(3) for payments (₹10,000 a day)
+      if (mode === 'cash' && !currency && !input.acknowledgeCashLimit) {
+        const day = new Date(`${input.date}T00:00:00Z`);
+        const sameDay = await tx.payment.aggregate({
+          where: {
+            organizationId,
+            kind,
+            contactId: input.contactId,
+            date: day,
+            mode: 'cash',
+            status: 'posted',
+          },
+          _sum: { amount: true },
+        });
+        const perInvoice =
+          kind === 'receipt' && input.allocations.length
+            ? await Promise.all(
+                input.allocations.map(async (a) => {
+                  const before = await tx.paymentAllocation.aggregate({
+                    where: {
+                      organizationId,
+                      invoiceId: a.documentId,
+                      payment: { mode: 'cash', status: 'posted' },
+                    },
+                    _sum: { amount: true },
+                  });
+                  return Number(before._sum.amount ?? 0) + a.amount;
+                }),
+              )
+            : [];
+        const breach = cashLimitBreach({
+          kind,
+          amount: input.amount,
+          sameDay: Number(sameDay._sum.amount ?? 0),
+          perInvoice,
+        });
+        if (breach)
+          throw refuse(
+            ConflictException,
+            breach.section === '269ST'
+              ? 'This takes cash from them to ₹2,00,000 or more (Income-tax Act s.269ST: the penalty is the whole amount). Record it only if it really happened.'
+              : 'Cash paid to them today goes over ₹10,000: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.',
+            'cash_limit',
+            breach,
+          );
+      }
       if (bank.currency && bank.currency !== currency)
         throw refuse(
           BadRequestException,

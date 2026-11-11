@@ -46,3 +46,19 @@ describe('payment modes', () => {
     expect(paymentModeText({ mode: null, instrumentNo: null, instrumentDate: null, drawnOn: null })).toBeNull();
   });
 });
+
+describe('cash limits', () => {
+  it('flags ₹2 lakh or more received in cash from one person in a day, or for one invoice (s.269ST)', async () => {
+    const { cashLimitBreach } = await import('./index.js');
+    expect(cashLimitBreach({ kind: 'receipt', amount: 1_99_999_00, sameDay: 0 })).toBeNull();
+    expect(cashLimitBreach({ kind: 'receipt', amount: 1_00_000_00, sameDay: 1_00_000_00 })).toMatchObject({ section: '269ST', basis: 'day', total: 2_00_000_00 });
+    expect(cashLimitBreach({ kind: 'receipt', amount: 50_000_00, sameDay: 0, perInvoice: [2_10_000_00] })).toMatchObject({ basis: 'invoice' });
+  });
+
+  it('flags cash paid to one person above ₹10,000 in a day, ₹35,000 to a transporter (s.40A(3))', async () => {
+    const { cashLimitBreach } = await import('./index.js');
+    expect(cashLimitBreach({ kind: 'payment', amount: 10_000_00, sameDay: 0 })).toBeNull();
+    expect(cashLimitBreach({ kind: 'payment', amount: 6_000_00, sameDay: 5_000_00 })).toMatchObject({ section: '40A(3)', limit: 10_000_00 });
+    expect(cashLimitBreach({ kind: 'payment', amount: 30_000_00, sameDay: 0, transporter: true })).toBeNull();
+  });
+});

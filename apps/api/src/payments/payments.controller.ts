@@ -29,6 +29,7 @@ import {
   type VendorPaymentInput,
   chequeOptionsSchema,
   type ChequeOptions,
+  gstReturnQuerySchema,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -72,6 +73,21 @@ export class PaymentsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.payments.list(tenant.organizationId, q);
+  }
+
+  /** Cash receipts and payments that crossed the Income-tax limits (s.269ST, s.40A(3)), by person and day */
+  @Get('cash-limits')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Days a person paid or was paid ₹2 lakh or more in cash (s.269ST), or was paid over ₹10,000 in cash (s.40A(3)), for the tax audit (Form 3CD clauses 21(d) and 31)',
+  })
+  cashLimits(
+    @Query(new ZodValidationPipe(gstReturnQuerySchema))
+    q: { from: string; to: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.payments.cashLimits(tenant.organizationId, q.from, q.to);
   }
 
   @Get('open-invoices/:contactId')
