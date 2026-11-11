@@ -81,3 +81,40 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * A table wider than its box scrolls sideways; a soft shadow at the edge shows there's more to see
+ * (the shadow covered by the content's own edge once you reach it). Works for every table in a scroll box.
+ */
+.overflow-x-auto:has(> table),
+.scroll-cue {
+  --scroll-surface: #fff;
+  --scroll-shadow: rgb(15 18 26 / 0.16);
+  background:
+    linear-gradient(to right, var(--scroll-surface) 30%, transparent) left center / 2.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--scroll-surface) 30%, transparent) right center / 2.5rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--scroll-shadow), transparent) left center / 0.75rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--scroll-shadow), transparent) right center / 0.75rem 100% no-repeat scroll;
+}
+[data-theme='dark'] .overflow-x-auto:has(> table),
+[data-theme='dark'] .scroll-cue {
+  --scroll-surface: var(--color-ink-900);
+  --scroll-shadow: rgb(0 0 0 / 0.55);
+}
+
+/* Document numbers (INV/2026-27/0001) in tables stay on one line instead of breaking at the hyphen */
+td a.font-mono,
+th a.font-mono {
+  white-space: nowrap;
+}
+
+/* Every checkbox and radio the same size and colour, unless a class says otherwise */
+@layer base {
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    accent-color: var(--color-brand-600);
+  }
+}

@@ -1,3 +1,4 @@
+import { formatMoney } from '../lib/format';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -475,7 +476,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
             )}
             <dt className="border-t border-ink-200 pt-1 font-semibold dark:border-ink-700">{t('invoices.total')}</dt>
             <dd className="border-t border-ink-200 pt-1 text-end font-mono font-semibold tabular-nums dark:border-ink-700" dir="ltr">
-              {currency} {plain(amounts.total)}
+              {formatMoney(amounts.total, currency, locale)}
             </dd>
           </dl>
         </div>

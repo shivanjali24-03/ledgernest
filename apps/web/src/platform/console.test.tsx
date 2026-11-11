@@ -128,11 +128,13 @@ describe('platform users', () => {
     await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove Super Admin' }));
     expect(await screen.findByText('Rohan Mehta is no longer a Super Admin')).toBeInTheDocument();
 
+    // The menu drawn over the page closes before the next one opens
+    await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument());
     const me = screen.getByText('Shivanjali Desai').closest('tr')!;
     expect(within(me).getByText('You')).toBeInTheDocument();
     await userEvent.click(within(me).getByRole('button', { name: 'Actions for Shivanjali Desai' }));
-    expect(within(me).getByRole('menuitem', { name: 'Suspend account' })).toBeDisabled();
-    await userEvent.click(within(me).getByRole('menuitem', { name: 'Remove Super Admin' }));
+    expect(screen.getByRole('menuitem', { name: 'Suspend account' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Remove Super Admin' }));
     await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove Super Admin' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('LedgerNest needs at least one active Super Admin');
   });

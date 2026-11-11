@@ -59,8 +59,9 @@ function ProfitChart({ monthly }: { monthly: DashboardData['monthly'] }) {
         {hasLoss && <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-ink-300 dark:border-ink-600" />}
       </div>
       <div className="mt-1.5 flex gap-1.5 text-center text-[11px] text-ink-500" aria-hidden>
-        {monthly.map((m) => (
-          <span key={m.month} className="flex-1 truncate">
+        {/* Every month where there's room; every other one on a phone, rather than all of them cut short */}
+        {monthly.map((m, n) => (
+          <span key={m.month} className={clsx('flex-1 overflow-visible whitespace-nowrap', n % 2 !== (monthly.length - 1) % 2 && 'max-sm:invisible')}>
             {label(m.month)}
           </span>
         ))}
@@ -159,7 +160,7 @@ export default function Dashboard() {
             })}
           </motion.section>
 
-          <motion.div variants={fadeUp} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <motion.div variants={fadeUp} className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
             <section className="rounded-card border border-ink-200 bg-white p-6 shadow-card dark:border-ink-800 dark:bg-ink-900" aria-labelledby="profit-title">
               <h2 id="profit-title" className="text-lg font-semibold">
                 {t('dashboard.profitByMonth')}

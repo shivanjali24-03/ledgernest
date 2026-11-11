@@ -59,7 +59,7 @@ describe('invoices', () => {
     await waitFor(() => expect(totals()).toHaveTextContent('IGST 18%'));
     expect(totals()).toHaveTextContent('1,68,000.00');
     expect(totals()).toHaveTextContent('30,240.00');
-    expect(totals()).toHaveTextContent('INR 1,98,240.00');
+    expect(totals()).toHaveTextContent('₹1,98,240.00');
     expect(screen.getByText('Another state: IGST')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Issue' }));
     expect(await screen.findByText(/^Issued as INV\//, {}, { timeout: 4000 })).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe('invoices', () => {
     await userEvent.type(screen.getByLabelText('Quantity on line 1'), '8');
     await waitFor(() => expect(totals()).toHaveTextContent('CGST 9%'));
     expect(totals()).toHaveTextContent('SGST 9%');
-    expect(totals()).toHaveTextContent('INR 23,600.00');
+    expect(totals()).toHaveTextContent('₹23,600.00');
     await userEvent.click(screen.getByRole('button', { name: 'Save draft' }));
     expect(await screen.findByText('Draft saved', {}, { timeout: 4000 })).toBeInTheDocument();
   });

@@ -52,7 +52,7 @@ export default function Warehouses({ api, items }: { api: InventoryApi; items: {
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 px-5 py-3 dark:border-ink-800">
         <WarehouseIcon className="size-5 text-ink-400" aria-hidden />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-56">
           <h2 className="font-semibold">{t('warehouses.title')}</h2>
           <p className="text-sm text-ink-500">{list.data?.warehouses.length ? t('warehouses.hint') : t('warehouses.none')}</p>
         </div>

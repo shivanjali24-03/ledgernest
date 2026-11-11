@@ -36,7 +36,7 @@ export default function ReminderPolicyCard() {
         <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
           <BellRing className="size-4" aria-hidden />
         </span>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-56">
           <h2 className="font-semibold">{t('invoices.reminderPolicy.title')}</h2>
           <p className="mt-1 text-sm text-ink-500">{t(session.mode === 'demo' ? 'invoices.reminderPolicy.bodyDemo' : 'invoices.reminderPolicy.body')}</p>
         </div>

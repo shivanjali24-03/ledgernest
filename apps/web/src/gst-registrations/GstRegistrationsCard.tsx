@@ -52,7 +52,7 @@ export default function GstRegistrationsCard() {
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b border-ink-100 px-5 py-3 dark:border-ink-800">
         <Landmark className="size-5 text-ink-400" aria-hidden />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-56">
           <h2 className="font-semibold">{t('gstRegistrations.title')}</h2>
           <p className="text-sm text-ink-500">{t('gstRegistrations.hint')}</p>
         </div>
