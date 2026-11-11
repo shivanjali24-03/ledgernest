@@ -14,6 +14,8 @@ export interface InvoiceLine {
   item: { id: string; name: string; hsnSac: string | null; unit: string | null; trackBatches?: boolean; trackSerials?: boolean } | null;
   account: { id: string; code: string; name: string } | null;
   taxGroup: { id: string; name: string; supply: 'intra' | 'inter' | null } | null;
+  /** Under reverse charge: the GST the buyer pays (the line charges none) */
+  rcmTaxGroup?: { id: string; name: string; supply: 'intra' | 'inter' | null } | null;
   /** The cost centre or project the line belongs to */
   costCentre?: { id: string; code: string; name: string } | null;
   /** A draft invoice line's chosen batch (goods kept in batches); null = earliest expiry first */
@@ -63,6 +65,9 @@ export interface Invoice {
   roundOff?: number;
   /** Prices include GST */
   pricesIncludeTax?: boolean;
+  /** The buyer pays the GST under reverse charge, and how much */
+  reverseCharge?: boolean;
+  reverseChargeTax?: { name: string; amount: number }[];
   /** An ordinary supply, an export or SEZ supply, or a deemed export; and an export's shipping bill */
   supplyKind?: SupplyKind;
   exportDetails?: ExportDetails | null;

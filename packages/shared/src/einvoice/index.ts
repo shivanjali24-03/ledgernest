@@ -58,6 +58,8 @@ export interface EinvoiceInput {
   /** For an export: shipping bill, port, country, and the currency it's billed in */
   exportDetails?: { portCode: string | null; shippingBillNo: string | null; shippingBillDate: string | null; countryCode: string | null } | null;
   foreignCurrency?: string | null;
+  /** The buyer pays the tax under reverse charge */
+  reverseCharge?: boolean;
   lines: EinvoiceLine[];
 }
 
@@ -150,7 +152,7 @@ export function buildEinvoice(i: EinvoiceInput) {
   const total = sum((l) => l.amount + l.heads.igst + l.heads.cgst + l.heads.sgst + l.heads.cess);
   return {
     Version: '1.1',
-    TranDtls: { TaxSch: 'GST', SupTyp: SUP_TYP[i.supplyKind ?? 'regular'] ?? 'B2B', RegRev: 'N', IgstOnIntra: 'N' },
+    TranDtls: { TaxSch: 'GST', SupTyp: SUP_TYP[i.supplyKind ?? 'regular'] ?? 'B2B', RegRev: i.reverseCharge ? 'Y' : 'N', IgstOnIntra: 'N' },
     DocDtls: { Typ: i.kind === 'credit_note' ? 'CRN' : 'INV', No: i.number, Dt: ddmmyyyy(i.date) },
     SellerDtls: party(i.seller),
     BuyerDtls: exporting

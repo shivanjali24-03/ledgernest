@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ExportDetails, type InvoiceDiscount, type ShipTo, type SupplyKind, SUPPLY_KINDS, isExport, zeroRatedUnderLut } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ExportDetails, type InvoiceDiscount, type ShipTo, type SupplyKind, SUPPLY_KINDS, isExport, isSez, zeroRatedUnderLut } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -50,8 +50,9 @@ export interface SalesDraft {
   pricesIncludeTax?: boolean;
   discount?: InvoiceDiscount | null;
   supplyKind?: SupplyKind;
+  reverseCharge?: boolean;
   exportDetails?: Partial<ExportDetails> | null;
-  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
+  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; rcmTaxGroup?: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
   contactId: string;
@@ -68,6 +69,7 @@ export interface SalesDraftPayload {
   pricesIncludeTax?: boolean;
   discount?: InvoiceDiscount | null;
   supplyKind?: SupplyKind;
+  reverseCharge?: boolean;
   exportDetails?: Partial<ExportDetails> | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
@@ -161,13 +163,14 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [shipTo, setShipTo] = useState<ShipTo | null>(invoice?.shipTo ?? null);
   const [inclusive, setInclusive] = useState(!!invoice?.pricesIncludeTax);
   const [supplyKind, setSupplyKind] = useState<SupplyKind>(invoice?.supplyKind ?? 'regular');
+  const [reverseCharge, setReverseCharge] = useState(!!invoice?.reverseCharge);
   const [exportDetails, setExportDetails] = useState<Partial<ExportDetails>>(invoice?.exportDetails ?? {});
   const [discKind, setDiscKind] = useState<'percent' | 'amount'>(invoice?.discount?.kind ?? 'percent');
   const [discText, setDiscText] = useState(invoice?.discount ? (invoice.discount.kind === 'percent' ? String(invoice.discount.value / 10_000) : (invoice.discount.value / 100).toFixed(2)) : '');
   const shipToState = shipTo && (shipTo.country ?? 'IN') === 'IN' ? (findIndianState(shipTo.region)?.code ?? null) : null;
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
-      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
+      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: (l.taxGroup ?? l.rcmTaxGroup)?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
@@ -175,7 +178,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
   const pos = placeOfSupply || shipToState || customer?.stateCode || null;
-  const supply = supplyFor(orgState, pos);
+  // Exports and SEZ supplies are inter-state (IGST)
+  const supply = config.interest && (isExport(supplyKind) || isSez(supplyKind)) ? 'inter' : supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const pickItem = (key: string, itemId: string) => {
@@ -195,12 +199,18 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const filled = parsed.filter((l) => l.description.trim() || l.price);
   // A discount on the whole invoice: a percentage, or an amount in the invoice's currency
   const invoiceDiscount: InvoiceDiscount | null = discText.trim() ? (discKind === 'percent' ? { kind: 'percent', value: Math.round(Number(discText) * 10_000) } : { kind: 'amount', value: toMinor(discText, digits) ?? 0 }) : null;
-  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })) })), { roundTo: config.interest && settings?.roundInvoiceTotals && !customer?.currency ? 100 : undefined, taxInclusive: config.interest && inclusive, discount: config.interest ? invoiceDiscount : null });
+  // Zero-rated under LUT, or the buyer pays it under reverse charge: no GST on the invoice
+  const rcm = !!config.interest && reverseCharge && supplyKind === 'regular';
+  const taxFree = !!config.interest && (zeroRatedUnderLut(supplyKind) || rcm);
+  const rateList = (l: (typeof filled)[number]) => (l.group?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }));
+  // Under reverse charge: the GST the buyer pays, shown but not charged
+  const rcmTax = rcm ? invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: rateList(l) })), { discount: invoiceDiscount }).tax : 0;
+  const amounts = invoiceAmounts(filled.filter((l) => !l.invalid).map((l) => ({ quantity: l.quantity, unitPrice: l.price!, discountPpm: l.disc!, rates: taxFree ? [] : rateList(l) })), { roundTo: config.interest && settings?.roundInvoiceTotals && !customer?.currency ? 100 : undefined, taxInclusive: config.interest && inclusive, discount: config.interest ? invoiceDiscount : null });
   const breakdown = new Map<string, number>();
   filled
     .filter((l) => !l.invalid)
     .forEach((l, n) =>
-      (l.group?.rates ?? []).forEach((r, k) => {
+      (taxFree ? [] : (l.group?.rates ?? [])).forEach((r, k) => {
         const amount = amounts.lines[n]!.taxes[k]?.amount ?? 0;
         if (amount) breakdown.set(r.name, (breakdown.get(r.name) ?? 0) + amount);
       }),
@@ -218,7 +228,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount, supplyKind, exportDetails: isExport(supplyKind) && Object.values(exportDetails).some((x) => x) ? exportDetails : null } : {}),
+    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null, pricesIncludeTax: inclusive, discount: invoiceDiscount, supplyKind, exportDetails: isExport(supplyKind) && Object.values(exportDetails).some((x) => x) ? exportDetails : null, reverseCharge: rcm } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
@@ -415,6 +425,14 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                 </dd>
               </div>
             ))}
+            {rcm && (
+              <>
+                <dt className="text-ink-500">{t('invoices.reverseCharge.buyerPays')}</dt>
+                <dd className="text-end font-mono tabular-nums" dir="ltr" data-testid="rcm-tax">
+                  {plain(rcmTax)}
+                </dd>
+              </>
+            )}
             {!!amounts.discount && (
               <>
                 <dt className="text-ink-500">{t('invoices.discountIncluded')}</dt>
@@ -445,6 +463,15 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
             <input type="checkbox" checked={inclusive} disabled={!canManage} onChange={(e) => setInclusive(e.target.checked)} className="size-4 rounded accent-brand-600" />
             {t('invoices.pricesIncludeTax')}
           </label>
+          {india && supplyKind === 'regular' && (
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" checked={reverseCharge} disabled={!canManage} onChange={(e) => setReverseCharge(e.target.checked)} className="size-4 rounded accent-brand-600" />
+              <span>
+                {t('invoices.reverseCharge.label')}
+                <span className="block text-xs font-normal text-ink-500">{t('invoices.reverseCharge.hint')}</span>
+              </span>
+            </label>
+          )}
           <div className="w-40">
             <SelectField label={t('invoices.discountKind')} value={discKind} onChange={(e) => setDiscKind(e.target.value as 'percent' | 'amount')} disabled={!canManage} options={[{ value: 'percent', label: t('invoices.discountPercent') }, { value: 'amount', label: t('invoices.discountAmount', { currency }) }]} />
           </div>
