@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { contactCreateSchema, MSME_CATEGORIES, type MsmeCategory, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
+import { contactCreateSchema, GST_TREATMENTS, gstTreatmentOf, type GstTreatment, MSME_CATEGORIES, type MsmeCategory, INDIAN_STATES, isGstin, type ContactAddress, type ContactUpdateInput, currencyDigits, toMinor } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useCurrenciesApi } from '../currencies/useCurrenciesApi';
 import { useIntlLocale } from '../i18n';
@@ -64,6 +64,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [isVendor, setVendor] = useState(contact?.isVendor ?? defaultType === 'vendor');
   const [legalName, setLegalName] = useState(contact?.legalName ?? '');
   const [taxId, setTaxId] = useState(contact?.taxId ?? '');
+  const [gstTreatment, setGstTreatment] = useState<GstTreatment | ''>(contact?.gstTreatment ?? '');
   const [email, setEmail] = useState(contact?.email ?? '');
   const [phone, setPhone] = useState(contact?.phone ?? '');
   const [billing, setBilling] = useState<Address>(() => toForm(contact?.billingAddress ?? { line1: null, line2: null, city: null, region: null, postalCode: null, country: 'IN' }));
@@ -95,6 +96,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     isVendor,
     legalName,
     taxId,
+    gstTreatment: gstTreatment || null,
     email,
     phone,
     billingAddress: fromForm(billing),
@@ -184,6 +186,13 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           </Field>
           <TextField label={t('contacts.fields.legalName')} value={legalName} onChange={(e) => setLegalName(e.target.value)} dir="auto" />
           <TextField label={billing.country === 'IN' ? t('contacts.fields.gstin') : t('contacts.fields.taxId')} value={taxId} onChange={(e) => changeTaxId(e.target.value)} error={errors.taxId} dir="ltr" className="font-mono uppercase" hint={billing.country === 'IN' ? t('contacts.hints.gstin') : undefined} />
+          <SelectField
+            label={t('contacts.fields.gstTreatment')}
+            value={gstTreatment}
+            onChange={(e) => setGstTreatment(e.target.value as GstTreatment | '')}
+            error={errors.gstTreatment}
+            options={[{ value: '', label: t('contacts.gstTreatments.auto', { kind: t(`contacts.gstTreatments.${gstTreatmentOf({ taxId: taxId || null, billingAddress: billing })}`) }) }, ...GST_TREATMENTS.map((k) => ({ value: k, label: t(`contacts.gstTreatments.${k}`) }))]}
+          />
           <SelectField
             label={t('contacts.fields.currency')}
             value={currency}

@@ -2318,7 +2318,8 @@
       "creditLimit": "Credit limit",
       "msme": "MSME (Udyam)",
       "udyam": "Udyam registration number",
-      "interestRate": "Interest on late payment, % a year"
+      "interestRate": "Interest on late payment, % a year",
+      "gstTreatment": "GST registration"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
@@ -2388,6 +2389,16 @@
       "micro": "Micro enterprise",
       "small": "Small enterprise",
       "medium": "Medium enterprise"
+    },
+    "gstTreatments": {
+      "auto": "From GSTIN and country ({{kind}})",
+      "registered": "Registered (regular)",
+      "composition": "Composition dealer",
+      "sez": "SEZ unit or developer",
+      "unregistered": "Unregistered business",
+      "consumer": "Consumer",
+      "overseas": "Overseas",
+      "uin": "UN body or embassy (UIN)"
     }
   },
   "items": {
@@ -2666,7 +2677,8 @@
       "instalments_before_issue": "The first instalment can’t fall due before the invoice date.",
       "no_lut": "Add a letter of undertaking (LUT) covering the invoice date in Settings first.",
       "rcm_kind": "Reverse charge applies to ordinary domestic supplies only.",
-      "rcm_unregistered": "Under reverse charge the buyer pays the GST, so they must be registered: add their GSTIN."
+      "rcm_unregistered": "Under reverse charge the buyer pays the GST, so they must be registered: add their GSTIN.",
+      "sez_customer": "This customer is in an SEZ: choose a supply to an SEZ, with IGST or under LUT."
     },
     "reminder": {
       "action": "Send reminder",
@@ -3099,7 +3111,8 @@
       "boe_reverse_charge": "IGST on imported goods is paid to customs, not under reverse charge.",
       "boe_currency": "Customs duty and IGST are paid in rupees: enter the bill of entry from customs or your clearing agent.",
       "boe_stock": "Goods come into stock on the overseas supplier’s bill: leave stock items off the bill of entry.",
-      "boe_no_igst": "Give the value IGST is worked out on as a line with IGST."
+      "boe_no_igst": "Give the value IGST is worked out on as a line with IGST.",
+      "vendor_composition": "This vendor is under the composition scheme and can’t charge GST: take the tax off the lines."
     },
     "duplicates": {
       "title": "This may be a bill you’ve entered already:",

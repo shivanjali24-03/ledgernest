@@ -9,6 +9,16 @@ import { findIndianState, isGstin } from '../taxes/index.js';
  */
 export const PAYMENT_TERMS_MAX_DAYS = 365;
 
+/**
+ * How GST treats a party: registered (regular GSTIN), composition (registered, but can't charge GST or claim credit),
+ * an SEZ unit or developer (supplies to it are zero-rated), unregistered business, consumer, overseas (exports and
+ * imports), or a UN body or embassy with a UIN. null = worked out from the GSTIN and country (gstTreatmentOf).
+ */
+export const GST_TREATMENTS = ['registered', 'composition', 'sez', 'unregistered', 'consumer', 'overseas', 'uin'] as const;
+export type GstTreatment = (typeof GST_TREATMENTS)[number];
+/** The treatments that come with a GSTIN (or UIN) */
+export const GSTIN_TREATMENTS: readonly GstTreatment[] = ['registered', 'composition', 'sez', 'uin'];
+
 /** MSME categories under the MSMED Act (Udyam registration); micro and small suppliers must be paid within 45 days */
 export const MSME_CATEGORIES = ['micro', 'small', 'medium'] as const;
 export type MsmeCategory = (typeof MSME_CATEGORIES)[number];
@@ -101,11 +111,17 @@ const fields = {
   udyamNumber: udyam.optional().default(null),
   /** Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none */
   interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
+  /** How GST treats them; null = worked out from the GSTIN and country */
+  gstTreatment: z.enum(GST_TREATMENTS).nullable().optional().default(null),
   notes: text(1000),
 };
 
 /** A GSTIN needs an Indian address; it fixes the state, which must agree with the one typed (if any). */
-function checkGstin(v: { taxId: string | null; billingAddress: ContactAddress }, ctx: z.RefinementCtx) {
+function checkGstin(v: { taxId: string | null; billingAddress: ContactAddress; gstTreatment?: GstTreatment | null }, ctx: z.RefinementCtx) {
+  const t = v.gstTreatment;
+  if (t && GSTIN_TREATMENTS.includes(t) && !v.taxId) ctx.addIssue({ code: 'custom', path: ['taxId'], message: 'Give their GSTIN (or UIN).' });
+  if ((t === 'unregistered' || t === 'consumer') && v.taxId && isGstin(v.taxId)) ctx.addIssue({ code: 'custom', path: ['gstTreatment'], message: 'They have a GSTIN, so they’re registered.' });
+  if (t === 'overseas' && v.billingAddress.country === 'IN') ctx.addIssue({ code: 'custom', path: ['billingAddress', 'country'], message: 'An overseas party has an address outside India.' });
   if (!v.taxId || v.billingAddress.country !== 'IN') return;
   if (!isGstin(v.taxId)) return void ctx.addIssue({ code: 'custom', path: ['taxId'], message: 'This GSTIN isn’t valid: check the 15 characters.' });
   const typed = findIndianState(v.billingAddress.region);
@@ -156,6 +172,7 @@ export const contactUpdateSchema = z
     msmeCategory: z.enum(MSME_CATEGORIES).nullable(),
     udyamNumber: udyam,
     interestRateBp: z.number().int().min(0).max(3600).nullable(),
+    gstTreatment: z.enum(GST_TREATMENTS).nullable(),
     notes: z
       .string()
       .trim()
@@ -167,6 +184,14 @@ export const contactUpdateSchema = z
   .strict()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
 export type ContactUpdateInput = z.input<typeof contactUpdateSchema>;
+
+/** How GST treats a contact: as set, or from its GSTIN and country */
+export function gstTreatmentOf(c: { gstTreatment?: GstTreatment | string | null; taxId: string | null; billingAddress?: { country: string | null } | null }): GstTreatment {
+  if (c.gstTreatment && (GST_TREATMENTS as readonly string[]).includes(c.gstTreatment)) return c.gstTreatment as GstTreatment;
+  if (c.taxId && isGstin(c.taxId)) return 'registered';
+  if (c.billingAddress?.country && c.billingAddress.country !== 'IN') return 'overseas';
+  return 'unregistered';
+}
 
 /** The state a contact's supplies are taxed in: from the GSTIN when there is one, else the address. */
 export function contactStateCode(c: { taxId: string | null; billingAddress: { region: string | null; country: string | null } }): string | null {

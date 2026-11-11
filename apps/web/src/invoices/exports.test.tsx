@@ -99,3 +99,20 @@ describe('reverse charge on sales', () => {
     expect(screen.getByRole('status', { name: 'Totals' })).toHaveTextContent('GST payable by the buyer');
   }, 30_000);
 });
+
+describe('GST registration type', () => {
+  it('makes supplies to an SEZ customer zero-rated, choosing it for them on the invoice', async () => {
+    const { createDemoContactsApi } = await import('../contacts/demoContactsApi');
+    const { gstinCheckChar } = await import('@ledgernest/shared');
+    const g = (s: string) => `${s}${gstinCheckChar(s)}`;
+    const sez = await createDemoContactsApi(() => true).create({ name: 'Magarpatta SEZ unit', isCustomer: true, isVendor: false, gstTreatment: 'sez', taxId: g('27AABCM9876K1Z'), billingAddress: { line1: null, line2: null, city: 'Pune', region: 'Maharashtra', postalCode: null, country: 'IN' } });
+    await expect(createDemoInvoicesApi(() => true).create({ contactId: sez.id, issueDate: '2026-10-01', lines: [line()] })).rejects.toMatchObject({ details: { reason: 'sez_customer' } });
+    renderApp('/invoices/new');
+    await screen.findByLabelText('Type of supply', {}, { timeout: 10_000 });
+    const customer = screen.getByLabelText('Customer') as HTMLSelectElement;
+    await waitFor(() => expect([...customer.options].map((x) => x.value)).toContain(sez.id), { timeout: 10_000 });
+    await userEvent.selectOptions(customer, sez.id);
+    // The demo company has a LUT
+    await waitFor(() => expect(screen.getByLabelText('Type of supply')).toHaveValue('sez_lut'));
+  }, 30_000);
+});

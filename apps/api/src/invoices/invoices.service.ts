@@ -771,6 +771,7 @@ export class InvoicesService {
         stateCode: true,
         paymentTermsDays: true,
         taxId: true,
+        gstTreatment: true,
       },
     });
     if (!contact)
@@ -852,6 +853,14 @@ export class InvoicesService {
         );
     }
 
+    // A supply to an SEZ unit or developer is zero-rated, with IGST or under a LUT (IGST Act s.16)
+    if (contact.gstTreatment === 'sez' && !isSez(kind))
+      throw refuse(
+        BadRequestException,
+        'This customer is in an SEZ: choose a supply to an SEZ, with IGST or under LUT.',
+        'sez_customer',
+        { field: 'supplyKind' },
+      );
     // Reverse charge: a domestic supply to a registered buyer, who pays the GST (CGST Act s.9(3), notified services)
     const rcm = !!input.reverseCharge;
     if (rcm && kind !== 'regular')

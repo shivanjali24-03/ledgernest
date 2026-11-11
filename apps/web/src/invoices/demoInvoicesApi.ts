@@ -376,6 +376,7 @@ export const demoPrepareSale = (input: unknown): Omit<Stored, 'id' | 'number' | 
   // An export has no Indian place of supply; exports and SEZ supplies are inter-state (IGST), or without tax under a LUT
   const placeOfSupply = isExport(kind) ? null : (d.placeOfSupply ?? shipToState ?? contact.stateCode);
   const supply = kind === 'regular' || kind === 'deemed_export' ? supplyFor(ORG_STATE, placeOfSupply) : 'inter';
+  if (contact.gstTreatment === 'sez' && kind !== 'sez_with_igst' && kind !== 'sez_lut') throw refuse(400, 'sez_customer', { field: 'supplyKind' });
   const rcm = !!d.reverseCharge;
   if (rcm && kind !== 'regular') throw refuse(400, 'rcm_kind', { field: 'reverseCharge' });
   if (rcm && !(contact.taxId && /^\d{2}[A-Z0-9]{13}$/.test(contact.taxId))) throw refuse(400, 'rcm_unregistered', { field: 'reverseCharge' });
