@@ -85,15 +85,22 @@ export function Gstr3bPanel({ data, ...state }: { data: Gstr3b | undefined; isPe
           {heads(data.itc)}
         </tr>
         {data.itcReversed &&
-          (['blocked', 'ineligible'] as const)
-            .filter((x) => HEADS.some((h) => data.itcReversed![x][h]))
+          (['blocked', 'ineligible', 'unpaid180'] as const)
+            .filter((x) => HEADS.some((h) => data.itcReversed![x]?.[h]))
             .map((x) => (
               <tr key={x}>
                 <td className="px-3 py-1.5">{k(`r3b.reversed.${x}`)}</td>
                 <td className={num} dir="ltr" />
-                {heads(data.itcReversed![x])}
+                {heads(data.itcReversed![x]!)}
               </tr>
             ))}
+        {data.itcReclaimed && HEADS.some((h) => data.itcReclaimed![h]) && (
+          <tr>
+            <td className="px-3 py-1.5">{k('r3b.reclaimed')}</td>
+            <td className={num} dir="ltr" />
+            {heads(data.itcReclaimed)}
+          </tr>
+        )}
       </Block>
       <Block title={k('r3b.paymentTitle')} caption={k('r3b.paymentHint')} head={<tr><th scope="col" className={`${th} text-start`}>{k('head')}</th><th scope="col" className={`${th} text-end`}>{k('r3b.tax')}</th><th scope="col" className={`${th} text-end`}>{k('r3b.byIgst')}</th><th scope="col" className={`${th} text-end`}>{k('r3b.byCgst')}</th><th scope="col" className={`${th} text-end`}>{k('r3b.bySgst')}</th><th scope="col" className={`${th} text-end`}>{k('r3b.cash')}</th></tr>}>
         {HEADS.map((h) => (

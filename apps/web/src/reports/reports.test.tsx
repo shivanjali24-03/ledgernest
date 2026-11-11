@@ -260,4 +260,22 @@ describe('reports', () => {
     expect(screen.getByText('Nest Demo Pvt. Ltd.', { selector: 'p' })).toBeInTheDocument();
     for (const m of [create, click, print]) m.mockRestore();
   });
+
+  it('lists bills against the 180-day rule for input credit', async () => {
+    const { createDemoBillsApi } = await import('../bills/demoBillsApi');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const { demoTaxState } = await import('../taxes/demoTaxesApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const api = createDemoBillsApi(() => true);
+    const sharma = demoContactRows().find((c) => c.name === 'Sharma Office Supplies')!;
+    const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')!.id;
+    // Their invoice 170 days ago, still unpaid: 10 days to pay
+    const day = new Date(Date.now() - 170 * 86_400_000).toISOString().slice(0, 10);
+    const b = await api.record((await api.create({ contactId: sharma.id, billDate: new Date().toISOString().slice(0, 10), vendorBillDate: day, vendorReference: 'SOS-OLD', lines: [{ description: 'Toner', quantity: '1', unitPrice: 1_000_00, taxGroupId: gst18, accountId: sampleId('5300') }] })).id);
+    renderApp('/reports?tab=gst&return=itc-180');
+    const table = await screen.findByRole('table', { name: 'Bills against the 180-day rule' }, { timeout: 10_000 });
+    expect(table).toHaveTextContent(b.number!);
+    expect(table).toHaveTextContent('Pay soon');
+    expect(table).toHaveTextContent('180.00');
+  }, 30_000);
 });

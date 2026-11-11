@@ -8,6 +8,7 @@ import {
   type OrganizationPermission,
 } from '@ledgernest/shared';
 import { MsmeReportService } from './msme-report.service.js';
+import { Itc180Service } from './itc-180.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const asDate = (day: string) => new Date(`${day}T00:00:00Z`);
@@ -32,6 +33,7 @@ export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly msme: MsmeReportService,
+    private readonly itc180: Itc180Service,
   ) {}
 
   async dashboard(
@@ -248,6 +250,20 @@ export class DashboardService {
           kind: 'msme_due',
           count: late.length,
           amount: late.reduce((s, b) => s + b.balance, 0),
+        });
+      // Suppliers to pay within 180 days of their invoice, or the input credit is lost (rule 37)
+      const credit = (
+        await this.itc180.report(organizationId, today)
+      ).bills.filter((b) => b.state === 'due_soon' || b.state === 'reverse');
+      if (credit.length)
+        alerts.push({
+          kind: 'itc_180',
+          count: credit.length,
+          amount: credit.reduce(
+            (s, b) =>
+              s + b.atRisk.igst + b.atRisk.cgst + b.atRisk.sgst + b.atRisk.cess,
+            0,
+          ),
         });
     }
     if (permissions.has('banking.view')) {

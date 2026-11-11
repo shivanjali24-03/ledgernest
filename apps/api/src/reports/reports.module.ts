@@ -10,6 +10,7 @@ import { CashForecastService } from './cash-forecast.service.js';
 import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
 import { MsmeReportService } from './msme-report.service.js';
+import { Itc180Service } from './itc-180.service.js';
 import { TdsReportService } from './tds-report.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
@@ -32,6 +33,7 @@ import { WeeklySummaryService } from './weekly-summary.service.js';
     TallyExportService,
     TdsReportService,
     MsmeReportService,
+    Itc180Service,
     BalanceConfirmationsService,
     ReportsService,
     DashboardService,

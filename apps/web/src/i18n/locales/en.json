@@ -123,7 +123,9 @@
       "msme_due_one": "1 bill from an MSME supplier to pay within the 45-day limit, {{amount}}",
       "msme_due_other": "{{count}} bills from MSME suppliers to pay within the 45-day limit, {{amount}}",
       "stock_expiring_one": "1 batch of stock has expired or expires within 30 days",
-      "stock_expiring_other": "{{count}} batches of stock have expired or expire within 30 days"
+      "stock_expiring_other": "{{count}} batches of stock have expired or expire within 30 days",
+      "itc_180_one": "1 bill’s input credit at risk under the 180-day rule, {{amount}}",
+      "itc_180_other": "{{count}} bills’ input credit at risk under the 180-day rule, {{amount}}"
     },
     "forecast": {
       "title": "Cash in 13 weeks",
@@ -1671,8 +1673,10 @@
         "reverseCharge": "(d) Inward supplies liable to reverse charge",
         "reversed": {
           "blocked": "4(B)(1) Credit not taken: blocked under s.17(5)",
-          "ineligible": "4(B)(1) Credit not taken: other ineligible (rules 42, 43)"
-        }
+          "ineligible": "4(B)(1) Credit not taken: other ineligible (rules 42, 43)",
+          "unpaid180": "4(B)(2) Credit reversed: suppliers unpaid after 180 days (rule 37)"
+        },
+        "reclaimed": "4(D)(1) Credit taken back: suppliers paid after 180 days"
       },
       "r1": {
         "empty": "No invoices or credit notes in these dates",
@@ -1993,6 +1997,31 @@
         "rate": "Rate"
       },
       "csv": "Download CSV"
+    },
+    "itc180": {
+      "tab": "180-day rule",
+      "title": "Bills against the 180-day rule",
+      "vendor": "Vendor",
+      "bill": "Bill",
+      "invoiceDate": "Their invoice",
+      "deadline": "Pay by",
+      "balance": "Unpaid",
+      "credit": "Credit",
+      "state": "State",
+      "none": "Every supplier with input credit on their bills has been paid in time.",
+      "daysLeft_one": "1 day left",
+      "daysLeft_other": "{{count}} days left",
+      "states": {
+        "ok": "In time",
+        "due_soon": "Pay soon",
+        "reverse": "Reverse credit",
+        "reclaim": "Take credit back"
+      },
+      "totals": {
+        "dueSoon": "Credit at risk in 30 days",
+        "reverse": "Credit to reverse",
+        "reclaim": "Credit to take back"
+      }
     }
   },
   "taxes": {

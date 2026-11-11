@@ -96,6 +96,7 @@ const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   recurring_bills_due: '/recurring-bills',
   bills_due_soon: '/bills?state=unpaid',
   msme_due: '/reports?tab=msme',
+  itc_180: '/reports?tab=gst&return=itc-180',
 };
 
 export default function Dashboard() {
