@@ -423,6 +423,8 @@ export class InvoiceRemindersService
             ? [`Amount in words: ${rupeesInWords(inv.total)}`, '']
             : []),
           ...(org.invoiceTerms ? org.invoiceTerms.split(/\r?\n/) : []),
+          // The interest terms it was issued with
+          ...(inv.interest ? [inv.interest.text] : []),
           // What a GST tax invoice must also say (CGST Rules, rule 46): reverse charge, and the supplier's signature
           ...(org.taxId
             ? [

@@ -19,6 +19,8 @@ export interface Contact {
   paymentTermsDays: number;
   /** The most a customer may owe, in their currency's smallest unit; null = no limit */
   creditLimit?: number | null;
+  /** Interest on late payment, basis points a year: null = the organisation's, 0 = none */
+  interestRateBp?: number | null;
   /** The vendor's MSME category from its Udyam certificate: micro and small must be paid within 45 days */
   msmeCategory?: MsmeCategory | null;
   udyamNumber?: string | null;

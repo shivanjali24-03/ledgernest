@@ -62,6 +62,7 @@ function DraftForm({ invoice, template, api }: { invoice: Invoice | null; templa
         listPath: '/invoices',
         invalidate: ['invoices', 'journals', 'journal', 'reports'],
         creditCheck: true,
+        interest: true,
         batches: true,
         series: invoiceSeries,
         autoUntil: (date, customer) => (customer ? dueDateFor(date, customer.paymentTermsDays) : ''),
@@ -242,6 +243,13 @@ export default function InvoiceEditor() {
           <DraftForm key={invoice!.id} invoice={invoice!} api={api} />
         ) : (
           <>
+            {invoice!.interest && invoice!.balance > 0 && (invoice!.interest.accrued > 0 || invoice!.interest.inGrace) && (
+              <p role="note" className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 print:hidden dark:bg-amber-950/40 dark:text-amber-200">
+                {invoice!.interest.inGrace
+                  ? t('invoices.interest.inGrace', { count: invoice!.interest.graceDays - invoice!.interest.daysLate })
+                  : t('invoices.interest.accrued', { amount: formatMoney(invoice!.interest.accrued, invoice!.currency ?? 'INR', locale), perDay: formatMoney(invoice!.interest.perDay, invoice!.currency ?? 'INR', locale), days: invoice!.interest.daysLate })}
+              </p>
+            )}
             {msmeInterest > 0 && (
               <p role="note" className="mb-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 print:hidden dark:bg-amber-950/40 dark:text-amber-200">
                 {t('invoices.msmeInterest', { amount: formatMoney(msmeInterest, 'INR', locale) })}

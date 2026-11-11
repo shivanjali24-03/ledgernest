@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus, accruedInterest, interestTermsFor, interestTermsText, type InterestTerms } from '@ledgernest/shared';
 import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
@@ -6,6 +6,7 @@ import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventor
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
 import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
+import { demoSettings } from '../settings/demoSettingsApi';
 import { demoRateOn } from '../currencies/demoCurrenciesApi';
 import { demoItemRows } from '../items/demoItemsApi';
 import { createDemoJournalsApi } from '../journals/demoJournalsApi';
@@ -30,6 +31,9 @@ type Stored = {
   /** The number as written when issued, from its series */
   fullNumber?: string | null;
   seriesId?: string | null;
+  /** A draft's own interest rate; once issued, the terms it was issued with */
+  interestRateBp?: number | null;
+  interestTerms?: InterestTerms | null;
   status: InvoiceStatus;
   contactId: string;
   issueDate: string;
@@ -307,7 +311,15 @@ function view(i: Stored): Invoice {
       };
     }),
   };
-  return { ...base, state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today()) };
+  // Interest on paying late, under the terms it was issued with, to today
+  const t = i.status === 'issued' ? i.interestTerms : null;
+  const accrued = t ? accruedInterest(t, { total: a.total, dueDate: i.dueDate }, [...base.payments, ...base.credits].map((x) => ({ date: x.date, amount: x.amount })), today()) : null;
+  return {
+    ...base,
+    interestRateBp: i.status === 'draft' ? (i.interestRateBp ?? null) : null,
+    interest: t && accrued ? { ...t, text: interestTermsText(t), accrued: accrued.interest, perDay: accrued.perDay, daysLate: accrued.daysLate, inGrace: accrued.inGrace } : null,
+    state: invoiceState({ status: i.status, total: a.total, amountPaid: i.amountPaid, dueDate: i.dueDate }, today()),
+  };
 }
 
 /** The same checks and line rules as the API */
@@ -391,7 +403,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
       wait(async () => {
         guard();
         const rows = await load();
-        const i: Stored = { id: crypto.randomUUID(), number: null, yearName: null, status: 'draft', amountPaid: 0, journalEntryId: null, journalNumber: null, voidEntryId: null, voidNumber: null, ...prepare(input), seriesId: input.seriesId ?? null };
+        const i: Stored = { id: crypto.randomUUID(), number: null, yearName: null, status: 'draft', amountPaid: 0, journalEntryId: null, journalNumber: null, voidEntryId: null, voidNumber: null, ...prepare(input), seriesId: input.seriesId ?? null, interestRateBp: input.interestRateBp ?? null };
         rows.push(i);
         save(rows);
         return view(i);
@@ -402,7 +414,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const rows = await load();
         const i = find(rows, iid);
         if (i.status !== 'draft') throw refuse(409, 'not_draft');
-        Object.assign(i, prepare(input), { seriesId: input.seriesId ?? null });
+        Object.assign(i, prepare(input), { seriesId: input.seriesId ?? null, interestRateBp: input.interestRateBp ?? null });
         save(rows);
         return view(i);
       }),
@@ -448,7 +460,9 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
           throw e;
         });
         demoSaveMovements('invoice', i.id, i.issueDate, posted.id, cost.movements);
-        Object.assign(i, { status: 'issued', number, fullNumber: label, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
+        const org = demoSettings();
+        const interestTerms = interestTermsFor({ rateBp: org.interestRateBp ?? null, method: org.interestMethod, graceDays: org.interestGraceDays }, { rateBp: demoContactRows().find((c) => c.id === i.contactId)?.interestRateBp ?? null }, { rateBp: i.interestRateBp ?? null });
+        Object.assign(i, { interestTerms, status: 'issued', number, fullNumber: label, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
         save(rows);
         return view(i);
       }),

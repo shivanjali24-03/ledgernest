@@ -125,6 +125,12 @@ export const organizationSettingsSchema = z
     gstScheme: z.enum(['regular', 'composition']),
     /** The composition rate in basis points: 1% traders and manufacturers, 5% restaurants, 6% services */
     compositionRateBp: z.union([z.literal(100), z.literal(500), z.literal(600)]),
+    /** Interest on invoices paid late: the yearly rate in basis points (1800 = 18%); null = none */
+    interestRateBp: z.number().int().min(1).max(3600).nullable(),
+    /** Simple interest, or compounded every month */
+    interestMethod: z.enum(['simple', 'monthly']),
+    /** Days after the due date it may be paid without interest */
+    interestGraceDays: z.number().int().min(0).max(365),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

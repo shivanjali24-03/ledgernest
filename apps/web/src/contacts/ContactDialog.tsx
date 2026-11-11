@@ -74,6 +74,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const limitDigits = currencyDigits(currency || currencies.data?.base || contact?.currency || 'INR');
   const [limit, setLimit] = useState(contact?.creditLimit != null ? String(contact.creditLimit / 10 ** currencyDigits(contact.currency ?? 'INR')) : '');
   const [msme, setMsme] = useState<MsmeCategory | ''>(contact?.msmeCategory ?? '');
+  const [interest, setInterest] = useState(contact?.interestRateBp != null ? String(contact.interestRateBp / 100) : '');
   const [udyam, setUdyam] = useState(contact?.udyamNumber ?? '');
   const [notes, setNotes] = useState(contact?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -104,6 +105,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     creditLimit: isCustomer && limit.trim() ? (toMinor(limit, limitDigits) ?? Number.NaN) : null,
     // Only vendors are paid under the MSME rules
     msmeCategory: isVendor && msme ? msme : null,
+    interestRateBp: isCustomer && interest.trim() ? Math.round(Number(interest.replace('%', '').trim()) * 100) : null,
     udyamNumber: isVendor ? udyam : '',
     notes,
   });
@@ -193,6 +195,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           <TextField label={t('contacts.fields.phone')} value={phone} onChange={(e) => setPhone(e.target.value)} error={errors.phone} dir="ltr" />
           <TextField label={t('contacts.fields.paymentTerms')} type="number" min={0} max={365} value={terms} onChange={(e) => setTerms(e.target.value)} error={errors.paymentTermsDays} hint={t('contacts.hints.paymentTerms')} />
           {isCustomer && <TextField label={t('contacts.fields.creditLimit')} value={limit} onChange={(e) => setLimit(e.target.value)} inputMode="decimal" dir="ltr" error={errors.creditLimit ? t('contacts.hints.badLimit') : undefined} hint={t('contacts.hints.creditLimit', { currency: currency || currencies.data?.base || '' })} />}
+          {isCustomer && <TextField label={t('contacts.fields.interestRate')} value={interest} onChange={(e) => setInterest(e.target.value)} inputMode="decimal" dir="ltr" placeholder={t('contacts.hints.interestDefault')} error={errors.interestRateBp} hint={t('contacts.hints.interestRate')} />}
           {isVendor && billing.country === 'IN' && (
             <>
               <SelectField label={t('contacts.fields.msme')} value={msme} onChange={(e) => setMsme(e.target.value as MsmeCategory | '')} hint={t('contacts.hints.msme')} options={[{ value: '', label: t('contacts.msme.none') }, ...MSME_CATEGORIES.map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />

@@ -19,6 +19,11 @@ import {
   todayIn,
   toBase,
   type InvoiceStatus,
+  accruedInterest,
+  interestTermsFor,
+  interestTermsText,
+  type InterestMethod,
+  type InterestTerms,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -56,6 +61,8 @@ export type DraftIn = {
   contactId: string;
   /** The number series to number it from when issued; omitted = the default */
   seriesId?: string | null;
+  /** Interest on late payment for this invoice: null = the customer's or organisation's, 0 = none */
+  interestRateBp?: number | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -119,6 +126,9 @@ const select = {
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   seriesId: true,
+  interestRateBp: true,
+  interestMethod: true,
+  interestGraceDays: true,
   contact: {
     select: {
       id: true,
@@ -130,6 +140,7 @@ const select = {
       billingAddress: true,
       shippingAddress: true,
       stateCode: true,
+      interestRateBp: true,
     },
   },
   receivableAccount: { select: { id: true, code: true, name: true } },
@@ -398,6 +409,26 @@ export class InvoicesService {
         }[],
       })),
     };
+    // Interest on paying late, under the terms it was issued with, to today
+    const terms: InterestTerms | null =
+      i.status === 'issued' && i.interestMethod && i.interestRateBp
+        ? {
+            rateBp: i.interestRateBp,
+            method: i.interestMethod as InterestMethod,
+            graceDays: i.interestGraceDays ?? 0,
+          }
+        : null;
+    const accrued =
+      terms &&
+      accruedInterest(
+        terms,
+        { total: v.total, dueDate: v.dueDate },
+        [...v.payments, ...v.credits].map((x) => ({
+          date: x.date,
+          amount: x.amount,
+        })),
+        today,
+      );
     return {
       ...v,
       state: invoiceState(
@@ -409,6 +440,20 @@ export class InvoicesService {
         },
         today,
       ),
+      /** On a draft: a rate chosen for it (null = the customer's or organisation's, 0 = none) */
+      interestRateBp: i.status === 'draft' ? i.interestRateBp : null,
+      /** Once issued: its interest terms, and what's accrued to today */
+      interest:
+        terms && accrued
+          ? {
+              ...terms,
+              text: interestTermsText(terms),
+              accrued: accrued.interest,
+              perDay: accrued.perDay,
+              daysLate: accrued.daysLate,
+              inGrace: accrued.inGrace,
+            }
+          : null,
     };
   }
 
@@ -940,6 +985,7 @@ export class InvoicesService {
           reference: input.reference,
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
+          interestRateBp: input.interestRateBp ?? null,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -998,6 +1044,7 @@ export class InvoicesService {
           reference: input.reference,
           seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
+          interestRateBp: input.interestRateBp ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
           taxTotal: BigInt(p.amounts.tax),
@@ -1138,6 +1185,24 @@ export class InvoicesService {
       );
 
       // The entry: what the customer owes against income and output tax (worked out like any taxed journal line)
+      // The interest terms it's issued with stay with it: the draft's own rate, else the customer's, else ours
+      const orgTerms = await tx.organization.findUniqueOrThrow({
+        where: { id: organizationId },
+        select: {
+          interestRateBp: true,
+          interestMethod: true,
+          interestGraceDays: true,
+        },
+      });
+      const terms = interestTermsFor(
+        {
+          rateBp: orgTerms.interestRateBp,
+          method: orgTerms.interestMethod as InterestMethod,
+          graceDays: orgTerms.interestGraceDays,
+        },
+        { rateBp: i.contact.interestRateBp },
+        { rateBp: i.interestRateBp },
+      );
       const { baseCurrency } = await tx.organization.findUniqueOrThrow({
         where: { id: organizationId },
         select: { baseCurrency: true },
@@ -1275,6 +1340,9 @@ export class InvoicesService {
           journalEntryId: entry.id,
           rate,
           issuedAt: new Date(),
+          interestRateBp: terms?.rateBp ?? 0,
+          interestMethod: terms?.method ?? null,
+          interestGraceDays: terms?.graceDays ?? null,
         },
       });
       await this.audit.record(

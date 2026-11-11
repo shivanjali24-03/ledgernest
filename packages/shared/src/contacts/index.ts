@@ -99,6 +99,8 @@ const fields = {
   /** The vendor's MSME category from its Udyam certificate; null = not an MSME (or not known) */
   msmeCategory: z.enum(MSME_CATEGORIES).nullable().optional().default(null),
   udyamNumber: udyam.optional().default(null),
+  /** Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none */
+  interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
   notes: text(1000),
 };
 
@@ -153,6 +155,7 @@ export const contactUpdateSchema = z
     creditLimit: z.number().int().min(0).max(1e15).nullable(),
     msmeCategory: z.enum(MSME_CATEGORIES).nullable(),
     udyamNumber: udyam,
+    interestRateBp: z.number().int().min(0).max(3600).nullable(),
     notes: z
       .string()
       .trim()
