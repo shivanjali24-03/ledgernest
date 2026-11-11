@@ -42,7 +42,7 @@ export function StatusBadge({ status }: { status: 'ACTIVE' | 'SUSPENDED' }) {
 
 export function Pill({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'brand' }) {
   return (
-    <span className={clsx('inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold', tone === 'brand' ? 'bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-100' : 'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300')}>
+    <span className={clsx('inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold', tone === 'brand' ? 'bg-brand-100 text-brand-800 dark:bg-brand-900/60 dark:text-brand-100' : 'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300')}>
       {children}
     </span>
   );

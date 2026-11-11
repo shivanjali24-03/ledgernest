@@ -10,7 +10,7 @@ import { resetDemoItems } from '../items/demoItemsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
-import { openDialog } from '../test/openDialog';
+import { openDialog, press } from '../test/openDialog';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoQuotes } from './demoQuotesApi';
 
@@ -104,16 +104,14 @@ describe('quotes', () => {
   it('duplicates a quote into a new one', { timeout: 20_000 }, async () => {
     const router = renderApp();
     await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 4000 }));
-    // Under More (the page may still be settling: open the menu until the item shows)
+    // Under More: press it (opening the menu first) until the page moves to the copy
     await waitFor(
       () => {
-        if (!screen.queryByRole('menuitem', { name: 'Duplicate' })) fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
-        expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeInTheDocument();
+        if (!router.state.location.search.includes('copy=')) press('Duplicate');
+        expect(router.state.location.search).toMatch(/^\?copy=/);
       },
-      { timeout: 6000 },
+      { timeout: 8000 },
     );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Duplicate' }));
-    await waitFor(() => expect(router.state.location.search).toMatch(/^\?copy=/), { timeout: 6000 });
     await waitFor(() => expect(screen.getByLabelText('Description on line 1')).toHaveValue('Patient booking app: design and build'), { timeout: 4000 });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('QT-0002 saved', {}, { timeout: 4000 })).toBeInTheDocument();

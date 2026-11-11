@@ -151,7 +151,7 @@ export default function InvitationsPanel({ inviteOpen, onInviteOpen }: { inviteO
     );
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       {body}
 
       <Modal

@@ -415,7 +415,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                           ))}
                       </select>
                     </td>
-                    <td className="px-3 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                    <td className="whitespace-nowrap px-3 pb-2 pt-3.5 text-end font-mono tabular-nums" dir="ltr">
                       {amount !== undefined ? plain(amount) : ''}
                     </td>
                     <td className="py-1.5 pe-2">
@@ -483,14 +483,14 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
       </Card>
 
       {config.interest && (
-        <Card className="flex flex-wrap items-end gap-4 p-5">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={inclusive} disabled={!canManage} onChange={(e) => setInclusive(e.target.checked)} className="size-4 rounded accent-brand-600" />
+        <Card className="flex flex-wrap items-start gap-4 p-5">
+          <label className="flex items-start gap-2 text-sm font-medium">
+            <input type="checkbox" checked={inclusive} disabled={!canManage} onChange={(e) => setInclusive(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
             {t('invoices.pricesIncludeTax')}
           </label>
           {india && supplyKind === 'regular' && (
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" checked={reverseCharge} disabled={!canManage} onChange={(e) => setReverseCharge(e.target.checked)} className="size-4 rounded accent-brand-600" />
+            <label className="flex max-w-md items-start gap-2 text-sm font-medium">
+              <input type="checkbox" checked={reverseCharge} disabled={!canManage} onChange={(e) => setReverseCharge(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
               <span>
                 {t('invoices.reverseCharge.label')}
                 <span className="block text-xs font-normal text-ink-500">{t('invoices.reverseCharge.hint')}</span>

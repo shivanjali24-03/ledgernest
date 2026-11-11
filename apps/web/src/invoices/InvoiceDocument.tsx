@@ -34,7 +34,8 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
   const plain = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
   const day = (d: string) => formatDate(`${d}T00:00:00Z`, locale);
   const address = (a: Record<string, string | null> | { line1: string | null; line2: string | null; city: string | null; region: string | null; postalCode: string | null; country?: string | null }) =>
-    [a.line1, a.line2, [a.city, a.region, a.postalCode].filter(Boolean).join(', '), a.country && a.country !== org?.country ? countryName(a.country, locale) : null].filter(Boolean);
+    // An area named after its city ("Pune" then "Pune, Maharashtra") isn't repeated
+    [a.line1, a.line2 && a.line2 !== a.city ? a.line2 : null, [a.city, a.region, a.postalCode].filter(Boolean).join(', '), a.country && a.country !== org?.country ? countryName(a.country, locale) : null].filter((x) => x && !(x === a.city && a.region));
   const pos = stateName(i.placeOfSupply);
   // Pay by UPI: rupee invoices with something still owed, once the organisation has its UPI ID
   const upi =
@@ -122,7 +123,7 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
       </section>
 
       <div className="relative overflow-x-auto">
-        <table className="w-full min-w-[560px]">
+        <table className="w-full sm:min-w-[560px]">
           <thead className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-700">
             <tr>
               <th scope="col" className="py-2 text-start font-semibold">
@@ -131,10 +132,11 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
               <th scope="col" className="py-2 text-end font-semibold">
                 {t('invoices.columns.qty')}
               </th>
-              <th scope="col" className="py-2 text-end font-semibold">
+              {/* On a phone: item, quantity and amount; the rate and tax are in the totals and the PDF */}
+              <th scope="col" className="py-2 text-end font-semibold max-sm:hidden">
                 {t('invoices.columns.rate')}
               </th>
-              <th scope="col" className="py-2 text-end font-semibold">
+              <th scope="col" className="py-2 text-end font-semibold max-sm:hidden">
                 {t('invoices.columns.tax')}
               </th>
               <th scope="col" className="py-2 text-end font-semibold">
@@ -161,16 +163,16 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
                     </span>
                   ))}
                 </td>
-                <td className="py-2.5 text-end tabular-nums" dir="ltr">
+                <td className="whitespace-nowrap py-2.5 ps-2 text-end tabular-nums" dir="ltr">
                   {l.quantity}
                   {l.item?.unit && <span className="ms-1 text-xs text-ink-500">{l.item.unit}</span>}
                 </td>
-                <td className="py-2.5 text-end tabular-nums" dir="ltr">
+                <td className="py-2.5 text-end tabular-nums max-sm:hidden" dir="ltr">
                   {plain(l.unitPrice)}
                   {l.discount > 0 && <span className="block text-xs text-ink-500">−{l.discount}%</span>}
                 </td>
-                <td className="py-2.5 text-end text-ink-600 dark:text-ink-300">{(l.taxGroup ?? l.rcmTaxGroup)?.name ?? '—'}</td>
-                <td className="py-2.5 text-end tabular-nums" dir="ltr">
+                <td className="py-2.5 text-end text-ink-600 max-sm:hidden dark:text-ink-300">{(l.taxGroup ?? l.rcmTaxGroup)?.name ?? '—'}</td>
+                <td className="whitespace-nowrap py-2.5 ps-3 text-end tabular-nums" dir="ltr">
                   {plain(l.amount)}
                 </td>
               </tr>

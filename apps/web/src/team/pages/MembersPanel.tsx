@@ -60,7 +60,7 @@ export default function MembersPanel() {
   if (members.data.length === 0) return <Card>{<EmptyState icon={<Users className="size-5" />} title={t('team.members.empty')} />}</Card>;
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <div className="relative overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">

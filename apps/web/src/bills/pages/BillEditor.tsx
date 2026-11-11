@@ -502,7 +502,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                         </select>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                    <td className="whitespace-nowrap px-3 pb-2 pt-3.5 text-end font-mono tabular-nums" dir="ltr">
                       {amount !== undefined ? plain(amount) : ''}
                     </td>
                     <td className="py-1.5 pe-2">
