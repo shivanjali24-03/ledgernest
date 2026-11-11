@@ -75,6 +75,7 @@ export class CashForecastService {
             total: true,
             amountPaid: true,
             fiscalYear: { select: { name: true } },
+            fullNumber: true,
             contact: { select: { id: true, name: true } },
           },
         }),
@@ -178,7 +179,7 @@ export class CashForecastService {
         id: i.id,
         label:
           i.number && i.fiscalYear
-            ? invoiceNumber(i.fiscalYear.name, i.number)
+            ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
             : 'Invoice',
         contact: i.contact,
         dueDate: iso(i.dueDate),

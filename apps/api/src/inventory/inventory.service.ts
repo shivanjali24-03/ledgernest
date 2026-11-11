@@ -680,6 +680,7 @@ export class InventoryService {
             id: true,
             number: true,
             fiscalYear: { select: { name: true } },
+            fullNumber: true,
           },
         }),
         this.prisma.creditNote.findMany({
@@ -688,11 +689,15 @@ export class InventoryService {
             id: true,
             number: true,
             fiscalYear: { select: { name: true } },
+            fullNumber: true,
           },
         }),
       ]);
       for (const c of notes)
-        docs.set(c.id, creditNoteNumber(c.fiscalYear.name, c.number));
+        docs.set(
+          c.id,
+          c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number),
+        );
       for (const b of bills)
         docs.set(
           b.id,
@@ -704,7 +709,7 @@ export class InventoryService {
         docs.set(
           i.id,
           i.number && i.fiscalYear
-            ? invoiceNumber(i.fiscalYear.name, i.number)
+            ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
             : null,
         );
     }

@@ -543,6 +543,7 @@ export class ReportsService {
               select: {
                 id: true,
                 issueDate: true,
+                fullNumber: true,
                 credits: creditedBy,
                 ...common,
               },
@@ -550,7 +551,7 @@ export class ReportsService {
           ).map((d) => ({
             ...d,
             date: d.issueDate,
-            label: invoiceNumber(d.fiscalYear!.name, d.number!),
+            label: d.fullNumber ?? invoiceNumber(d.fiscalYear!.name, d.number!),
           }))
         : (
             await this.prisma.bill.findMany({

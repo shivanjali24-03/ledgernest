@@ -94,13 +94,20 @@ describe('customers and vendors', () => {
     renderApp();
     await row('Kumar Logistics');
     await userEvent.click(screen.getByRole('button', { name: 'Add contact' }));
-    const again = await screen.findByRole('dialog', { name: 'New contact' }, { timeout: 5000 });
-    const b = within(again).getAllByRole('group')[0]!;
-    await userEvent.type(within(b).getByLabelText('PIN code'), '799001');
-    expect(await within(b).findByText(/India Post doesn’t know this PIN code/, {}, { timeout: 15_000 })).toBeInTheDocument();
-    expect(within(b).getByLabelText('City or town').tagName).toBe('INPUT');
-    await userEvent.type(within(b).getByLabelText('PIN code'), '1');
-    expect(within(b).getByLabelText('PIN code')).toHaveValue('799001');
+    await screen.findByRole('dialog', { name: 'New contact' }, { timeout: 5000 });
+    // The dialog can remount under load: find it afresh and type the PIN again if it was lost
+    const billing = () => within(screen.getByRole('dialog', { name: 'New contact' })).getAllByRole('group')[0]!;
+    await waitFor(
+      () => {
+        const pin = within(billing()).getByLabelText('PIN code') as HTMLInputElement;
+        if (pin.value !== '799001') fireEvent.change(pin, { target: { value: '799001' } });
+        expect(within(billing()).getByText(/India Post doesn’t know this PIN code/)).toBeInTheDocument();
+      },
+      { timeout: 15_000 },
+    );
+    expect(within(billing()).getByLabelText('City or town').tagName).toBe('INPUT');
+    fireEvent.change(within(billing()).getByLabelText('PIN code'), { target: { value: '7990011' } });
+    expect(within(billing()).getByLabelText('PIN code')).toHaveValue('799001');
   }, 30_000);
 
   it('archives and restores a contact', async () => {

@@ -15,6 +15,7 @@ import { PeriodsModule } from './periods/periods.module.js';
 import { JournalsModule } from './journals/journals.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { TaxesModule } from './taxes/taxes.module.js';
+import { NumberingModule } from './numbering/numbering.module.js';
 import { GeoModule } from './geo/geo.module.js';
 import { CurrenciesModule } from './currencies/currencies.module.js';
 import { ContactsModule } from './contacts/contacts.module.js';
@@ -64,6 +65,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     TaxesModule,
     CurrenciesModule,
     GeoModule,
+    NumberingModule,
     ContactsModule,
     ItemsModule,
     InvoicesModule,

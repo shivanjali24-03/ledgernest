@@ -1,4 +1,5 @@
 import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -26,6 +27,9 @@ type Stored = {
   id: string;
   number: number | null;
   yearName: string | null;
+  /** The number as written when issued, from its series */
+  fullNumber?: string | null;
+  seriesId?: string | null;
   status: InvoiceStatus;
   contactId: string;
   issueDate: string;
@@ -255,7 +259,8 @@ function view(i: Stored): Invoice {
   const receivable = accounts.find((x) => x.type === 'asset' && (x.currency ?? null) === i.currency && /receivable/i.test(x.name));
   const base = {
     id: i.id,
-    number: i.number && i.yearName ? invoiceNumber(i.yearName, i.number) : null,
+    number: i.number && i.yearName ? (i.fullNumber ?? invoiceNumber(i.yearName, i.number)) : null,
+    seriesId: i.seriesId ?? null,
     status: i.status,
     issueDate: i.issueDate,
     dueDate: i.dueDate,
@@ -386,7 +391,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
       wait(async () => {
         guard();
         const rows = await load();
-        const i: Stored = { id: crypto.randomUUID(), number: null, yearName: null, status: 'draft', amountPaid: 0, journalEntryId: null, journalNumber: null, voidEntryId: null, voidNumber: null, ...prepare(input) };
+        const i: Stored = { id: crypto.randomUUID(), number: null, yearName: null, status: 'draft', amountPaid: 0, journalEntryId: null, journalNumber: null, voidEntryId: null, voidNumber: null, ...prepare(input), seriesId: input.seriesId ?? null };
         rows.push(i);
         save(rows);
         return view(i);
@@ -397,7 +402,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const rows = await load();
         const i = find(rows, iid);
         if (i.status !== 'draft') throw refuse(409, 'not_draft');
-        Object.assign(i, prepare(input));
+        Object.assign(i, prepare(input), { seriesId: input.seriesId ?? null });
         save(rows);
         return view(i);
       }),
@@ -422,7 +427,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const year = years.find((y) => y.startDate <= i.issueDate && i.issueDate <= y.endDate);
         if (!year) throw refuse(409, 'no_period');
         const number = Math.max(0, ...rows.filter((r) => r.yearName === year.name && r.number).map((r) => r.number!)) + 1;
-        const label = invoiceNumber(year.name, number);
+        const label = demoDocNumber('invoice', i.seriesId, year.name, number);
         let rate: string | null = null;
         if (i.currency) {
           rate = i.rate ?? demoRateOn(i.currency, i.issueDate);
@@ -443,7 +448,7 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
           throw e;
         });
         demoSaveMovements('invoice', i.id, i.issueDate, posted.id, cost.movements);
-        Object.assign(i, { status: 'issued', number, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
+        Object.assign(i, { status: 'issued', number, fullNumber: label, yearName: year.name, rate, journalEntryId: posted.id, journalNumber: posted.number });
         save(rows);
         return view(i);
       }),

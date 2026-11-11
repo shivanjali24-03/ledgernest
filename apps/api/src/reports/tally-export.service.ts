@@ -24,6 +24,8 @@ const doc = {
     fiscalYear: { select: { name: true } },
   },
 } as const;
+/** Invoices, credit notes and debit notes also carry their number as written */
+const numbered = { select: { ...doc.select, fullNumber: true } } as const;
 
 /**
  * The books for Tally Prime: ledgers (accounts under Tally's groups, customers and vendors as Sundry Debtors and
@@ -109,19 +111,19 @@ export class TallyExportService {
             orderBy: { lineNo: 'asc' },
             select: { accountId: true, debit: true, credit: true },
           },
-          invoice: doc,
-          voidedInvoice: doc,
+          invoice: numbered,
+          voidedInvoice: numbered,
           bill: doc,
           voidedBill: doc,
-          creditNote: doc,
-          voidedCreditNote: doc,
+          creditNote: numbered,
+          voidedCreditNote: numbered,
           payment: { select: { ...doc.select, kind: true } },
           voidedPayment: { select: { ...doc.select, kind: true } },
-          vendorCredit: doc,
-          voidedVendorCredit: doc,
+          vendorCredit: numbered,
+          voidedVendorCredit: numbered,
           // Refunds of credit given: the customer's or vendor's own ledger too
-          creditRefund: { select: { creditNote: doc } },
-          vendorRefund: { select: { vendorCredit: doc } },
+          creditRefund: { select: { creditNote: numbered } },
+          vendorRefund: { select: { vendorCredit: numbered } },
         },
       }),
     ]);
@@ -136,20 +138,21 @@ export class TallyExportService {
       } | null = e.invoice
         ? {
             kind: 'invoice',
-            number: invoiceNumber(
-              e.invoice.fiscalYear!.name,
-              e.invoice.number!,
-            ),
+            number:
+              e.invoice.fullNumber ??
+              invoiceNumber(e.invoice.fiscalYear!.name, e.invoice.number!),
             contactId: e.invoice.contactId,
             voided: false,
           }
         : e.voidedInvoice
           ? {
               kind: 'invoice',
-              number: invoiceNumber(
-                e.voidedInvoice.fiscalYear!.name,
-                e.voidedInvoice.number!,
-              ),
+              number:
+                e.voidedInvoice.fullNumber ??
+                invoiceNumber(
+                  e.voidedInvoice.fiscalYear!.name,
+                  e.voidedInvoice.number!,
+                ),
               contactId: e.voidedInvoice.contactId,
               voided: true,
             }
@@ -173,20 +176,24 @@ export class TallyExportService {
               : e.creditNote
                 ? {
                     kind: 'credit_note',
-                    number: creditNoteNumber(
-                      e.creditNote.fiscalYear.name,
-                      e.creditNote.number,
-                    ),
+                    number:
+                      e.creditNote.fullNumber ??
+                      creditNoteNumber(
+                        e.creditNote.fiscalYear.name,
+                        e.creditNote.number,
+                      ),
                     contactId: e.creditNote.contactId,
                     voided: false,
                   }
                 : e.voidedCreditNote
                   ? {
                       kind: 'credit_note',
-                      number: creditNoteNumber(
-                        e.voidedCreditNote.fiscalYear.name,
-                        e.voidedCreditNote.number,
-                      ),
+                      number:
+                        e.voidedCreditNote.fullNumber ??
+                        creditNoteNumber(
+                          e.voidedCreditNote.fiscalYear.name,
+                          e.voidedCreditNote.number,
+                        ),
                       contactId: e.voidedCreditNote.contactId,
                       voided: true,
                     }
@@ -215,11 +222,15 @@ export class TallyExportService {
                       : (e.vendorCredit ?? e.voidedVendorCredit)
                         ? {
                             kind: 'debit_note',
-                            number: vendorCreditNumber(
+                            number:
                               (e.vendorCredit ?? e.voidedVendorCredit)!
-                                .fiscalYear.name,
-                              (e.vendorCredit ?? e.voidedVendorCredit)!.number,
-                            ),
+                                .fullNumber ??
+                              vendorCreditNumber(
+                                (e.vendorCredit ?? e.voidedVendorCredit)!
+                                  .fiscalYear.name,
+                                (e.vendorCredit ?? e.voidedVendorCredit)!
+                                  .number,
+                              ),
                             contactId: (e.vendorCredit ?? e.voidedVendorCredit)!
                               .contactId,
                             voided: !e.vendorCredit,
@@ -227,14 +238,14 @@ export class TallyExportService {
                         : e.creditRefund?.creditNote
                           ? {
                               kind: 'payment',
-                              number: `${creditNoteNumber(e.creditRefund.creditNote.fiscalYear.name, e.creditRefund.creditNote.number)} refund`,
+                              number: `${e.creditRefund.creditNote.fullNumber ?? creditNoteNumber(e.creditRefund.creditNote.fiscalYear.name, e.creditRefund.creditNote.number)} refund`,
                               contactId: e.creditRefund.creditNote.contactId,
                               voided: false,
                             }
                           : e.vendorRefund?.vendorCredit
                             ? {
                                 kind: 'payment',
-                                number: `${vendorCreditNumber(e.vendorRefund.vendorCredit.fiscalYear.name, e.vendorRefund.vendorCredit.number)} refund`,
+                                number: `${e.vendorRefund.vendorCredit.fullNumber ?? vendorCreditNumber(e.vendorRefund.vendorCredit.fiscalYear.name, e.vendorRefund.vendorCredit.number)} refund`,
                                 contactId:
                                   e.vendorRefund.vendorCredit.contactId,
                                 voided: false,

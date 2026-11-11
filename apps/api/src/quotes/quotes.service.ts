@@ -74,6 +74,7 @@ const select = {
       number: true,
       status: true,
       fiscalYear: { select: { name: true } },
+      fullNumber: true,
     },
   },
   lines: {
@@ -145,7 +146,8 @@ export class QuotesService {
         id: q.invoice.id,
         number:
           q.invoice.number && q.invoice.fiscalYear
-            ? invoiceNumber(q.invoice.fiscalYear.name, q.invoice.number)
+            ? (q.invoice.fullNumber ??
+              invoiceNumber(q.invoice.fiscalYear.name, q.invoice.number))
             : null,
         status: q.invoice.status,
       },

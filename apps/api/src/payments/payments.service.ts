@@ -98,7 +98,7 @@ const select = {
   allocations: {
     select: {
       amount: true,
-      invoice: doc,
+      invoice: { select: { ...doc.select, fullNumber: true } },
       bill: { select: { ...doc.select, vendorReference: true } },
     },
   },
@@ -172,11 +172,13 @@ export class PaymentsService {
               documentId: a.invoice.id,
               invoiceNumber:
                 a.invoice.number && a.invoice.fiscalYear
-                  ? invoiceNumber(a.invoice.fiscalYear.name, a.invoice.number)
+                  ? (a.invoice.fullNumber ??
+                    invoiceNumber(a.invoice.fiscalYear.name, a.invoice.number))
                   : null,
               documentNumber:
                 a.invoice.number && a.invoice.fiscalYear
-                  ? invoiceNumber(a.invoice.fiscalYear.name, a.invoice.number)
+                  ? (a.invoice.fullNumber ??
+                    invoiceNumber(a.invoice.fiscalYear.name, a.invoice.number))
                   : null,
               amount: Number(a.amount),
             }
@@ -266,11 +268,12 @@ export class PaymentsService {
         total: true,
         amountPaid: true,
         fiscalYear: { select: { name: true } },
+        fullNumber: true,
       },
     });
     return rows.map((i) => ({
       id: i.id,
-      number: invoiceNumber(i.fiscalYear!.name, i.number!),
+      number: i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
       issueDate: iso(i.issueDate),
       dueDate: iso(i.dueDate),
       currency: i.currency,

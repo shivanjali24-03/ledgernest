@@ -32,6 +32,8 @@ export interface SalesDraft {
   notes: string | null;
   placeOfSupply: string | null;
   currency: string | null;
+  /** The number series it will be numbered from (invoices) */
+  seriesId?: string | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null }[];
 }
 export interface SalesDraftPayload {
@@ -41,6 +43,7 @@ export interface SalesDraftPayload {
   reference: string;
   notes: string;
   placeOfSupply: string | null;
+  seriesId?: string | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null }[];
 }
 export interface SalesDraftConfig {
@@ -56,6 +59,8 @@ export interface SalesDraftConfig {
   /** The second date when left blank: the due date from payment terms, or the expiry date */
   autoUntil: (date: string, customer: Contact | null) => string;
   untilHint: (customer: Contact | null) => string | undefined;
+  /** Number series to choose from (invoices, when there's more than one) */
+  series?: { id: string; name: string; preview: string; isDefault: boolean }[];
   /** Warn when this takes the customer over their credit limit (invoices) */
   creditCheck?: boolean;
   labels: { date: string; until: string; save: string; extra: string; delete: string; deleteTitle: string; deleteBody: string; deleted: string };
@@ -99,6 +104,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [reference, setReference] = useState(invoice?.reference ?? '');
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
+  const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
       ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '' }))
@@ -149,6 +155,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     reference,
     notes,
     placeOfSupply: placeOfSupply || null,
+    ...(config.series ? { seriesId: seriesId || null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null })),
   });
   const save = useMutation({
@@ -192,6 +199,15 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         <TextField label={config.labels.date} type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} disabled={!canManage} />
         <TextField label={config.labels.until} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate ? config.untilHint(customer) : undefined} />
         <TextField label={t('invoices.fields.reference')} value={reference} onChange={(e) => setReference(e.target.value)} disabled={!canManage} placeholder="PO-4471" dir="auto" />
+        {config.series && config.series.length > 1 && (
+          <SelectField
+            label={t('invoices.fields.series')}
+            value={seriesId || config.series.find((x) => x.isDefault)?.id || ''}
+            onChange={(e) => setSeriesId(e.target.value)}
+            disabled={!canManage}
+            options={config.series.map((x) => ({ value: x.id, label: `${x.name} · ${x.preview}` }))}
+          />
+        )}
         {india && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}

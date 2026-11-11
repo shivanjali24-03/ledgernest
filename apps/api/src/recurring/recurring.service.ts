@@ -71,6 +71,7 @@ const select = {
       issueDate: true,
       total: true,
       fiscalYear: { select: { name: true } },
+      fullNumber: true,
     },
   },
 } as const;
@@ -139,7 +140,7 @@ export class RecurringService
         id: i.id,
         number:
           i.number && i.fiscalYear
-            ? invoiceNumber(i.fiscalYear.name, i.number)
+            ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
             : null,
         status: i.status,
         issueDate: iso(i.issueDate),

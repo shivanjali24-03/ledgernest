@@ -130,6 +130,7 @@ const select = {
       status: true,
       total: true,
       fiscalYear: { select: { name: true } },
+      fullNumber: true,
     },
   },
   vendorCreditApplications: {
@@ -142,6 +143,7 @@ const select = {
           id: true,
           number: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
         },
       },
     },
@@ -297,17 +299,19 @@ export class BillsService {
       /** Debit notes raised against it */
       debitNotes: i.vendorCredits.map((c) => ({
         id: c.id,
-        number: vendorCreditNumber(c.fiscalYear.name, c.number),
+        number: c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number),
         status: c.status as 'issued' | 'void',
         total: amount(c.total),
       })),
       /** Credit from debit notes that came off it */
       credits: i.vendorCreditApplications.map((c) => ({
         id: c.vendorCredit.id,
-        number: vendorCreditNumber(
-          c.vendorCredit.fiscalYear.name,
-          c.vendorCredit.number,
-        ),
+        number:
+          c.vendorCredit.fullNumber ??
+          vendorCreditNumber(
+            c.vendorCredit.fiscalYear.name,
+            c.vendorCredit.number,
+          ),
         date: iso(c.date),
         amount: amount(c.amount),
       })),

@@ -1,4 +1,5 @@
-import { creditApplySchema, creditNoteNumber, creditNoteSchema, creditRefundSchema, currencyDigits, formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase } from '@ledgernest/shared';
+import { creditApplySchema, creditNoteSchema, creditRefundSchema, currencyDigits, formatQuantity, invoiceAmounts, parseQuantity, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase } from '@ledgernest/shared';
+import { demoDocNumber } from '../numbering/demoNumberingApi';
 import { ApiError } from '../auth/client';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
@@ -136,7 +137,7 @@ export function createDemoCreditNotesApi(canManage: () => boolean, canRefund: ()
         if (!year) throw refuse(409, 'no_period');
         const all = load();
         const seq = Math.max(0, ...all.filter((x) => x.yearName === year.name).map((x) => x.seq)) + 1;
-        const label = creditNoteNumber(year.name, seq);
+        const label = demoDocNumber('credit_note', d.seriesId, year.name, seq);
         const toInr = (minor: number) => (inv.rate ? toBase(minor, inv.rate, currencyDigits(inv.currency!), currencyDigits(DEMO_BASE_CURRENCY)) : minor);
         const receivable = inv.receivableAccount!;
         // Goods that came back return to stock at the cost they left at

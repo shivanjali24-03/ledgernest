@@ -104,6 +104,7 @@ export class StatementsService {
           select: {
             ...common,
             number: true,
+            fullNumber: true,
             issueDate: true,
             reference: true,
           },
@@ -113,6 +114,7 @@ export class StatementsService {
           select: {
             ...common,
             number: true,
+            fullNumber: true,
             date: true,
             reason: true,
           },
@@ -123,7 +125,7 @@ export class StatementsService {
           i,
           'invoice',
           i.issueDate,
-          invoiceNumber(i.fiscalYear!.name, i.number!),
+          i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
           i.reference,
           Number(i.total),
         );
@@ -132,7 +134,7 @@ export class StatementsService {
           c,
           'credit_note',
           c.date,
-          creditNoteNumber(c.fiscalYear.name, c.number),
+          c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number),
           c.reason,
           -Number(c.total),
         );
@@ -167,6 +169,7 @@ export class StatementsService {
           id: true,
           total: true,
           number: true,
+          fullNumber: true,
           date: true,
           vendorReference: true,
           reason: true,
@@ -179,7 +182,8 @@ export class StatementsService {
         },
       });
       for (const n of debitNotes) {
-        const label = vendorCreditNumber(n.fiscalYear.name, n.number);
+        const label =
+          n.fullNumber ?? vendorCreditNumber(n.fiscalYear.name, n.number);
         add(
           { ...n, currency: null },
           'debit_note',

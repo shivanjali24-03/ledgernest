@@ -31,6 +31,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { NumberingService } from '../numbering/numbering.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -47,6 +48,8 @@ type LineIn = {
 };
 export type DraftIn = {
   contactId: string;
+  /** The number series to number it from when issued; omitted = the default */
+  seriesId?: string | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -108,6 +111,8 @@ const select = {
   updatedAt: true,
   receivableAccountId: true,
   fiscalYear: { select: { name: true } },
+  fullNumber: true,
+  seriesId: true,
   contact: {
     select: {
       id: true,
@@ -154,6 +159,7 @@ const select = {
           id: true,
           number: true,
           fiscalYear: { select: { name: true } },
+          fullNumber: true,
         },
       },
     },
@@ -167,6 +173,7 @@ const select = {
       status: true,
       total: true,
       fiscalYear: { select: { name: true } },
+      fullNumber: true,
     },
   },
   lines: {
@@ -213,6 +220,7 @@ export class InvoicesService {
     private readonly journals: JournalsService,
     private readonly inventory: InventoryService,
     private readonly webhooks: WebhooksService,
+    private readonly numbering: NumberingService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -250,7 +258,7 @@ export class InvoicesService {
       id: i.id,
       number:
         i.number && i.fiscalYear
-          ? invoiceNumber(i.fiscalYear.name, i.number)
+          ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
           : null,
       status: i.status as InvoiceStatus,
       issueDate: iso(i.issueDate),
@@ -258,6 +266,7 @@ export class InvoicesService {
       currency: i.currency,
       rate: i.rate && rateText(i.rate),
       placeOfSupply: i.placeOfSupply,
+      seriesId: i.seriesId,
       reference: i.reference,
       notes: i.notes,
       contact: {
@@ -303,10 +312,9 @@ export class InvoicesService {
       /** Credit that came off it, from its own credit notes or others */
       credits: i.credits.map((c) => ({
         id: c.creditNote.id,
-        number: creditNoteNumber(
-          c.creditNote.fiscalYear.name,
-          c.creditNote.number,
-        ),
+        number:
+          c.creditNote.fullNumber ??
+          creditNoteNumber(c.creditNote.fiscalYear.name, c.creditNote.number),
         date: iso(c.date),
         amount: amount(c.amount),
       })),
@@ -315,7 +323,7 @@ export class InvoicesService {
       /** Credit notes raised against it */
       creditNotes: i.creditNotes.map((c) => ({
         id: c.id,
-        number: creditNoteNumber(c.fiscalYear.name, c.number),
+        number: c.fullNumber ?? creditNoteNumber(c.fiscalYear.name, c.number),
         status: c.status as 'issued' | 'void',
         total: amount(c.total),
       })),
@@ -435,7 +443,8 @@ export class InvoicesService {
         OR: [
           { reference: { contains: q.search, mode: 'insensitive' } },
           { contact: { name: { contains: q.search, mode: 'insensitive' } } },
-          ...(/^\d+$/.test(q.search) ? [{ number: Number(q.search) }] : []),
+          { fullNumber: { contains: q.search, mode: 'insensitive' } },
+          ...(/^\d{1,9}$/.test(q.search) ? [{ number: Number(q.search) }] : []),
         ],
       }),
     };
@@ -816,6 +825,27 @@ export class InvoicesService {
   }
 
   /** `then` runs in the same transaction once the draft exists (a quote marks itself invoiced) */
+  /** A series chosen for a draft: an invoice series of this organisation that's still in use */
+  private async draftSeries(
+    tx: Tx,
+    organizationId: string,
+    seriesId: string | null | undefined,
+  ) {
+    if (!seriesId) return null;
+    const s = await tx.numberSeries.findFirst({
+      where: { organizationId, id: seriesId, type: 'invoice', archived: false },
+      select: { id: true },
+    });
+    if (!s)
+      throw refuse(
+        BadRequestException,
+        'Choose one of your invoice number series.',
+        'invalid_series',
+        { field: 'seriesId' },
+      );
+    return s.id;
+  }
+
   async createDraft(
     input: DraftIn,
     ctx: Ctx,
@@ -835,6 +865,7 @@ export class InvoicesService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           reference: input.reference,
+          seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
@@ -892,6 +923,7 @@ export class InvoicesService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           reference: input.reference,
+          seriesId: await this.draftSeries(tx, organizationId, input.seriesId),
           notes: input.notes,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -1017,12 +1049,17 @@ export class InvoicesService {
           'There is no financial year for the issue date. Add it under Financial years.',
           'no_period',
         );
-      const last = await tx.invoice.aggregate({
-        where: { organizationId, fiscalYearId: year.id },
-        _max: { number: true },
-      });
-      const number = (last._max.number ?? 0) + 1;
-      const label = invoiceNumber(year.name, number);
+      const {
+        seriesId,
+        number,
+        fullNumber: label,
+      } = await this.numbering.allocate(
+        tx,
+        organizationId,
+        'invoice',
+        i.seriesId,
+        year,
+      );
 
       // The entry: what the customer owes against income and output tax (worked out like any taxed journal line)
       const { baseCurrency } = await tx.organization.findUniqueOrThrow({
@@ -1145,6 +1182,8 @@ export class InvoicesService {
         data: {
           status: 'issued',
           number,
+          seriesId,
+          fullNumber: label,
           fiscalYearId: year.id,
           journalEntryId: entry.id,
           rate,
@@ -1201,7 +1240,8 @@ export class InvoicesService {
           'Payments are recorded against this invoice. Remove them first, or issue a credit note.',
           'has_payments',
         );
-      const label = invoiceNumber(i.fiscalYear!.name, i.number!);
+      const label =
+        i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!);
       const r = await this.journals.reverseInTx(
         tx,
         organizationId,

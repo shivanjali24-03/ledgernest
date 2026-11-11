@@ -192,6 +192,7 @@ export class CustomerLinkService {
         total: true,
         amountPaid: true,
         fiscalYear: { select: { name: true } },
+        fullNumber: true,
       },
     });
     await this.prisma.contact.update({
@@ -206,7 +207,7 @@ export class CustomerLinkService {
       !!org.msmeBankRateBp;
     const invoices = rows.map((i) => ({
       id: i.id,
-      number: invoiceNumber(i.fiscalYear!.name, i.number!),
+      number: i.fullNumber ?? invoiceNumber(i.fiscalYear!.name, i.number!),
       issueDate: iso(i.issueDate),
       dueDate: iso(i.dueDate),
       currency: i.currency ?? org.baseCurrency,

@@ -40,6 +40,7 @@ const invoiceSelect = {
   currency: true,
   placeOfSupply: true,
   fiscalYear: { select: { name: true } },
+  fullNumber: true,
   contact: {
     select: { name: true, legalName: true, taxId: true, billingAddress: true },
   },
@@ -109,6 +110,7 @@ export class EinvoiceService {
       issueDate: Date;
       currency: string | null;
       placeOfSupply: string | null;
+      fullNumber: string | null;
       fiscalYear: { name: string } | null;
       contact: {
         name: string;
@@ -134,7 +136,7 @@ export class EinvoiceService {
       kind: 'invoice',
       number:
         i.number && i.fiscalYear
-          ? invoiceNumber(i.fiscalYear.name, i.number)
+          ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
           : '',
       date: iso(i.issueDate),
       currency: i.currency ?? 'INR',
