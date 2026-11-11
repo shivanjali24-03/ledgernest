@@ -1,4 +1,4 @@
-import { buildEinvoice, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { buildEinvoice, einvoiceIrnSchema, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -47,6 +47,7 @@ type Stored = {
   lastRemindedAt?: string | null;
   reminders?: number;
   share?: { token: string; views: number; lastViewedAt: string | null } | null;
+  irn?: { irn: string; ackNo: string | null; ackDate: string | null } | null;
 };
 const today = () => todayIn('Asia/Kolkata');
 const thisMonth = (day: number) => `${today().slice(0, 8)}${String(Math.min(day, Number(today().slice(8)))).padStart(2, '0')}`;
@@ -278,6 +279,7 @@ function view(i: Stored): Invoice {
     lastRemindedAt: i.lastRemindedAt ?? null,
     reminders: i.reminders ?? 0,
     share: i.share ?? null,
+    irn: i.irn ?? null,
     voidEntry: i.voidEntryId ? { id: i.voidEntryId, number: i.voidNumber } : null,
     lines: i.lines.map((l, n) => {
       const item = l.itemId ? items.find((x) => x.id === l.itemId) : undefined;
@@ -506,6 +508,27 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
         const i = find(rows, iid);
         i.share = null;
         save(rows);
+      }),
+    setIrn: (iid, input) =>
+      wait(async () => {
+        guard();
+        const p = einvoiceIrnSchema.safeParse(input);
+        if (!p.success) throw new ApiError('validation', 400, undefined, undefined, { fields: p.error.issues });
+        const rows = await load();
+        const i = find(rows, iid);
+        if (i.status !== 'issued') throw refuse(409, 'not_issued');
+        i.irn = { irn: p.data.irn, ackNo: p.data.ackNo, ackDate: p.data.ackDate };
+        save(rows);
+        return view(i);
+      }),
+    clearIrn: (iid) =>
+      wait(async () => {
+        guard();
+        const rows = await load();
+        const i = find(rows, iid);
+        i.irn = null;
+        save(rows);
+        return view(i);
       }),
     remind: (iid, input) =>
       wait(async () => {

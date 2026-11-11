@@ -42,6 +42,8 @@ export function createLiveInvoicesApi(client: AuthClient, organizationId: string
       const { blob, filename } = await client.download(`/invoices/${id}/e-way-bill`, { method: 'POST', body: JSON.stringify(transport), headers: { 'X-Organization-Id': organizationId } });
       return { blob, filename: filename ?? 'e-way-bill.json' };
     },
+    setIrn: (id, input) => r(`/${id}/irn`, { method: 'PUT', json: input }),
+    clearIrn: (id) => r(`/${id}/irn`, { method: 'DELETE' }),
     unshare: async (id) => {
       await r(`/${id}/share`, { method: 'DELETE' });
     },

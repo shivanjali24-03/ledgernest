@@ -315,4 +315,30 @@ describe('invoices', () => {
     await previewAs('auditor');
     await waitFor(() => expect(screen.queryByRole('button', { name: 'New invoice' })).not.toBeInTheDocument());
   });
+
+  it('records the IRN from the portal’s response, pasted in', { timeout: 30_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 6000 }));
+    await screen.findByRole('article', {}, { timeout: 6000 });
+    // Found is enough: the page can re-render right after, leaving a found element detached
+    await screen.findByText('Not registered on the e-invoice portal yet.', {}, { timeout: 12_000 });
+    const irn = 'a5c12dca80e743321740b001fd70953e8738d109865d28ba4013750f2046f229';
+    const response = JSON.stringify({ Status: 1, Data: { AckNo: 112610036563310, AckDt: '2026-11-10 11:05:00', Irn: irn, SignedQRCode: 'eyJhbGciOiJSUzI1NiJ9.eyJJcm4iOiJ4In0.c2ln', Status: 'ACT' } });
+    // Open, paste and save in one retried step: under load the page can re-render and close the dialog
+    await waitFor(
+      () => {
+        let dialog = screen.queryByRole('dialog');
+        if (!dialog) {
+          fireEvent.click(screen.getByRole('button', { name: 'Add IRN' }));
+          dialog = screen.getByRole('dialog');
+        }
+        fireEvent.change(within(dialog).getByLabelText('The portal’s response (JSON)'), { target: { value: response } });
+        expect(within(dialog).getByLabelText('IRN')).toHaveValue(irn);
+        expect(within(dialog).getByLabelText('Ack No')).toHaveValue('112610036563310');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+      },
+      { timeout: 10_000 },
+    );
+    await screen.findByText(`e-Invoice registered · IRN ${irn} · Ack 112610036563310`, {}, { timeout: 10_000 });
+  });
 });

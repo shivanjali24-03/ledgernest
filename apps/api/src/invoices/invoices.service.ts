@@ -100,6 +100,9 @@ const select = {
   shareToken: true,
   shareViews: true,
   shareViewedAt: true,
+  irn: true,
+  irnAckNo: true,
+  irnAckDate: true,
   reminders: true,
   createdAt: true,
   updatedAt: true,
@@ -328,6 +331,10 @@ export class InvoicesService {
             views: i.shareViews,
             lastViewedAt: i.shareViewedAt,
           }
+        : null,
+      /** The e-invoice registration from the portal, printed on the invoice */
+      irn: i.irn
+        ? { irn: i.irn, ackNo: i.irnAckNo, ackDate: i.irnAckDate }
         : null,
       createdAt: i.createdAt,
       lines: i.lines.map((l) => ({

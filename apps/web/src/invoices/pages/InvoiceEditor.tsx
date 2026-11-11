@@ -30,6 +30,7 @@ import { saveBlob } from '../../lib/saveBlob';
 import ShareInvoiceDialog from '../ShareInvoiceDialog';
 import EinvoiceProblemsDialog from '../EinvoiceProblemsDialog';
 import EwayBillDialog from '../EwayBillDialog';
+import IrnDialog from '../IrnDialog';
 import EmailInvoiceDialog from '../EmailInvoiceDialog';
 import { stateTone } from '../state';
 import type { Invoice, InvoicesApi } from '../types';
@@ -90,6 +91,7 @@ export default function InvoiceEditor() {
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [eway, setEway] = useState(false);
+  const [irnOpen, setIrnOpen] = useState(false);
   const [einvoiceProblems, setEinvoiceProblems] = useState<EinvoiceProblem[] | null>(null);
   const orgSettings = useOrganizationSettings().data;
   const india = orgSettings?.country === 'IN';
@@ -238,6 +240,22 @@ export default function InvoiceEditor() {
                 {t('invoices.msmeInterest', { amount: formatMoney(msmeInterest, 'INR', locale) })}
               </p>
             )}
+            {invoice!.status === 'issued' && india && (invoice!.irn || (canManage && invoice!.contact.taxId)) && (
+              <p className="mb-3 flex flex-wrap items-center gap-2 text-xs text-ink-500 print:hidden">
+                {invoice!.irn ? (
+                  <span className="font-mono" dir="ltr">
+                    {t('invoices.irn.registered', { irn: invoice!.irn.irn, ackNo: invoice!.irn.ackNo ?? '' })}
+                  </span>
+                ) : (
+                  <span>{t('invoices.irn.notYet')}</span>
+                )}
+                {canManage && (
+                  <button type="button" onClick={() => setIrnOpen(true)} className="font-medium text-brand-700 hover:underline dark:text-brand-300">
+                    {invoice!.irn ? t('invoices.irn.change') : t('invoices.irn.add')}
+                  </button>
+                )}
+              </p>
+            )}
             <InvoiceDocument invoice={invoice!} />
             <p className="text-sm text-ink-500 print:hidden">
               {invoice!.journalEntry && (
@@ -308,6 +326,7 @@ export default function InvoiceEditor() {
       </motion.div>
       {emailing && invoice && api && <EmailInvoiceDialog api={api} invoice={invoice} onClose={() => setEmailing(false)} />}
       {einvoiceProblems && invoice && <EinvoiceProblemsDialog invoice={invoice} problems={einvoiceProblems} onClose={() => setEinvoiceProblems(null)} />}
+      {irnOpen && invoice && api && <IrnDialog invoice={invoice} api={api} onClose={() => setIrnOpen(false)} />}
       {eway && invoice && api && <EwayBillDialog invoice={invoice} api={api} onClose={() => setEway(false)} />}
       {sharing && invoice && api && <ShareInvoiceDialog api={api} invoice={invoice} onClose={() => setSharing(false)} />}
       {reminding && invoice && api && <ReminderDialog api={api} invoice={invoice} onClose={() => setReminding(false)} onSent={(r) => { setReminding(false); queryClient.setQueryData(key, { ...invoice, ...r }); void queryClient.invalidateQueries({ queryKey: ['audit'] }); }} />}

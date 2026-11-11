@@ -367,6 +367,24 @@ export class InvoiceRemindersService
       ? findIndianState(inv.placeOfSupply)
       : undefined;
     const logo = await organizationLogo(this.prisma, organizationId);
+    // Registered on the e-invoice portal: its IRN and signed QR code go on the invoice
+    const signedQr = inv.irn
+      ? (
+          await this.prisma.invoice.findUnique({
+            where: { id: inv.id },
+            select: { irnSignedQr: true },
+          })
+        )?.irnSignedQr
+      : null;
+    const upiQr = upi
+      ? {
+          modules: qrMatrix(upi),
+          caption: [
+            'Scan to pay with any UPI app',
+            `Rs ${(inv.balance / 100).toFixed(2)} to ${org.upiId}`,
+          ],
+        }
+      : undefined;
     const pdf = Buffer.from(
       pdfTableBytes({
         logo,
@@ -383,6 +401,14 @@ export class InvoiceRemindersService
           `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
           address(inv.contact.billingAddress),
           `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
+          ...(inv.irn
+            ? [
+                // The 64 characters in two even halves, so the line never breaks mid-way
+                `IRN ${inv.irn.irn.slice(0, 32)}`,
+                `${inv.irn.irn.slice(32)}`,
+                `Ack No ${inv.irn.ackNo ?? ''} · Ack date ${inv.irn.ackDate ?? ''}`,
+              ]
+            : []),
         ].filter(Boolean),
         after: [
           ...(currency === 'INR'
@@ -404,15 +430,17 @@ export class InvoiceRemindersService
         ],
         footer: `${seller} · ${inv.number}`,
         rows: invoiceRows({ ...inv, currency }, digits),
-        qr: upi
+        // The e-invoice QR (larger: it's dense) at the right, the UPI one beside it
+        ...(signedQr
           ? {
-              modules: qrMatrix(upi),
-              caption: [
-                'Scan to pay with any UPI app',
-                `Rs ${(inv.balance / 100).toFixed(2)} to ${org.upiId}`,
-              ],
+              qr: {
+                modules: qrMatrix(signedQr),
+                side: 110,
+                caption: ['e-Invoice QR'],
+              },
+              qr2: upiQr,
             }
-          : undefined,
+          : { qr: upiQr }),
       }),
     );
     return {

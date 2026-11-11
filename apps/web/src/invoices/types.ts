@@ -1,4 +1,4 @@
-import type { Einvoice, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
+import type { Einvoice, EinvoiceIrnInput, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
 import type { InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
@@ -53,6 +53,8 @@ export interface Invoice {
   reminders: number;
   /** The customer's link (opened without signing in), how often it was opened and when last */
   share?: InvoiceShare | null;
+  /** The e-invoice registration from the portal (printed on the invoice with its signed QR code) */
+  irn?: { irn: string; ackNo: string | null; ackDate: string | null } | null;
   lines: InvoiceLine[];
 }
 
@@ -108,6 +110,9 @@ export interface InvoicesApi {
   einvoices(from: string, to: string): Promise<EinvoiceBatch>;
   /** An issued invoice's goods as e-way bill JSON for the portal; refused with the problems when the portal would refuse it */
   ewayBill(id: string, transport: EwayTransport): Promise<{ blob: Blob; filename: string }>;
+  /** Records the IRN the e-invoice portal gave, or takes it off */
+  setIrn(id: string, input: EinvoiceIrnInput): Promise<Invoice>;
+  clearIrn(id: string): Promise<Invoice>;
   /** Automatic reminders for overdue invoices */
   reminderPolicy(): Promise<ReminderPolicy>;
   setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;
