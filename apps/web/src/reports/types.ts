@@ -140,7 +140,7 @@ export interface Dashboard {
   baseCurrency: string;
   kpis: { cash: DashboardKpi; receivables: DashboardKpi; payables: DashboardKpi; profit: DashboardKpi & { since: string } };
   monthly: { month: string; income: number; expenses: number; profit: number; cash: number }[];
-  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon'; count: number; amount?: number }[];
+  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon' | 'msme_due'; count: number; amount?: number }[];
   /** gst and upi only for organisations in India */
   setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean; gst?: boolean; upi?: boolean };
 }
@@ -227,6 +227,12 @@ export interface ReportsApi {
   compliance(): Promise<Compliance>;
   /** TDS kept back from vendor payments in the dates */
   tds(from: string, to: string, side?: 'payable' | 'receivable'): Promise<TdsReport>;
+  /** Bills from micro and small suppliers against the 45-day rule, and what section 43B(h) takes out of the year */
+  msme(date?: string): Promise<MsmeReportView>;
+  /** Balance confirmations asked for the day and side, with their answers */
+  confirmations(asOf: string, side: 'receivable' | 'payable'): Promise<ConfirmationRow[]>;
+  /** Asks everyone on that side with a balance on the day (or just those given) to confirm it, by email where possible */
+  requestConfirmations(input: { asOf: string; side: 'receivable' | 'payable'; contactIds?: string[]; send: boolean }): Promise<{ created: number; emailed: number; skipped: { contactId: string; name: string; reason: string }[] }>;
   /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates */
   tally(part: 'masters' | 'vouchers', from?: string, to?: string): Promise<{ blob: Blob; filename: string }>;
   exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
@@ -252,7 +258,8 @@ export type CashForecast = SharedCashForecast & { currency: string; lateCustomer
 /** What GET /reports/compliance returns */
 export interface Compliance {
   today: string | null;
-  items: (ComplianceItem & { daysLeft: number; amount?: number })[];
+  /** lateFee and interest: what filing a late GST return today would cost (paise) */
+  items: (ComplianceItem & { daysLeft: number; amount?: number; lateFee?: number; interest?: number })[];
 }
 
 /** What GET /reports/tds returns */
@@ -271,4 +278,21 @@ export interface TdsReport {
 export interface GstHealth {
   checked: boolean;
   issues: { kind: 'org_gstin' | 'org_address' | 'items_hsn' | 'customers_state' | 'customers_einvoice' | 'vendors_gstin'; count: number; sample: { id: string; name: string }[] }[];
+}
+
+export type MsmeReportView = Omit<import('@ledgernest/shared').MsmeReport, 'bills'> & { bills: (import('@ledgernest/shared').MsmeBill & { vendorReference: string | null })[] };
+
+export interface ConfirmationRow {
+  id: string;
+  contact: { id: string; name: string; phone: string | null };
+  currency: string;
+  balance: number;
+  status: 'pending' | 'agreed' | 'disputed';
+  theirBalance: number | null;
+  note: string | null;
+  respondedBy: string | null;
+  respondedAt: string | null;
+  sentTo: string | null;
+  views: number;
+  token: string;
 }

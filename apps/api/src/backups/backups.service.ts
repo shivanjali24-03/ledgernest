@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   BACKUP_FORMAT,
@@ -405,6 +405,12 @@ export class BackupsService {
                 if (t === 'invoices' && c.name === 'share_token') v = null;
                 if (t === 'invoices' && c.name === 'share_views') v = 0;
                 if (t === 'invoices' && c.name === 'share_viewed_at') v = null;
+                if (t === 'contacts' && c.name === 'share_token') v = null;
+                if (t === 'contacts' && c.name === 'share_views') v = 0;
+                if (t === 'contacts' && c.name === 'share_viewed_at') v = null;
+                // Balance confirmations keep their answers, but the copy's links are its own
+                if (t === 'balance_confirmations' && c.name === 'token')
+                  v = randomBytes(24).toString('base64url');
                 params.push(this.param(v, c));
                 return this.placeholder(params.length, c);
               });

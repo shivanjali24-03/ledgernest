@@ -1,4 +1,4 @@
-import { buildEinvoice, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
+import { buildEinvoice, buildEwayBill, ewayBillFile, ewayProblems, einvoiceProblems, zeroHeads, type EinvoiceInput, invoiceRows, pdfTableBytes, qrMatrix, rupeesInWords, upiPayUri, currencyDigits, dueDateFor, invoiceAmounts, invoiceDraftSchema, invoiceNumber, invoiceReminderSchema, DEFAULT_REMINDER_POLICY, reminderPolicySchema, invoiceState, splitTax, todayIn, toBase, type InvoiceStatus } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCostOfSale, demoSaveMovements, demoUndoDocument } from '../inventory/demoInventoryApi';
@@ -465,6 +465,14 @@ export function createDemoInvoicesApi(canManage: () => boolean): InvoicesApi {
       const problems = einvoiceProblems(input);
       if (problems.length) throw new ApiError('conflict', 409, undefined, undefined, { reason: 'einvoice_incomplete', problems });
       return { blob: new Blob([JSON.stringify(buildEinvoice(input), null, 2)], { type: 'application/json' }), filename: `e-invoice-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json` };
+    },
+    ewayBill: async (iid, transport) => {
+      const v = view(find(await load(), iid));
+      if (v.status !== 'issued') throw refuse(409, 'not_issued');
+      const input = demoEinvoiceInput(v);
+      const problems = ewayProblems(input, transport);
+      if (problems.length) throw new ApiError('conflict', 409, undefined, undefined, { reason: 'eway_incomplete', problems });
+      return { blob: new Blob([JSON.stringify(ewayBillFile([buildEwayBill(input, transport)]), null, 2)], { type: 'application/json' }), filename: `e-way-bill-${input.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json` };
     },
     einvoices: async (from, to) => {
       const views = (await load()).map(view).filter((v) => v.status === 'issued' && v.contact.taxId && v.issueDate >= from && v.issueDate <= to);

@@ -74,6 +74,14 @@ export class PermissionGuard implements CanActivate {
     if (access.organizationStatus === 'SUSPENDED' && !actor.isSuperAdmin)
       throw new ForbiddenException('This organisation is suspended.');
 
+    // The organisation requires two-factor sign-in: set it up first (API keys act for a person already checked)
+    if (access.twoFactorMissing && !actor.apiKey)
+      throw new ForbiddenException({
+        message:
+          'This organisation requires two-factor sign-in. Turn it on for your account to continue.',
+        details: { reason: 'two_factor_required' },
+      });
+
     // A key may do what its maker may do now, and only within its scopes
     if (actor.apiKey) {
       const scopes = actor.apiKey.scopes;
@@ -94,7 +102,11 @@ export class PermissionGuard implements CanActivate {
         details: { missing },
       });
 
-    const { organizationStatus: _status, ...tenant } = access;
+    const {
+      organizationStatus: _status,
+      twoFactorMissing: _missing,
+      ...tenant
+    } = access;
     req.tenant = tenant;
     setCurrentOrganization(organizationId);
 

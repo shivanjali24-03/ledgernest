@@ -30,6 +30,8 @@ import {
   invoiceVoidSchema,
   type InvoiceDraftInput,
   isoDaySchema,
+  ewayTransportSchema,
+  type EwayTransport,
 } from '@ledgernest/shared';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -152,6 +154,30 @@ export class InvoicesController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const f = await this.einvoices.one(tenant.organizationId, invoiceId);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${f.fileName}"`,
+    );
+    return f.json;
+  }
+
+  /** One issued invoice's goods as e-way bill JSON for the portal's bulk upload, with the transport details given */
+  @Post(':id/e-way-bill')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission('invoices.view')
+  @ApiProduces('application/json')
+  async ewayBill(
+    @Param('id', id) invoiceId: string,
+    @Body(new ZodValidationPipe(ewayTransportSchema)) body: EwayTransport,
+    @CurrentTenant() tenant: Tenant,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const f = await this.einvoices.ewayBill(
+      tenant.organizationId,
+      invoiceId,
+      body,
+    );
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader(
       'Content-Disposition',

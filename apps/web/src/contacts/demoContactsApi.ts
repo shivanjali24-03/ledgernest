@@ -23,7 +23,7 @@ function seed(): Contact[] {
     c(1, { name: 'Kumar Logistics', isCustomer: true, legalName: 'Kumar Logistics Private Limited', taxId: gstin('27AAKCK4821R1Z'), email: 'accounts@kumarlogistics.in', phone: '+91 20 4011 2200', billingAddress: address({ line1: 'Plot 18, Hinjewadi Phase 2', city: 'Pune', region: 'Maharashtra', postalCode: '411057', country: 'IN' }), paymentTermsDays: 15 }),
     c(2, { name: 'Bluewave Clinics', isCustomer: true, legalName: 'Bluewave Healthcare LLP', taxId: gstin('29AAQFB7310K1Z'), email: 'finance@bluewave.health', billingAddress: address({ line1: '80 Feet Road, Koramangala', city: 'Bengaluru', region: 'Karnataka', postalCode: '560034', country: 'IN' }), paymentTermsDays: 30 }),
     c(3, { name: 'Northwind Inc.', isCustomer: true, legalName: 'Northwind Traders Inc.', taxId: 'EIN 84-1234567', email: 'ap@northwind.example', billingAddress: address({ line1: '500 Congress Ave', city: 'Austin', region: 'Texas', postalCode: '78701', country: 'US' }), currency: 'USD', paymentTermsDays: 45 }),
-    c(4, { name: 'Sharma Office Supplies', isVendor: true, taxId: gstin('27ABZPS6519M1Z'), phone: '+91 98220 31144', billingAddress: address({ line1: 'Shop 4, Laxmi Road', city: 'Pune', region: 'Maharashtra', postalCode: '411030', country: 'IN' }), paymentTermsDays: 7 }),
+    c(4, { name: 'Sharma Office Supplies', isVendor: true, taxId: gstin('27ABZPS6519M1Z'), phone: '+91 98220 31144', billingAddress: address({ line1: 'Shop 4, Laxmi Road', city: 'Pune', region: 'Maharashtra', postalCode: '411030', country: 'IN' }), paymentTermsDays: 7, msmeCategory: 'micro', udyamNumber: 'UDYAM-MH-26-0012345' }),
     c(5, { name: 'Amazon Web Services', isVendor: true, legalName: 'Amazon Web Services, Inc.', email: 'aws-receivables@amazon.example', billingAddress: address({ city: 'Seattle', region: 'Washington', country: 'US' }), currency: 'USD', paymentTermsDays: 0 }),
     c(6, { name: 'Gulf Traders LLC', isCustomer: true, isVendor: true, billingAddress: address({ line1: 'Office 1204, Bay Square', city: 'Dubai', country: 'AE' }), currency: 'AED', paymentTermsDays: 30, notes: 'Buys our support plans and resells hardware to us.' }),
   ];
@@ -53,6 +53,15 @@ export const resetDemoContacts = () => {
 };
 /** The demo's contacts, for invoices and bills */
 export const demoContactRows = () => load();
+/** The demo customer behind an account link, counting the visit */
+export function demoCustomerByToken(token: string): Contact | null {
+  const rows = load();
+  const c = rows.find((r) => r.share?.token === token);
+  if (!c?.share) return null;
+  c.share = { ...c.share, views: c.share.views + 1, lastViewedAt: new Date().toISOString() };
+  save(rows);
+  return c;
+}
 
 const refuse = (status: 400 | 409, reason: string, extra: object = {}) => new ApiError(status === 400 ? 'validation' : 'conflict', status, undefined, undefined, { reason, ...extra });
 const wait = <T>(fn: () => T | Promise<T>) => new Promise<T>((resolve, reject) => setTimeout(() => Promise.resolve().then(fn).then(resolve, reject), 150));
@@ -75,6 +84,19 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
     if (!whole.success) throw new ApiError('validation', 400, whole.error.issues[0]!.message, undefined, { reason: 'invalid', field: whole.error.issues[0]!.path.join('.') });
     return { ...whole.data, currency, stateCode: contactStateCode(whole.data) };
   };
+  // What each customer owes and each vendor is owed: unpaid documents less advances (loaded on demand: invoices use contacts too)
+  const balances = async () => {
+    const { demoInvoiceViews } = await import('../invoices/demoInvoicesApi');
+    const { demoAdvances } = await import('../payments/demoPaymentsApi');
+    const { demoUnappliedCredit } = await import('../credit-notes/demoCreditNotesApi');
+    const { demoStoredBillViews } = await import('../bills/demoBillsApi');
+    const invoices = await demoInvoiceViews();
+    const bills = demoStoredBillViews();
+    return {
+      owed: (cid: string) => invoices.filter((i) => i.contact.id === cid && i.status === 'issued').reduce((s, i) => s + i.balance, 0) - demoAdvances(cid) - demoUnappliedCredit(cid),
+      owing: (cid: string) => bills.filter((b) => b.contact.id === cid && b.status === 'open').reduce((s, b) => s + b.balance, 0) - demoAdvances(cid, 'payment'),
+    };
+  };
   const api: ContactsApi = {
     exportList: async (q) => {
       const all = (await api.list({ ...q, page: 1, pageSize: 10_000 })).items;
@@ -83,15 +105,7 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
     },
     list: (q) =>
       wait(async () => {
-        // What each customer owes and each vendor is owed: unpaid documents less advances (loaded on demand: invoices use contacts too)
-        const { demoInvoiceViews } = await import('../invoices/demoInvoicesApi');
-        const { demoAdvances } = await import('../payments/demoPaymentsApi');
-        const { demoUnappliedCredit } = await import('../credit-notes/demoCreditNotesApi');
-        const { demoStoredBillViews } = await import('../bills/demoBillsApi');
-        const invoices = await demoInvoiceViews();
-        const bills = demoStoredBillViews();
-        const owed = (cid: string) => invoices.filter((i) => i.contact.id === cid && i.status === 'issued').reduce((s, i) => s + i.balance, 0) - demoAdvances(cid) - demoUnappliedCredit(cid);
-        const owing = (cid: string) => bills.filter((b) => b.contact.id === cid && b.status === 'open').reduce((s, b) => s + b.balance, 0) - demoAdvances(cid, 'payment');
+        const { owed, owing } = await balances();
         const s = q.search?.trim().toLowerCase();
         const items = load()
           .filter((c) => !!q.archived === c.archived)
@@ -100,7 +114,12 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
           .sort((a, b) => a.name.localeCompare(b.name));
         return { total: items.length, page: q.page, pageSize: q.pageSize, items: items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((c) => ({ ...c, receivable: owed(c.id), payable: owing(c.id) })) };
       }),
-    get: (cid) => wait(() => find(load(), cid)),
+    get: (cid) =>
+      wait(async () => {
+        const c = find(load(), cid);
+        const { owed, owing } = await balances();
+        return { ...c, receivable: owed(c.id), payable: owing(c.id) };
+      }),
     create: (input) =>
       wait(() => {
         guard();
@@ -141,6 +160,27 @@ export function createDemoContactsApi(canManage: () => boolean): ContactsApi {
         const rows = load();
         find(rows, cid);
         save(rows.filter((r) => r.id !== cid));
+      }),
+    share: (cid) =>
+      wait(() => {
+        guard();
+        const rows = load();
+        const c = find(rows, cid);
+        if (!c.isCustomer) throw refuse(400, 'not_customer');
+        if (!c.share) {
+          const bytes = crypto.getRandomValues(new Uint8Array(24));
+          c.share = { token: btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), views: 0, lastViewedAt: null };
+          save(rows);
+        }
+        return { ...c.share };
+      }),
+    unshare: (cid) =>
+      wait(() => {
+        guard();
+        const rows = load();
+        const c = find(rows, cid);
+        c.share = null;
+        save(rows);
       }),
   };
   return api;

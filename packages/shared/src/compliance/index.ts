@@ -65,3 +65,18 @@ export function complianceDueDates(today: string, { gst, horizonDays = 45, lookb
   }
   return out.filter((i) => i.due >= from && i.due <= to).sort((a, b) => a.due.localeCompare(b.due) || a.kind.localeCompare(b.kind));
 }
+
+/**
+ * The late fee for filing GSTR-1 or GSTR-3B after the due date (section 47, as reduced from June 2021): ₹50 a day
+ * (₹25 CGST + ₹25 SGST), ₹20 a day for a nil return, capped per return by the previous year's turnover: ₹500 for a nil
+ * return, ₹2,000 up to ₹1.5 crore, ₹5,000 up to ₹5 crore, ₹10,000 above. In paise.
+ */
+export function gstLateFee(daysLate: number, { nil, turnover }: { nil: boolean; turnover: number }): number {
+  if (daysLate <= 0) return 0;
+  const perDay = nil ? 20_00 : 50_00;
+  const cap = nil ? 500_00 : turnover <= 1_50_00_000_00 ? 2_000_00 : turnover <= 5_00_00_000_00 ? 5_000_00 : 10_000_00;
+  return Math.min(daysLate * perDay, cap);
+}
+
+/** Interest on GST paid in cash after the due date (section 50): 18% a year, day by day. In paise */
+export const gstInterest = (tax: number, daysLate: number) => (daysLate > 0 && tax > 0 ? Math.round((tax * 18 * daysLate) / 36_500) : 0);

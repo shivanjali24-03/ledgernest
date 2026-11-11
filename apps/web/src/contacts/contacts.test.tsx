@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -159,6 +159,32 @@ describe('customers and vendors', () => {
     expect(dialog).toHaveTextContent('accounts@kumarlogistics.in');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Send reminders' }));
     expect(await screen.findByText(/^In the demo nothing is really sent; \d+ reminders would go to accounts@kumarlogistics.in$/, {}, { timeout: 4000 })).toBeInTheDocument();
+  });
+
+  it('shares a customer’s account link, which shows them what they owe with each invoice', { timeout: 30_000 }, async () => {
+    const { demoInvoiceViews, resetDemoInvoices } = await import('../invoices/demoInvoicesApi');
+    resetDemoInvoices();
+    // The month's invoice to Kumar, in the books
+    await demoInvoiceViews();
+    renderApp('/contacts/c0000000-0000-4000-8000-000000000001');
+    let link = '';
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: /^Share account/ }));
+        link = (within(screen.getByRole('dialog', { name: 'Account link for Kumar Logistics' })).getByLabelText('Account link') as HTMLInputElement).value;
+        expect(link).toMatch(/\/c\/[A-Za-z0-9_-]{32}$/);
+      },
+      { timeout: 8000 },
+    );
+    expect(screen.getByTestId('account-message')).toHaveTextContent(/^Dear Kumar Logistics, here is your account with .+: ₹[\d,.]+ due\./);
+    const token = link.split('/c/')[1]!;
+    cleanup();
+    sessionStorage.clear();
+    renderApp(`/c/${token}`);
+    expect(await screen.findByText('Account of Kumar Logistics Private Limited', {}, { timeout: 6000 })).toBeInTheDocument();
+    const list = screen.getByRole('list', { name: 'Invoices' });
+    expect(within(list).getByText(/^INV\/.+\/0001$/)).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: /^Download INV\/.+\/0001 as PDF$/ })).toBeInTheDocument();
   });
 
   it('finds a contact and their invoice from the command palette', { timeout: 20_000 }, async () => {

@@ -93,6 +93,7 @@ const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   quotes_expiring: '/quotes?state=open',
   recurring_bills_due: '/recurring-bills',
   bills_due_soon: '/bills?state=unpaid',
+  msme_due: '/reports?tab=msme',
 };
 
 export default function Dashboard() {

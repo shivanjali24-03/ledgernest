@@ -6,7 +6,7 @@ import AppShell from './layout/AppShell';
 import { NAV } from './layout/nav';
 import RequirePermission from './layout/RequirePermission';
 import RouteError from './pages/RouteError';
-import { AcceptInvite, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
+import { AcceptInvite, BalanceConfirmation, LegalPage, CustomerAccount, ForgotPassword, ResetPassword, PublicInvoice, Approvals, Banking, Imports, Integrations, BillEditor, Bills, Budgets, CostCentres, Inventory, ChartOfAccounts, CreditNotes, FixedAssets, Reconcile, Recurring, ComingSoon, Contacts, ContactPage, RecurringBills, DebitNotes, Quotes, QuoteEditor, Currencies, Dashboard, FiscalYears, GstSlabs, InvoiceEditor, Invoices, Items, JournalEditor, Journals, Reports, OrganizationAudit, OrganizationDetail, Organizations, Payments, PlatformAudit, PlatformOverview, PlatformUsers, Settings, SignIn, Taxes, Team } from './pages';
 
 const page = (el: ReactNode, permission?: Permission) => (
   <Suspense fallback={null}>{permission ? <RequirePermission permission={permission}>{el}</RequirePermission> : el}</Suspense>
@@ -80,6 +80,41 @@ const ROUTES: RouteObject[] = [
     element: (
       <Suspense fallback={<Splash />}>
         <ResetPassword />
+      </Suspense>
+    ),
+  },
+  {
+    // Public: the privacy notice and terms of use
+    path: '/privacy',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <LegalPage which="privacy" />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/terms',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <LegalPage which="terms" />
+      </Suspense>
+    ),
+  },
+  {
+    // Public: a customer or vendor confirming their balance for the audit
+    path: '/b/:token',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <BalanceConfirmation />
+      </Suspense>
+    ),
+  },
+  {
+    // Public: a customer's account, from the link their supplier sent
+    path: '/c/:token',
+    element: (
+      <Suspense fallback={<Splash />}>
+        <CustomerAccount />
       </Suspense>
     ),
   },

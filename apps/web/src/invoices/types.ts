@@ -1,4 +1,4 @@
-import type { Einvoice, EinvoiceProblem } from '@ledgernest/shared';
+import type { Einvoice, EinvoiceProblem, EwayTransport } from '@ledgernest/shared';
 import type { InvoiceDraftInput, InvoiceState, InvoiceStatus, ReminderPolicy } from '@ledgernest/shared';
 
 export interface InvoiceLine {
@@ -106,6 +106,8 @@ export interface InvoicesApi {
   einvoice(id: string): Promise<{ blob: Blob; filename: string }>;
   /** Every issued B2B invoice in the dates as e-invoice JSON, and those needing a fix */
   einvoices(from: string, to: string): Promise<EinvoiceBatch>;
+  /** An issued invoice's goods as e-way bill JSON for the portal; refused with the problems when the portal would refuse it */
+  ewayBill(id: string, transport: EwayTransport): Promise<{ blob: Blob; filename: string }>;
   /** Automatic reminders for overdue invoices */
   reminderPolicy(): Promise<ReminderPolicy>;
   setReminderPolicy(policy: ReminderPolicy): Promise<ReminderPolicy>;

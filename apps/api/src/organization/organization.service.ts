@@ -34,6 +34,10 @@ const select = {
   invoiceTerms: true,
   upiId: true,
   weeklySummary: true,
+  requireTwoFactor: true,
+  msmeCategory: true,
+  udyamNumber: true,
+  msmeBankRateBp: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -59,6 +63,10 @@ type Columns = Partial<{
   invoiceTerms: string | null;
   upiId: string | null;
   weeklySummary: boolean;
+  requireTwoFactor: boolean;
+  msmeCategory: string | null;
+  udyamNumber: string | null;
+  msmeBankRateBp: number | null;
 }>;
 
 const ADDRESS_COLUMNS = { line1: 'addressLine1', line2: 'addressLine2', city: 'city', region: 'region', postalCode: 'postalCode' } as const;
@@ -105,6 +113,12 @@ export class OrganizationService {
     // Only what actually changes is written and audited
     const changed = (Object.keys(wanted) as (keyof Columns)[]).filter((k) => wanted[k] !== current[k]);
     if (!changed.length) return this.get(organizationId);
+
+    // Requiring two-factor starts with yourself, so no one locks themselves out
+    if (changed.includes('requireTwoFactor') && wanted.requireTwoFactor) {
+      const me = await this.prisma.user.findUniqueOrThrow({ where: { id: ctx.actor.userId }, select: { totpEnabledAt: true } });
+      if (!me.totpEnabledAt) throw refuse(ConflictException, 'Turn on two-factor sign-in for yourself first.', 'two_factor_self', { field: 'requireTwoFactor' });
+    }
 
     const locks = await this.locks(organizationId);
     for (const field of ['baseCurrency', 'fiscalYearStartMonth'] as const) {

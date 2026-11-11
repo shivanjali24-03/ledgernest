@@ -1,9 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { accountDeleteSchema, changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, type AccountDeleteInput, type ChangePasswordInput, type ForgotPasswordInput, type LoginInput, type ResetPasswordInput } from '@ledgernest/shared';
+import { accountDeleteSchema, changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema, twoFactorDisableSchema, twoFactorEnableSchema, twoFactorLoginSchema, twoFactorSetupSchema, twoFactorCodeSchema, type AccountDeleteInput, type ChangePasswordInput, type ForgotPasswordInput, type LoginInput, type ResetPasswordInput } from '@ledgernest/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { Env } from '../config/env.js';
 import { AuthService, type IssuedTokens, type RequestContext } from './auth.service.js';
@@ -12,6 +12,9 @@ import type { Actor } from '../access/types.js';
 import { clearRefreshCookie, setRefreshCookie } from './session-cookie.js';
 import { AccountService } from './account.service.js';
 import { PasswordService } from './password.service.js';
+import { TwoFactorService } from './two-factor.service.js';
+import { SessionsService } from './sessions.service.js';
+import { z } from 'zod';
 import { hashToken, REFRESH_COOKIE } from './tokens.js';
 
 // Read on each request, not at import time: .env is loaded after this file is imported.
@@ -26,6 +29,8 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly passwords: PasswordService,
     private readonly accounts: AccountService,
+    private readonly twoFactor: TwoFactorService,
+    private readonly sessions: SessionsService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -38,9 +43,65 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Email or password is incorrect' })
   @ApiTooManyRequestsResponse({ description: 'Too many attempts from this address' })
   async login(@Body(new ZodValidationPipe(loginSchema)) body: LoginInput, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const tokens = await this.auth.login(body.email, body.password, ctxOf(req));
+    const r = await this.auth.login(body.email, body.password, ctxOf(req));
+    // Two-factor sign-in on: the password was right, now the code
+    if ('ticket' in r) return { twoFactorRequired: true, ticket: r.ticket };
+    this.setRefreshCookie(res, r);
+    return { accessToken: r.accessToken, expiresIn: r.expiresIn };
+  }
+
+  @Post('login/2fa')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60_000, limit: loginLimit } })
+  @ApiOkResponse({ description: 'Signed in with the code from the authenticator app (or a recovery code) after the password' })
+  async loginTwoFactor(@Body(new ZodValidationPipe(twoFactorLoginSchema)) body: z.output<typeof twoFactorLoginSchema>, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const tokens = await this.auth.loginTwoFactor(body.ticket, body.code, ctxOf(req));
     this.setRefreshCookie(res, tokens);
     return { accessToken: tokens.accessToken, expiresIn: tokens.expiresIn };
+  }
+
+  @Get('2fa')
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Whether two-factor sign-in is on, and how many recovery codes are left' })
+  twoFactorStatus(@CurrentActor() actor: Actor) {
+    return this.twoFactor.status(actor.userId);
+  }
+
+  @Post('2fa/setup')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'A new secret and otpauth link to scan; a code from it turns two-factor on' })
+  twoFactorSetup(@Body(new ZodValidationPipe(twoFactorSetupSchema)) body: { password: string }, @CurrentActor() actor: Actor) {
+    return this.twoFactor.setup(actor.userId, body.password);
+  }
+
+  @Post('2fa/enable')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'Two-factor sign-in is on; the ten recovery codes are shown this once' })
+  twoFactorEnable(@Body(new ZodValidationPipe(twoFactorEnableSchema)) body: { code: string }, @CurrentActor() actor: Actor, @Req() req: Request) {
+    return this.twoFactor.enable(actor.userId, body.code, ctxOf(req));
+  }
+
+  @Post('2fa/disable')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'Two-factor sign-in is off' })
+  async twoFactorDisable(@Body(new ZodValidationPipe(twoFactorDisableSchema)) body: z.output<typeof twoFactorDisableSchema>, @CurrentActor() actor: Actor, @Req() req: Request) {
+    await this.twoFactor.disable(actor.userId, body.password, body.code, ctxOf(req));
+  }
+
+  @Post('2fa/recovery-codes')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOkResponse({ description: 'Ten new recovery codes; the old ones stop working' })
+  twoFactorRecoveryCodes(@Body(new ZodValidationPipe(z.object({ code: twoFactorCodeSchema }))) body: { code: string }, @CurrentActor() actor: Actor, @Req() req: Request) {
+    return this.twoFactor.regenerate(actor.userId, body.code, ctxOf(req));
   }
 
   @Post('refresh')
@@ -94,6 +155,21 @@ export class AuthController {
   async changePassword(@Body(new ZodValidationPipe(changePasswordSchema)) body: ChangePasswordInput, @CurrentActor() actor: Actor, @Req() req: Request) {
     const raw = cookieOf(req);
     await this.passwords.change(actor.userId, body.currentPassword, body.newPassword, { ...ctxOf(req), refreshTokenHash: raw ? hashToken(raw) : undefined });
+  }
+
+  @Get('sessions')
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Where you are signed in: device, address and when it was last used; this one first' })
+  listSessions(@CurrentActor() actor: Actor, @Req() req: Request) {
+    return this.sessions.list(actor.userId, cookieOf(req));
+  }
+
+  @Delete('sessions/:id')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOkResponse({ description: 'That device is signed out (within the access token’s 15 minutes)' })
+  async revokeSession(@Param('id', new ParseUUIDPipe()) id: string, @CurrentActor() actor: Actor, @Req() req: Request) {
+    await this.sessions.revoke(actor.userId, id, ctxOf(req));
   }
 
   @Post('logout-all')

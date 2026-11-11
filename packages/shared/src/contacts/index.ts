@@ -9,6 +9,19 @@ import { findIndianState, isGstin } from '../taxes/index.js';
  */
 export const PAYMENT_TERMS_MAX_DAYS = 365;
 
+/** MSME categories under the MSMED Act (Udyam registration); micro and small suppliers must be paid within 45 days */
+export const MSME_CATEGORIES = ['micro', 'small', 'medium'] as const;
+export type MsmeCategory = (typeof MSME_CATEGORIES)[number];
+/** A Udyam registration number: UDYAM-MH-26-0012345 */
+export const UDYAM_NUMBER = /^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/;
+const udyam = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^$|^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/, 'A Udyam number looks like UDYAM-MH-26-0012345.')
+  .transform((v) => v || null)
+  .nullable();
+
 const text = (max: number) =>
   z
     .string()
@@ -83,6 +96,9 @@ const fields = {
   paymentTermsDays: z.number().int().min(0).max(PAYMENT_TERMS_MAX_DAYS).optional().default(30),
   /** The most a customer may owe, in their currency's smallest unit; null = no limit */
   creditLimit: z.number().int().min(0).max(1e15).nullable().optional().default(null),
+  /** The vendor's MSME category from its Udyam certificate; null = not an MSME (or not known) */
+  msmeCategory: z.enum(MSME_CATEGORIES).nullable().optional().default(null),
+  udyamNumber: udyam.optional().default(null),
   notes: text(1000),
 };
 
@@ -135,6 +151,8 @@ export const contactUpdateSchema = z
       .nullable(),
     paymentTermsDays: z.number().int().min(0).max(PAYMENT_TERMS_MAX_DAYS),
     creditLimit: z.number().int().min(0).max(1e15).nullable(),
+    msmeCategory: z.enum(MSME_CATEGORIES).nullable(),
+    udyamNumber: udyam,
     notes: z
       .string()
       .trim()

@@ -31,7 +31,8 @@ export function createLiveBillsApi(client: AuthClient, organizationId: string): 
     create: (input) => r('', { method: 'POST', json: input }),
     update: (id, input) => r(`/${id}`, { method: 'PATCH', json: input }),
     remove: (id) => r(`/${id}`, { method: 'DELETE' }),
-    record: (id) => r(`/${id}/record`, { method: 'POST' }),
+    record: (id, opts) => r(`/${id}/record`, { method: 'POST', ...(opts?.allowDuplicate ? { json: { allowDuplicate: true } } : {}) }),
+    duplicates: (id) => r(`/${id}/duplicates`),
     void: (id, input) => r(`/${id}/void`, { method: 'POST', json: input }),
   };
 }

@@ -42,8 +42,13 @@ const select = {
   currency: true,
   paymentTermsDays: true,
   creditLimit: true,
+  msmeCategory: true,
+  udyamNumber: true,
   notes: true,
   archivedAt: true,
+  shareToken: true,
+  shareViews: true,
+  shareViewedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -61,6 +66,8 @@ type Values = {
   currency: string | null;
   paymentTermsDays: number;
   creditLimit: number | null;
+  msmeCategory: 'micro' | 'small' | 'medium' | null;
+  udyamNumber: string | null;
   notes: string | null;
 };
 
@@ -77,6 +84,8 @@ const EDITABLE = [
   'currency',
   'paymentTermsDays',
   'creditLimit',
+  'msmeCategory',
+  'udyamNumber',
   'notes',
 ] as const;
 
@@ -99,12 +108,17 @@ export class ContactsService {
       payable: 0,
     },
   ) {
+    const { shareToken, shareViews, shareViewedAt, ...rest } = c;
     return {
-      ...c,
+      ...rest,
       billingAddress: c.billingAddress as ContactAddress,
       shippingAddress: c.shippingAddress as ContactAddress | null,
       archived: !!c.archivedAt,
       creditLimit: c.creditLimit === null ? null : Number(c.creditLimit),
+      /** The customer's account link, and how often it was opened */
+      share: shareToken
+        ? { token: shareToken, views: shareViews, lastViewedAt: shareViewedAt }
+        : null,
       ...balances,
     };
   }

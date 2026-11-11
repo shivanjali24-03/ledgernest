@@ -52,6 +52,7 @@ import { CashForecastService } from './cash-forecast.service.js';
 import { GstHealthService } from './gst-health.service.js';
 import { TallyExportService } from './tally-export.service.js';
 import { TdsReportService } from './tds-report.service.js';
+import { MsmeReportService } from './msme-report.service.js';
 import { DashboardService } from './dashboard.service.js';
 import { ExportAuditInterceptor } from './export-audit.interceptor.js';
 import { GstReturnsService } from './gst-returns.service.js';
@@ -104,6 +105,7 @@ export class ReportsController {
     private readonly gstHealth: GstHealthService,
     private readonly tally: TallyExportService,
     private readonly tds: TdsReportService,
+    private readonly msme: MsmeReportService,
   ) {}
 
   /** "Today" in the organisation's time zone, when no date is given. */
@@ -541,6 +543,20 @@ export class ReportsController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.tds.report(tenant.organizationId, q.from, q.to, q.side);
+  }
+
+  @Get('msme')
+  @RequirePermission('reports.view')
+  @ApiOkResponse({
+    description:
+      'Bills from micro and small suppliers against the 45-day rule (MSMED Act section 15): each deadline and state on the day, and what income-tax section 43B(h) would take out of the year',
+  })
+  msmeReport(
+    @Query(new ZodValidationPipe(z.object({ date: isoDaySchema.optional() })))
+    q: { date?: string },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    return this.msme.report(tenant.organizationId, q.date);
   }
 
   /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates; import masters first */
