@@ -476,7 +476,7 @@ export function createDemoReportsApi(canExport: () => boolean): ReportsApi {
       .sort((a, b) => a.date.localeCompare(b.date))
       .map((p) => {
         const c = demoContactRows().find((x) => x.id === p.contact.id);
-        return { id: p.id, number: p.number, date: p.date, vendor: { id: p.contact.id, name: c?.legalName ?? p.contact.name, pan: panFromGstin(c?.taxId) }, section: p.tds!.section, ratePpm: p.tds!.ratePpm, base: p.tds!.base, amount: p.amount, tds: p.tds!.amount };
+        return { id: p.id, number: p.number, date: p.date, vendor: { id: p.contact.id, name: c?.legalName ?? p.contact.name, pan: c?.pan ?? panFromGstin(c?.taxId) }, section: p.tds!.section, ratePpm: p.tds!.ratePpm, base: p.tds!.base, amount: p.amount, tds: p.tds!.amount };
       });
     const group = (key: (p: (typeof payments)[number]) => string) => {
       const m = new Map<string, { count: number; base: number; tds: number }>();

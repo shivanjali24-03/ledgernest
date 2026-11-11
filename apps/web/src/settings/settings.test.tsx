@@ -206,4 +206,19 @@ describe('GST scheme settings', () => {
     expect(before).toMatchObject({ gstScheme: 'regular', compositionRate: '100' });
     expect(changes(before, { ...before, gstScheme: 'composition', compositionRate: '600' })).toEqual({ gstScheme: 'composition', compositionRateBp: 600 });
   });
+
+  it('keeps the PAN and other registration numbers, checked against the GSTIN', async () => {
+    renderApp();
+    await userEvent.selectOptions(await screen.findByLabelText('Kind of business', {}, { timeout: 4000 }), 'partnership');
+    const pan = screen.getByLabelText('PAN');
+    await userEvent.type(pan, 'AAPCN1234C');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('The PAN doesn’t agree with the GSTIN or the kind of business.')).toBeInTheDocument();
+    await userEvent.clear(pan);
+    await userEvent.type(pan, 'aapfn1234c');
+    await userEvent.type(screen.getByLabelText('TAN'), 'PNEN12345A');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Settings saved')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('ledgernest.demo.settings')!).settings).toMatchObject({ businessType: 'partnership', pan: 'AAPFN1234C', tan: 'PNEN12345A' });
+  }, 20_000);
 });

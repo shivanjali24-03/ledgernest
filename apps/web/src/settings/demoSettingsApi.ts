@@ -1,4 +1,4 @@
-import { organizationSettingsSchema, sniffLogoType } from '@ledgernest/shared';
+import { organizationIdProblems, organizationSettingsSchema, sniffLogoType } from '@ledgernest/shared';
 import { ApiError } from '../auth/client';
 import type { OrganizationSettings, SettingsApi } from './types';
 
@@ -80,6 +80,9 @@ export function createDemoSettingsApi(canManage: () => boolean): SettingsApi {
         if (!parsed.success) throw new ApiError('validation', 400, undefined, undefined, { fields: parsed.error.issues });
         const s = load();
         const { address, ...rest } = parsed.data;
+        // The PAN agrees with the GSTIN and the kind of business, the CIN with the kind of company (as the API checks)
+        const problem = organizationIdProblems({ ...s.settings, ...rest } as Parameters<typeof organizationIdProblems>[0])[0];
+        if (problem && (['pan', 'taxId', 'businessType', 'cin'] as const).some((k) => k in rest)) throw new ApiError('validation', 400, problem.message, undefined, { reason: 'identifier', field: problem.field });
         if (rest.baseCurrency && rest.baseCurrency !== s.settings.baseCurrency && s.settings.locks.baseCurrency) {
           throw new ApiError('conflict', 409, undefined, undefined, { reason: 'locked', field: 'baseCurrency' });
         }

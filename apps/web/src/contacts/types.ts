@@ -25,6 +25,8 @@ export interface Contact {
   msmeCategory?: MsmeCategory | null;
   /** How GST treats them; null = from the GSTIN and country */
   gstTreatment?: GstTreatment | null;
+  /** Their PAN, for TDS; null = from the GSTIN */
+  pan?: string | null;
   udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;

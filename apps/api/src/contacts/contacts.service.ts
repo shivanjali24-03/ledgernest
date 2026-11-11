@@ -44,6 +44,7 @@ const select = {
   creditLimit: true,
   msmeCategory: true,
   gstTreatment: true,
+  pan: true,
   udyamNumber: true,
   interestRateBp: true,
   notes: true,
@@ -73,6 +74,7 @@ type Values = {
   udyamNumber: string | null;
   interestRateBp?: number | null;
   gstTreatment?: string | null;
+  pan?: string | null;
   notes: string | null;
 };
 
@@ -93,6 +95,7 @@ const EDITABLE = [
   'udyamNumber',
   'interestRateBp',
   'gstTreatment',
+  'pan',
   'notes',
 ] as const;
 
