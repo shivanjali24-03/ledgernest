@@ -80,6 +80,16 @@ const binary = (b: Uint8Array) => {
 
 export const PDF_TYPE = 'application/pdf';
 
+/** An amount on a printed document, grouped the Indian way: 2,10,000.00 (minor units in, e.g. paise) */
+export const pdfAmount = (minor: number, digits = 2) =>
+  new Intl.NumberFormat('en-IN', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
+
+/** A date on a printed document: 11 Nov 2026 (an ISO date in; anything else comes back as it was) */
+export const pdfDate = (iso: string | null | undefined) => {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso ?? '';
+  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`));
+};
+
 /** Helvetica widths (per 1000 em) for space to tilde */
 const WIDTHS = [
   278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,

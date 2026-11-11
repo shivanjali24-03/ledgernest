@@ -20,6 +20,8 @@ import {
   DEFAULT_REMINDER_POLICY,
   findIndianState,
   invoiceRows,
+  pdfAmount,
+  pdfDate,
   pdfTableBytes,
   qrMatrix,
   rupeesInWords,
@@ -395,8 +397,9 @@ export class InvoiceRemindersService
     const digits = currencyDigits(currency);
     const upi = this.upiLink(org, inv, currency);
     const address = (a: Record<string, string | null | undefined>) =>
+      // Skipping a part that repeats the one before (an area named after its city: "Pune, Pune")
       [a.line1, a.line2, a.city, a.region, a.postalCode]
-        .filter(Boolean)
+        .filter((x, n, all) => x && x !== all[n - 1])
         .join(', ');
     const seller = reg?.tradeName ?? org.legalName ?? org.name;
     const pos = inv.placeOfSupply
@@ -417,7 +420,7 @@ export class InvoiceRemindersService
           modules: qrMatrix(upi),
           caption: [
             'Scan to pay with any UPI app',
-            `Rs ${(inv.balance / 100).toFixed(2)} to ${org.upiId}`,
+            `Rs ${pdfAmount(inv.balance)} to ${org.upiId}`,
           ],
         }
       : undefined;
@@ -451,7 +454,7 @@ export class InvoiceRemindersService
           ]
             .filter(Boolean)
             .join(' · '),
-          `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
+          `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${/^\d{2}[A-Z0-9]{13}$/.test(inv.contact.taxId) ? 'GSTIN' : 'Tax ID'} ${inv.contact.taxId}` : ''}`,
           address(inv.contact.billingAddress),
           // Where the goods go, when not the billing address
           ...(inv.shipTo
@@ -459,14 +462,14 @@ export class InvoiceRemindersService
                 `Ship to: ${[inv.shipTo.name, inv.shipTo.line1, inv.shipTo.line2, inv.shipTo.city, inv.shipTo.region, inv.shipTo.postalCode].filter(Boolean).join(', ')}`,
               ]
             : []),
-          `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
+          `Invoice date ${pdfDate(inv.issueDate)} · Due ${pdfDate(inv.dueDate)}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
           // An export's shipping bill
           ...(inv.exportDetails &&
           (inv.exportDetails.shippingBillNo || inv.exportDetails.portCode)
             ? [
                 [
                   inv.exportDetails.shippingBillNo &&
-                    `Shipping bill ${inv.exportDetails.shippingBillNo}${inv.exportDetails.shippingBillDate ? ` dated ${inv.exportDetails.shippingBillDate}` : ''}`,
+                    `Shipping bill ${inv.exportDetails.shippingBillNo}${inv.exportDetails.shippingBillDate ? ` dated ${pdfDate(inv.exportDetails.shippingBillDate)}` : ''}`,
                   inv.exportDetails.portCode &&
                     `Port ${inv.exportDetails.portCode}`,
                   inv.exportDetails.countryCode &&
@@ -508,9 +511,7 @@ export class InvoiceRemindersService
               })),
             );
             const m = (minor: number) =>
-              (minor / 10 ** currencyDigits(currency)).toFixed(
-                currencyDigits(currency),
-              );
+              pdfAmount(minor, currencyDigits(currency));
             return rows.length
               ? [
                   'HSN/SAC summary:',
@@ -525,7 +526,7 @@ export class InvoiceRemindersService
           ...(inv.pricesIncludeTax ? ['Prices include GST.'] : []),
           ...(inv.discountTotal
             ? [
-                `Includes a discount of ${currency} ${(inv.discountTotal / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))} on the invoice, before tax.`,
+                `Includes a discount of ${currency} ${pdfAmount(inv.discountTotal, currencyDigits(currency))} on the invoice, before tax.`,
               ]
             : []),
           // Where to pay
@@ -546,7 +547,7 @@ export class InvoiceRemindersService
                 'Payable in instalments:',
                 ...inv.instalments.map(
                   (x) =>
-                    `${x.n}. ${x.dueDate}: ${currency} ${(x.amount / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))}`,
+                    `${x.n}. ${pdfDate(x.dueDate)}: ${currency} ${pdfAmount(x.amount, currencyDigits(currency))}`,
                 ),
               ]
             : []),
@@ -559,7 +560,7 @@ export class InvoiceRemindersService
                   : inv.reverseCharge
                     ? [
                         'Whether tax is payable on reverse charge: Yes',
-                        `GST payable by the recipient: ${inv.reverseChargeTax.map((t) => `${t.name} ${currency} ${(t.amount / 10 ** currencyDigits(currency)).toFixed(currencyDigits(currency))}`).join(', ') || 'none'}`,
+                        `GST payable by the recipient: ${inv.reverseChargeTax.map((t) => `${t.name} ${currency} ${pdfAmount(t.amount, currencyDigits(currency))}`).join(', ') || 'none'}`,
                       ]
                     : ['Whether tax is payable on reverse charge: No']),
                 '',

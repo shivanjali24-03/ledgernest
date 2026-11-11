@@ -228,7 +228,7 @@ describe('Reverse charge on sales (e2e)', () => {
     const text = (pdf.body as Buffer).toString('latin1');
     expect(text).toContain('Whether tax is payable on reverse charge: Yes');
     expect(text).toContain(
-      'GST payable by the recipient: CGST 2.5% INR 1250.00',
+      'GST payable by the recipient: CGST 2.5% INR 1,250.00',
     );
   });
 
