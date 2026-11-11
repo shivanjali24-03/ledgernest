@@ -176,16 +176,16 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
           )}
         </dl>
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[560px] text-sm">
+          <table className="w-full table-fixed text-xs sm:table-auto sm:min-w-[560px] sm:text-sm">
             <thead className="text-xs uppercase tracking-wide text-ink-400">
               <tr>
-                <th scope="col" className="px-5 py-2 text-start font-semibold">
+                <th scope="col" className="px-3 py-2 text-start font-semibold sm:px-5">
                   {t('journals.fields.account')}
                 </th>
-                <th scope="col" className="px-5 py-2 text-end font-semibold">
+                <th scope="col" className="w-[28%] px-2 py-2 text-end font-semibold sm:w-auto sm:px-5">
                   {t('journals.fields.debit')}
                 </th>
-                <th scope="col" className="px-5 py-2 text-end font-semibold">
+                <th scope="col" className="w-[28%] px-2 py-2 text-end font-semibold sm:w-auto sm:px-5">
                   {t('journals.fields.credit')}
                 </th>
               </tr>
@@ -193,7 +193,7 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
             <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
               {entry.lines.map((l) => (
                 <tr key={l.id} className={clsx((l.taxRate || l.fxSourceLine) && 'text-ink-500')}>
-                  <td className={clsx('px-5 py-2', l.credit > 0 && 'ps-10')}>
+                  <td className={clsx('break-words px-3 py-2 sm:px-5', l.credit > 0 && 'ps-6 sm:ps-10')}>
                     <span dir="auto">
                       <code className="me-2 text-xs text-ink-400" dir="ltr">
                         {l.account.code}
@@ -222,10 +222,10 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
                     )}
                     {l.fxSourceLine && <span className="block text-xs text-ink-500">{t('journals.fx.lineFor', { n: l.fxSourceLine })}</span>}
                   </td>
-                  <td className="px-5 py-2 text-end font-mono tabular-nums" dir="ltr">
+                  <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-5" dir="ltr">
                     {l.debit ? money.plain(l.debit) : ''}
                   </td>
-                  <td className="px-5 py-2 text-end font-mono tabular-nums" dir="ltr">
+                  <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-5" dir="ltr">
                     {l.credit ? money.plain(l.credit) : ''}
                   </td>
                 </tr>
@@ -233,13 +233,13 @@ function PostedView({ entry, api, onChange }: { entry: JournalEntry; api: Journa
             </tbody>
             <tfoot className="border-t-2 border-ink-200 font-semibold dark:border-ink-700">
               <tr>
-                <th scope="row" className="px-5 py-2 text-start">
+                <th scope="row" className="px-3 py-2 text-start sm:px-5">
                   {t('journals.total')}
                 </th>
-                <td className="px-5 py-2 text-end font-mono tabular-nums" dir="ltr">
+                <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-5" dir="ltr">
                   {money.format(entry.totals.debit)}
                 </td>
-                <td className="px-5 py-2 text-end font-mono tabular-nums" dir="ltr">
+                <td className="whitespace-nowrap px-2 py-2 text-end font-mono tabular-nums sm:px-5" dir="ltr">
                   {money.format(entry.totals.credit)}
                 </td>
               </tr>

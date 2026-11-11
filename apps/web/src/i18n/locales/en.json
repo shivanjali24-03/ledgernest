@@ -1164,7 +1164,7 @@
     },
     "delete": {
       "title": "Delete this organisation",
-      "body": "Every account, invoice, bill, payment, report and file goes, for everyone, and can’t be brought back. Download a backup above first: GST law asks you to keep your records for six years.",
+      "body": "Every account, invoice, bill, payment, report and file goes, for everyone, and can’t be brought back. Download a backup above first: books must be kept for eight years (the Companies Act; GST law asks for six).",
       "action": "Delete organisation…",
       "confirmTitle": "Delete {{name}} for good?",
       "confirmBody": "This can’t be undone. Everyone in it loses access.",
@@ -3700,7 +3700,8 @@
       "lastTime": "Last time a line like this went to {{account}}",
       "paysInvoice": "Pays {{number}} from {{name}} ({{balance}} owed)",
       "recordReceipt": "Record receipt",
-      "received": "Recorded {{number}} for {{invoice}}, matched to the bank"
+      "received": "Recorded {{number}} for {{invoice}}, matched to the bank",
+      "noLines": "No bank lines yet"
     }
   },
   "assets": {
@@ -5040,7 +5041,7 @@
       "close_other": "{{count}} months are still open. Closing the last one moves the year’s profit to retained earnings.",
       "closeDone": "Closed, with the closing entry {{number}}.",
       "closed": "Every month is closed.",
-      "backup": "Download a full backup from Settings and keep it safe; books must be kept for eight years.",
+      "backup": "Download a full backup from Settings and keep it safe: books must be kept for eight years (the Companies Act; GST law asks for six).",
       "bankNotReconciled_one": "1 bank account isn’t reconciled to a statement dated {{date}} or later.",
       "bankNotReconciled_other": "{{count}} bank accounts aren’t reconciled to a statement dated {{date}} or later."
     }

@@ -77,7 +77,7 @@ export default function PurchaseOrders() {
             <EmptyState icon={<ClipboardList className="size-5" />} title={search || filter !== 'all' ? t('purchaseOrders.noMatches') : t('purchaseOrders.empty')} body={search || filter !== 'all' ? undefined : t('purchaseOrders.emptyBody')} />
           ) : (
             <div className="relative overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm" aria-label={t('purchaseOrders.title')}>
+              <table className="stack-sm w-full min-w-[680px] text-sm" aria-label={t('purchaseOrders.title')}>
                 <thead className="whitespace-nowrap border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>
                     <th scope="col" className="px-4 py-2.5 text-start font-semibold">{t('purchaseOrders.columns.number')}</th>
@@ -100,11 +100,11 @@ export default function PurchaseOrders() {
                         {o.contact.name}
                         {o.reference && <span className="block text-xs text-ink-500">{o.reference}</span>}
                       </td>
-                      <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{o.expectedDate ? day(o.expectedDate) : '—'}</td>
-                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
+                      <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300" data-label={t('purchaseOrders.fields.expectedDate')}>{o.expectedDate ? day(o.expectedDate) : '—'}</td>
+                      <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr" data-end>
                         {o.currency ? formatMoney(o.total, o.currency, locale) : money.format(o.total)}
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5" data-end>
                         <span className="inline-flex whitespace-nowrap rounded-full bg-current/10 px-2 py-0.5 text-xs font-semibold text-ink-600 dark:text-ink-300">{t(`purchaseOrders.statuses.${o.status}`)}</span>
                       </td>
                     </tr>

@@ -172,7 +172,7 @@ export default function Reconcile() {
             <Card className="overflow-hidden">
               <h2 className="border-b border-ink-100 p-4 font-semibold dark:border-ink-800">{t('banking.rec.bankSide', { count: data!.bankLines.length })}</h2>
               {!data!.bankLines.length ? (
-                <EmptyState icon={<CheckCircle2 className="size-5" />} title={t('banking.rec.bankDone')} body={data!.summary.since ? undefined : t('banking.rec.importFirst')} />
+                <EmptyState icon={<CheckCircle2 className="size-5" />} title={data!.summary.since ? t('banking.rec.bankDone') : t('banking.rec.noLines')} body={data!.summary.since ? undefined : t('banking.rec.importFirst')} />
               ) : (
                 <ul className="divide-y divide-ink-100 dark:divide-ink-800">
                   {data!.bankLines.map((l) => {

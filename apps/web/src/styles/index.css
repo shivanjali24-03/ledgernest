@@ -121,3 +121,59 @@ th a.font-mono {
     accent-color: var(--color-brand-600);
   }
 }
+
+/*
+ * Lists on a phone: each table row becomes a two-column card instead of a table that hides its amounts
+ * off-screen. Cells go on the left; a cell with data-end goes on the right (amounts, status); data-label
+ * puts a small label before a value that needs one ("Due 26 Nov 2026").
+ */
+@media (max-width: 639.98px) {
+  table.stack-sm {
+    display: block;
+    min-width: 0 !important;
+  }
+  table.stack-sm thead {
+    display: none;
+  }
+  table.stack-sm tbody {
+    display: block;
+  }
+  table.stack-sm tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-auto-flow: row dense;
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+    padding: 0.75rem 1rem;
+  }
+  table.stack-sm td,
+  table.stack-sm th {
+    display: block;
+    grid-column: 1;
+    padding: 0 !important;
+    text-align: start;
+    white-space: normal;
+  }
+  table.stack-sm [data-end] {
+    grid-column: 2;
+    text-align: end;
+    white-space: nowrap;
+  }
+  table.stack-sm [data-label]::before {
+    content: attr(data-label) ' ';
+    color: var(--color-ink-500);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+  }
+}
+
+/* A line editor on a phone: each field takes the full width under its label */
+@media (max-width: 639.98px) {
+  table.stack-sm td[data-label] > :is(input, select, div) {
+    margin-top: 0.125rem;
+    width: 100%;
+  }
+  table.stack-sm tr + tr {
+    border-top: 1px solid var(--color-ink-200);
+  }
+}
