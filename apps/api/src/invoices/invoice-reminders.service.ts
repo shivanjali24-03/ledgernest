@@ -30,6 +30,7 @@ import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { organizationLogo } from '../common/pdf-logo.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoicesService } from './invoices.service.js';
 
@@ -363,8 +364,10 @@ export class InvoiceRemindersService
     const pos = inv.placeOfSupply
       ? findIndianState(inv.placeOfSupply)
       : undefined;
+    const logo = await organizationLogo(this.prisma, organizationId);
     const pdf = Buffer.from(
       pdfTableBytes({
+        logo,
         title: `${org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
         subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
         info: [

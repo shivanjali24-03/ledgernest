@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { deflateSync } from 'node:zlib';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -216,8 +217,12 @@ describe('Customer account links (e2e)', () => {
         res.on('end', () => done(null, Buffer.concat(chunks)));
       })
       .expect(200);
-    expect(st.headers['content-disposition']).toContain('statement-kumar-logistics-');
-    expect((st.body as Buffer).toString('latin1').startsWith('%PDF')).toBe(true);
+    expect(st.headers['content-disposition']).toContain(
+      'statement-kumar-logistics-',
+    );
+    expect((st.body as Buffer).toString('latin1').startsWith('%PDF')).toBe(
+      true,
+    );
     expect(
       (
         (await as().get(`/contacts/${kumar}`).expect(200)).body as {
@@ -304,6 +309,43 @@ describe('Customer account links (e2e)', () => {
         where: { organizationId: org, action: 'org.contact.chased' },
       }),
     ).toBe(1);
+  });
+
+  it('puts the organisation’s logo on its invoice PDFs', async () => {
+    // A 1 x 1 half-transparent orange PNG
+    const chunk = (t: string, d: Buffer) => {
+      const len = Buffer.alloc(4);
+      len.writeUInt32BE(d.length);
+      return Buffer.concat([len, Buffer.from(t, 'ascii'), d, Buffer.alloc(4)]);
+    };
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(1, 0);
+    ihdr.writeUInt32BE(1, 4);
+    ihdr[8] = 8;
+    ihdr[9] = 6;
+    const pngBytes = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', deflateSync(Buffer.from([0, 255, 128, 0, 128]))),
+      chunk('IEND', Buffer.alloc(0)),
+    ]);
+    await prisma.organizationLogo.create({
+      data: { organizationId: org, contentType: 'image/png', data: pngBytes },
+    });
+    const pdf = await visitor(`${token}/invoices/${inv[1]}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain(
+      '/Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceRGB',
+    );
+    expect(text).toContain('/SMask');
+    expect(text).toContain('/Im1 Do');
   });
 
   it('turns away made-up links, and stops when turned off', async () => {

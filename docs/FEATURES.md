@@ -22,6 +22,7 @@ Status: ✅ done · 🚧 in progress · 📋 planned
 | Audit log | Who did what, when and from where, for every change to financial data and access | ✅ Done (#12) |
 | Multi-language | English, हिन्दी and मराठी, switchable at any time. Spanish, French, German and Arabic (right-to-left) are kept in `apps/web/src/i18n/locales` but not offered while the app is India-only | ✅ (#5) |
 | Organisation settings | Company details, logo, base currency, locale, time zone and fiscal year start | ✅ #38 |
+| Logo on documents | The organisation's logo (PNG with transparency, or JPEG) at the top of its invoice, quote, receipt and payment advice PDFs, fitted to 120 × 40 points; a WebP logo shows in the app but not on PDFs | ✅ |
 | Localisation | Numbers, currencies, dates and fiscal years follow each organisation's locale | ✅ Amounts follow the organisation's currency and format (#42) |
 | Motion system | Smooth, GPU-friendly animations that run at the display's refresh rate (60–240 Hz) and respect "reduce motion" | ✅ (#4) |
 | Light and dark themes | System default, remembered per user | ✅ (#4) |

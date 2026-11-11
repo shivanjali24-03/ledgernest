@@ -20,7 +20,49 @@ export interface PdfTable {
   rows: (string | number | null)[][];
   /** A QR code at the top right of the first page (e.g. to pay by UPI), with a line or two of caption under it */
   qr?: { modules: boolean[][]; caption?: string[] };
+  /** The organisation's logo at the top left of the first page, the heading under it */
+  logo?: PdfImage | null;
 }
+
+/** An image ready to embed: JPEG as it is (DCTDecode), or zlib-compressed samples (FlateDecode), with alpha as a soft mask */
+export interface PdfImage {
+  width: number;
+  height: number;
+  filter: 'DCTDecode' | 'FlateDecode';
+  colorSpace: 'DeviceRGB' | 'DeviceGray' | 'DeviceCMYK';
+  data: Uint8Array;
+  /** For PNG data embedded as it is: its predictor, colours and columns */
+  decodeParms?: string;
+  /** zlib-compressed 8-bit alpha, the same size */
+  smask?: Uint8Array;
+}
+
+/** A JPEG's size and colours, read from its frame header; null if it isn't one PDF can show */
+export function jpegImage(bytes: Uint8Array): PdfImage | null {
+  if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 9 < bytes.length) {
+    if (bytes[i] !== 0xff) return null;
+    const marker = bytes[i + 1]!;
+    const len = (bytes[i + 2]! << 8) | bytes[i + 3]!;
+    // Baseline, extended or progressive frames
+    if (marker >= 0xc0 && marker <= 0xc2) {
+      const height = (bytes[i + 5]! << 8) | bytes[i + 6]!;
+      const width = (bytes[i + 7]! << 8) | bytes[i + 8]!;
+      const comps = bytes[i + 9]!;
+      const colorSpace = comps === 1 ? 'DeviceGray' : comps === 4 ? 'DeviceCMYK' : 'DeviceRGB';
+      return width && height ? { width, height, filter: 'DCTDecode', colorSpace, data: bytes } : null;
+    }
+    i += 2 + len;
+  }
+  return null;
+}
+
+const binary = (b: Uint8Array) => {
+  let s = '';
+  for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192));
+  return s;
+};
 
 export const PDF_TYPE = 'application/pdf';
 
@@ -83,6 +125,12 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   const numeric = Array.from({ length: cols }, (_, j) => !/code|gstin|document|number|hsn|reference|date|section/i.test(header[j] ?? '') && body.some((r) => r[j]) && body.every((r) => !r[j] || NUMERIC.test(r[j])));
 
   const top = ph - margin;
+  // The logo fits 120 x 40 points, keeping its shape; the heading starts under it
+  const logo = table.logo ?? null;
+  const logoScale = logo ? Math.min(120 / logo.width, 40 / logo.height) : 0;
+  const logoW = logo ? logo.width * logoScale : 0;
+  const logoH = logo ? logo.height * logoScale : 0;
+  const headTop = logo ? top - logoH - 10 : top;
   const info = (table.info ?? []).slice(0, 12);
   // The QR code: 88pt square (quiet zone included), captions under it; the heading's text keeps clear of it
   const qrSide = 88;
@@ -90,7 +138,7 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   const qrN = table.qr?.modules.length ?? 0;
   const qrBottom = top - qrSide - qrCaption.length * 9;
   const headWidth = pw - margin * 2 - (qrN ? qrSide + 12 : 0);
-  const firstY = Math.min(top - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0), qrN ? qrBottom - 8 : Infinity);
+  const firstY = Math.min(headTop - (table.subtitle ? 44 : 30) - info.length * 11 - (info.length ? 6 : 0), qrN ? qrBottom - 8 : Infinity);
   const perFirst = Math.floor((firstY - margin - 24) / rowH) - 1;
   const perPage = Math.floor((top - margin - 24) / rowH) - 1;
   const pages: string[][][] = [];
@@ -141,6 +189,8 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
     let s = '0 g\n';
     let y = top;
     if (p === 0) {
+      if (logo) s += `q ${num(logoW)} 0 0 ${num(logoH)} ${margin} ${num(top - logoH)} cm /Im1 Do Q\n`;
+      y = headTop;
       s += `BT /F2 14 Tf ${margin} ${num(y - 14)} Td ${literal(truncate(encode(table.title), headWidth, 14, true))} Tj ET\n`;
       if (table.subtitle) s += `BT /F1 9 Tf ${margin} ${num(y - 30)} Td ${literal(truncate(encode(table.subtitle), headWidth, 9, false))} Tj ET\n`;
       info.forEach((l, k) => {
@@ -193,10 +243,19 @@ export function pdfTableBytes(table: PdfTable): Uint8Array {
   objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`);
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
   objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  // The logo (and its soft mask) come after the pages
+  const imageId = 5 + streams.length * 2;
+  const xobject = logo ? ` /XObject << /Im1 ${imageId} 0 R >>` : '';
   streams.forEach((s, i) => {
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${6 + i * 2} 0 R >>`);
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>${xobject} >> /Contents ${6 + i * 2} 0 R >>`);
     objects.push(`<< /Length ${s.length} >>\nstream\n${s}endstream`);
   });
+  if (logo) {
+    const parms = logo.decodeParms ? ` /DecodeParms ${logo.decodeParms}` : '';
+    const mask = logo.smask ? ` /SMask ${imageId + 1} 0 R` : '';
+    objects.push(`<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /${logo.colorSpace} /BitsPerComponent 8 /Filter /${logo.filter}${parms}${mask} /Length ${logo.data.length} >>\nstream\n${binary(logo.data)}\nendstream`);
+    if (logo.smask) objects.push(`<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${logo.smask.length} >>\nstream\n${binary(logo.smask)}\nendstream`);
+  }
   let out = '%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';
   const offsets: number[] = [];
   objects.forEach((o, i) => {
