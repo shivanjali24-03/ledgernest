@@ -51,7 +51,8 @@ const invoiceSelect = {
       quantity: true,
       unitPrice: true,
       amount: true,
-      item: { select: { hsnSac: true, unit: true } },
+      inAltUnit: true,
+      item: { select: { hsnSac: true, unit: true, altUnit: true } },
       taxGroup: {
         select: {
           rates: {
@@ -123,7 +124,12 @@ export class EinvoiceService {
         quantity: { toFixed(n: number): string };
         unitPrice: bigint;
         amount: bigint;
-        item: { hsnSac: string | null; unit: string | null } | null;
+        inAltUnit: boolean;
+        item: {
+          hsnSac: string | null;
+          unit: string | null;
+          altUnit: string | null;
+        } | null;
         taxGroup: {
           rates: { rate: { id: string; kind: string; ratePpm: number } }[];
         } | null;
@@ -165,7 +171,8 @@ export class EinvoiceService {
           description: l.description,
           hsn: l.item?.hsnSac?.replace(/\s/g, '') || null,
           quantity: l.quantity.toFixed(3).replace(/\.?0+$/, ''),
-          unit: l.item?.unit ?? null,
+          // The unit the line's quantity is in
+          unit: (l.inAltUnit ? l.item?.altUnit : null) ?? l.item?.unit ?? null,
           unitPrice: Number(l.unitPrice),
           amount: Number(l.amount),
           heads,

@@ -75,6 +75,16 @@ const fields = {
   brand: text(80),
   /** A grouping of the business's own, e.g. "Spices" or "Spare parts" */
   category: text(80),
+  /** A second unit it's also sold or bought in, e.g. BOX when the unit is PCS */
+  altUnit: text(16),
+  /** How many of the main unit make one of the second, e.g. "12" (up to 4 decimals) */
+  altFactor: z
+    .string()
+    .trim()
+    .regex(/^$|^\d{1,9}(\.\d{1,4})?$/, 'Enter how many make one, with up to 4 decimal places.')
+    .refine((v) => !v || Number(v) > 0, 'Enter how many make one.')
+    .transform((v) => v || null)
+    .nullable(),
   /** Stock at or below this is low, e.g. "10" */
   reorderLevel: z
     .string()
@@ -106,7 +116,9 @@ export const itemCreateSchema = z.object({
   barcode: fields.barcode.optional().default(null),
   brand: fields.brand.optional().default(null),
   category: fields.category.optional().default(null),
-});
+  altUnit: fields.altUnit.optional().default(null),
+  altFactor: fields.altFactor.optional().default(null),
+}).refine((v) => !v.altUnit === !v.altFactor, { path: ['altFactor'], message: 'Give the second unit and how many of the main unit make one.' });
 export type ItemCreateInput = z.input<typeof itemCreateSchema>;
 
 export const itemUpdateSchema = z
@@ -124,3 +136,8 @@ export const itemListQuerySchema = z.object({
     .optional()
     .transform((v) => v === 'true'),
 });
+
+/** A quantity in an item's second unit, in its main unit: 2 BOX of 12 = 24 PCS (ten-thousandths, rounded half up) */
+export function toMainUnit(quantity: bigint, altFactor: bigint) {
+  return (quantity * altFactor * 2n + 10_000n) / 20_000n;
+}

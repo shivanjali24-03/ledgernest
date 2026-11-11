@@ -7,6 +7,7 @@ import {
 import {
   allocateBatches,
   serialsProblem,
+  toMainUnit,
   averageUnitCost,
   batchExpired,
   billNumber,
@@ -18,6 +19,7 @@ import {
   todayIn,
   type EnteredLine,
   type StockMovementKind,
+  type openingStockSchema,
   type stockAdjustmentSchema,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
@@ -25,6 +27,7 @@ import type { z } from 'zod';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { AccountsService } from '../accounts/accounts.service.js';
 import { JournalsService } from '../journals/journals.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -125,6 +128,7 @@ export class InventoryService {
           cogsAccountId: string;
           trackBatches: boolean;
           trackSerials: boolean;
+          altFactor: bigint | null;
         }
       >();
     const items = await tx.item.findMany({
@@ -136,6 +140,7 @@ export class InventoryService {
         cogsAccountId: true,
         trackBatches: true,
         trackSerials: true,
+        altFactor: true,
       },
     });
     return new Map(
@@ -148,6 +153,7 @@ export class InventoryService {
           cogsAccountId: i.cogsAccountId!,
           trackBatches: i.trackBatches,
           trackSerials: i.trackSerials,
+          altFactor: i.altFactor ? parseQuantity(i.altFactor.toFixed(4)) : null,
         },
       ]),
     );
@@ -356,6 +362,15 @@ export class InventoryService {
         );
   }
 
+  /** A line's quantity in the item's main unit (stock is kept in it), from its second unit if the line is in that */
+  private mainQuantity(
+    item: { altFactor: bigint | null },
+    l: { quantity: string; inAltUnit?: boolean },
+  ) {
+    const q = parseQuantity(l.quantity)!;
+    return l.inAltUnit && item.altFactor ? toMainUnit(q, item.altFactor) : q;
+  }
+
   /** A line of goods with serial numbers needs one per unit, none twice */
   private checkSerials(
     item: { id: string; name: string },
@@ -522,6 +537,7 @@ export class InventoryService {
       costCentreId?: string | null;
       batchId?: string | null;
       serials?: string[];
+      inAltUnit?: boolean;
     }[],
     /** The day it's sold: expired batches can't be */
     day?: string,
@@ -551,7 +567,7 @@ export class InventoryService {
     for (const l of lines) {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
-      const q = parseQuantity(l.quantity)!;
+      const q = this.mainQuantity(item, l);
       const s = stock.get(item.id) ?? { quantity: 0n, value: 0n };
       if (q > s.quantity)
         throw refuse(
@@ -626,7 +642,7 @@ export class InventoryService {
         }
       } else {
         if (item.trackSerials)
-          this.checkSerials(item, l.quantity, upper(l.serials));
+          this.checkSerials(item, formatQuantity(q), upper(l.serials));
         movements.push({
           itemId: item.id,
           quantity: -q,
@@ -672,6 +688,7 @@ export class InventoryService {
       quantity: string;
       costCentreId?: string | null;
       serials?: string[];
+      inAltUnit?: boolean;
     }[],
   ) {
     const items = await this.tracked(
@@ -721,12 +738,12 @@ export class InventoryService {
       if (!sold.length) continue;
       const soldQ = sold.reduce((x, m) => x - signed(m.quantity), 0n);
       const soldV = sold.reduce((x, m) => x - m.value, 0n);
-      const q = parseQuantity(l.quantity)!;
+      const q = this.mainQuantity(item, l);
       const value = costOfQuantity(soldQ, soldV, q);
       // Units with serial numbers: which ones came back, each one sold on this line
       if (item.trackSerials) {
         const back = upper(l.serials);
-        this.checkSerials(item, l.quantity, back);
+        this.checkSerials(item, formatQuantity(q), back);
         const soldSerials = new Set(sold.flatMap((m) => m.serials ?? []));
         const stranger = back.find((x) => !soldSerials.has(x));
         if (stranger)
@@ -816,6 +833,7 @@ export class InventoryService {
       quantity: string;
       value: number;
       serials?: string[];
+      inAltUnit?: boolean;
     } & Partial<BatchIn>)[],
   ) {
     const items = await this.tracked(
@@ -828,10 +846,14 @@ export class InventoryService {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
       if (item.trackSerials)
-        this.checkSerials(item, l.quantity, upper(l.serials));
+        this.checkSerials(
+          item,
+          formatQuantity(this.mainQuantity(item, l)),
+          upper(l.serials),
+        );
       out.push({
         itemId: item.id,
-        quantity: parseQuantity(l.quantity)!,
+        quantity: this.mainQuantity(item, l),
         value: BigInt(l.value),
         serials: item.trackSerials ? upper(l.serials) : [],
         batchId: item.trackBatches
@@ -979,7 +1001,59 @@ export class InventoryService {
 
   async adjust(input: z.output<typeof stockAdjustmentSchema>, ctx: Ctx) {
     const organizationId = ctx.tenant.organizationId;
-    const id = await this.prisma.$transaction(async (tx) => {
+    const id = await this.prisma.$transaction((tx) =>
+      this.adjustInTx(tx, input, ctx),
+    );
+    return this.movement(organizationId, id);
+  }
+
+  /**
+   * Opening stock for many items at once, on the day the books start: each counted in at what it cost, against
+   * Opening balance equity, all or nothing.
+   */
+  async openingStock(input: z.output<typeof openingStockSchema>, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const { locale } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: organizationId },
+      select: { locale: true },
+    });
+    const ids = await this.prisma.$transaction(async (tx) => {
+      await AccountsService.createSystemAccounts(tx, organizationId, locale);
+      const equity = await tx.account.findFirstOrThrow({
+        where: { organizationId, systemKey: 'opening_balance_equity' },
+        select: { id: true },
+      });
+      const out: string[] = [];
+      for (const l of input.lines)
+        out.push(
+          await this.adjustInTx(
+            tx,
+            {
+              ...l,
+              date: input.date,
+              direction: 'in',
+              accountId: equity.id,
+              reason: 'Opening stock',
+            },
+            ctx,
+          ),
+        );
+      return out;
+    });
+    return {
+      movements: await Promise.all(
+        ids.map((id) => this.movement(organizationId, id)),
+      ),
+    };
+  }
+
+  private async adjustInTx(
+    tx: Tx,
+    input: z.output<typeof stockAdjustmentSchema>,
+    ctx: Ctx,
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    {
       await this.lock(tx, organizationId);
       const item = await tx.item.findFirst({
         where: { organizationId, id: input.itemId },
@@ -1153,8 +1227,7 @@ export class InventoryService {
         tx,
       );
       return m.id;
-    });
-    return this.movement(organizationId, id);
+    }
   }
 
   /** Undoing an adjustment: its entry is reversed and its quantity put back (stock added must still be on hand) */

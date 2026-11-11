@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { useContactsApi } from '../contacts/useContactsApi';
 import type { Contact } from '../contacts/types';
 import SerialsInput from '../inventory/SerialsInput';
+import UnitSelect from '../items/UnitSelect';
+import { priceInUnit } from '../items/unitPrice';
 import CostCentreSelect from '../cost-centres/CostCentreSelect';
 import { useCostCentres } from '../cost-centres/useCostCentresApi';
 import { useIntlLocale } from '../i18n';
@@ -35,7 +37,7 @@ export interface SalesDraft {
   currency: string | null;
   /** The number series it will be numbered from (invoices) */
   seriesId?: string | null;
-  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[] }[];
+  lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
   contactId: string;
@@ -45,7 +47,7 @@ export interface SalesDraftPayload {
   notes: string;
   placeOfSupply: string | null;
   seriesId?: string | null;
-  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[] }[];
+  lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
   initial: SalesDraft | null;
@@ -69,8 +71,8 @@ export interface SalesDraftConfig {
   labels: { date: string; until: string; save: string; extra: string; delete: string; deleteTitle: string; deleteBody: string; deleted: string };
 }
 
-type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string; batchId: string; serials: string };
-const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '', batchId: '', serials: '' });
+type Line = { key: string; itemId: string; description: string; quantity: string; unitPrice: string; discount: string; taxGroupId: string; accountId: string; costCentreId: string; batchId: string; serials: string; inAltUnit: boolean };
+const blankLine = (): Line => ({ key: crypto.randomUUID(), itemId: '', description: '', quantity: '1', unitPrice: '', discount: '', taxGroupId: '', accountId: '', costCentreId: '', batchId: '', serials: '', inAltUnit: false });
 
 /** For goods kept in batches: which batch to sell from, or the earliest expiry first; expired batches can't be chosen */
 function BatchSelect({ itemId, value, onChange, label, disabled }: { itemId: string; value: string; onChange: (v: string) => void; label: string; disabled: boolean }) {
@@ -130,7 +132,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [seriesId, setSeriesId] = useState(invoice?.seriesId ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
-      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n') }))
+      ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
       : [blankLine()],
   );
   const [deleting, setDeleting] = useState(false);
@@ -144,7 +146,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const pickItem = (key: string, itemId: string) => {
     const item = items.data?.find((x) => x.id === itemId);
     // An item fills in its description, price, tax and account; prices are in the base currency
-    set(key, item ? { itemId, description: item.name, unitPrice: item.salePrice !== null && !customer?.currency ? plain(item.salePrice) : '', taxGroupId: composition ? '' : (item.taxGroupId ?? ''), accountId: item.incomeAccountId ?? '' } : { itemId: '' });
+    set(key, item ? { itemId, description: item.name, unitPrice: item.salePrice !== null && !customer?.currency ? plain(item.salePrice) : '', taxGroupId: composition ? '' : (item.taxGroupId ?? ''), accountId: item.incomeAccountId ?? '', inAltUnit: false } : { itemId: '', inAltUnit: false });
   };
 
   const parsed = lines.map((l) => {
@@ -179,7 +181,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
+    lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
   const save = useMutation({
     mutationFn: (extra: boolean) => config.save(payload(), extra),
@@ -298,6 +300,17 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.lineQty', { n: n + 1 })} value={l.quantity} disabled={!canManage} onChange={(e) => set(l.key, { quantity: e.target.value })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.qty === null && 'border-expense')} />
+                      <UnitSelect
+                        item={items.data?.find((x) => x.id === l.itemId)}
+                        inAlt={l.inAltUnit}
+                        label={t('items.lineUnit', { n: n + 1 })}
+                        disabled={!canManage}
+                        onChange={(inAlt) => {
+                          const factor = items.data?.find((x) => x.id === l.itemId)?.altFactor;
+                          const p = factor ? priceInUnit(l.price, factor, inAlt) : null;
+                          set(l.key, { inAltUnit: inAlt, ...(p !== null ? { unitPrice: plain(p) } : {}) });
+                        }}
+                      />
                     </td>
                     <td className="px-3 py-1.5">
                       <input aria-label={t('invoices.linePrice', { n: n + 1 })} value={l.unitPrice} disabled={!canManage} onChange={(e) => set(l.key, { unitPrice: e.target.value })} onBlur={() => l.price && set(l.key, { unitPrice: plain(l.price) })} inputMode="decimal" dir="ltr" className={clsx(cell, 'text-end font-mono', l.price === null && 'border-expense')} />

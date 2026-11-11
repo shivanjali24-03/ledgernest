@@ -742,6 +742,9 @@ model Item {
   trackBatches       Boolean   @default(false) @map("track_batches")
   /// Tracked goods whose every unit has its own serial number
   trackSerials       Boolean   @default(false) @map("track_serials")
+  /// A second unit it's also sold or bought in (e.g. BOX), and how many of the main unit make one
+  altUnit            String?   @map("alt_unit")
+  altFactor          Decimal?  @map("alt_factor") @db.Decimal(13, 4)
   inventoryAccountId String?   @map("inventory_account_id") @db.Uuid
   cogsAccountId      String?   @map("cogs_account_id") @db.Uuid
   /// Stock at or below this is low (tracked goods only)
@@ -863,6 +866,8 @@ model InvoiceLine {
   itemId         String?  @map("item_id") @db.Uuid
   description    String
   quantity       Decimal  @db.Decimal(13, 4)
+  /// The quantity and price are in the item's second unit
+  inAltUnit      Boolean  @default(false) @map("in_alt_unit")
   /// The serial numbers of the units sold (goods with serial numbers)
   serials        String[] @default([])
   /// The batch chosen to sell from (goods kept in batches); null = earliest expiry first
@@ -1023,6 +1028,8 @@ model BillLine {
   itemId         String?   @map("item_id") @db.Uuid
   description    String
   quantity       Decimal   @db.Decimal(13, 4)
+  /// The quantity and price are in the item's second unit
+  inAltUnit      Boolean   @default(false) @map("in_alt_unit")
   /// The serial numbers of the units bought
   serials        String[]  @default([])
   /// For goods kept in batches: the batch that came in, with its dates

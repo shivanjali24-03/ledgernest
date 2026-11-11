@@ -108,6 +108,8 @@ export const invoiceLineSchema = z.object({
   batchId: z.uuid().nullable().optional().default(null),
   /** For goods with serial numbers: the units sold (bought, on a bill), one per unit */
   serials: serialsSchema,
+  /** The quantity and price are in the item's second unit (e.g. boxes), not its main one */
+  inAltUnit: z.boolean().optional().default(false),
 });
 export type InvoiceLineInput = z.input<typeof invoiceLineSchema>;
 

@@ -371,6 +371,7 @@ export class CreditNotesService {
               itemId: true,
               taxGroupId: true,
               costCentreId: true,
+              inAltUnit: true,
               taxGroup: {
                 select: {
                   rates: {
@@ -564,6 +565,7 @@ export class CreditNotesService {
               quantity: l.quantity,
               costCentreId: l.src.costCentreId,
               serials: l.serials,
+              inAltUnit: l.src.inAltUnit,
             })),
           )
         : { movements: [], journal: [] };

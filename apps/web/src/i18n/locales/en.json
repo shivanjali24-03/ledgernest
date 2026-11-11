@@ -2348,7 +2348,9 @@
       "mrp": "MRP ({{currency}})",
       "barcode": "Barcode",
       "brand": "Brand",
-      "category": "Category"
+      "category": "Category",
+      "altUnit": "Also sold or bought in",
+      "altFactor": "{{unit}} in one {{alt}}"
     },
     "kinds": {
       "goods": "Goods",
@@ -2358,14 +2360,16 @@
       "hsnSac": "4, 6 or 8 digits, for GST invoices.",
       "uqc": "GST’s unit of quantity, used in GSTR-1, e-invoices and e-way bills.",
       "mrp": "As printed on the pack, tax included. The sale price can’t be more.",
-      "barcode": "Scan it, or type the number under the bars."
+      "barcode": "Scan it, or type the number under the bars.",
+      "altUnit": "A second unit, like boxes of pieces. Stock stays in the main unit."
     },
     "validation": {
       "name": "Enter at least 2 characters.",
       "price": "Enter an amount, like 2,500.",
       "hsnSac": "Use a 4, 6 or 8-digit code.",
       "aboveMrp": "The sale price is more than the MRP.",
-      "barcode": "That barcode isn’t right: check the number on the pack."
+      "barcode": "That barcode isn’t right: check the number on the pack.",
+      "altFactor": "Enter how many make one, above zero."
     },
     "errors": {
       "name_taken": "Another item already has this name.",
@@ -2375,7 +2379,8 @@
       "tax_group_archived": "That tax group is archived.",
       "account_archived": "That account is archived.",
       "barcode_taken": "Another item already has this barcode.",
-      "above_mrp": "The sale price is more than the MRP printed on the pack."
+      "above_mrp": "The sale price is more than the MRP printed on the pack.",
+      "alt_unit_incomplete": "Give the second unit and how many of the main unit make one."
     },
     "uqc": {
       "BAG": "Bags",
@@ -2425,7 +2430,10 @@
       "OTH": "Others"
     },
     "chooseUnit": "Choose the unit",
-    "mrpShort": "MRP"
+    "mrpShort": "MRP",
+    "noAltUnit": "No second unit",
+    "units": "units",
+    "lineUnit": "Unit on line {{n}}"
   },
   "invoices": {
     "title": "Invoices",
@@ -4667,5 +4675,24 @@
       "serials_need_stock": "Only goods whose stock is tracked can have serial numbers.",
       "batches_or_serials": "Goods are kept either in batches or by serial number, not both."
     }
+  },
+  "openingStock": {
+    "action": "Opening stock",
+    "title": "Opening stock",
+    "description": "What was on hand when your books start, and what one of each cost. It's counted in against Opening balance equity, all together.",
+    "date": "As of",
+    "item": "Item",
+    "quantity": "Quantity",
+    "unitCost": "Cost of one ({{currency}})",
+    "save_one": "Save stock of 1 item",
+    "save_other": "Save stock of {{count}} items",
+    "saved_one": "Opening stock of 1 item saved",
+    "saved_other": "Opening stock of {{count}} items saved",
+    "none": "No goods track their stock yet. Turn on stock tracking for an item first.",
+    "quantityOf": "Quantity of {{item}}",
+    "costOf": "Cost of one {{item}}",
+    "batchFor": "Batch of {{item}}",
+    "expiryFor": "Expiry of {{item}}",
+    "serialsFor": "Serial numbers of {{item}}"
   }
 }
