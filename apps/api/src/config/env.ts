@@ -57,6 +57,11 @@ export const envSchema = z
       .url()
       .default('https://api.postalpincode.in')
       .transform((v) => v.replace(/\/+$/, '')),
+    /** Razorpay's IFSC directory (free, no key), for filling a bank branch from its IFSC */
+    IFSC_URL: z
+      .url()
+      .default('https://ifsc.razorpay.com')
+      .transform((v) => v.replace(/\/+$/, '')),
     CORS_ORIGINS: z
       .string()
       .default('http://localhost:5173')

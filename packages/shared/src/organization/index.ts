@@ -1,5 +1,6 @@
 import { isUpiId } from '../upi/index.js';
 import { z } from 'zod';
+import { bankDetailsSchema } from '../bank/index.js';
 
 const PAN = /^[A-Z]{3}[ABCFGHJLPT][A-Z]\d{4}[A-Z]$/;
 const TAN = /^[A-Z]{4}\d{5}[A-Z]$/;
@@ -166,6 +167,8 @@ export const organizationSettingsSchema = z
     cin: idField(CIN_OR_LLPIN, 'A CIN looks like U72200MH2020PTC123456; an LLPIN like AAB-1234.'),
     /** Importer-exporter code from DGFT (now the PAN for most) */
     iec: idField(/^[A-Z0-9]{10}$/, 'An IEC is 10 letters and digits.'),
+    /** The account customers pay into, printed on invoices */
+    bankDetails: bankDetailsSchema.nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');

@@ -115,6 +115,8 @@ model Organization {
   tan                  String?
   cin                  String?
   iec                  String?
+  /// The account customers pay into, printed on invoices { accountName, accountNumber, ifsc, bankName, branch, accountType }
+  bankDetails          Json?              @map("bank_details")
   lutFrom              DateTime?          @map("lut_from") @db.Date
   lutTo                DateTime?          @map("lut_to") @db.Date
   weeklySummarySentOn  DateTime?          @map("weekly_summary_sent_on") @db.Date
@@ -712,6 +714,8 @@ model Contact {
   gstTreatment     String?   @map("gst_treatment")
   /// Their PAN, for TDS; null = from the GSTIN
   pan              String?
+  /// The account they're paid into { accountName, accountNumber, ifsc, bankName, branch, accountType }
+  bankDetails      Json?     @map("bank_details")
   udyamNumber      String?   @map("udyam_number")
   /// Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none
   interestRateBp   Int?      @map("interest_rate_bp")
@@ -2083,6 +2087,16 @@ model BalanceConfirmation {
 }
 
 /// India Post's answer for a PIN code, kept so the address form doesn't ask again (not per organisation: it's public data)
+/// Bank branches by IFSC, from Razorpay's free directory, kept a month
+model IfscCache {
+  ifsc      String   @id @db.Char(11)
+  /// The parsed lookup (null when the directory doesn't know it)
+  data      Json?
+  fetchedAt DateTime @default(now()) @map("fetched_at") @db.Timestamptz(6)
+
+  @@map("ifsc_cache")
+}
+
 model PincodeCache {
   pin       String   @id @db.Char(6)
   /// The parsed lookup (null when India Post doesn't know the PIN)

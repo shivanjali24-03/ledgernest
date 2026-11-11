@@ -10,6 +10,8 @@ import Button from '../ui/Button';
 import { Field, inputClass, SelectField, TextField } from '../ui/Field';
 import Modal from '../ui/Modal';
 import IndianAddressFields from '../geo/IndianAddressFields';
+import BankDetailsFields from '../bank/BankDetailsFields';
+import { bankForm, bankValue, type BankForm } from '../bank/form';
 import { useToast } from '../ui/toastContext';
 import { ApiError } from '../auth/client';
 import { contactErrorMessage } from './errors';
@@ -78,6 +80,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [msme, setMsme] = useState<MsmeCategory | ''>(contact?.msmeCategory ?? '');
   const [interest, setInterest] = useState(contact?.interestRateBp != null ? String(contact.interestRateBp / 100) : '');
   const [udyam, setUdyam] = useState(contact?.udyamNumber ?? '');
+  const [bank, setBank] = useState<BankForm>(bankForm(contact?.bankDetails));
   const [notes, setNotes] = useState(contact?.notes ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -111,6 +114,8 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     msmeCategory: isVendor && msme ? msme : null,
     interestRateBp: isCustomer && interest.trim() ? Math.round(Number(interest.replace('%', '').trim()) * 100) : null,
     udyamNumber: isVendor ? udyam : '',
+    // Only vendors are paid into an account
+    bankDetails: isVendor ? bankValue(bank) : null,
     notes,
   });
   const save = useMutation({
@@ -212,6 +217,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
             <>
               <SelectField label={t('contacts.fields.msme')} value={msme} onChange={(e) => setMsme(e.target.value as MsmeCategory | '')} hint={t('contacts.hints.msme')} options={[{ value: '', label: t('contacts.msme.none') }, ...MSME_CATEGORIES.map((c) => ({ value: c, label: t(`contacts.msme.${c}`) }))]} />
               <TextField label={t('contacts.fields.udyam')} value={udyam} onChange={(e) => setUdyam(e.target.value)} error={errors.udyamNumber} placeholder="UDYAM-MH-26-0012345" dir="ltr" className="font-mono uppercase" />
+              <BankDetailsFields value={bank} onChange={setBank} errors={{ accountName: errors['bankDetails.accountName'], accountNumber: errors['bankDetails.accountNumber'], ifsc: errors['bankDetails.ifsc'] }} />
             </>
           )}
         </div>

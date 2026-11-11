@@ -1,6 +1,9 @@
 import { LOGO_MAX_BYTES, LOGO_TYPES, sniffLogoType, type LogoType, type OrganizationSettingsInput } from '@ledgernest/shared';
 import { monthName } from '../lib/format';
 import type { OrganizationSettings } from './types';
+import { bankValue } from '../bank/form';
+
+const BANK: string[] = ['bankAccountName', 'bankAccountNumber', 'bankIfsc', 'bankName', 'bankBranch'];
 
 export interface SettingsValues {
   name: string;
@@ -47,6 +50,11 @@ export interface SettingsValues {
   tan: string;
   cin: string;
   iec: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankIfsc: string;
+  bankName: string;
+  bankBranch: string;
 }
 export type SettingsField = keyof SettingsValues;
 export type SettingsErrors = Partial<Record<SettingsField, string>>;
@@ -91,6 +99,11 @@ export const toValues = (s: OrganizationSettings): SettingsValues => ({
   tan: s.tan ?? '',
   cin: s.cin ?? '',
   iec: s.iec ?? '',
+  bankAccountName: s.bankDetails?.accountName ?? '',
+  bankAccountNumber: s.bankDetails?.accountNumber ?? '',
+  bankIfsc: s.bankDetails?.ifsc ?? '',
+  bankName: s.bankDetails?.bankName ?? '',
+  bankBranch: s.bankDetails?.branch ?? '',
 });
 
 /** Only what the person changed, shaped for PATCH /organization. Empty when nothing changed. */
@@ -110,6 +123,8 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
     else if (k === 'interestRate') out.interestRateBp = v[k].trim() ? Math.round(Number(v[k].replace('%', '').trim()) * 100) : null;
     else if (k === 'interestGraceDays') out.interestGraceDays = Number(v[k] || 0);
     else if (k === 'lutFrom' || k === 'lutTo' || k === 'businessType') out[k] = v[k] || null;
+    // The bank account goes as one: all of it, or null when cleared
+    else if (BANK.includes(k)) out.bankDetails = bankValue({ accountName: v.bankAccountName, accountNumber: v.bankAccountNumber, ifsc: v.bankIfsc, bankName: v.bankName, branch: v.bankBranch });
     else out[k] = v[k];
   }
   if (Object.keys(address).length) out.address = address;
@@ -119,6 +134,7 @@ export function changes(initial: SettingsValues, v: SettingsValues): Organizatio
 /** The form field a validation issue belongs to (address.city → city). */
 export const fieldOf = (path: PropertyKey[]): SettingsField | null => {
   const key = String(path[path.length - 1] ?? '');
+  if (path[0] === 'bankDetails') return ({ accountName: 'bankAccountName', accountNumber: 'bankAccountNumber', ifsc: 'bankIfsc', bankName: 'bankName', branch: 'bankBranch' } as const)[key as 'ifsc'] ?? null;
   return key in ADDRESS || ['name', 'legalName', 'taxId', 'email', 'phone', 'country', 'baseCurrency', 'locale', 'timeZone', 'fiscalYearStartMonth', 'invoiceTerms', 'upiId', 'weeklySummary', 'requireTwoFactor', 'msmeCategory', 'udyamNumber', 'gstScheme', 'interestMethod', 'interestGraceDays', 'lutNumber', 'lutFrom', 'lutTo', 'businessType', 'pan', 'tan', 'cin', 'iec'].includes(key) ? (key as SettingsField) : key === 'msmeBankRateBp' ? 'msmeBankRate' : key === 'interestRateBp' ? 'interestRate' : null;
 };
 

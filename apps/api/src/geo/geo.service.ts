@@ -6,8 +6,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  IFSC,
   PIN_CODE,
+  ifscFromRazorpay,
   pinLookupFromIndiaPost,
+  type IfscLookup,
   type PinLookup,
 } from '@ledgernest/shared';
 import type { Env } from '../config/env.js';
@@ -76,6 +79,66 @@ export class GeoService {
     await this.prisma.pincodeCache.upsert({
       where: { pin },
       create: { pin, data, fetchedAt: now },
+      update: { data, fetchedAt: now },
+    });
+    if (!found) throw unknown();
+    return found;
+  }
+
+  /**
+   * A bank branch from its IFSC, through Razorpay's free IFSC directory: only for a well-formed code, with a timeout,
+   * kept a month (a day when unknown) like PIN codes.
+   */
+  async ifsc(code: string, now = new Date()): Promise<IfscLookup> {
+    const ifsc = code.toUpperCase();
+    if (!IFSC.test(ifsc))
+      throw new BadRequestException({
+        message:
+          'An IFSC is 11 characters, like HDFC0001234 (the 5th is a zero).',
+        details: { reason: 'invalid_ifsc' },
+      });
+    const unknown = () =>
+      new NotFoundException({
+        message: 'No bank branch has this IFSC. Check it on the cheque book.',
+        details: { reason: 'unknown_ifsc' },
+      });
+    const kept = await this.prisma.ifscCache.findUnique({ where: { ifsc } });
+    if (kept) {
+      const age = now.getTime() - kept.fetchedAt.getTime();
+      if (kept.data && age < KEEP_FOUND_MS)
+        return kept.data as unknown as IfscLookup;
+      if (!kept.data && age < KEEP_MISSING_MS) throw unknown();
+    }
+    const url = this.config.get('IFSC_URL', { infer: true });
+    let found: IfscLookup | null;
+    try {
+      const res = await fetch(`${url}/${ifsc}`, {
+        signal: AbortSignal.timeout(8000),
+        headers: { Accept: 'application/json' },
+        redirect: 'error',
+      });
+      // The directory answers 404 for a code it doesn't know
+      if (res.status === 404) found = null;
+      else {
+        if (!res.ok) throw new Error(String(res.status));
+        const text = await res.text();
+        if (text.length > 100_000) throw new Error('too large');
+        found = ifscFromRazorpay(ifsc, JSON.parse(text));
+      }
+    } catch {
+      if (kept?.data) return kept.data as unknown as IfscLookup;
+      throw new BadGatewayException({
+        message:
+          'The IFSC directory couldn’t be reached. Type the bank and branch instead.',
+        details: { reason: 'source_unavailable' },
+      });
+    }
+    const data = found
+      ? (found as unknown as Prisma.InputJsonValue)
+      : Prisma.DbNull;
+    await this.prisma.ifscCache.upsert({
+      where: { ifsc },
+      create: { ifsc, data, fetchedAt: now },
       update: { data, fetchedAt: now },
     });
     if (!found) throw unknown();

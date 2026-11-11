@@ -11,6 +11,7 @@ import {
   organizationIdProblems,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
+import { Prisma } from '../generated/prisma/client.js';
 import { TenantPrisma } from '../access/tenant-prisma.js';
 import type { Actor, Tenant } from '../access/types.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -67,6 +68,7 @@ const select = {
   tan: true,
   cin: true,
   iec: true,
+  bankDetails: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -111,6 +113,7 @@ type Columns = Partial<{
   tan: string | null;
   cin: string | null;
   iec: string | null;
+  bankDetails: unknown;
 }>;
 
 const ADDRESS_COLUMNS = {
@@ -265,7 +268,9 @@ export class OrganizationService {
         k,
         (k === 'lutFrom' || k === 'lutTo') && typeof wanted[k] === 'string'
           ? new Date(`${wanted[k] as string}T00:00:00Z`)
-          : wanted[k],
+          : k === 'bankDetails' && wanted[k] === null
+            ? Prisma.DbNull
+            : wanted[k],
       ]),
     );
     await this.prisma.$transaction(async (tx) => {

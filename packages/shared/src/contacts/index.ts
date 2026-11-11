@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { bankDetailsSchema } from '../bank/index.js';
 import { emailSchema } from '../auth/index.js';
 import { findIndianState, isGstin } from '../taxes/index.js';
 
@@ -123,6 +124,8 @@ const fields = {
   gstTreatment: z.enum(GST_TREATMENTS).nullable().optional().default(null),
   /** Their PAN, for TDS (from the GSTIN when blank) */
   pan: contactPan.optional().default(null),
+  /** The account they're paid into (vendors) */
+  bankDetails: bankDetailsSchema.nullable().optional().default(null),
   notes: text(1000),
 };
 
@@ -185,6 +188,7 @@ export const contactUpdateSchema = z
     interestRateBp: z.number().int().min(0).max(3600).nullable(),
     gstTreatment: z.enum(GST_TREATMENTS).nullable(),
     pan: contactPan,
+    bankDetails: bankDetailsSchema.nullable(),
     notes: z
       .string()
       .trim()

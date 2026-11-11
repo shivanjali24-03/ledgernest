@@ -132,7 +132,22 @@ describe('Organisation and party identifiers (e2e)', () => {
     expect(cin.body.details).toMatchObject({ field: 'cin' });
   });
 
-  it('prints the PAN and LLPIN on invoices', async () => {
+  it('prints the PAN, LLPIN and bank account on invoices', async () => {
+    const bad = await patchOrg({
+      bankDetails: { accountName: 'Nest', accountNumber: '12', ifsc: 'X' },
+    }).expect(400);
+    expect(bad.body.details.map((d: { field: string }) => d.field)).toEqual(
+      expect.arrayContaining(['bankDetails.accountNumber', 'bankDetails.ifsc']),
+    );
+    await patchOrg({
+      bankDetails: {
+        accountName: 'Nest Demo LLP',
+        accountNumber: '5010 0123 4567 89',
+        ifsc: 'hdfc0001234',
+        bankName: 'HDFC Bank',
+        branch: 'Baner',
+      },
+    }).expect(200);
     const customer = (
       await contact({ name: 'Buyer', isVendor: false }).expect(201)
     ).body.id as string;
@@ -154,6 +169,10 @@ describe('Organisation and party identifiers (e2e)', () => {
     const text = (pdf.body as Buffer).toString('latin1');
     expect(text).toContain('PAN AAPFN1234C');
     expect(text).toContain('LLPIN AAB-1234');
+    expect(text).toContain('A/c 50100123456789');
+    expect(text).toContain('IFSC HDFC0001234');
+    // And it can be taken off again
+    await patchOrg({ bankDetails: null }).expect(200);
   });
 
   it('keeps a vendor’s PAN for TDS, checked against their GSTIN', async () => {
