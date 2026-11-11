@@ -120,7 +120,7 @@ export default function Invoices() {
           ) : (
             <div className="relative overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
+                <thead className="whitespace-nowrap border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>
                     <th scope="col" className="px-4 py-2.5 text-start font-semibold">
                       {t('invoices.columns.number')}
@@ -155,14 +155,16 @@ export default function Invoices() {
                         {i.contact.name}
                         {i.reference && <span className="block text-xs text-ink-500">{i.reference}</span>}
                       </td>
-                      <td className="px-4 py-2.5 text-ink-600 dark:text-ink-300">{day(i.dueDate)}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-ink-600 dark:text-ink-300">{day(i.dueDate)}</td>
                       <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
                         {i.currency ? formatMoney(i.total, i.currency, locale) : money.format(i.total)}
                       </td>
                       <td className="px-4 py-2.5 text-end font-mono tabular-nums" dir="ltr">
                         {i.status === 'issued' ? (i.currency ? formatMoney(i.balance, i.currency, locale) : money.format(i.balance)) : '—'}
                       </td>
-                      <td className={`px-4 py-2.5 font-medium ${stateTone(i.state)}`}>{t(`invoices.states.${i.state}`)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex whitespace-nowrap rounded-full bg-current/10 px-2 py-0.5 text-xs font-semibold ${stateTone(i.state)}`}>{t(`invoices.states.${i.state}`)}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

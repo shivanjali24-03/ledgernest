@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Ban, FileInput, PackageCheck, Plus, Send, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { parseQuantity, todayIn } from '@ledgernest/shared';
+import { lineNet, parseQuantity, todayIn } from '@ledgernest/shared';
 import { ApiError } from '../../auth/client';
 import { apiErrorMessage } from '../../platform/errors';
 import { useAccountsApi } from '../../accounts/useAccountsApi';
@@ -64,6 +64,13 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
     set(key, item ? { itemId, description: item.name, unitPrice: item.purchasePrice !== null ? (item.purchasePrice / 100).toFixed(2) : '', taxGroupId: item.taxGroupId ?? '', accountId: (item.trackStock ? item.inventoryAccountId : item.expenseAccountId) ?? '' } : { itemId: '' });
   };
   const filled = lines.filter((l) => l.description.trim() || l.unitPrice.trim());
+  // Each line's amount before tax, and their total, as the vendor will bill it
+  const net = (l: Line) => {
+    const price = toMinor(l.unitPrice);
+    return price !== null && parseQuantity(l.quantity) !== null ? lineNet(l.quantity, price, 0) : null;
+  };
+  const subtotal = filled.reduce((sum, l) => sum + (net(l) ?? 0), 0);
+  const money = useMoney();
   const invalid = !contactId || !filled.length || filled.some((l) => !l.description.trim() || toMinor(l.unitPrice) === null || parseQuantity(l.quantity) === null);
   const save = useMutation({
     mutationFn: () => {
@@ -98,6 +105,7 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
               {['item', 'description', 'quantity', 'price', 'tax', 'account'].map((c) => (
                 <th key={c} scope="col" className="px-3 py-2 text-start font-semibold">{t(`purchaseOrders.columns.${c}`)}</th>
               ))}
+              <th scope="col" className="px-3 py-2 text-end font-semibold">{t('purchaseOrders.columns.amount')}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -131,6 +139,9 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
                     ))}
                   </select>
                 </td>
+                <td className="whitespace-nowrap px-3 py-1.5 text-end font-mono tabular-nums" dir="ltr">
+                  {net(l) !== null ? money.plain(net(l)!) : ''}
+                </td>
                 <td className="pe-2">
                   {lines.length > 1 && (
                     <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} aria-label={t('journals.removeLineN', { n: n + 1 })} className="grid size-9 place-items-center rounded-lg text-ink-400 hover:bg-ink-100 hover:text-expense dark:hover:bg-ink-800">
@@ -142,10 +153,14 @@ function DraftForm({ order, api }: { order: PurchaseOrder | null; api: PurchaseO
             ))}
           </tbody>
         </table>
-        <div className="p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3">
           <Button type="button" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setLines((ls) => [...ls, blank()])}>
             {t('journals.addLine')}
           </Button>
+          <p className="pe-12 text-sm">
+            <span className="text-ink-500">{t('purchaseOrders.totalBeforeTax')}</span>{' '}
+            <span className="font-mono font-semibold tabular-nums" dir="ltr">{money.format(subtotal)}</span>
+          </p>
         </div>
       </Card>
       <Card className="p-5">

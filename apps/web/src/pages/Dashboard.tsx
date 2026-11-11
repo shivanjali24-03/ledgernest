@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronRight
 import clsx from 'clsx';
 import AnimatedNumber from '../motion/AnimatedNumber';
 import { fadeUp, stagger } from '../motion/tokens';
-import { formatCompactMoney, formatPercent } from '../lib/format';
+import { formatCompactMoney, formatPercent, threeLetterMonths } from '../lib/format';
 import { roleLabel, useSession } from '../layout/session';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
@@ -16,14 +16,14 @@ import { SkeletonRows } from '../ui/Kit';
 import ComplianceCard from './ComplianceCard';
 import DemoTourCard from './DemoTourCard';
 
-/** Tiny line chart; the line draws itself in (stroke animation, no layout). */
+/** Tiny line chart that fades in. (A stroke draw-in breaks into dashes on a stretched, non-scaling line.) */
 function Sparkline({ points, tone }: { points: number[]; tone: 'good' | 'bad' | 'flat' }) {
   const min = Math.min(...points);
   const max = Math.max(...points);
   const d = points.map((p, i) => `${(i / Math.max(points.length - 1, 1)) * 100},${30 - ((p - min) / (max - min || 1)) * 26 - 2}`).join(' L');
   return (
     <svg viewBox="0 0 100 30" className="h-10 w-full" preserveAspectRatio="none" aria-hidden>
-      <motion.path d={`M${d}`} fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className={tone === 'flat' ? 'stroke-ink-300 dark:stroke-ink-600' : tone === 'good' ? 'stroke-income' : 'stroke-expense'} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1, ease: [0.2, 0.8, 0.2, 1] }} />
+      <motion.path d={`M${d}`} fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" className={tone === 'flat' ? 'stroke-ink-300 dark:stroke-ink-600' : tone === 'good' ? 'stroke-income' : 'stroke-expense'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} />
     </svg>
   );
 }
@@ -38,7 +38,7 @@ function ProfitChart({ monthly }: { monthly: DashboardData['monthly'] }) {
   const money = useMoney();
   const max = Math.max(1, ...monthly.map((m) => Math.abs(m.profit)));
   const hasLoss = monthly.some((m) => m.profit < 0);
-  const label = (month: string) => new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`));
+  const label = (month: string) => threeLetterMonths(new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`)));
   return (
     <figure>
       <div className={clsx('relative flex h-40 items-stretch gap-1.5', hasLoss && 'pb-0')} aria-hidden>
@@ -197,7 +197,7 @@ export default function Dashboard() {
                   </span>
                   <span className={clsx('mt-0.5 block', forecast.data.shortfall ? 'text-expense' : 'text-ink-600 dark:text-ink-300')}>
                     {forecast.data.shortfall
-                      ? t('dashboard.forecast.shortfall', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${forecast.data.shortfall.start}T00:00:00Z`)), amount: money.format(forecast.data.shortfall.balance).replace('-', '\u2212') }) /* a true minus sign: no line break after it */
+                      ? t('dashboard.forecast.shortfall', { date: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${forecast.data.shortfall.start}T00:00:00Z`)), amount: money.format(forecast.data.shortfall.balance).replace(/^[-\u2212\u2013]/, '\u2212\u2060') }) /* minus sign joined to the amount: no line break after it */
                       : t('dashboard.forecast.fine', { amount: money.format(forecast.data.weeks.at(-1)?.closing ?? forecast.data.opening) })}
                   </span>
                 </Link>

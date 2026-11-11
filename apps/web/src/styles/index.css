@@ -51,6 +51,9 @@
   }
   html[data-theme='dark'] {
     color-scheme: dark;
+    /* Muted text lighter on dark surfaces: at least 5:1 on cards (WCAG AA), where the light-mode greys gave 3:1 */
+    --color-ink-500: #a3acbd;
+    --color-ink-400: #95a0b4;
   }
   body {
     @apply bg-ink-50 text-ink-900 dark:bg-ink-950 dark:text-ink-100;

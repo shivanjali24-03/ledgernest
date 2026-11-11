@@ -27,7 +27,10 @@ export const formatPercent = (value: number, locale = 'en-IN') =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(value);
 
 /** "8 Nov 2026" in the user's language. */
-export const formatDate = (iso: string, locale: string) => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
+/** Indian English abbreviates September as "Sept"; every other month gets three letters, so it does too */
+export const threeLetterMonths = (text: string) => text.replace(/\bSept\b/g, 'Sep');
+
+export const formatDate = (iso: string, locale: string) => threeLetterMonths(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)));
 
 /** "3 days ago", "in 5 days", "now", in the user's language. */
 export function formatRelative(iso: string, locale: string, now = Date.now()): string {

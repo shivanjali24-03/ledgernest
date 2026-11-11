@@ -9,6 +9,9 @@ import { useMoney } from '../lib/useMoney';
 import { useSession } from '../layout/session';
 import { fadeUp, stagger } from '../motion/tokens';
 import { usePeriodsApi } from '../periods/usePeriodsApi';
+import { useBankingApi } from '../banking/useBankingApi';
+import { useIntlLocale } from '../i18n';
+import { formatDate } from '../lib/format';
 import { useReportsApi } from '../reports/useReportsApi';
 import { useOrganizationSettings } from '../settings/useOrganizationSettings';
 import { SelectField } from '../ui/Field';
@@ -29,6 +32,8 @@ interface Step {
  */
 export default function YearEnd() {
   const { t } = useTranslation();
+  const locale = useIntlLocale();
+  const day = (d: string) => (d ? formatDate(`${d}T00:00:00Z`, locale) : '');
   const money = useMoney();
   const session = useSession();
   const reports = useReportsApi();
@@ -48,6 +53,17 @@ export default function YearEnd() {
   const payable = useQuery({ queryKey: [...key, 'confirm', end, 'payable'], queryFn: () => reports!.confirmations(end, 'payable'), enabled: on });
   const msme = useQuery({ queryKey: [...key, 'msme', end], queryFn: () => reports!.msme(end), enabled: on && india });
   const gst = useQuery({ queryKey: [...key, 'gst-health'], queryFn: () => reports!.gstHealth(), enabled: !!reports && india });
+  // Each bank account reconciled to a statement dated at or after the year end; none counts as done without one
+  const banking = useBankingApi();
+  const banks = useQuery({
+    queryKey: [...key, 'bank-reconciled', end],
+    queryFn: async () => {
+      const accounts = (await banking!.accounts()).filter((a) => a.subtype === 'bank' && !a.archived && !a.hasChildren);
+      const work = await Promise.all(accounts.map((a) => banking!.reconcileWorkspace(a.id, end)));
+      return { total: accounts.length, behind: work.filter((w) => !w.lastReconciliation || w.lastReconciliation.statementDate < end).length };
+    },
+    enabled: on && !!banking,
+  });
 
   if (years.data && !all.length)
     return (
@@ -75,8 +91,12 @@ export default function YearEnd() {
   const steps: Step[] = [
     {
       key: 'bank',
-      status: !dashboard.data ? 'loading' : alert('unreconciled') ? 'attention' : 'done',
-      detail: alert('unreconciled') ? t('yearEnd.details.bank', { count: alert('unreconciled') }) : t('yearEnd.details.bankDone'),
+      status: !dashboard.data || (banking && !banks.data) ? 'loading' : alert('unreconciled') ? 'attention' : banks.data?.behind ? 'todo' : 'done',
+      detail: alert('unreconciled')
+        ? t('yearEnd.details.bank', { count: alert('unreconciled') })
+        : banks.data?.behind
+          ? t('yearEnd.details.bankNotReconciled', { count: banks.data.behind, date: day(end) })
+          : t('yearEnd.details.bankDone'),
       to: '/banking',
     },
     {
