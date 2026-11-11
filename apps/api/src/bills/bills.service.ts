@@ -671,6 +671,7 @@ export class BillsService {
         stateCode: true,
         paymentTermsDays: true,
         taxId: true,
+        gstTreatment: true,
       },
     });
     if (!contact)
@@ -703,6 +704,18 @@ export class BillsService {
     const placeOfSupply = input.placeOfSupply ?? contact.stateCode;
     const rcm = !!input.reverseCharge;
     const boe = input.billOfEntry ?? null;
+    // A composition dealer issues bills of supply: it can't charge GST (CGST Act s.10(4))
+    if (
+      contact.gstTreatment === 'composition' &&
+      !rcm &&
+      !boe &&
+      input.lines.some((l) => l.taxGroupId)
+    )
+      throw refuse(
+        BadRequestException,
+        'This vendor is under the composition scheme and can’t charge GST: take the tax off the lines.',
+        'vendor_composition',
+      );
     if (boe && rcm)
       throw refuse(
         BadRequestException,

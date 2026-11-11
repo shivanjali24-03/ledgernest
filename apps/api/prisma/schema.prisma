@@ -702,6 +702,8 @@ model Contact {
   creditLimit      BigInt?   @map("credit_limit")
   /// MSME category from the vendor's Udyam certificate (micro, small or medium); null = not an MSME
   msmeCategory     String?   @map("msme_category")
+  /// How GST treats them: registered | composition | sez | unregistered | consumer | overseas | uin; null = from the GSTIN and country
+  gstTreatment     String?   @map("gst_treatment")
   udyamNumber      String?   @map("udyam_number")
   /// Interest on this customer's late payments, basis points a year: null = the organisation's, 0 = none
   interestRateBp   Int?      @map("interest_rate_bp")

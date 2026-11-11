@@ -1,4 +1,4 @@
-import type { ContactAddress, ContactCreateInput, ContactUpdateInput, MsmeCategory } from '@ledgernest/shared';
+import type { ContactAddress, ContactCreateInput, ContactUpdateInput, MsmeCategory, GstTreatment } from '@ledgernest/shared';
 
 export interface Contact {
   id: string;
@@ -23,6 +23,8 @@ export interface Contact {
   interestRateBp?: number | null;
   /** The vendor's MSME category from its Udyam certificate: micro and small must be paid within 45 days */
   msmeCategory?: MsmeCategory | null;
+  /** How GST treats them; null = from the GSTIN and country */
+  gstTreatment?: GstTreatment | null;
   udyamNumber?: string | null;
   /** The customer's account link (opened without signing in), how often it was opened and when last */
   share?: { token: string; views: number; lastViewedAt: string | null } | null;

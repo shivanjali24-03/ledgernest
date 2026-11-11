@@ -377,6 +377,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
     const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
     const rcm = !!d.reverseCharge;
     const boe = d.billOfEntry ?? null;
+    if (contact.gstTreatment === 'composition' && !rcm && !boe && d.lines.some((l) => l.taxGroupId)) throw refuse(400, 'vendor_composition');
     if (boe && rcm) throw refuse(400, 'boe_reverse_charge', { field: 'reverseCharge' });
     if (boe && contact.currency) throw refuse(400, 'boe_currency', { field: 'contactId' });
     if (boe && !d.lines.some((l) => l.taxGroupId)) throw refuse(400, 'boe_no_igst');

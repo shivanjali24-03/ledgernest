@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ExportDetails, type InvoiceDiscount, type ShipTo, type SupplyKind, SUPPLY_KINDS, isExport, isSez, zeroRatedUnderLut } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ExportDetails, type InvoiceDiscount, type ShipTo, type SupplyKind, SUPPLY_KINDS, isExport, isSez, zeroRatedUnderLut, gstTreatmentOf } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -264,7 +264,16 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
           <SelectField
             label={t('invoices.fields.customer')}
             value={contactId}
-            onChange={(e) => setContactId(e.target.value)}
+            onChange={(e) => {
+              setContactId(e.target.value);
+              // An SEZ or overseas customer: the supply is zero-rated, under LUT when the organisation has one
+              const c = customers.data?.items.find((x) => x.id === e.target.value);
+              if (c && config.interest) {
+                const g = gstTreatmentOf(c);
+                const lut = !!settings?.lutNumber;
+                setSupplyKind(g === 'sez' ? (lut ? 'sez_lut' : 'sez_with_igst') : g === 'overseas' ? (lut ? 'export_lut' : 'export_with_igst') : 'regular');
+              }
+            }}
             disabled={!canManage}
             options={[{ value: '', label: t('invoices.chooseCustomer') }, ...(customers.data?.items ?? []).map((c) => ({ value: c.id, label: c.currency ? `${c.name} (${c.currency})` : c.name }))]}
             hint={customer?.currency ? t('invoices.foreignHint', { code: customer.currency }) : undefined}

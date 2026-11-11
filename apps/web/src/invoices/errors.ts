@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import { ApiError } from '../auth/client';
 import { journalErrorMessage } from '../journals/errors';
 
-const REASONS = ['not_customer', 'contact_archived', 'account_required', 'not_income', 'item_archived', 'no_receivable_account', 'receivable_currency', 'zero_total', 'not_draft', 'not_issued', 'has_payments', 'document_entry', 'no_rate', 'no_period', 'period_closed', 'over_allocated', 'bank_currency', 'bank_invalid', 'invoice_not_issued', 'invoice_currency', 'already_void', 'nothing_owed', 'no_email', 'mail_off', 'mail_failed', 'composition_no_tax', 'nothing_to_charge', 'waive_too_much', 'already_charged', 'no_interest_terms', 'instalments_total', 'instalments_before_issue', 'no_lut', 'rcm_kind', 'rcm_unregistered'];
+const REASONS = ['not_customer', 'contact_archived', 'account_required', 'not_income', 'item_archived', 'no_receivable_account', 'receivable_currency', 'zero_total', 'not_draft', 'not_issued', 'has_payments', 'document_entry', 'no_rate', 'no_period', 'period_closed', 'over_allocated', 'bank_currency', 'bank_invalid', 'invoice_not_issued', 'invoice_currency', 'already_void', 'nothing_owed', 'no_email', 'mail_off', 'mail_failed', 'composition_no_tax', 'nothing_to_charge', 'waive_too_much', 'already_charged', 'no_interest_terms', 'instalments_total', 'instalments_before_issue', 'no_lut', 'rcm_kind', 'rcm_unregistered', 'sez_customer'];
 
 /** Refusals about batches of goods (shared with bills and stock counts) */
 export const BATCH_REASONS = ['batch_required', 'batch_dates_differ', 'batch_expired', 'insufficient_batch', 'insufficient_unexpired', 'batch_invalid', 'batches_need_stock'];
