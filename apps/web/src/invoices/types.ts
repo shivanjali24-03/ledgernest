@@ -11,11 +11,19 @@ export interface InvoiceLine {
   discount: number;
   amount: number;
   taxAmount: number;
-  item: { id: string; name: string; hsnSac: string | null; unit: string | null } | null;
+  item: { id: string; name: string; hsnSac: string | null; unit: string | null; trackBatches?: boolean } | null;
   account: { id: string; code: string; name: string } | null;
   taxGroup: { id: string; name: string; supply: 'intra' | 'inter' | null } | null;
   /** The cost centre or project the line belongs to */
   costCentre?: { id: string; code: string; name: string } | null;
+  /** A draft invoice line's chosen batch (goods kept in batches); null = earliest expiry first */
+  batchId?: string | null;
+  /** The batches an issued invoice line's goods came from */
+  batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[];
+  /** A bill line's batch, as it came in */
+  batchNo?: string | null;
+  mfgDate?: string | null;
+  expiryDate?: string | null;
 }
 
 export interface Invoice {

@@ -19,6 +19,8 @@ export interface Item {
   expenseAccount: { id: string; code: string; name: string } | null;
   /** Goods whose quantity on hand is kept, at average cost */
   trackStock: boolean;
+  /** Tracked goods kept in batches with manufacturing and expiry dates */
+  trackBatches?: boolean;
   inventoryAccountId: string | null;
   cogsAccountId: string | null;
   inventoryAccount: { id: string; code: string; name: string } | null;
@@ -35,9 +37,20 @@ export interface Item {
   archived: boolean;
 }
 
+export interface ItemBatch {
+  id: string;
+  batchNo: string;
+  mfgDate: string | null;
+  expiryDate: string | null;
+  onHand: string;
+  expired: boolean;
+}
+
 /** Products and services. Live and demo both implement it. */
 export interface ItemsApi {
   list(q: { search?: string; kind?: ItemKind; category?: string; archived?: boolean }): Promise<Item[]>;
+  /** An item's batches, with what's on hand and whether each has expired */
+  batches(itemId: string): Promise<ItemBatch[]>;
   /** The categories and brands in use, for suggestions */
   facets(): Promise<{ categories: string[]; brands: string[] }>;
   /** As CSV, in the columns the items import reads */

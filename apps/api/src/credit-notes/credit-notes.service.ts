@@ -555,6 +555,7 @@ export class CreditNotesService {
             organizationId,
             inv.id,
             lines.map((l) => ({
+              invoiceLineId: l.src.id,
               itemId: l.src.itemId,
               quantity: l.quantity,
               costCentreId: l.src.costCentreId,

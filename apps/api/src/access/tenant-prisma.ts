@@ -15,6 +15,7 @@ export const TENANT_MODELS = new Set<string>([
   'Account',
   'FiscalYear',
   'NumberSeries',
+  'StockBatch',
   'Period',
   'JournalEntry',
   'JournalLine',

@@ -39,15 +39,20 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
   const [unitCost, setUnitCost] = useState('');
   const [accountId, setAccount] = useState('');
   const [reason, setReason] = useState('');
+  const [batchNo, setBatchNo] = useState('');
+  const [mfgDate, setMfgDate] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const batched = !!item?.trackBatches;
+  const batches = useQuery({ queryKey: ['items', session.organizationId, 'batches', item?.id], queryFn: () => itemsApi!.batches(item!.id), enabled: !!itemsApi && batched });
   const others = (accounts.data ?? []).filter((a) => !a.archived && a.childCount === 0 && !a.currency && a.id !== item?.inventoryAccountId);
   // Write-offs usually go to an expense; stock counted in, to equity (opening stock) or an expense (found)
   const suggested = others.filter((a) => (direction === 'out' ? a.type === 'expense' : a.type === 'equity' || a.type === 'expense'));
   const account = accountId || suggested[0]?.id || '';
   const qtyOk = /^\d{1,9}(\.\d{1,4})?$/.test(quantity.trim()) && Number(quantity) > 0;
   const cost = unitCost.trim() ? toMinor(unitCost, money.digits) : null;
-  const problem = !item ? 'item' : !qtyOk ? 'quantity' : unitCost.trim() && cost === null ? 'unitCost' : !account ? 'account' : reason.trim().length < 3 ? 'reason' : null;
+  const problem = !item ? 'item' : !qtyOk ? 'quantity' : unitCost.trim() && cost === null ? 'unitCost' : batched && !batchNo.trim() ? 'batch' : !account ? 'account' : reason.trim().length < 3 ? 'reason' : null;
   const save = useMutation({
-    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim() }),
+    mutationFn: () => api.adjust({ itemId: item!.id, date, direction, quantity: quantity.trim(), unitCost: direction === 'in' ? cost : null, accountId: account, reason: reason.trim(), ...(batched ? { batchNo: batchNo.trim(), mfgDate: direction === 'in' ? mfgDate || null : null, expiryDate: direction === 'in' ? expiryDate || null : null } : {}) }),
     onSuccess: (m) => {
       for (const k of ['inventory', 'items', 'journals', 'reports']) void qc.invalidateQueries({ queryKey: [k] });
       toast(t(direction === 'in' ? 'inventory.addedToast' : 'inventory.writtenOffToast', { quantity: m.quantity.replace(/^-/, ''), item: m.item }));
@@ -107,6 +112,21 @@ export default function AdjustStockDialog({ api, itemId: initial, onClose }: { a
             className="text-end font-mono"
           />
         )}
+        {batched &&
+          (direction === 'out' ? (
+            <SelectField
+              label={t('batches.batch')}
+              value={batchNo}
+              onChange={(e) => setBatchNo(e.target.value)}
+              options={[{ value: '', label: t('batches.choose') }, ...(batches.data ?? []).filter((b) => b.onHand !== '0').map((b) => ({ value: b.batchNo, label: t(b.expired ? 'batches.optionExpired' : 'batches.option', { batch: b.batchNo, expiry: b.expiryDate ?? '—', onHand: b.onHand }) }))]}
+            />
+          ) : (
+            <>
+              <TextField label={t('batches.batchNo')} value={batchNo} onChange={(e) => setBatchNo(e.target.value)} dir="ltr" className="font-mono" />
+              <TextField label={t('batches.mfgDate')} type="date" value={mfgDate} onChange={(e) => setMfgDate(e.target.value)} />
+              <TextField label={t('batches.expiryDate')} type="date" value={expiryDate} min={mfgDate || undefined} onChange={(e) => setExpiryDate(e.target.value)} />
+            </>
+          ))}
         <SelectField label={t('inventory.fields.account')} value={account} onChange={(e) => setAccount(e.target.value)} options={[...suggested, ...others.filter((a) => !suggested.includes(a))].map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))} />
         <div className="sm:col-span-2">
           <TextField label={t('inventory.fields.reason')} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t(direction === 'in' ? 'inventory.reasonInExample' : 'inventory.reasonOutExample')} maxLength={500} dir="auto" />

@@ -5,7 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  allocateBatches,
   averageUnitCost,
+  batchExpired,
   billNumber,
   creditNoteNumber,
   costOfQuantity,
@@ -27,7 +29,19 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
 type Tx = Prisma.TransactionClient;
-type Movement = { itemId: string; quantity: bigint; value: bigint };
+type Movement = {
+  itemId: string;
+  quantity: bigint;
+  value: bigint;
+  batchId?: string | null;
+  sourceLineId?: string | null;
+};
+/** A batch as a bill line or a stock count brings it in */
+type BatchIn = {
+  batchNo: string | null;
+  mfgDate: string | null;
+  expiryDate: string | null;
+};
 const refuse = (
   Ex: typeof ConflictException | typeof BadRequestException,
   message: string,
@@ -104,6 +118,7 @@ export class InventoryService {
           name: string;
           inventoryAccountId: string;
           cogsAccountId: string;
+          trackBatches: boolean;
         }
       >();
     const items = await tx.item.findMany({
@@ -113,6 +128,7 @@ export class InventoryService {
         name: true,
         inventoryAccountId: true,
         cogsAccountId: true,
+        trackBatches: true,
       },
     });
     return new Map(
@@ -123,9 +139,154 @@ export class InventoryService {
           name: i.name,
           inventoryAccountId: i.inventoryAccountId!,
           cogsAccountId: i.cogsAccountId!,
+          trackBatches: i.trackBatches,
         },
       ]),
     );
+  }
+
+  /** What's on hand in each batch of some items (ten-thousandths) */
+  async batchStock(
+    tx: Tx | PrismaService,
+    organizationId: string,
+    itemIds: string[],
+  ) {
+    if (!itemIds.length) return [];
+    const [batches, sums] = await Promise.all([
+      tx.stockBatch.findMany({
+        where: { organizationId, itemId: { in: itemIds } },
+        orderBy: [{ expiryDate: 'asc' }, { createdAt: 'asc' }],
+        select: {
+          id: true,
+          itemId: true,
+          batchNo: true,
+          mfgDate: true,
+          expiryDate: true,
+          createdAt: true,
+        },
+      }),
+      tx.stockMovement.groupBy({
+        by: ['batchId'],
+        where: {
+          organizationId,
+          itemId: { in: itemIds },
+          batchId: { not: null },
+        },
+        _sum: { quantity: true },
+      }),
+    ]);
+    const onHand = new Map(
+      sums.map((r) => [
+        r.batchId!,
+        r._sum.quantity ? signed(r._sum.quantity) : 0n,
+      ]),
+    );
+    return batches.map((b) => ({
+      id: b.id,
+      itemId: b.itemId,
+      batchNo: b.batchNo,
+      mfgDate: b.mfgDate ? iso(b.mfgDate) : null,
+      expiryDate: b.expiryDate ? iso(b.expiryDate) : null,
+      receivedAt: b.createdAt.toISOString(),
+      onHand: onHand.get(b.id) ?? 0n,
+    }));
+  }
+
+  /** An item's batches with what's on hand, for choosing one and for the item page */
+  async batches(organizationId: string, itemId: string, day: string) {
+    const rows = await this.batchStock(this.prisma, organizationId, [itemId]);
+    return rows.map((b) => ({
+      id: b.id,
+      batchNo: b.batchNo,
+      mfgDate: b.mfgDate,
+      expiryDate: b.expiryDate,
+      onHand: onHandText(b.onHand),
+      expired: batchExpired(b.expiryDate, day),
+    }));
+  }
+
+  /**
+   * The batch a bill line or stock count brings goods into: found by its number, or made. A batch already known
+   * keeps its dates; one given different dates is refused, as it's probably a different batch.
+   */
+  async batchFor(
+    tx: Tx,
+    organizationId: string,
+    item: { id: string; name: string },
+    b: BatchIn,
+  ) {
+    if (!b.batchNo)
+      throw refuse(
+        BadRequestException,
+        `${item.name} is kept in batches: enter the batch number.`,
+        'batch_required',
+        { itemId: item.id },
+      );
+    const found = await tx.stockBatch.findFirst({
+      where: {
+        organizationId,
+        itemId: item.id,
+        batchNo: { equals: b.batchNo, mode: 'insensitive' },
+      },
+    });
+    if (found) {
+      const differs = (a: Date | null, x: string | null) =>
+        !!a && !!x && iso(a) !== x;
+      if (
+        differs(found.mfgDate, b.mfgDate) ||
+        differs(found.expiryDate, b.expiryDate)
+      )
+        throw refuse(
+          ConflictException,
+          `Batch ${found.batchNo} of ${item.name} is already recorded with other dates.`,
+          'batch_dates_differ',
+          { itemId: item.id, batchNo: found.batchNo },
+        );
+      if ((!found.mfgDate && b.mfgDate) || (!found.expiryDate && b.expiryDate))
+        await tx.stockBatch.update({
+          where: { id: found.id },
+          data: {
+            ...(!found.mfgDate && b.mfgDate && { mfgDate: asDate(b.mfgDate) }),
+            ...(!found.expiryDate &&
+              b.expiryDate && { expiryDate: asDate(b.expiryDate) }),
+          },
+        });
+      return found.id;
+    }
+    return (
+      await tx.stockBatch.create({
+        data: {
+          organizationId,
+          itemId: item.id,
+          batchNo: b.batchNo,
+          mfgDate: b.mfgDate ? asDate(b.mfgDate) : null,
+          expiryDate: b.expiryDate ? asDate(b.expiryDate) : null,
+        },
+        select: { id: true },
+      })
+    ).id;
+  }
+
+  /** A batch chosen on a draft invoice line must be one of that item's */
+  async checkChosenBatches(
+    tx: Tx,
+    organizationId: string,
+    lines: { itemId: string | null; batchId?: string | null }[],
+  ) {
+    const chosen = lines.filter((l) => l.batchId);
+    if (!chosen.length) return;
+    const found = await tx.stockBatch.findMany({
+      where: { organizationId, id: { in: chosen.map((l) => l.batchId!) } },
+      select: { id: true, itemId: true },
+    });
+    for (const l of chosen)
+      if (found.find((b) => b.id === l.batchId)?.itemId !== l.itemId)
+        throw refuse(
+          BadRequestException,
+          'That batch isn’t one of the item’s.',
+          'batch_invalid',
+          { field: 'batchId' },
+        );
   }
 
   /** The inventory account each tracked item on some lines is bought into */
@@ -146,10 +307,14 @@ export class InventoryService {
     tx: Tx,
     organizationId: string,
     lines: {
+      id?: string;
       itemId: string | null;
       quantity: string;
       costCentreId?: string | null;
+      batchId?: string | null;
     }[],
+    /** The day it's sold: expired batches can't be */
+    day?: string,
   ) {
     const items = await this.tracked(
       tx,
@@ -160,6 +325,17 @@ export class InventoryService {
       return { movements: [] as Movement[], journal: [] as EnteredLine[] };
     await this.lock(tx, organizationId);
     const stock = await this.onHand(tx, organizationId, [...items.keys()]);
+    const batched = [...items.values()].filter((i) => i.trackBatches);
+    const batchLeft = new Map(
+      (
+        await this.batchStock(
+          tx,
+          organizationId,
+          batched.map((i) => i.id),
+        )
+      ).map((b) => [b.id, b]),
+    );
+    const today = day ?? iso(new Date());
     const movements: Movement[] = [];
     const journal: EnteredLine[] = [];
     for (const l of lines) {
@@ -176,7 +352,75 @@ export class InventoryService {
         );
       const value = costOfQuantity(s.quantity, s.value, q);
       stock.set(item.id, { quantity: s.quantity - q, value: s.value - value });
-      movements.push({ itemId: item.id, quantity: -q, value: -value });
+      if (item.trackBatches) {
+        // From the batch chosen, or the earliest-expiring ones; never from an expired batch
+        const mine = [...batchLeft.values()].filter(
+          (b) => b.itemId === item.id,
+        );
+        let take: { id: string; quantity: bigint }[];
+        if (l.batchId) {
+          const b = batchLeft.get(l.batchId);
+          if (!b || b.itemId !== item.id)
+            throw refuse(
+              BadRequestException,
+              'That batch isn’t one of the item’s.',
+              'batch_invalid',
+              { itemId: item.id },
+            );
+          if (batchExpired(b.expiryDate, today))
+            throw refuse(
+              ConflictException,
+              `Batch ${b.batchNo} of ${item.name} expired on ${b.expiryDate}.`,
+              'batch_expired',
+              { itemId: item.id, batchNo: b.batchNo },
+            );
+          if (q > b.onHand)
+            throw refuse(
+              ConflictException,
+              `Only ${onHandText(b.onHand)} of ${item.name} in batch ${b.batchNo}.`,
+              'insufficient_batch',
+              {
+                itemId: item.id,
+                batchNo: b.batchNo,
+                onHand: onHandText(b.onHand),
+              },
+            );
+          take = [{ id: b.id, quantity: q }];
+        } else {
+          const a = allocateBatches(mine, q, today);
+          if (a.short > 0n)
+            throw refuse(
+              ConflictException,
+              `Only ${onHandText(q - a.short)} of ${item.name} in stock that hasn’t expired.`,
+              'insufficient_unexpired',
+              { itemId: item.id, onHand: onHandText(q - a.short) },
+            );
+          take = a.take;
+        }
+        // The line's cost spread over its batches
+        let restQ = q;
+        let restV = value;
+        for (const t of take) {
+          const v = costOfQuantity(restQ, restV, t.quantity);
+          restQ -= t.quantity;
+          restV -= v;
+          const b = batchLeft.get(t.id)!;
+          batchLeft.set(t.id, { ...b, onHand: b.onHand - t.quantity });
+          movements.push({
+            itemId: item.id,
+            quantity: -t.quantity,
+            value: -v,
+            batchId: t.id,
+            sourceLineId: l.id ?? null,
+          });
+        }
+      } else
+        movements.push({
+          itemId: item.id,
+          quantity: -q,
+          value: -value,
+          sourceLineId: l.id ?? null,
+        });
       if (value > 0n) {
         const description = `Cost of ${item.name}`;
         journal.push(
@@ -208,6 +452,8 @@ export class InventoryService {
     organizationId: string,
     invoiceId: string,
     lines: {
+      /** The invoice line it credits */
+      invoiceLineId?: string;
       itemId: string | null;
       quantity: string;
       costCentreId?: string | null;
@@ -223,19 +469,61 @@ export class InventoryService {
     for (const l of lines) {
       const item = l.itemId ? items.get(l.itemId) : undefined;
       if (!item) continue;
-      const sold = await tx.stockMovement.findFirst({
-        where: {
-          organizationId,
-          kind: 'invoice',
-          sourceId: invoiceId,
-          itemId: item.id,
-        },
-        select: { quantity: true, value: true },
-      });
-      if (!sold) continue;
+      // What the invoice line took out (by batch), or, for invoices from before lines were recorded, the item's
+      let sold = l.invoiceLineId
+        ? await tx.stockMovement.findMany({
+            where: {
+              organizationId,
+              kind: 'invoice',
+              sourceId: invoiceId,
+              sourceLineId: l.invoiceLineId,
+            },
+            // In the order they were taken: earliest expiry first
+            orderBy: [
+              { createdAt: 'asc' },
+              { batch: { expiryDate: { sort: 'asc', nulls: 'last' } } },
+              { batch: { createdAt: 'asc' } },
+            ],
+            select: { quantity: true, value: true, batchId: true },
+          })
+        : [];
+      if (!sold.length)
+        sold = await tx.stockMovement.findMany({
+          where: {
+            organizationId,
+            kind: 'invoice',
+            sourceId: invoiceId,
+            itemId: item.id,
+          },
+          take: 1,
+          select: { quantity: true, value: true, batchId: true },
+        });
+      if (!sold.length) continue;
+      const soldQ = sold.reduce((x, m) => x - signed(m.quantity), 0n);
+      const soldV = sold.reduce((x, m) => x - m.value, 0n);
       const q = parseQuantity(l.quantity)!;
-      const value = costOfQuantity(-signed(sold.quantity), -sold.value, q);
-      movements.push({ itemId: item.id, quantity: q, value });
+      const value = costOfQuantity(soldQ, soldV, q);
+      // Back into the batches it left, in order
+      let restQ = q;
+      let restV = value;
+      for (const m of sold) {
+        if (restQ <= 0n) break;
+        const out = -signed(m.quantity);
+        const back = out < restQ ? out : restQ;
+        const v =
+          m === sold.at(-1) || back === restQ
+            ? restV
+            : costOfQuantity(restQ, restV, back);
+        movements.push({
+          itemId: item.id,
+          quantity: back,
+          value: v,
+          batchId: m.batchId,
+          sourceLineId: l.invoiceLineId ?? null,
+        });
+        restQ -= back;
+        restV -= v;
+      }
       if (value > 0n) {
         const description = `${item.name} returned`;
         journal.push(
@@ -262,20 +550,37 @@ export class InventoryService {
   async receipts(
     tx: Tx,
     organizationId: string,
-    lines: { itemId: string | null; quantity: string; value: number }[],
+    lines: ({
+      id?: string;
+      itemId: string | null;
+      quantity: string;
+      value: number;
+    } & Partial<BatchIn>)[],
   ) {
     const items = await this.tracked(
       tx,
       organizationId,
       lines.map((l) => l.itemId),
     );
-    return lines
-      .filter((l) => l.itemId && items.has(l.itemId))
-      .map((l): Movement => ({
-        itemId: l.itemId!,
+    const out: Movement[] = [];
+    for (const l of lines) {
+      const item = l.itemId ? items.get(l.itemId) : undefined;
+      if (!item) continue;
+      out.push({
+        itemId: item.id,
         quantity: parseQuantity(l.quantity)!,
         value: BigInt(l.value),
-      }));
+        batchId: item.trackBatches
+          ? await this.batchFor(tx, organizationId, item, {
+              batchNo: l.batchNo ?? null,
+              mfgDate: l.mfgDate ?? null,
+              expiryDate: l.expiryDate ?? null,
+            })
+          : null,
+        sourceLineId: l.id ?? null,
+      });
+    }
+    return out;
   }
 
   async save(
@@ -305,6 +610,8 @@ export class InventoryService {
         reason: m.reason ?? null,
         journalEntryId: m.journalEntryId,
         createdById: m.actorId,
+        batchId: x.batchId ?? null,
+        sourceLineId: x.sourceLineId ?? null,
       })),
     });
   }
@@ -328,7 +635,10 @@ export class InventoryService {
         itemId: true,
         quantity: true,
         value: true,
+        batchId: true,
+        sourceLineId: true,
         item: { select: { name: true } },
+        batch: { select: { batchNo: true } },
       },
     });
     if (!done.length) return;
@@ -353,6 +663,29 @@ export class InventoryService {
           value: s.value - d.value,
         });
       }
+      // And from the same batch
+      const batched = done.filter((d) => d.batchId);
+      if (batched.length) {
+        const left = new Map(
+          (
+            await this.batchStock(tx, organizationId, [
+              ...new Set(batched.map((d) => d.itemId)),
+            ])
+          ).map((b) => [b.id, b.onHand]),
+        );
+        for (const d of batched) {
+          const q = signed(d.quantity);
+          const have = left.get(d.batchId!) ?? 0n;
+          if (q > have)
+            throw refuse(
+              ConflictException,
+              `Some of batch ${d.batch!.batchNo} of ${d.item.name} has been sold or written off since.`,
+              'stock_used',
+              { itemId: d.itemId },
+            );
+          left.set(d.batchId!, have - q);
+        }
+      }
     }
     await this.save(
       tx,
@@ -368,6 +701,8 @@ export class InventoryService {
         itemId: d.itemId,
         quantity: -signed(d.quantity),
         value: -d.value,
+        batchId: d.batchId,
+        sourceLineId: d.sourceLineId,
       })),
     );
   }
@@ -384,6 +719,7 @@ export class InventoryService {
           id: true,
           name: true,
           trackStock: true,
+          trackBatches: true,
           inventoryAccountId: true,
           archivedAt: true,
         },
@@ -412,6 +748,32 @@ export class InventoryService {
         item.id,
       ) ?? { quantity: 0n, value: 0n };
       let value: bigint;
+      // Goods kept in batches are counted batch by batch: new stock into its batch, a write-off from one that has it
+      let batchId: string | null = null;
+      if (item.trackBatches) {
+        if (input.direction === 'in')
+          batchId = await this.batchFor(tx, organizationId, item, input);
+        else {
+          if (!input.batchNo)
+            throw refuse(
+              BadRequestException,
+              `${item.name} is kept in batches: enter the batch number.`,
+              'batch_required',
+              { field: 'batchNo' },
+            );
+          const b = (await this.batchStock(tx, organizationId, [item.id])).find(
+            (x) => x.batchNo.toLowerCase() === input.batchNo!.toLowerCase(),
+          );
+          if (!b || q > b.onHand)
+            throw refuse(
+              ConflictException,
+              `Only ${onHandText(b?.onHand ?? 0n)} of ${item.name} in batch ${input.batchNo}.`,
+              'insufficient_batch',
+              { field: 'quantity' },
+            );
+          batchId = b.id;
+        }
+      }
       if (input.direction === 'out') {
         if (q > s.quantity)
           throw refuse(
@@ -488,6 +850,7 @@ export class InventoryService {
           reason: input.reason,
           journalEntryId: entry?.id ?? null,
           createdById: ctx.actor.userId,
+          batchId,
         },
         select: { id: true },
       });
@@ -528,6 +891,7 @@ export class InventoryService {
           value: true,
           journalEntryId: true,
           reason: true,
+          batchId: true,
           item: { select: { name: true } },
         },
       });
@@ -548,7 +912,12 @@ export class InventoryService {
         const s = (await this.onHand(tx, organizationId, [m.itemId])).get(
           m.itemId,
         )!;
-        if (q > s.quantity)
+        const inBatch = m.batchId
+          ? ((await this.batchStock(tx, organizationId, [m.itemId])).find(
+              (b) => b.id === m.batchId,
+            )?.onHand ?? 0n)
+          : q;
+        if (q > s.quantity || q > inBatch)
           throw refuse(
             ConflictException,
             `Some of the ${m.item.name} added has been sold or written off since.`,
@@ -582,6 +951,7 @@ export class InventoryService {
           reason: m.reason,
           journalEntryId: reversal?.id ?? null,
           createdById: ctx.actor.userId,
+          batchId: m.batchId,
         },
       });
       await this.audit.record(

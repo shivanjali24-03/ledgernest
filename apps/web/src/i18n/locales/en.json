@@ -3613,7 +3613,8 @@
       "quantity": "Enter a quantity above zero, with up to 4 decimal places.",
       "unitCost": "Enter what one unit cost.",
       "account": "Choose the other account.",
-      "reason": "Say why the stock changed."
+      "reason": "Say why the stock changed.",
+      "batch": "Enter or choose the batch."
     },
     "errors": {
       "insufficient_stock": "Not enough in stock: only {{onHand}} on hand.",
@@ -4591,6 +4592,30 @@
       "characters": "Use letters, digits, - and / only.",
       "default_needed": "Make another series the default first.",
       "in_use": "This series has numbered documents. Archive it instead."
+    }
+  },
+  "batches": {
+    "track": "Keep in batches with expiry dates",
+    "trackHint": "For medicines, food and anything that expires: bills record each batch and its dates, sales take the earliest expiry first and never expired stock. Turn it on before any stock moves.",
+    "batch": "Batch",
+    "batchNo": "Batch number",
+    "mfgDate": "Manufactured",
+    "expiryDate": "Expires",
+    "choose": "Choose the batch",
+    "auto": "Batch: earliest expiry first",
+    "option": "{{batch}} · exp {{expiry}} · {{onHand}} left",
+    "optionExpired": "{{batch}} · expired {{expiry}}",
+    "lineBatch": "Batch for line {{n}}",
+    "lineMfg": "Manufacturing date for line {{n}}",
+    "lineExpiry": "Expiry date for line {{n}}",
+    "errors": {
+      "batch_required": "This item is kept in batches: enter the batch number.",
+      "batch_dates_differ": "That batch is already recorded with other dates. Check the batch number.",
+      "batch_expired": "That batch has expired and can’t be sold.",
+      "insufficient_batch": "There isn’t that much left in batch {{batch}}: {{onHand}} on hand.",
+      "insufficient_unexpired": "Only {{onHand}} in stock that hasn’t expired.",
+      "batch_invalid": "That batch isn’t one of the item’s.",
+      "batches_need_stock": "Only goods whose stock is tracked can be kept in batches."
     }
   }
 }

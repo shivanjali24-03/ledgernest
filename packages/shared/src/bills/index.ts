@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { batchDatesInOrder, batchFieldShape, BATCH_DATES_MESSAGE } from '../inventory/batches.js';
 import { rateSchema } from '../currencies/index.js';
 import { invoiceLineSchema, MAX_INVOICE_LINES } from '../invoices/index.js';
 import { isoDaySchema } from '../periods/index.js';
@@ -22,7 +23,11 @@ const text = (max: number) =>
     .default(null);
 
 /** A bill line: as an invoice line, but its account is an expense or an asset (e.g. equipment) */
-export const billLineSchema = invoiceLineSchema;
+/** A bill line; goods kept in batches also say which batch came in, with its dates */
+export const billLineSchema = invoiceLineSchema
+  .omit({ batchId: true })
+  .extend(batchFieldShape)
+  .refine(batchDatesInOrder, { path: ['expiryDate'], message: BATCH_DATES_MESSAGE });
 
 export const billDraftSchema = z
   .object({

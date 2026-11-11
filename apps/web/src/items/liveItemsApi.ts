@@ -20,6 +20,7 @@ export function createLiveItemsApi(client: AuthClient, organizationId: string): 
       return r(`?${p}`);
     },
     facets: () => r('/facets'),
+    batches: (id) => r(`/${id}/batches`),
     create: (input) => r('', { method: 'POST', json: input }),
     update: (id, input) => r(`/${id}`, { method: 'PATCH', json: input }),
     archive: (id, archive) => r(`/${id}/${archive ? 'archive' : 'restore'}`, { method: 'POST' }),

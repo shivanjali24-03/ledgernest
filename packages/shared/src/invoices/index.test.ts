@@ -29,4 +29,13 @@ describe('invoiceRows', () => {
     expect(rows.map((r) => r[4])).toContain('CGST 9%');
     expect(rows.at(-1)).toEqual(['', '', '', '', 'Balance due', '', '10000.00']);
   });
+
+  it('lists the batches a line of goods came from under it', () => {
+    const rows = invoiceRows({ currency: 'INR', subtotal: 100_00, total: 112_00, amountPaid: 0, balance: 112_00, taxBreakdown: [], lines: [{ description: 'Paracetamol 500mg', quantity: '10', unitPrice: 10_00, discount: 0, amount: 100_00, taxAmount: 12_00, item: { hsnSac: '3004' }, batches: [{ batchNo: 'PX1', mfgDate: '2026-01-10', expiryDate: '2027-12-31', quantity: '4' }, { batchNo: 'PX2', mfgDate: null, expiryDate: '2028-06-30', quantity: '6' }] }] }, 2);
+    expect(rows.slice(1, 4)).toEqual([
+      ['Paracetamol 500mg', '3004', '10', '10.00', '', '100.00', '12.00'],
+      ['   Batch PX1 · Mfg 01/2026 · Exp 12/2027', '', '4', '', '', '', ''],
+      ['   Batch PX2 · Exp 06/2028', '', '6', '', '', '', ''],
+    ]);
+  });
 });

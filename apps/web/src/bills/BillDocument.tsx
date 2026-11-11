@@ -1,4 +1,4 @@
-import { currencyDigits, INDIAN_STATES } from '@ledgernest/shared';
+import { currencyDigits, INDIAN_STATES, batchLabel } from '@ledgernest/shared';
 import { useTranslation } from 'react-i18next';
 import { useIntlLocale } from '../i18n';
 import { formatDate, formatMoney } from '../lib/format';
@@ -96,6 +96,11 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
               <tr key={l.id}>
                 <td className={cell} dir="auto">
                   {l.description}
+                  {l.batchNo && (
+                    <span className="block text-xs text-ink-500" dir="ltr">
+                      {batchLabel({ batchNo: l.batchNo, mfgDate: l.mfgDate, expiryDate: l.expiryDate })}
+                    </span>
+                  )}
                 </td>
                 <td className={`${cell} text-ink-600 dark:text-ink-300`}>{l.account && `${l.account.code} · ${l.account.name}`}</td>
                 <td className={`${cell} text-end font-mono tabular-nums`} dir="ltr">

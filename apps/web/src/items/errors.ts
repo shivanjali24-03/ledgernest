@@ -7,6 +7,7 @@ const REASONS = ['name_taken', 'sku_taken', 'barcode_taken', 'above_mrp', 'incom
 export const itemErrorMessage = (e: unknown, t: (k: string) => string) => {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
   if (typeof reason === 'string' && STOCK.includes(reason)) return t(`inventory.errors.${reason}`);
+  if (reason === 'batches_need_stock') return t('batches.errors.batches_need_stock');
   return typeof reason === 'string' && REASONS.includes(reason) ? t(`items.errors.${reason}`) : apiErrorMessage(e, t as never);
 };
 

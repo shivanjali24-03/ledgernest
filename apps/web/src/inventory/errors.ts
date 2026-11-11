@@ -1,3 +1,4 @@
+import { BATCH_REASONS } from '../invoices/errors';
 import type { TFunction } from 'i18next';
 import { ApiError } from '../auth/client';
 import { journalErrorMessage } from '../journals/errors';
@@ -8,5 +9,6 @@ const REASONS = ['insufficient_stock', 'stock_used', 'not_tracked', 'account_inv
 export function inventoryErrorMessage(e: unknown, t: TFunction): string {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
   const onHand = e instanceof ApiError ? e.details?.onHand : undefined;
+  if (typeof reason === 'string' && BATCH_REASONS.includes(reason)) return t(`batches.errors.${reason}`, { onHand, batch: e instanceof ApiError ? e.details?.batchNo : undefined });
   return typeof reason === 'string' && REASONS.includes(reason) ? t(`inventory.errors.${reason}`, { onHand }) : journalErrorMessage(e, t);
 }
