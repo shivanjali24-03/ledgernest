@@ -20,6 +20,7 @@ import {
   todayIn,
   toBase,
   type BillStatus,
+  type ItcKind,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -54,6 +55,8 @@ type LineIn = {
   serials?: string[];
   /** The quantity and price are in the item's second unit */
   inAltUnit?: boolean;
+  /** Input tax credit: eligible, blocked (s.17(5)) or ineligible */
+  itc?: ItcKind;
 };
 export type DraftIn = {
   contactId: string;
@@ -193,6 +196,7 @@ const select = {
       accountId: true,
       taxGroupId: true,
       rcmTaxGroupId: true,
+      itc: true,
       costCentreId: true,
       batchNo: true,
       mfgDate: true,
@@ -394,6 +398,8 @@ export class BillsService {
         expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
         serials: l.serials,
         inAltUnit: l.inAltUnit,
+        /** Input tax credit: eligible, blocked (s.17(5)) or ineligible; when not, its GST is cost */
+        itc: l.itc as ItcKind,
       })),
     };
     return {
@@ -715,6 +721,7 @@ export class BillsService {
             expenseAccountId: true,
             trackStock: true,
             inventoryAccountId: true,
+            itcBlocked: true,
           },
         })
       ).map((i) => [i.id, i]),
@@ -802,6 +809,8 @@ export class BillsService {
         accountId,
         group: rcm ? null : group,
         rcmGroup: rcm ? group : null,
+        // An item whose credit is blocked (s.17(5)) is always so
+        itc: item?.itcBlocked ? 'blocked' : (l.itc ?? 'eligible'),
       });
     }
     await checkCostCentres(tx, organizationId, lines);
@@ -918,6 +927,7 @@ export class BillsService {
         discountPpm: l.discount,
         taxGroupId: l.group?.id ?? null,
         rcmTaxGroupId: l.rcmGroup?.id ?? null,
+        itc: l.itc ?? 'eligible',
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
         batchNo: l.batchNo ?? null,
@@ -1141,6 +1151,7 @@ export class BillsService {
           expiryDate: l.expiryDate ? iso(l.expiryDate) : null,
           serials: l.serials,
           inAltUnit: l.inAltUnit,
+          itc: l.itc as ItcKind,
         })),
       });
       if (!p.payableAccountId)
@@ -1224,16 +1235,22 @@ export class BillsService {
             ).taxes.reduce((t, x) => t + x.amount, 0)
           : 0;
       };
+      // No credit on a line: blocked (s.17(5)) or ineligible, or for a composition dealer: its GST is cost
+      const lineNoCredit = (n: number) =>
+        noCredit || (p.lines[n]!.itc ?? 'eligible') !== 'eligible';
       const expense = p.lines.map((l, n) => ({
         accountId: l.accountId,
         description: l.description,
         debit:
           base(
-            p.amounts.lines[n]!.net + (noCredit ? p.amounts.lines[n]!.tax : 0),
-          ) + (noCredit ? rcmTaxOf(n) : 0),
+            p.amounts.lines[n]!.net +
+              (lineNoCredit(n) ? p.amounts.lines[n]!.tax : 0),
+          ) + (lineNoCredit(n) ? rcmTaxOf(n) : 0),
         credit: 0,
         // Reverse charge GST is input tax credit too, once paid (CGST Act s.16)
-        taxGroupId: noCredit ? null : ((l.group ?? l.rcmGroup)?.id ?? null),
+        taxGroupId: lineNoCredit(n)
+          ? null
+          : ((l.group ?? l.rcmGroup)?.id ?? null),
         taxInclusive: false,
         costCentreId: l.costCentreId ?? null,
       }));
@@ -1338,7 +1355,8 @@ export class BillsService {
               id: row.id,
               itemId: l.itemId,
               quantity: l.quantity,
-              value: base(p.amounts.lines[n]!.net),
+              // GST that can't be claimed is part of what the goods cost
+              value: expense[n]!.debit,
               batchNo: l.batchNo ?? null,
               mfgDate: l.mfgDate ?? null,
               expiryDate: l.expiryDate ?? null,

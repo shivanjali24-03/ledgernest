@@ -57,6 +57,8 @@ const fields = {
   trackBatches: z.boolean(),
   /** Tracked goods whose every unit has its own serial number (phones, appliances) */
   trackSerials: z.boolean(),
+  /** Input tax credit on buying it is blocked (CGST Act s.17(5)): its GST is part of the cost */
+  itcBlocked: z.boolean(),
   /** The inventory (asset) account the stock sits in */
   inventoryAccountId: z.uuid().nullable(),
   /** The cost of sales account stock goes to as it's sold */
@@ -109,6 +111,7 @@ export const itemCreateSchema = z.object({
   trackStock: fields.trackStock.optional().default(false),
   trackBatches: fields.trackBatches.optional().default(false),
   trackSerials: fields.trackSerials.optional().default(false),
+  itcBlocked: fields.itcBlocked.optional().default(false),
   inventoryAccountId: fields.inventoryAccountId.optional().default(null),
   cogsAccountId: fields.cogsAccountId.optional().default(null),
   reorderLevel: fields.reorderLevel.optional().default(null),

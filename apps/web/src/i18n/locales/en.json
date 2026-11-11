@@ -1668,7 +1668,11 @@
         "cash": "Paid in cash",
         "totalCash": "Tax to pay in cash",
         "carried": "Credit carried forward: {{amounts}}",
-        "reverseCharge": "(d) Inward supplies liable to reverse charge"
+        "reverseCharge": "(d) Inward supplies liable to reverse charge",
+        "reversed": {
+          "blocked": "4(B)(1) Credit not taken: blocked under s.17(5)",
+          "ineligible": "4(B)(1) Credit not taken: other ineligible (rules 42, 43)"
+        }
       },
       "r1": {
         "empty": "No invoices or credit notes in these dates",
@@ -2491,7 +2495,9 @@
     "mrpShort": "MRP",
     "noAltUnit": "No second unit",
     "units": "units",
-    "lineUnit": "Unit on line {{n}}"
+    "lineUnit": "Unit on line {{n}}",
+    "itcBlocked": "Input tax credit blocked (s.17(5))",
+    "itcBlockedHint": "Cars, food and drinks, club or health memberships, gifts, building works and the like: GST paid on buying it becomes part of its cost"
   },
   "invoices": {
     "title": "Invoices",
@@ -3081,6 +3087,12 @@
       "note": "Tax payable on reverse charge: we pay the GST on this bill and claim it as input credit.",
       "selfInvoice": "Self invoice",
       "selfInvoiceNo": "Self invoice {{number}}"
+    },
+    "lineItc": "Input tax credit on line {{n}}",
+    "itc": {
+      "eligible": "Credit eligible",
+      "blocked": "Credit blocked (s.17(5))",
+      "ineligible": "Credit ineligible"
     }
   },
   "creditNotes": {

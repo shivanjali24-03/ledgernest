@@ -114,7 +114,10 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
                 <td className={`${cell} text-end font-mono tabular-nums`} dir="ltr">
                   {plain(l.unitPrice)}
                 </td>
-                <td className={cell}>{l.taxGroup?.name ?? '—'}</td>
+                <td className={cell}>
+                  {(l.taxGroup ?? l.rcmTaxGroup)?.name ?? '—'}
+                  {l.itc && l.itc !== 'eligible' && <span className="block text-xs text-ink-500">{t(`bills.itc.${l.itc}`)}</span>}
+                </td>
                 <td className={`${cell} text-end font-mono tabular-nums`} dir="ltr">
                   {plain(l.amount)}
                 </td>

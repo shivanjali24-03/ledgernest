@@ -1,7 +1,10 @@
-import type { BillDraftInput, BillState, BillStatus } from '@ledgernest/shared';
+import type { BillDraftInput, BillState, BillStatus, ItcKind } from '@ledgernest/shared';
 import type { InvoiceLine } from '../invoices/types';
 
-export type BillLine = InvoiceLine;
+export type BillLine = InvoiceLine & {
+  /** Input tax credit: eligible, blocked (s.17(5)) or ineligible; when not, its GST is cost */
+  itc?: ItcKind;
+};
 
 export interface Bill {
   id: string;

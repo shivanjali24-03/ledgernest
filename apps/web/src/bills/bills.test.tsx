@@ -220,4 +220,34 @@ describe('bills', () => {
     expect(totals()).toHaveTextContent('INR 1,000.00');
     expect(totals()).not.toHaveTextContent('CGST 9%');
   }, 20_000);
+
+  it('books GST it can’t claim as cost: a blocked item, or a line marked ineligible', async () => {
+    const { createDemoBillsApi } = await import('./demoBillsApi');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const { demoTaxState } = await import('../taxes/demoTaxesApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const { createDemoJournalsApi } = await import('../journals/demoJournalsApi');
+    const api = createDemoBillsApi(() => true);
+    const gst18 = demoTaxState().groups.find((g) => g.name === 'GST 18%')!.id;
+    const sharma = demoContactRows().find((c) => c.name === 'Sharma Office Supplies')!;
+    const today = new Date().toISOString().slice(0, 10);
+    const d = await api.create({ contactId: sharma.id, billDate: today, vendorReference: 'SOS-GIFT', lines: [{ description: 'Diwali gifts', quantity: '1', unitPrice: 1_000_00, taxGroupId: gst18, accountId: sampleId('5300'), itc: 'ineligible' }] });
+    expect(d.lines[0]!.itc).toBe('ineligible');
+    expect(d.total).toBe(1_180_00);
+    const rec = await api.record(d.id);
+    const entry = await createDemoJournalsApi(() => true).get(rec.journalEntry!.id);
+    // One cost line with the GST in it, against the vendor: no input credit
+    expect(entry.lines.filter((l) => l.debit > 0).map((l) => l.debit)).toEqual([1_180_00]);
+  }, 30_000);
+
+  it('asks about input credit on a taxed line', async () => {
+    renderApp('/bills/new');
+    await screen.findByRole('heading', { name: 'New bill' });
+    await choose('Vendor', 'Sharma Office Supplies');
+    await userEvent.type(screen.getByLabelText('Description on line 1'), 'Gifts');
+    await userEvent.type(screen.getByLabelText('Price on line 1'), '1000');
+    await choose('Tax on line 1', 'GST 18%');
+    await userEvent.selectOptions(await screen.findByLabelText('Input tax credit on line 1'), 'blocked');
+    expect(screen.getByLabelText('Input tax credit on line 1')).toHaveValue('blocked');
+  }, 20_000);
 });

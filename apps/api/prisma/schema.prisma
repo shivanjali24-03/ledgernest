@@ -760,6 +760,8 @@ model Item {
   trackBatches       Boolean   @default(false) @map("track_batches")
   /// Tracked goods whose every unit has its own serial number
   trackSerials       Boolean   @default(false) @map("track_serials")
+  /// Input tax credit on it is blocked (CGST Act s.17(5)): e.g. cars, food, club memberships; its GST is part of the cost
+  itcBlocked         Boolean   @default(false) @map("itc_blocked")
   /// A second unit it's also sold or bought in (e.g. BOX), and how many of the main unit make one
   altUnit            String?   @map("alt_unit")
   altFactor          Decimal?  @map("alt_factor") @db.Decimal(13, 4)
@@ -1096,6 +1098,8 @@ model BillLine {
   taxGroupId     String?   @map("tax_group_id") @db.Uuid
   /// Under reverse charge: the GST we pay on the line (the vendor charges none)
   rcmTaxGroupId  String?   @map("rcm_tax_group_id") @db.Uuid
+  /// Input tax credit: eligible | blocked (s.17(5)) | ineligible (e.g. personal or exempt use); not eligible = GST is cost
+  itc            String    @default("eligible")
   accountId      String?   @map("account_id") @db.Uuid
   amount         BigInt
   taxAmount      BigInt    @default(0) @map("tax_amount")

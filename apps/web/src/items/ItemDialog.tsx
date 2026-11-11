@@ -39,6 +39,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [trackStock, setTrackStock] = useState(item?.trackStock ?? false);
   const [trackBatches, setTrackBatches] = useState(item?.trackBatches ?? false);
   const [trackSerials, setTrackSerials] = useState(item?.trackSerials ?? false);
+  const [itcBlocked, setItcBlocked] = useState(item?.itcBlocked ?? false);
   const [inventoryAccountId, setInventory] = useState(item?.inventoryAccountId ?? '');
   const [cogsAccountId, setCogs] = useState(item?.cogsAccountId ?? '');
   const [reorderLevel, setReorderLevel] = useState(item?.reorderLevel ?? '');
@@ -64,6 +65,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
     hsnSac: hsnSac.trim() || null,
     incomeAccountId: incomeAccountId || null,
     expenseAccountId: expenseAccountId || null,
+    itcBlocked,
     trackStock: kind === 'goods' && trackStock,
     trackBatches: kind === 'goods' && trackStock && trackBatches,
     trackSerials: kind === 'goods' && trackStock && trackSerials,
@@ -204,6 +206,13 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
           error={errors.expenseAccountId}
           options={[{ value: '', label: t('items.chooseLater') }, ...active.filter((a) => a.type === 'expense' || a.type === 'asset').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
         />
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={itcBlocked} onChange={(e) => setItcBlocked(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+          <span>
+            <span className="font-medium">{t('items.itcBlocked')}</span>
+            <span className="block text-xs text-ink-500">{t('items.itcBlockedHint')}</span>
+          </span>
+        </label>
         {kind === 'goods' && (
           <fieldset className="space-y-3 rounded-xl border border-ink-100 p-3 sm:col-span-2 dark:border-ink-800">
             <label className="flex items-start gap-2 text-sm">

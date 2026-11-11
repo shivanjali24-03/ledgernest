@@ -37,6 +37,7 @@ type Values = {
   trackStock: boolean;
   trackBatches?: boolean;
   trackSerials?: boolean;
+  itcBlocked?: boolean;
   altUnit?: string | null;
   altFactor?: string | null;
   inventoryAccountId: string | null;
@@ -62,6 +63,7 @@ const EDITABLE = [
   'trackStock',
   'trackBatches',
   'trackSerials',
+  'itcBlocked',
   'altUnit',
   'altFactor',
   'inventoryAccountId',
@@ -96,6 +98,7 @@ const select = {
   trackStock: true,
   trackBatches: true,
   trackSerials: true,
+  itcBlocked: true,
   altUnit: true,
   altFactor: true,
   inventoryAccountId: true,
