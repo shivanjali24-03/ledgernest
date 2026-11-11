@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { invoiceLineSchema, MAX_INVOICE_LINES } from '../invoices/index.js';
+import { serialsSchema } from '../inventory/serials.js';
 import { isoDaySchema } from '../periods/index.js';
 
 /**
@@ -147,3 +148,28 @@ export const quoteDecisionSchema = z.object({
     .nullish(),
 });
 export type QuoteDecisionInput = z.input<typeof quoteDecisionSchema>;
+
+/**
+ * A delivery challan's goods leaving: from which batch, and which units by serial number, line by line (lines not
+ * given take the earliest-expiring batches; goods with serial numbers must say which)
+ */
+export const challanDispatchSchema = z.object({
+  date: isoDaySchema.optional(),
+  lines: z
+    .array(z.object({ quoteLineId: z.uuid(), batchId: z.uuid().nullable().optional().default(null), serials: serialsSchema }))
+    .max(500)
+    .optional()
+    .default([]),
+});
+export type ChallanDispatchInput = z.input<typeof challanDispatchSchema>;
+
+/** A delivery challan's goods came back (job work done, not approved, back from the exhibition) */
+export const challanBackSchema = z.object({ date: isoDaySchema.optional() });
+
+/** Goods sent for job work that don't come back within a year (three for capital goods) are treated as supplied: CGST s.143 */
+export const jobWorkDeadline = (dispatchedOn: string, years = 1) => {
+  const [y, m, d] = dispatchedOn.split('-').map(Number) as [number, number, number];
+  // 29 February a year on is the 28th
+  const last = new Date(Date.UTC(y + years, m, 0)).getUTCDate();
+  return `${y + years}-${String(m).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`;
+};

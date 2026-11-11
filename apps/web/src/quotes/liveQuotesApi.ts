@@ -5,8 +5,8 @@ import type { QuotesApi } from './types';
 export function createLiveQuotesApi(client: AuthClient, organizationId: string): QuotesApi {
   const r = <T>(path: string, init: RequestInit & { json?: unknown } = {}) => client.request<T>(`/quotes${path}`, { ...init, headers: { 'X-Organization-Id': organizationId } });
   return {
-    pdf: async (id) => {
-      const { blob, filename } = await client.download(`/quotes/${id}/pdf`, { headers: { 'X-Organization-Id': organizationId } });
+    pdf: async (id, copy) => {
+      const { blob, filename } = await client.download(`/quotes/${id}/pdf${copy ? `?copy=${copy}` : ''}`, { headers: { 'X-Organization-Id': organizationId } });
       return { blob, filename: filename ?? 'quote.pdf' };
     },
     list: (q) => {
@@ -24,6 +24,8 @@ export function createLiveQuotesApi(client: AuthClient, organizationId: string):
     move: (id, status) => r(`/${id}/status`, { method: 'POST', json: { status } }),
     convert: (id, input) => r(`/${id}/convert`, { method: 'POST', json: input }),
     copy: (id, kind) => r(`/${id}/copy`, { method: 'POST', json: { kind } }),
+    dispatch: (id, input) => r(`/${id}/dispatch`, { method: 'POST', json: input }),
+    goodsBack: (id, input) => r(`/${id}/goods-back`, { method: 'POST', json: input }),
     email: (id, input) => r(`/${id}/email`, { method: 'POST', json: input }),
     share: (id) => r(`/${id}/share`, { method: 'POST' }),
     unshare: (id) => r(`/${id}/share`, { method: 'DELETE' }),

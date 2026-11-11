@@ -39,6 +39,6 @@ describe('Debit note dialog', () => {
     expect(qty).toHaveValue('1');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Raise debit note' }));
     await waitFor(() => expect(create).toHaveBeenCalled());
-    expect(create.mock.calls[0]![0]).toMatchObject({ billId: 'b-1', lines: [{ billLineId: 'l-1', quantity: '1', serials: ['IMEI-2'] }] });
+    expect((create.mock.calls as unknown as unknown[][])[0]![0]).toMatchObject({ billId: 'b-1', lines: [{ billLineId: 'l-1', quantity: '1', serials: ['IMEI-2'] }] });
   });
 });

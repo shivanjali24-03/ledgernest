@@ -1,4 +1,4 @@
-import type { QuoteDraftInput, QuoteState, QuoteStatus, QuoteKind, ChallanPurpose } from '@ledgernest/shared';
+import type { ChallanDispatchInput, InvoiceCopy, QuoteDraftInput, QuoteState, QuoteStatus, QuoteKind, ChallanPurpose } from '@ledgernest/shared';
 
 export interface QuoteLine {
   id: string;
@@ -10,7 +10,7 @@ export interface QuoteLine {
   discount: number;
   amount: number;
   taxAmount: number;
-  item: { id: string; name: string } | null;
+  item: { id: string; name: string; trackStock?: boolean; trackSerials?: boolean } | null;
   account: { id: string; code: string; name: string } | null;
   taxGroup: { id: string; name: string } | null;
   costCentre: { id: string; code: string; name: string } | null;
@@ -38,6 +38,8 @@ export interface Quote {
   /** The invoice it became */
   invoice: { id: string; number: string | null; status: string } | null;
   sentAt: string | null;
+  /** A delivery challan's goods: when they left stock, and when they came back (invoiced or returned); job work is due back within a year */
+  goods?: { dispatchedAt: string | null; backAt: string | null; backReason: 'invoiced' | 'returned' | null; jobWorkDue: string | null } | null;
   decidedAt: string | null;
   /** Who accepted or declined it from the customer's link, and what they said */
   decidedBy?: string | null;
@@ -55,8 +57,12 @@ export type QuoteFilter = QuoteState | 'open';
 export interface QuotesApi {
   list(q: { kind?: QuoteKind; state?: QuoteFilter; contactId?: string; search?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: QuoteSummary[] }>;
   get(id: string): Promise<Quote>;
-  /** The quote as a PDF file */
-  pdf(id: string): Promise<{ blob: Blob; filename: string }>;
+  /** The quote as a PDF file; a delivery challan in one of its three copies */
+  pdf(id: string, copy?: InvoiceCopy): Promise<{ blob: Blob; filename: string }>;
+  /** A delivery challan's goods leave stock (still ours, sent on challan) */
+  dispatch(id: string, input: ChallanDispatchInput): Promise<Quote>;
+  /** A delivery challan's goods came back into stock */
+  goodsBack(id: string, input: { date?: string }): Promise<Quote>;
   create(input: QuoteDraftInput): Promise<Quote>;
   update(id: string, input: QuoteDraftInput): Promise<Quote>;
   remove(id: string): Promise<void>;

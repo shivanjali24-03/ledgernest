@@ -3917,7 +3917,9 @@
       "credit_note": "Credit note",
       "credit_note_void": "Credit note voided",
       "debit_note": "Debit note",
-      "debit_note_void": "Debit note voided"
+      "debit_note_void": "Debit note voided",
+      "challan_out": "Sent on challan",
+      "challan_back": "Back from challan"
     },
     "onHandPill": "On hand: {{quantity}} {{unit}}",
     "track": "Track stock",
@@ -4409,7 +4411,17 @@
       "not_sendable": "Only open or accepted quotes can be emailed.",
       "mail_off": "Email isn’t set up on this server. Print the quote and send it yourself.",
       "no_email": "This customer has no email address. Enter one to send it to.",
-      "mail_failed": "The email couldn’t be sent. Try again later."
+      "mail_failed": "The email couldn’t be sent. Try again later.",
+      "challan_dispatched": "The goods on this challan have already left. Record them coming back first.",
+      "challan_back": "The goods on this challan are already back.",
+      "challan_not_dispatched": "The goods on this challan haven’t left.",
+      "no_stock_goods": "Nothing on this challan is kept in stock.",
+      "before_challan": "The goods can’t leave before the challan’s date.",
+      "before_dispatch": "Goods can’t come back before they left.",
+      "insufficient_stock": "There isn’t that much in stock.",
+      "insufficient_unexpired": "There isn’t that much in stock that hasn’t expired.",
+      "serials_count": "Enter one serial number for each unit.",
+      "serial_not_in_stock": "A serial number entered isn’t in stock."
     },
     "moved": {
       "draft": "{{number}} is back to draft",
@@ -4479,6 +4491,28 @@
         "exhibition": "For an exhibition",
         "unknown_quantity": "Quantity known only on delivery",
         "other": "Other movement, not a supply"
+      },
+      "goods": "Goods on this challan",
+      "notSent": "The goods haven’t left yet. Send them to take them out of stock: they stay yours until invoiced.",
+      "outSince": "The goods left on {{date}}: out of stock, still yours (goods sent on challan).",
+      "backOn": "Sent on {{sent}}, back in stock on {{date}}.",
+      "invoicedOn": "Sent on {{sent}}, sold on the invoice of {{date}}.",
+      "jobWorkDue": "Sent for job work: due back by {{date}}, or they count as supplied (CGST s.143).",
+      "dispatch": "Goods sent",
+      "back": "Goods came back",
+      "dispatchTitle": "Send the goods on {{number}}",
+      "dispatchBody": "They leave stock at average cost, into goods sent on challan. Invoicing the challan sells them; if they come back, record it.",
+      "backTitle": "Goods back on {{number}}",
+      "backBody": "They come back into stock exactly as they left.",
+      "goodsDate": "Date",
+      "serials": "Serial numbers of {{description}} ({{quantity}})",
+      "dispatched": "Goods on {{number}} sent",
+      "backDone": "Goods on {{number}} back in stock",
+      "copies": {
+        "menu": "Challan copies",
+        "original": "Original for consignee",
+        "duplicate": "Duplicate for transporter",
+        "triplicate": "Triplicate for consignor"
       }
     }
   },
@@ -5048,7 +5082,8 @@
       "sold": "Sold",
       "written_off": "Written off",
       "removed": "Bill voided",
-      "returned": "Returned to the supplier"
+      "returned": "Returned to the supplier",
+      "on_challan": "Out on a delivery challan"
     },
     "errors": {
       "serials_not_whole": "Goods with serial numbers come in whole units, each with its serial.",

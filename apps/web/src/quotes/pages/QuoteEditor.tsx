@@ -19,14 +19,16 @@ import Button from '../../ui/Button';
 import { SelectField } from '../../ui/Field';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
+import ChallanGoods from '../ChallanGoods';
 import EmailQuoteDialog from '../EmailQuoteDialog';
+import RowMenu from '../../ui/RowMenu';
 import ShareQuoteDialog from '../ShareQuoteDialog';
 import { saveBlob } from '../../lib/saveBlob';
 import { quoteTone } from '../tone';
 import type { Quote, QuotesApi } from '../types';
 import { useQuotesApi } from '../useQuotesApi';
 
-const QUOTE_REASONS = ['not_editable', 'not_draft', 'bad_move', 'already_invoiced', 'declined', 'not_sendable', 'mail_off', 'no_email', 'mail_failed'];
+const QUOTE_REASONS = ['not_editable', 'not_draft', 'bad_move', 'already_invoiced', 'declined', 'not_sendable', 'mail_off', 'no_email', 'mail_failed', 'challan_dispatched', 'challan_back', 'challan_not_dispatched', 'no_stock_goods', 'before_challan', 'before_dispatch', 'insufficient_stock', 'insufficient_unexpired', 'serials_count', 'serial_not_in_stock'];
 /** A translated explanation for a quote refusal; line and customer problems read as they do for invoices */
 function quoteErrorMessage(e: unknown, t: (k: string) => string) {
   const reason = e instanceof ApiError ? e.details?.reason : undefined;
@@ -193,7 +195,7 @@ export default function QuoteEditor() {
   const [emailing, setEmailing] = useState(false);
   const [sharing, setSharing] = useState(false);
   const download = useMutation({
-    mutationFn: () => api!.pdf(quote!.id),
+    mutationFn: (copy?: 'original' | 'duplicate' | 'triplicate') => api!.pdf(quote!.id, copy),
     onSuccess: (f) => saveBlob(f),
     onError: (e) => toast(quoteErrorMessage(e, t), 'error'),
   });
@@ -258,9 +260,13 @@ export default function QuoteEditor() {
                     {t('invoices.print')}
                   </Button>
                 )}
-                <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate()}>
+                <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate(undefined)}>
                   {t('common.downloadPdf')}
                 </Button>
+                {/* A challan travels with the goods in three copies (Rule 55) */}
+                {quote.kind === 'delivery_challan' && (
+                  <RowMenu label={t('quotes.challan.copies.menu')} items={(['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: c, label: t(`quotes.challan.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) }))} />
+                )}
                 {canManage && quote.status !== 'invoiced' && quote.status !== 'declined' && (
                   <Button variant="secondary" icon={<Share2 className="size-4" />} onClick={() => setSharing(true)}>
                     {quote.share?.views ? t('invoices.share.actionOpened', { count: quote.share.views }) : t('quotes.share.action')}
@@ -324,6 +330,7 @@ export default function QuoteEditor() {
         ) : (
           <QuoteView quote={quote!} />
         )}
+        {quote && api && quote.kind === 'delivery_challan' && <ChallanGoods quote={quote} api={api} canManage={canManage} errorMessage={(e) => quoteErrorMessage(e, t)} onChanged={(q) => queryClient.setQueryData(key, q)} />}
         {quote?.decidedBy && (
           <p role="note" className="rounded-xl bg-ink-50 px-4 py-3 text-sm text-ink-700 print:hidden dark:bg-ink-900 dark:text-ink-200">
             {t(quote.status === 'declined' ? 'quotes.share.declinedBy' : 'quotes.share.acceptedBy', { name: quote.decidedBy })}

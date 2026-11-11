@@ -20,6 +20,8 @@ import {
   type quoteEmailSchema,
   type QuoteStatus,
   parseQuoteNumber,
+  jobWorkDeadline,
+  type challanDispatchSchema,
   CHALLAN_PURPOSE_TEXT,
   INDIAN_STATES,
   INVOICE_COPIES,
@@ -36,6 +38,8 @@ import { AuditService } from '../audit/audit.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { InvoicesService, type DraftIn } from '../invoices/invoices.service.js';
+import { InventoryService } from '../inventory/inventory.service.js';
+import { JournalsService } from '../journals/journals.service.js';
 import { organizationLogo } from '../common/pdf-logo.js';
 import { organizationSender } from '../common/reply-to.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -69,6 +73,9 @@ const select = {
   taxTotal: true,
   total: true,
   sentAt: true,
+  dispatchedAt: true,
+  backAt: true,
+  backReason: true,
   decidedAt: true,
   decidedBy: true,
   decisionNote: true,
@@ -98,7 +105,9 @@ const select = {
       discountPpm: true,
       amount: true,
       taxAmount: true,
-      item: { select: { id: true, name: true } },
+      item: {
+        select: { id: true, name: true, trackStock: true, trackSerials: true },
+      },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: { id: true, name: true } },
       costCentre: { select: { id: true, code: true, name: true } },
@@ -120,6 +129,8 @@ export class QuotesService {
     private readonly invoices: InvoicesService,
     private readonly mail: MailService,
     private readonly webhooks: WebhooksService,
+    private readonly journals: JournalsService,
+    private readonly inventory: InventoryService,
   ) {}
 
   private lock(tx: Tx, organizationId: string) {
@@ -166,6 +177,21 @@ export class QuotesService {
         status: q.invoice.status,
       },
       sentAt: q.sentAt,
+      /** A delivery challan's goods: when they left stock, and when they came back (invoiced or returned) */
+      goods:
+        q.kind === 'delivery_challan'
+          ? {
+              dispatchedAt: q.dispatchedAt ? iso(q.dispatchedAt) : null,
+              backAt: q.backAt ? iso(q.backAt) : null,
+              backReason:
+                (q.backReason as 'invoiced' | 'returned' | null) ?? null,
+              // Goods out for job work must come back within a year, or they count as supplied (s.143)
+              jobWorkDue:
+                q.purpose === 'job_work' && q.dispatchedAt && !q.backAt
+                  ? jobWorkDeadline(iso(q.dispatchedAt))
+                  : null,
+            }
+          : null,
       decidedAt: q.decidedAt,
       /** Set when the customer answered from their link */
       decidedBy: q.decidedBy,
@@ -469,6 +495,13 @@ export class QuotesService {
       await this.lock(tx, organizationId);
       const q = await this.find(tx, organizationId, id);
       const from = q.status as QuoteStatus;
+      // Goods are out on it: it can't be reworked until they're back
+      if (status === 'draft' && q.dispatchedAt && !q.backAt)
+        throw refuse(
+          ConflictException,
+          'The goods on this challan have left. Record them coming back first.',
+          'challan_dispatched',
+        );
       if (!QUOTE_MOVES[from].includes(status))
         throw refuse(
           ConflictException,
@@ -547,6 +580,196 @@ export class QuotesService {
       } as Input,
       ctx,
     );
+  }
+
+  /**
+   * A delivery challan's goods leave stock, at average cost, to "goods sent on challan": still ours, not on hand.
+   * A draft challan is marked sent. Lines can name the batch and the units by serial number.
+   */
+  async dispatch(
+    id: string,
+    input: z.output<typeof challanDispatchSchema>,
+    ctx: Ctx,
+  ) {
+    const organizationId = ctx.tenant.organizationId;
+    const date = input.date ?? (await this.today(organizationId));
+    await this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, organizationId);
+      const q = await this.find(tx, organizationId, id);
+      const label = quoteNumber(q.number, q.kind as QuoteKind);
+      if (q.kind !== 'delivery_challan')
+        throw refuse(
+          BadRequestException,
+          'Only delivery challans move goods.',
+          'not_challan',
+        );
+      if (q.dispatchedAt)
+        throw refuse(
+          ConflictException,
+          'The goods on this challan have already left.',
+          'challan_dispatched',
+        );
+      if (q.status === 'invoiced' || q.status === 'declined')
+        throw refuse(
+          ConflictException,
+          q.status === 'invoiced'
+            ? 'This challan is already an invoice: the goods leave with it.'
+            : 'This challan was declined.',
+          q.status === 'invoiced' ? 'already_invoiced' : 'declined',
+        );
+      if (date < iso(q.quoteDate))
+        throw refuse(
+          BadRequestException,
+          'The goods can’t leave before the challan’s date.',
+          'before_challan',
+          { field: 'date' },
+        );
+      const given = new Map(input.lines.map((l) => [l.quoteLineId, l]));
+      const stranger = input.lines.find(
+        (l) => !q.lines.some((x) => x.id === l.quoteLineId),
+      );
+      if (stranger)
+        throw refuse(
+          BadRequestException,
+          'A line isn’t on this challan.',
+          'line_not_found',
+        );
+      const out = await this.inventory.challanOut(
+        tx,
+        organizationId,
+        q.lines.map((l) => ({
+          id: l.id,
+          itemId: l.item?.id ?? null,
+          quantity: formatQuantity(parseQuantity(l.quantity.toFixed(4))!),
+          batchId: given.get(l.id)?.batchId ?? null,
+          serials: given.get(l.id)?.serials ?? [],
+        })),
+        date,
+      );
+      if (!out.movements.length)
+        throw refuse(
+          BadRequestException,
+          'Nothing on this challan is kept in stock.',
+          'no_stock_goods',
+        );
+      const entry = await this.journals.postEntryInTx(
+        tx,
+        organizationId,
+        {
+          date,
+          memo: `Delivery challan ${label} · ${q.contact.name}`,
+          reference: label,
+          lines: out.journal,
+        },
+        ctx.actor.userId,
+      );
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'challan_out',
+          sourceId: id,
+          date,
+          journalEntryId: entry.id,
+          actorId: ctx.actor.userId,
+        },
+        out.movements,
+      );
+      await tx.quote.update({
+        where: { id },
+        data: {
+          dispatchedAt: asDate(date),
+          dispatchEntryId: entry.id,
+          ...(q.status === 'draft' && { status: 'sent', sentAt: new Date() }),
+        },
+      });
+      await this.audit.record(
+        {
+          action: 'org.quote.dispatch',
+          actorId: ctx.actor.userId,
+          organizationId,
+          entityType: 'quote',
+          entityId: id,
+          after: { number: label, date, entry: entry.number },
+          req: ctx.req,
+        },
+        tx,
+      );
+    });
+    return this.get(organizationId, id);
+  }
+
+  /** A delivery challan's goods came back: into stock exactly as they left, out of "goods sent on challan" */
+  async goodsBack(id: string, input: { date?: string }, ctx: Ctx) {
+    const organizationId = ctx.tenant.organizationId;
+    const date = input.date ?? (await this.today(organizationId));
+    await this.prisma.$transaction(async (tx) => {
+      await this.lock(tx, organizationId);
+      const q = await this.find(tx, organizationId, id);
+      const label = quoteNumber(q.number, q.kind as QuoteKind);
+      if (!q.dispatchedAt || q.backAt)
+        throw refuse(
+          ConflictException,
+          q.backAt
+            ? 'The goods on this challan are already back.'
+            : 'The goods on this challan haven’t left.',
+          q.backAt ? 'challan_back' : 'challan_not_dispatched',
+        );
+      if (date < iso(q.dispatchedAt))
+        throw refuse(
+          BadRequestException,
+          'Goods can’t come back before they left.',
+          'before_dispatch',
+          { field: 'date' },
+        );
+      const back = await this.inventory.challanBack(tx, organizationId, id);
+      const entry = back.journal.length
+        ? await this.journals.postEntryInTx(
+            tx,
+            organizationId,
+            {
+              date,
+              memo: `Goods back on ${label} · ${q.contact.name}`,
+              reference: label,
+              lines: back.journal,
+            },
+            ctx.actor.userId,
+          )
+        : null;
+      await this.inventory.save(
+        tx,
+        organizationId,
+        {
+          kind: 'challan_back',
+          sourceId: id,
+          date,
+          journalEntryId: entry?.id ?? null,
+          actorId: ctx.actor.userId,
+        },
+        back.movements,
+      );
+      await tx.quote.update({
+        where: { id },
+        data: {
+          backAt: asDate(date),
+          backReason: 'returned',
+          backEntryId: entry?.id ?? null,
+        },
+      });
+      await this.audit.record(
+        {
+          action: 'org.quote.goods_back',
+          actorId: ctx.actor.userId,
+          organizationId,
+          entityType: 'quote',
+          entityId: id,
+          after: { number: label, date, entry: entry?.number ?? null },
+          req: ctx.req,
+        },
+        tx,
+      );
+    });
+    return this.get(organizationId, id);
   }
 
   /** A draft invoice with the quote's lines, dated today unless another day is given */
