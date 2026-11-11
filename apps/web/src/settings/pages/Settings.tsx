@@ -11,7 +11,7 @@ import { useIntlLocale } from '../../i18n';
 import { useSession } from '../../layout/session';
 import { fadeUp, spring, stagger } from '../../motion/tokens';
 import { apiErrorMessage } from '../../platform/errors';
-import { countryOptions, currencyOptions, localeOptions, monthOptions } from '../../platform/options';
+import { baseCurrencyOptions, countryOptions, localeOptions, monthOptions } from '../../platform/options';
 import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { Field, inputClass, SelectField, TextField } from '../../ui/Field';
@@ -161,7 +161,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
           value={v.baseCurrency}
           onChange={set('baseCurrency')}
           disabled={!canManage || settings.locks.baseCurrency}
-          options={currencyOptions(locale, v.baseCurrency)}
+          options={baseCurrencyOptions(locale, v.baseCurrency)}
           hint={settings.locks.baseCurrency ? <LockedHint text={t('settings.locked.baseCurrency')} /> : t('settings.hints.baseCurrency')}
         />
         <SelectField
@@ -178,7 +178,7 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
             )
           }
         />
-        <SelectField label={t('settings.fields.locale')} value={v.locale} onChange={set('locale')} disabled={!canManage} options={localeOptions(locale)} hint={t('platform.form.localeHint')} />
+        <SelectField label={t('settings.fields.locale')} value={v.locale} onChange={set('locale')} disabled={!canManage} options={localeOptions(locale, v.locale)} hint={t('platform.form.localeHint')} />
         <SelectField
           label={t('settings.fields.timeZone')}
           value={v.timeZone}

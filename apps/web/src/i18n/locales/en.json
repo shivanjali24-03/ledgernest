@@ -224,7 +224,7 @@
     "brand": {
       "title": "Accounting that keeps up with your business",
       "secure": "Secure sign-in with automatic lockout",
-      "languages": "Works in 7 languages, including right-to-left",
+      "languages": "Works in English, Hindi and Marathi",
       "roles": "Roles from Super Admin to Viewer",
       "trialBalance": "Trial balance",
       "balanced": "Balanced"
@@ -561,7 +561,7 @@
       "inUse": "People still have this role. Give them another role first."
     },
     "noOrganization": "You're not in an organisation yet",
-    "noOrganizationBody": "Team management is per organisation. Ask an Owner to invite you, or create an organisation in the Super Admin console."
+    "noOrganizationBody": "Everything here belongs to an organisation. Ask an Owner to invite you, or create an organisation in the Super Admin console."
   },
   "permissions": {
     "areas": {
@@ -1004,7 +1004,7 @@
     "fields": {
       "name": "Display name",
       "legalName": "Legal name",
-      "taxId": "Tax ID",
+      "taxId": "GSTIN",
       "email": "Accounts email",
       "phone": "Phone",
       "line1": "Address line 1",
@@ -1045,7 +1045,7 @@
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
-      "taxId": "GSTIN, VAT number or similar.",
+      "taxId": "Your 15-character GSTIN, if you're registered for GST.",
       "baseCurrency": "Your books are kept in this currency.",
       "fiscalYear": "Your financial year runs {{span}}.",
       "timeZone": "It's {{time}} there now. Decides which day a transaction falls on.",
@@ -2102,7 +2102,7 @@
   },
   "taxes": {
     "title": "Taxes",
-    "description": "GST, VAT or sales tax: the rates you charge and the accounts they post to.",
+    "description": "GST rates you charge and pay, and the accounts they post to.",
     "addRate": "Add rate",
     "addGroup": "Add group",
     "rename": "Rename",
@@ -2113,7 +2113,7 @@
     "restored": "{{name}} restored",
     "actionsFor": "Actions for {{name}}",
     "empty": "No taxes yet",
-    "emptyBody": "Add a rate such as VAT 20%, then a group that lines can pick.",
+    "emptyBody": "Add a rate such as GST 18%, then a group that lines can pick.",
     "emptyBodyGst": "Set GST up in one step from India’s official slabs, or add your own rates.",
     "showArchived": "Show archived ({{count}})",
     "groups": "Tax groups",
@@ -2171,7 +2171,7 @@
       "description": "Any tax at any percentage, with the accounts it posts to.",
       "fixedRate": "The rate stays at {{rate}}: entries were taxed at it. For a new percentage, add a new rate.",
       "create": "Add rate",
-      "namePlaceholder": "e.g. VAT 20%"
+      "namePlaceholder": "e.g. GST 18%"
     },
     "groupDialog": {
       "newTitle": "New tax group",
@@ -3272,7 +3272,8 @@
       "portCode": "Port code",
       "assessable": "Value for IGST (owed to the supplier, not here)",
       "summary": "Bill of entry {{number}} dated {{date}}, port {{port}}"
-    }
+    },
+    "dueHint": "From the vendor’s terms: {{days}} days"
   },
   "creditNotes": {
     "title": "Credit notes",

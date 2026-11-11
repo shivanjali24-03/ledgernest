@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { INDUSTRIES, organizationCreateSchema, slugify } from '@ledgernest/shared';
 import { useIntlLocale } from '../i18n';
 import { SelectField, TextField } from '../ui/Field';
-import { countryOptions, currencyOptions, localeOptions, monthOptions } from './options';
+import { baseCurrencyOptions, countryOptions, localeOptions, monthOptions } from './options';
 import type { FieldErrors, OrganizationFormValues } from './formValues';
 
 /**
@@ -105,7 +105,7 @@ export default function OrganizationForm({
           </div>
         </>
       )}
-      <SelectField label={t('platform.form.currency')} value={v.baseCurrency} onChange={(e) => set('baseCurrency', e.target.value)} options={currencyOptions(locale, v.baseCurrency)} />
+      <SelectField label={t('platform.form.currency')} value={v.baseCurrency} onChange={(e) => set('baseCurrency', e.target.value)} options={baseCurrencyOptions(locale, v.baseCurrency)} />
       <SelectField label={t('platform.form.country')} value={v.country} onChange={(e) => set('country', e.target.value)} options={countryOptions(locale, t('platform.form.noCountry'))} />
       <SelectField
         label={t('platform.form.fiscalYear')}
@@ -124,7 +124,7 @@ export default function OrganizationForm({
           />
         </div>
       )}
-      <SelectField label={t('platform.form.locale')} value={v.locale} onChange={(e) => set('locale', e.target.value)} options={localeOptions(locale)} hint={t('platform.form.localeHint')} />
+      <SelectField label={t('platform.form.locale')} value={v.locale} onChange={(e) => set('locale', e.target.value)} options={localeOptions(locale, v.locale)} hint={t('platform.form.localeHint')} />
     </form>
   );
 }

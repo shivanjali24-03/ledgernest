@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router';
 import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronRight, Circle, TrendingDown, TrendingUp } from 'lucide-react';
@@ -122,6 +122,8 @@ export default function Dashboard() {
         ['profit', data.kpis.profit, false],
       ] as const)
     : [];
+  // A Super Admin outside any organisation has no books here: the platform overview is their home
+  if (session.organizationId === null && session.permissions.has('platform.organizations.view')) return <Navigate to="/platform" replace />;
 
   return (
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">

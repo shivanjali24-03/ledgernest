@@ -171,7 +171,8 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
 
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
-  const pos = placeOfSupply || customer?.stateCode || null;
+  // Until a vendor is chosen, the organisation's own state (not "Outside India")
+  const pos = placeOfSupply || customer?.stateCode || (customer ? null : orgState);
   // Services bought from abroad under reverse charge are an import: IGST
   const supply = (reverseCharge && !pos) || boe ? 'inter' : supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
@@ -340,7 +341,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           />
         </div>
         <TextField label={t('bills.fields.billDate')} type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} disabled={!canManage} />
-        <TextField label={t('invoices.fields.dueDate')} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate && customer ? t('invoices.dueHint', { days: customer.paymentTermsDays }) : undefined} />
+        <TextField label={t('invoices.fields.dueDate')} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate && customer ? t('bills.dueHint', { days: customer.paymentTermsDays }) : undefined} />
         <TextField label={t('bills.fields.vendorReference')} value={reference} onChange={(e) => setReference(e.target.value)} disabled={!canManage} placeholder="SOS/887" dir="auto" />
         <TextField label={t('bills.fields.vendorBillDate')} type="date" value={vendorDate} max={issueDate} onChange={(e) => setVendorDate(e.target.value)} disabled={!canManage} hint={t('bills.hints.vendorBillDate')} />
         {india && (
@@ -371,7 +372,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
         {india && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}
-            value={placeOfSupply || customer?.stateCode || ''}
+            value={pos ?? ''}
             onChange={(e) => setPlaceOfSupply(e.target.value)}
             disabled={!canManage}
             options={[

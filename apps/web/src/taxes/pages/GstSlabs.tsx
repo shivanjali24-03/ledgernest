@@ -54,7 +54,7 @@ export default function GstSlabs() {
     <motion.div variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-6">
       <motion.div variants={fadeUp}>
         <PageHeader
-          eyebrow={t('gstSlabs.eyebrow')}
+          eyebrow={t('platform.eyebrow')}
           title={t('gstSlabs.title')}
           description={t('gstSlabs.description')}
           actions={
