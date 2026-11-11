@@ -1,5 +1,22 @@
 import { isUpiId } from '../upi/index.js';
 import { z } from 'zod';
+
+const PAN = /^[A-Z]{3}[ABCFGHJLPT][A-Z]\d{4}[A-Z]$/;
+const TAN = /^[A-Z]{4}\d{5}[A-Z]$/;
+const CIN_OR_LLPIN = /^([LU]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}|[A-Z]{3}-\d{4})$/;
+/** Legal forms of business, and the 4th letter of a PAN that goes with each */
+export const BUSINESS_TYPES = ['proprietorship', 'partnership', 'llp', 'private_limited', 'public_limited', 'opc', 'huf', 'trust', 'society', 'cooperative', 'aop', 'government'] as const;
+export type BusinessType = (typeof BUSINESS_TYPES)[number];
+const PAN_TYPE: Record<BusinessType, string> = { proprietorship: 'P', partnership: 'F', llp: 'F', private_limited: 'C', public_limited: 'C', opc: 'C', huf: 'H', trust: 'T', society: 'A', cooperative: 'A', aop: 'A', government: 'G' };
+/** An optional identifier: trimmed, upper-cased, blank = none */
+const idField = (re: RegExp, message: string) =>
+  z
+    .string()
+    .trim()
+    .toUpperCase()
+    .transform((v) => v.replace(/\s+/g, '') || null)
+    .refine((v) => v === null || re.test(v), message)
+    .nullable();
 import { isoDaySchema } from '../periods/index.js';
 import { emailSchema } from '../auth/index.js';
 
@@ -140,11 +157,44 @@ export const organizationSettingsSchema = z
     lutNumber: z.string().trim().toUpperCase().max(20).transform((v) => v || null).nullable(),
     lutFrom: isoDaySchema.nullable(),
     lutTo: isoDaySchema.nullable(),
+    /** The kind of business, which the PAN's 4th letter must agree with */
+    businessType: z.enum(BUSINESS_TYPES).nullable(),
+    pan: idField(PAN, 'A PAN looks like AAPFN1234C.'),
+    /** Tax deduction account number, for TDS returns and certificates */
+    tan: idField(TAN, 'A TAN looks like PNEN12345A.'),
+    /** The company's CIN, or an LLP's LLPIN: companies print it on invoices (Companies Act s.12(3)(c)) */
+    cin: idField(CIN_OR_LLPIN, 'A CIN looks like U72200MH2020PTC123456; an LLPIN like AAB-1234.'),
+    /** Importer-exporter code from DGFT (now the PAN for most) */
+    iec: idField(/^[A-Z0-9]{10}$/, 'An IEC is 10 letters and digits.'),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
 export type OrganizationSettingsInput = z.input<typeof organizationSettingsSchema>;
 export type OrganizationSettingsUpdate = z.output<typeof organizationSettingsSchema>;
+
+
+/**
+ * Cross-checks of the organisation's identifiers: a GSTIN carries the PAN (characters 3-12); the PAN's 4th letter
+ * is the kind of holder (C company, F firm or LLP, P person, H HUF, T trust, A AOP/society, G government); a CIN is for
+ * companies (its last part says private, public or one person), an LLPIN for LLPs.
+ */
+export function organizationIdProblems(v: { pan?: string | null; taxId?: string | null; businessType?: BusinessType | null; cin?: string | null }): { field: 'pan' | 'cin'; message: string }[] {
+  const out: { field: 'pan' | 'cin'; message: string }[] = [];
+  const gstinPan = v.taxId && /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]{3}$/.test(v.taxId) ? v.taxId.slice(2, 12) : null;
+  if (v.pan && gstinPan && v.pan !== gstinPan) out.push({ field: 'pan', message: `The GSTIN carries PAN ${gstinPan}.` });
+  if (v.pan && v.businessType && v.pan[3] !== PAN_TYPE[v.businessType]) out.push({ field: 'pan', message: `A ${v.businessType.replace('_', ' ')}’s PAN has ${PAN_TYPE[v.businessType]} as its 4th letter.` });
+  if (v.cin && v.businessType) {
+    const llpin = /^[A-Z]{3}-\d{4}$/.test(v.cin);
+    const company = ['private_limited', 'public_limited', 'opc'].includes(v.businessType);
+    if (v.businessType === 'llp' ? !llpin : company ? llpin : true) out.push({ field: 'cin', message: v.businessType === 'llp' ? 'An LLP has an LLPIN, like AAB-1234.' : company ? 'A company has a 21-character CIN.' : 'Only companies and LLPs have a CIN or LLPIN.' });
+    else if (company) {
+      const kind = v.cin.slice(-9, -6);
+      const want = v.businessType === 'private_limited' ? 'PTC' : v.businessType === 'opc' ? 'OPC' : 'PLC';
+      if (kind !== want && !(v.businessType === 'public_limited' && ['PLC', 'GOI', 'SGC', 'GAP', 'NPL'].includes(kind))) out.push({ field: 'cin', message: `This CIN is for a ${kind} company.` });
+    }
+  }
+  return out;
+}
 
 /** Deleting the organisation: its name typed out, so it can't happen by a slip */
 export const organizationDeleteSchema = z.object({ confirmName: z.string().trim().min(1, 'Type the organisation’s name.').max(200) });

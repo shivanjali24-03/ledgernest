@@ -9,6 +9,14 @@ import { findIndianState, isGstin } from '../taxes/index.js';
  */
 export const PAYMENT_TERMS_MAX_DAYS = 365;
 
+const contactPan = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .transform((v) => v || null)
+  .refine((v) => v === null || /^[A-Z]{3}[ABCFGHJLPT][A-Z]\d{4}[A-Z]$/.test(v), 'A PAN looks like ABCPK1234F.')
+  .nullable();
+
 /**
  * How GST treats a party: registered (regular GSTIN), composition (registered, but can't charge GST or claim credit),
  * an SEZ unit or developer (supplies to it are zero-rated), unregistered business, consumer, overseas (exports and
@@ -113,11 +121,14 @@ const fields = {
   interestRateBp: z.number().int().min(0).max(3600).nullable().optional().default(null),
   /** How GST treats them; null = worked out from the GSTIN and country */
   gstTreatment: z.enum(GST_TREATMENTS).nullable().optional().default(null),
+  /** Their PAN, for TDS (from the GSTIN when blank) */
+  pan: contactPan.optional().default(null),
   notes: text(1000),
 };
 
 /** A GSTIN needs an Indian address; it fixes the state, which must agree with the one typed (if any). */
-function checkGstin(v: { taxId: string | null; billingAddress: ContactAddress; gstTreatment?: GstTreatment | null }, ctx: z.RefinementCtx) {
+function checkGstin(v: { taxId: string | null; billingAddress: ContactAddress; gstTreatment?: GstTreatment | null; pan?: string | null }, ctx: z.RefinementCtx) {
+  if (v.pan && v.taxId && isGstin(v.taxId) && v.taxId.slice(2, 12) !== v.pan) ctx.addIssue({ code: 'custom', path: ['pan'], message: `The GSTIN carries PAN ${v.taxId.slice(2, 12)}.` });
   const t = v.gstTreatment;
   if (t && GSTIN_TREATMENTS.includes(t) && !v.taxId) ctx.addIssue({ code: 'custom', path: ['taxId'], message: 'Give their GSTIN (or UIN).' });
   if ((t === 'unregistered' || t === 'consumer') && v.taxId && isGstin(v.taxId)) ctx.addIssue({ code: 'custom', path: ['gstTreatment'], message: 'They have a GSTIN, so they’re registered.' });
@@ -173,6 +184,7 @@ export const contactUpdateSchema = z
     udyamNumber: udyam,
     interestRateBp: z.number().int().min(0).max(3600).nullable(),
     gstTreatment: z.enum(GST_TREATMENTS).nullable(),
+    pan: contactPan,
     notes: z
       .string()
       .trim()

@@ -374,6 +374,8 @@ export class InvoiceRemindersService
         upiId: true,
         gstScheme: true,
         lutNumber: true,
+        pan: true,
+        cin: true,
       },
     });
     const composition = !!org.taxId && org.gstScheme === 'composition';
@@ -426,6 +428,13 @@ export class InvoiceRemindersService
             region: org.region,
             postalCode: org.postalCode,
           }),
+          // The PAN, and a company's CIN (Companies Act s.12(3)(c))
+          [
+            org.pan && `PAN ${org.pan}`,
+            org.cin && `${org.cin.includes('-') ? 'LLPIN' : 'CIN'} ${org.cin}`,
+          ]
+            .filter(Boolean)
+            .join(' · '),
           `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
           address(inv.contact.billingAddress),
           // Where the goods go, when not the billing address

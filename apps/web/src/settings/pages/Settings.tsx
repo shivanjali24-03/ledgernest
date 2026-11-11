@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNo
 import { useBlocker } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { organizationSettingsSchema } from '@ledgernest/shared';
+import { BUSINESS_TYPES, organizationSettingsSchema } from '@ledgernest/shared';
 import { Building2, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../auth/client';
@@ -85,6 +85,8 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
       if (e instanceof ApiError && e.details?.reason === 'locked') toast(t(`settings.locked.${String(e.details.field)}`), 'error');
       else if (e instanceof ApiError && e.details?.reason === 'currency_enabled') toast(t('settings.errors.currencyEnabled'), 'error');
       else if (e instanceof ApiError && e.details?.reason === 'two_factor_self') toast(t('settings.errors.twoFactorSelf'), 'error');
+      // The PAN or CIN doesn't agree with the GSTIN or the kind of business: shown next to the field
+      else if (e instanceof ApiError && e.details?.reason === 'identifier') setErrors((x) => ({ ...x, [String(e.details!.field)]: t(`settings.errors.identifier.${String(e.details!.field)}`) }));
       else toast(apiErrorMessage(e, t), 'error');
     },
   });
@@ -197,6 +199,16 @@ function SettingsForm({ api, settings, canManage, queryKey }: { api: SettingsApi
         </label>
         {text('upiId', t('settings.fields.upiId'), { dir: 'ltr', inputMode: 'email', autoCapitalize: 'none', spellCheck: false, placeholder: 'yourname@okhdfcbank', hint: t('settings.hints.upiId') })}
       </Section>
+
+      {v.country === 'IN' && (
+        <Section title={t('settings.ids.title')} description={t('settings.ids.description')}>
+          <SelectField label={t('settings.fields.businessType')} value={v.businessType} onChange={set('businessType')} disabled={!canManage} options={[{ value: '', label: t('settings.businessTypes.none') }, ...BUSINESS_TYPES.map((b) => ({ value: b, label: t(`settings.businessTypes.${b}`) }))]} />
+          {text('pan', t('settings.fields.pan'), { dir: 'ltr', className: 'font-mono uppercase', placeholder: v.taxId.length === 15 ? v.taxId.slice(2, 12) : 'AAPFN1234C' })}
+          {text('tan', t('settings.fields.tan'), { dir: 'ltr', className: 'font-mono uppercase', hint: t('settings.hints.tan') })}
+          {(v.businessType === 'llp' || v.businessType === 'private_limited' || v.businessType === 'public_limited' || v.businessType === 'opc') && text('cin', t(v.businessType === 'llp' ? 'settings.fields.llpin' : 'settings.fields.cin'), { dir: 'ltr', className: 'font-mono uppercase', hint: t('settings.hints.cin') })}
+          {text('iec', t('settings.fields.iec'), { dir: 'ltr', className: 'font-mono uppercase', hint: t('settings.hints.iec') })}
+        </Section>
+      )}
 
       {v.country === 'IN' && (
         <Section title={t('settings.gst.title')} description={t('settings.gst.description')}>

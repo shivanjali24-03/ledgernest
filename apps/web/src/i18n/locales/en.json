@@ -1028,7 +1028,13 @@
       "roundInvoiceTotals": "Round rupee invoice totals to the rupee",
       "lutNumber": "LUT ARN",
       "lutFrom": "LUT valid from",
-      "lutTo": "LUT valid to"
+      "lutTo": "LUT valid to",
+      "businessType": "Kind of business",
+      "pan": "PAN",
+      "tan": "TAN",
+      "cin": "CIN",
+      "llpin": "LLPIN",
+      "iec": "Importer-exporter code (IEC)"
     },
     "hints": {
       "legalName": "As registered, for invoices and tax filings.",
@@ -1047,7 +1053,10 @@
       "interestGraceDays": "No interest if paid within these days of the due date; after that, from the due date.",
       "interestAutoRaise": "For the interest accrued to the end of the month just gone and not yet charged. You look over and issue them.",
       "roundInvoiceTotals": "The difference shows as Round off and is booked to its own account.",
-      "lutNumber": "Letter of undertaking (RFD-11) for exports and SEZ supplies without IGST"
+      "lutNumber": "Letter of undertaking (RFD-11) for exports and SEZ supplies without IGST",
+      "tan": "For TDS returns and certificates",
+      "cin": "Printed on invoices with the PAN",
+      "iec": "From DGFT; for most businesses it's the PAN"
     },
     "locked": {
       "baseCurrency": "Can't change once entries are posted",
@@ -1064,7 +1073,11 @@
       "upiId": "Enter a UPI ID like yourname@okhdfcbank.",
       "twoFactorSelf": "Turn on two-factor sign-in for yourself first (in the menu under your name).",
       "msmeBankRate": "Enter the rate as a percentage, like 5.50.",
-      "udyamNumber": "A Udyam number looks like UDYAM-MH-26-0012345."
+      "udyamNumber": "A Udyam number looks like UDYAM-MH-26-0012345.",
+      "identifier": {
+        "pan": "The PAN doesn’t agree with the GSTIN or the kind of business.",
+        "cin": "The CIN or LLPIN doesn’t agree with the kind of business."
+      }
     },
     "leave": {
       "title": "Leave without saving?",
@@ -1135,6 +1148,25 @@
     "interestMethods": {
       "simple": "Simple interest, day by day",
       "monthly": "Compounded monthly"
+    },
+    "ids": {
+      "title": "Registration numbers",
+      "description": "PAN, TAN, CIN and IEC. Companies print their CIN on invoices."
+    },
+    "businessTypes": {
+      "none": "Not set",
+      "proprietorship": "Proprietorship",
+      "partnership": "Partnership firm",
+      "llp": "Limited liability partnership (LLP)",
+      "private_limited": "Private limited company",
+      "public_limited": "Public limited company",
+      "opc": "One person company",
+      "huf": "Hindu undivided family",
+      "trust": "Trust",
+      "society": "Society",
+      "cooperative": "Co-operative society",
+      "aop": "Association of persons",
+      "government": "Government body"
     }
   },
   "accounts": {
@@ -2319,7 +2351,8 @@
       "msme": "MSME (Udyam)",
       "udyam": "Udyam registration number",
       "interestRate": "Interest on late payment, % a year",
-      "gstTreatment": "GST registration"
+      "gstTreatment": "GST registration",
+      "pan": "PAN"
     },
     "hints": {
       "gstin": "15 characters; the state fills in from it.",
@@ -2328,7 +2361,8 @@
       "badLimit": "Enter an amount, like 50000.",
       "msme": "Micro and small suppliers must be paid within 45 days, or the expense is disallowed under section 43B(h).",
       "interestDefault": "As set for the organisation",
-      "interestRate": "Blank uses the organisation's rate; 0 charges none."
+      "interestRate": "Blank uses the organisation's rate; 0 charges none.",
+      "pan": "For TDS; worked out from the GSTIN when left blank"
     },
     "address": {
       "line1": "Address",

@@ -8,6 +8,7 @@ import {
   sniffLogoType,
   type LogoUpload,
   type OrganizationSettingsUpdate,
+  organizationIdProblems,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import { TenantPrisma } from '../access/tenant-prisma.js';
@@ -61,6 +62,11 @@ const select = {
   lutNumber: true,
   lutFrom: true,
   lutTo: true,
+  businessType: true,
+  pan: true,
+  tan: true,
+  cin: true,
+  iec: true,
   createdAt: true,
   updatedAt: true,
   logo: { select: { contentType: true, updatedAt: true } },
@@ -100,6 +106,11 @@ type Columns = Partial<{
   lutNumber: string | null;
   lutFrom: Date | string | null;
   lutTo: Date | string | null;
+  businessType: string | null;
+  pan: string | null;
+  tan: string | null;
+  cin: string | null;
+  iec: string | null;
 }>;
 
 const ADDRESS_COLUMNS = {
@@ -187,6 +198,19 @@ export class OrganizationService {
       (k) => day(wanted[k]) !== day(current[k]),
     );
     if (!changed.length) return this.get(organizationId);
+
+    // The PAN agrees with the GSTIN and the kind of business, the CIN with the kind of company
+    const problem = organizationIdProblems({
+      ...(current as unknown as Parameters<typeof organizationIdProblems>[0]),
+      ...(wanted as unknown as Parameters<typeof organizationIdProblems>[0]),
+    })[0];
+    if (
+      problem &&
+      changed.some((k) => ['pan', 'taxId', 'businessType', 'cin'].includes(k))
+    )
+      throw refuse(BadRequestException, problem.message, 'identifier', {
+        field: problem.field,
+      });
 
     // Requiring two-factor starts with yourself, so no one locks themselves out
     if (changed.includes('requireTwoFactor') && wanted.requireTwoFactor) {

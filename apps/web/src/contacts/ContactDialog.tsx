@@ -65,6 +65,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
   const [legalName, setLegalName] = useState(contact?.legalName ?? '');
   const [taxId, setTaxId] = useState(contact?.taxId ?? '');
   const [gstTreatment, setGstTreatment] = useState<GstTreatment | ''>(contact?.gstTreatment ?? '');
+  const [pan, setPan] = useState(contact?.pan ?? '');
   const [email, setEmail] = useState(contact?.email ?? '');
   const [phone, setPhone] = useState(contact?.phone ?? '');
   const [billing, setBilling] = useState<Address>(() => toForm(contact?.billingAddress ?? { line1: null, line2: null, city: null, region: null, postalCode: null, country: 'IN' }));
@@ -97,6 +98,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
     legalName,
     taxId,
     gstTreatment: gstTreatment || null,
+    pan: pan || null,
     email,
     phone,
     billingAddress: fromForm(billing),
@@ -186,6 +188,7 @@ export default function ContactDialog({ contact, defaultType, api, onClose, onSa
           </Field>
           <TextField label={t('contacts.fields.legalName')} value={legalName} onChange={(e) => setLegalName(e.target.value)} dir="auto" />
           <TextField label={billing.country === 'IN' ? t('contacts.fields.gstin') : t('contacts.fields.taxId')} value={taxId} onChange={(e) => changeTaxId(e.target.value)} error={errors.taxId} dir="ltr" className="font-mono uppercase" hint={billing.country === 'IN' ? t('contacts.hints.gstin') : undefined} />
+          {billing.country === 'IN' && <TextField label={t('contacts.fields.pan')} value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} error={errors.pan} dir="ltr" className="font-mono uppercase" placeholder={isGstin(taxId) ? taxId.slice(2, 12) : 'ABCPK1234F'} hint={t('contacts.hints.pan')} />}
           <SelectField
             label={t('contacts.fields.gstTreatment')}
             value={gstTreatment}

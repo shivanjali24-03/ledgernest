@@ -40,7 +40,7 @@ export class TdsReportService {
         tdsAmount: true,
         fiscalYear: { select: { name: true } },
         contact: {
-          select: { id: true, name: true, legalName: true, taxId: true },
+          select: { id: true, name: true, legalName: true, taxId: true, pan: true },
         },
       },
     });
@@ -55,7 +55,7 @@ export class TdsReportService {
       vendor: {
         id: p.contact.id,
         name: p.contact.legalName ?? p.contact.name,
-        pan: panFromGstin(p.contact.taxId),
+        pan: p.contact.pan ?? panFromGstin(p.contact.taxId),
       },
       section: p.tdsSection!,
       ratePpm: p.tdsRatePpm!,
