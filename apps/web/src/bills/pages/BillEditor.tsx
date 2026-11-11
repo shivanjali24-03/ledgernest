@@ -112,6 +112,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const [issueDate, setIssueDate] = useState(invoice?.billDate ?? todayIn(settings?.timeZone ?? 'Asia/Kolkata'));
   const [dueDate, setDueDate] = useState(invoice?.dueDate ?? '');
   const [reference, setReference] = useState(invoice?.vendorReference ?? '');
+  const [vendorDate, setVendorDate] = useState(invoice?.vendorBillDate ?? '');
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
   const [lines, setLines] = useState<Line[]>(
@@ -199,13 +200,14 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
         if (amount) breakdown.set(r.name, (breakdown.get(r.name) ?? 0) + amount);
       }),
     );
-  const autoDue = customer ? dueDateFor(issueDate, customer.paymentTermsDays) : '';
+  const autoDue = customer ? dueDateFor(vendorDate || issueDate, customer.paymentTermsDays) : '';
 
   const payload = () => ({
     contactId,
     billDate: issueDate,
     dueDate: dueDate || null,
     vendorReference: reference,
+    vendorBillDate: vendorDate || null,
     notes,
     placeOfSupply: placeOfSupply || null,
     lines: filled.map((l) => ({
@@ -295,6 +297,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
         <TextField label={t('bills.fields.billDate')} type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} disabled={!canManage} />
         <TextField label={t('invoices.fields.dueDate')} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate && customer ? t('invoices.dueHint', { days: customer.paymentTermsDays }) : undefined} />
         <TextField label={t('bills.fields.vendorReference')} value={reference} onChange={(e) => setReference(e.target.value)} disabled={!canManage} placeholder="SOS/887" dir="auto" />
+        <TextField label={t('bills.fields.vendorBillDate')} type="date" value={vendorDate} max={issueDate} onChange={(e) => setVendorDate(e.target.value)} disabled={!canManage} hint={t('bills.hints.vendorBillDate')} />
         {india && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}

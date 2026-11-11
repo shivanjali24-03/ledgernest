@@ -47,6 +47,12 @@ export default function BillDocument({ bill: b }: { bill: Bill }) {
           <dd className="font-mono" dir="ltr">
             {b.vendorReference ?? '—'}
           </dd>
+          {b.vendorBillDate && b.vendorBillDate !== b.billDate && (
+            <>
+              <dt className="text-ink-500">{t('bills.fields.vendorBillDate')}</dt>
+              <dd>{day(b.vendorBillDate)}</dd>
+            </>
+          )}
           <dt className="text-ink-500">{t('bills.fields.billDate')}</dt>
           <dd>{day(b.billDate)}</dd>
           <dt className="text-ink-500">{t('invoices.fields.dueDate')}</dt>

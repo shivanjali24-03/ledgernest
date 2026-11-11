@@ -922,10 +922,10 @@ describe('Aging reports (e2e)', () => {
     expect(kumar).toHaveLength(2);
     const bills = lines((await as().get('/bills/export').expect(200)).text);
     expect(bills[0]).toBe(
-      'number,state,bill_date,due_date,vendor,vendor_reference,currency,total,paid,balance',
+      'number,state,bill_date,due_date,vendor,vendor_reference,vendor_bill_date,currency,total,paid,balance',
     );
     expect(bills[1]).toMatch(
-      /^BILL\/2026-27\/0001,overdue,2026-04-01,2026-04-01,Sharma Supplies,,INR,250.00,0.00,250.00$/,
+      /^BILL\/2026-27\/0001,overdue,2026-04-01,2026-04-01,Sharma Supplies,,,INR,250.00,0.00,250.00$/,
     );
     expect(
       await prisma.auditLog.count({

@@ -2828,7 +2828,8 @@
     "fields": {
       "vendor": "Vendor",
       "billDate": "Bill date",
-      "vendorReference": "Vendor’s bill number"
+      "vendorReference": "Vendor’s bill number",
+      "vendorBillDate": "Vendor’s bill date"
     },
     "columns": {
       "account": "Account"
@@ -2863,6 +2864,9 @@
       "confirmTitle": "Record this bill again?",
       "confirmBody": "The vendor’s bill {{reference}} is recorded already as {{number}}. Recording it twice doubles the cost and the input GST.",
       "recordAnyway": "Record anyway"
+    },
+    "hints": {
+      "vendorBillDate": "The date printed on their bill, if it differs from the day you enter it. GSTR-2B and payment terms use it."
     }
   },
   "creditNotes": {

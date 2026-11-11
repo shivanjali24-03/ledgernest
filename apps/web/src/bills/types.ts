@@ -15,6 +15,8 @@ export interface Bill {
   placeOfSupply: string | null;
   /** The vendor's own number for it */
   vendorReference: string | null;
+  /** The date on the vendor's bill; null = the bill date */
+  vendorBillDate?: string | null;
   notes: string | null;
   contact: {
     id: string;
@@ -57,6 +59,7 @@ export interface BillSummary {
   amountPaid: number;
   balance: number;
   vendorReference: string | null;
+  vendorBillDate?: string | null;
 }
 
 export type BillFilter = BillState | 'unpaid';

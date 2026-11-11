@@ -52,6 +52,8 @@ export type DraftIn = {
   billDate: string;
   dueDate: string | null;
   vendorReference: string | null;
+  /** The date on the vendor's bill; null = the bill date */
+  vendorBillDate?: string | null;
   notes: string | null;
   placeOfSupply: string | null;
   payableAccountId: string | null;
@@ -91,6 +93,7 @@ const select = {
   rate: true,
   placeOfSupply: true,
   vendorReference: true,
+  vendorBillDate: true,
   notes: true,
   subtotal: true,
   taxTotal: true,
@@ -255,6 +258,7 @@ export class BillsService {
       rate: i.rate && rateText(i.rate),
       placeOfSupply: i.placeOfSupply,
       vendorReference: i.vendorReference,
+      vendorBillDate: i.vendorBillDate ? iso(i.vendorBillDate) : null,
       notes: i.notes,
       contact: {
         ...i.contact,
@@ -372,6 +376,7 @@ export class BillsService {
         id: true,
         contactId: true,
         vendorReference: true,
+        vendorBillDate: true,
         billDate: true,
         total: true,
       },
@@ -391,6 +396,7 @@ export class BillsService {
         number: true,
         status: true,
         vendorReference: true,
+        vendorBillDate: true,
         billDate: true,
         total: true,
         fiscalYear: { select: { name: true } },
@@ -399,12 +405,14 @@ export class BillsService {
     const shape = (o: {
       id: string;
       vendorReference: string | null;
+      vendorBillDate: Date | null;
       billDate: Date;
       total: bigint;
     }) => ({
       id: o.id,
       vendorReference: o.vendorReference,
-      billDate: iso(o.billDate),
+      // The vendor's own date, when known, is what a second copy of the same bill shares
+      billDate: iso(o.vendorBillDate ?? o.billDate),
       total: Number(o.total),
     });
     return possibleDuplicateBills(
@@ -520,6 +528,7 @@ export class BillsService {
           amountPaid: v.amountPaid,
           balance: v.balance,
           vendorReference: v.vendorReference,
+          vendorBillDate: v.vendorBillDate,
         };
       }),
     };
@@ -555,6 +564,7 @@ export class BillsService {
         'due_date',
         'vendor',
         'vendor_reference',
+        'vendor_bill_date',
         'currency',
         'total',
         'paid',
@@ -569,6 +579,7 @@ export class BillsService {
           b.dueDate,
           b.contact.name,
           b.vendorReference ?? '',
+          b.vendorBillDate ?? '',
           cur,
           major(b.total, cur),
           b.status === 'open' ? major(b.amountPaid, cur) : '',
@@ -807,7 +818,11 @@ export class BillsService {
       currency,
       placeOfSupply,
       dueDate:
-        input.dueDate ?? dueDateFor(input.billDate, contact.paymentTermsDays),
+        input.dueDate ??
+        dueDateFor(
+          input.vendorBillDate ?? input.billDate,
+          contact.paymentTermsDays,
+        ),
       payableAccountId,
       lines,
       amounts,
@@ -855,6 +870,9 @@ export class BillsService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
+          vendorBillDate: input.vendorBillDate
+            ? asDate(input.vendorBillDate)
+            : null,
           notes: input.notes,
           payableAccountId: p.payableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -911,6 +929,9 @@ export class BillsService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
+          vendorBillDate: input.vendorBillDate
+            ? asDate(input.vendorBillDate)
+            : null,
           notes: input.notes,
           payableAccountId: p.payableAccountId,
           subtotal: BigInt(p.amounts.subtotal),

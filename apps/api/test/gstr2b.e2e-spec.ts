@@ -307,6 +307,96 @@ describe('GSTR-2B reconciliation (e2e)', () => {
     ]);
   });
 
+  it('matches on the date printed on the vendor’s bill, not the day it was entered', async () => {
+    const draft = (
+      await as()
+        .post('/bills', {
+          contactId: contact.sharma,
+          vendorReference: 'SOS/50/26-27',
+          vendorBillDate: '2026-10-21',
+          billDate: '2026-10-24',
+          lines: [
+            {
+              description: 'Toner',
+              quantity: 1,
+              unitPrice: 1_000_00,
+              taxGroupId: gst18,
+              accountId: acc.supplies,
+            },
+          ],
+        })
+        .expect(201)
+    ).body as {
+      id: string;
+      vendorBillDate: string;
+      billDate: string;
+      dueDate: string;
+    };
+    // Payment terms run from the vendor's date
+    expect(draft).toMatchObject({
+      vendorBillDate: '2026-10-21',
+      billDate: '2026-10-24',
+      dueDate: '2026-11-20',
+    });
+    await as().post(`/bills/${draft.id}/record`).expect(200);
+    const content = JSON.stringify({
+      data: {
+        gstin: OURS,
+        rtnprd: '102026',
+        docdata: {
+          b2b: [
+            {
+              ctin: SHARMA,
+              inv: [
+                {
+                  inum: 'SOS/50/26-27',
+                  dt: '21-10-2026',
+                  val: 1180,
+                  pos: '27',
+                  rev: 'N',
+                  itcavl: 'Y',
+                  items: [
+                    { txval: 1000, igst: 0, cgst: 90, sgst: 90, cess: 0 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const r = (
+      await as()
+        .post('/reports/gst/gstr-2b', {
+          content,
+          from: '2026-10-01',
+          to: '2026-10-31',
+        })
+        .expect(200)
+    ).body as Result;
+    expect(r.rows.find((x) => x.doc?.number === 'SOS/50/26-27')).toMatchObject({
+      status: 'matched',
+      problems: [],
+    });
+    // A vendor's bill can't be dated after it's entered
+    await as()
+      .post('/bills', {
+        contactId: contact.sharma,
+        vendorReference: 'SOS/51/26-27',
+        vendorBillDate: '2026-10-25',
+        billDate: '2026-10-24',
+        lines: [
+          {
+            description: 'x',
+            quantity: 1,
+            unitPrice: 100,
+            accountId: acc.supplies,
+          },
+        ],
+      })
+      .expect(400);
+  });
+
   it('says when the file is for another GSTIN, and turns away files that aren’t GSTR-2B', async () => {
     const other = (
       await as()
