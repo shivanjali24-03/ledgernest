@@ -24,7 +24,7 @@ export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { setRole } = session;
-  const groups = useMemo(() => visibleNav(session.permissions), [session.permissions]);
+  const groups = useMemo(() => visibleNav(session.permissions, session.organizationId !== null), [session.permissions, session.organizationId]);
 
   // ⌘/Ctrl+K opens the command palette from anywhere
   useEffect(() => {

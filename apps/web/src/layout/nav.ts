@@ -118,6 +118,9 @@ export const NAV: NavGroup[] = [
   },
 ];
 
-/** The navigation a user with these permissions may see (empty groups removed). */
-export const visibleNav = (permissions: ReadonlySet<Permission>): NavGroup[] =>
-  NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.permission || permissions.has(i.permission)) })).filter((g) => g.items.length);
+/**
+ * The navigation a user with these permissions may see (empty groups removed). A Super Admin who isn't in
+ * an organisation sees only the platform console: everything else belongs to an organisation.
+ */
+export const visibleNav = (permissions: ReadonlySet<Permission>, inOrganization = true): NavGroup[] =>
+  NAV.map((g) => ({ ...g, items: g.items.filter((i) => (!i.permission || permissions.has(i.permission)) && (inOrganization || !!i.permission?.startsWith('platform.'))) })).filter((g) => g.items.length);

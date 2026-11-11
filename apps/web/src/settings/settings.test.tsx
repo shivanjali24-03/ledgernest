@@ -31,7 +31,7 @@ describe('organisation settings', () => {
     renderApp();
     expect(await screen.findByRole('heading', { name: 'Organisation settings' })).toBeInTheDocument();
     expect(await field('Legal name')).toHaveValue('Nest Demo Private Limited');
-    expect(screen.getByLabelText('Tax ID')).toHaveValue('27AAPFN1234C1Z5');
+    expect(screen.getByLabelText('GSTIN')).toHaveValue('27AAPFN1234C1Z5');
     expect(screen.getByLabelText('Base currency')).toBeDisabled();
     expect(screen.getByText("Can't change once entries are posted")).toBeInTheDocument();
     expect(screen.getByText('Your financial year runs April – March.')).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe('organisation settings', () => {
 
   it('shows problems next to the field, with the same rules as the API, and discards changes', async () => {
     renderApp();
-    const tax = await field('Tax ID');
+    const tax = await field('GSTIN');
     await userEvent.clear(tax);
     await userEvent.type(tax, '<script>');
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));

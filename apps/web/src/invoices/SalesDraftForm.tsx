@@ -187,7 +187,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
 
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
-  const pos = placeOfSupply || shipToState || customer?.stateCode || null;
+  // Until a customer is chosen, the organisation's own state (not "Outside India")
+  const pos = placeOfSupply || shipToState || customer?.stateCode || (customer ? null : orgState);
   // Exports and SEZ supplies are inter-state (IGST)
   const supply = config.interest && (isExport(supplyKind) || isSez(supplyKind)) ? 'inter' : supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
@@ -317,7 +318,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         {india && !isExport(supplyKind) && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}
-            value={placeOfSupply || shipToState || customer?.stateCode || ''}
+            value={pos ?? ''}
             onChange={(e) => setPlaceOfSupply(e.target.value)}
             disabled={!canManage}
             options={[{ value: '', label: t('invoices.outsideIndia') }, ...INDIAN_STATES.map((s) => ({ value: s.code, label: `${s.code} · ${s.name}` }))]}
