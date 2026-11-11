@@ -51,9 +51,21 @@ export default function YearEnd() {
 
   if (years.data && !all.length)
     return (
-      <Card>
-        <EmptyState icon={<CheckCircle2 className="size-5" />} title={t('yearEnd.noYears')} />
-      </Card>
+      <div className="space-y-6">
+        <PageHeader eyebrow={<span dir="auto">{session.organization}</span>} title={t('yearEnd.title')} description={t('yearEnd.description')} />
+        <Card>
+          <EmptyState
+            icon={<CheckCircle2 className="size-5" />}
+            title={t('yearEnd.noYears')}
+            action={
+              <Link to="/periods" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                {t('nav.items.periods')}
+                <ChevronRight className="size-4 rtl:-scale-x-100" aria-hidden />
+              </Link>
+            }
+          />
+        </Card>
+      </div>
     );
   const alert = (kind: string) => dashboard.data?.alerts.find((a) => a.kind === kind)?.count ?? 0;
   const confirmations = [...(receivable.data ?? []), ...(payable.data ?? [])];

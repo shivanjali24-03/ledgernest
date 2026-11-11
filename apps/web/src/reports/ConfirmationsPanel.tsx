@@ -51,7 +51,7 @@ export default function ConfirmationsPanel({ api, asOf, side, canRequest, queryK
           </Button>
         )}
       </div>
-      <Card className="overflow-x-auto">
+      <Card className="relative overflow-x-auto">
         {list.isError ? (
           <ErrorState onRetry={() => void list.refetch()} />
         ) : !list.data ? (

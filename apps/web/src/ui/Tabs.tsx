@@ -24,7 +24,7 @@ export default function Tabs<T extends string>({
   };
   return (
     <LayoutGroup id={id}>
-      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-ink-200 dark:border-ink-800">
+      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-ink-200 pe-8 [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] dark:border-ink-800">
         {tabs.map((t) => {
           const selected = t.value === value;
           return (
@@ -34,7 +34,7 @@ export default function Tabs<T extends string>({
               role="tab"
               aria-selected={selected}
               tabIndex={selected ? 0 : -1}
-              onClick={() => onChange(t.value)}
+              onClick={(e) => (onChange(t.value), e.currentTarget.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }))}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                   e.preventDefault();

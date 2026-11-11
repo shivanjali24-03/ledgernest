@@ -54,7 +54,7 @@ export default function MsmePanel({ data, isPending, isError, onRetry }: { data:
         ))}
       </div>
       <p className="text-sm text-ink-500">{t('reports.msme.disallowedHint', { from: day(data.fiscalYear.from), to: day(data.fiscalYear.to) })}</p>
-      <Card className="overflow-x-auto">
+      <Card className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <caption className="border-b border-ink-100 px-4 py-3 text-start dark:border-ink-800">
             <span className="flex items-center justify-between gap-2">

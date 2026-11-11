@@ -34,7 +34,7 @@ function Block({ title, caption, head, children }: { title: string; caption?: st
         <h3 className="font-semibold">{title}</h3>
         {caption && <p className="text-xs text-ink-500">{caption}</p>}
       </div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <caption className="sr-only">{title}</caption>
           <thead className="text-xs uppercase tracking-wide text-ink-400">{head}</thead>

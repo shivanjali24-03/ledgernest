@@ -76,7 +76,7 @@ export default function PurchaseOrders() {
           ) : !data!.items.length ? (
             <EmptyState icon={<ClipboardList className="size-5" />} title={search || filter !== 'all' ? t('purchaseOrders.noMatches') : t('purchaseOrders.empty')} body={search || filter !== 'all' ? undefined : t('purchaseOrders.emptyBody')} />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[680px] text-sm" aria-label={t('purchaseOrders.title')}>
                 <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">
                   <tr>

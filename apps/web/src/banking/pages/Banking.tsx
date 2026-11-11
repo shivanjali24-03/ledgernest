@@ -200,7 +200,7 @@ export default function Banking() {
             ) : activity.isError ? (
               <ErrorState onRetry={() => void activity.refetch()} />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead className="text-xs uppercase tracking-wide text-ink-400">
                     <tr>

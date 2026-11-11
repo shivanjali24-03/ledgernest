@@ -15,7 +15,7 @@ export default function CashLimitsPanel({ from, to }: { from: string; to: string
   const q = useQuery({ queryKey: ['payments', session.organizationId, 'cash-limits', from, to], queryFn: () => api!.cashLimits(from, to), enabled: !!api && from <= to });
   const th = 'px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-500';
   return (
-    <Card className="overflow-x-auto">
+    <Card className="relative overflow-x-auto">
       <div className="p-4 pb-2">
         <h2 className="font-semibold">{t('reports.cashLimits.title')}</h2>
         <p className="text-sm text-ink-500">{t('reports.cashLimits.hint')}</p>

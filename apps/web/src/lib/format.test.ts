@@ -19,6 +19,8 @@ describe('money formatting', () => {
   it('formats compact amounts for dashboards', () => {
     expect(formatCompactMoney(123456789, 'USD', 'en-US')).toBe('$1.2M');
     expect(formatCompactMoney(4821500000, 'INR', 'en-IN')).toBe('₹4.8Cr');
+    // Nothing yet reads ₹0, not ₹0.0
+    expect(formatCompactMoney(0, 'INR', 'en-IN')).toBe('₹0');
   });
 
   it('formats percentages with a sign', () => {

@@ -102,7 +102,7 @@ export default function CashForecastPanel({ data, isPending, isError, onRetry }:
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <caption className="sr-only">{t('reports.forecast.tableTitle')}</caption>
             <thead className="text-xs uppercase tracking-wide text-ink-400">

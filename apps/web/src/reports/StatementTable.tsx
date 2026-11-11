@@ -37,7 +37,7 @@ export default function StatementTable({ columns, blocks, onAccount, caption }: 
     </>
   );
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-[560px] text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="border-b border-ink-100 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-800">

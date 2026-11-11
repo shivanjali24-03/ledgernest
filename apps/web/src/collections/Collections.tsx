@@ -108,7 +108,7 @@ export default function Collections() {
         />
       </motion.div>
       <motion.div variants={fadeUp}>
-        <Card className="overflow-x-auto">
+        <Card className="relative overflow-x-auto">
           {aging.isError ? (
             <ErrorState onRetry={() => void aging.refetch()} />
           ) : !aging.data || !customers.data ? (

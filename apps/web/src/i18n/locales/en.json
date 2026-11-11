@@ -2474,7 +2474,7 @@
       "medium": "Medium enterprise"
     },
     "gstTreatments": {
-      "auto": "From GSTIN and country ({{kind}})",
+      "auto": "{{kind}} (from GSTIN)",
       "registered": "Registered (regular)",
       "composition": "Composition dealer",
       "sez": "SEZ unit or developer",

@@ -121,7 +121,7 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
         </div>
       </section>
 
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[560px]">
           <thead className="border-b border-ink-200 text-xs uppercase tracking-wide text-ink-400 dark:border-ink-700">
             <tr>

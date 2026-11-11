@@ -99,7 +99,7 @@ export default function TdsPanel({ side = 'payable', data, isPending, isError, o
             {t('reports.tds.csv')}
           </Button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <caption className="sr-only">{t('reports.tds.payments')}</caption>
             <thead className="text-xs uppercase tracking-wide text-ink-400">

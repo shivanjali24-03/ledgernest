@@ -191,13 +191,13 @@ export default function Taxes() {
                   </ul>
                 </Card>
               </motion.div>
-              <motion.div variants={fadeUp}>
+              <motion.div variants={fadeUp} className="min-w-0">
                 <Card className="overflow-hidden">
                   <header className="border-b border-ink-100 px-5 py-3 dark:border-ink-800">
                     <h2 className="font-semibold">{t('taxes.rates')}</h2>
                     <p className="text-sm text-ink-500">{t('taxes.ratesHint')}</p>
                   </header>
-                  <div className="overflow-x-auto">
+                  <div className="relative overflow-x-auto">
                     <table className="w-full min-w-[40rem] text-sm">
                       <thead className="text-start text-xs uppercase tracking-wide text-ink-500">
                         <tr>

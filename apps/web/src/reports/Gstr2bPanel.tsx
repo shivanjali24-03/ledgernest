@@ -127,7 +127,7 @@ export default function Gstr2bPanel({ api, from, to, registrationId }: { api: Re
             {rows.length === 0 ? (
               <p className="px-4 py-6 text-sm text-ink-500">{t('reports.gstr2b.nothing')}</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className="w-full min-w-[860px] text-sm">
                   <caption className="sr-only">{t('reports.gstr2b.title')}</caption>
                   <thead className="text-xs uppercase tracking-wide text-ink-400">

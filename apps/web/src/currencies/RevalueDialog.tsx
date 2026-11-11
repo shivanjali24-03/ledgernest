@@ -73,7 +73,7 @@ export default function RevalueDialog({ api, today, onClose }: { api: Currencies
             <p>{t('currencies.revalue.nothing')}</p>
           )}
           {result.adjustments.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[520px]">
                 <caption className="sr-only">{t('currencies.revalue.title')}</caption>
                 <thead className="text-xs uppercase tracking-wide text-ink-400">

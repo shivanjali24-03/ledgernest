@@ -2474,7 +2474,7 @@
       "medium": "मध्यम उद्यम"
     },
     "gstTreatments": {
-      "auto": "GSTIN और देश से ({{kind}})",
+      "auto": "{{kind}} (GSTIN से)",
       "registered": "पंजीकृत (नियमित)",
       "composition": "कंपोज़िशन डीलर",
       "sez": "SEZ इकाई या डेवलपर",

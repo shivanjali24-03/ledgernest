@@ -178,7 +178,7 @@ function RunCard({ run, api, canManage }: { run: PayRun; api: PayrollApi; canMan
           </>
         )}
       </div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm" aria-label={t('payroll.payslipsOf', { month: run.label })}>
           <thead className="text-xs uppercase tracking-wide text-ink-400">
             <tr>
