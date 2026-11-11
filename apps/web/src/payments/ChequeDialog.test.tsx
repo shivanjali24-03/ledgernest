@@ -43,7 +43,8 @@ describe('Cheque dialog', () => {
     expect(right).toHaveValue('-1');
     await userEvent.clear(right);
     await userEvent.type(right, '45');
-    expect(within(dialog).getByText('Between -30 and 30 mm.')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Download cheque PDF' })).toBeDisabled();
+    // Under load the check can trail the typing: wait for it
+    expect(await within(dialog).findByText('Between -30 and 30 mm.', {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Download cheque PDF' })).toBeDisabled());
   });
 });

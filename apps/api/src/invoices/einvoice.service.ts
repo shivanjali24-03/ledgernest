@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import {
   buildEinvoice,
+  currencyDigits,
+  toBase,
   buildEwayBill,
   einvoiceProblems,
   ewayBillFile,
@@ -48,6 +50,7 @@ const invoiceSelect = {
   status: true,
   issueDate: true,
   currency: true,
+  rate: true,
   placeOfSupply: true,
   shipTo: true,
   roundOff: true,
@@ -118,6 +121,8 @@ export class EinvoiceService {
       number: number | null;
       issueDate: Date;
       currency: string | null;
+      /** A foreign-currency invoice's rate: the portals take rupees */
+      rate?: { toString(): string } | null;
       placeOfSupply: string | null;
       shipTo?: unknown;
       roundOff?: bigint;
@@ -155,6 +160,11 @@ export class EinvoiceService {
     seller: EinvoiceInput['seller'],
   ): EinvoiceInput {
     const a = (i.contact.billingAddress ?? {}) as Record<string, string | null>;
+    // The portals take every value in rupees: a foreign-currency invoice goes at the rate it was posted at, its
+    // currency named in the export details (ForCur)
+    const rate = i.currency && i.rate ? i.rate.toString() : null;
+    const inr = (minor: number) =>
+      rate ? toBase(minor, rate, currencyDigits(i.currency!), 2) : minor;
     return {
       kind: 'invoice',
       number:
@@ -162,9 +172,9 @@ export class EinvoiceService {
           ? (i.fullNumber ?? invoiceNumber(i.fiscalYear.name, i.number))
           : '',
       date: iso(i.issueDate),
-      currency: i.currency ?? 'INR',
+      currency: rate ? 'INR' : (i.currency ?? 'INR'),
       placeOfSupply: i.placeOfSupply,
-      roundOff: Number(i.roundOff ?? 0),
+      roundOff: inr(Number(i.roundOff ?? 0)),
       supplyKind: i.supplyKind ?? 'regular',
       exportDetails:
         (i.exportDetails as EinvoiceInput['exportDetails']) ?? null,
@@ -198,8 +208,9 @@ export class EinvoiceService {
         // Under reverse charge the buyer pays the tax, reported to the portal all the same
         const rates = (l.taxGroup ?? l.rcmTaxGroup)?.rates ?? [];
         const heads = zeroHeads();
+        const amount = inr(Number(l.amount));
         splitTax(
-          Number(l.amount),
+          amount,
           false,
           rates.map((r) => ({ rateId: r.rate.id, ratePpm: r.rate.ratePpm })),
         ).taxes.forEach((t, k) => {
@@ -213,14 +224,15 @@ export class EinvoiceService {
           // The unit the line's quantity is in
           unit: (l.inAltUnit ? l.item?.altUnit : null) ?? l.item?.unit ?? null,
           // Prices that include GST go to the portal without it
-          unitPrice:
+          unitPrice: inr(
             i.pricesIncludeTax && !i.reverseCharge
               ? Math.round(
                   (Number(l.unitPrice) * 1_000_000) /
                     (1_000_000 + rates.reduce((s, r) => s + r.rate.ratePpm, 0)),
                 )
               : Number(l.unitPrice),
-          amount: Number(l.amount),
+          ),
+          amount,
           heads,
           gstRate:
             rates

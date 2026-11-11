@@ -55,7 +55,7 @@ export interface EinvoiceInput {
   roundOff?: number;
   /** An export or SEZ supply (with IGST or under LUT), or a deemed export */
   supplyKind?: string | null;
-  /** For an export: shipping bill, port, country, and the currency it's billed in */
+  /** For an export: shipping bill, port, country; and the currency it's billed in (every amount here is in rupees) */
   exportDetails?: { portCode: string | null; shippingBillNo: string | null; shippingBillDate: string | null; countryCode: string | null } | null;
   foreignCurrency?: string | null;
   /** The buyer pays the tax under reverse charge */
@@ -158,13 +158,13 @@ export function buildEinvoice(i: EinvoiceInput) {
     BuyerDtls: exporting
       ? { Gstin: 'URP', LglNm: cut(i.buyer.legalName, 100), Addr1: cut(i.buyer.address1, 100), Loc: cut(i.buyer.city, 50) || 'Abroad', Pin: 999999, Stcd: '96', Pos: '96' }
       : { ...party(i.buyer), Pos: i.placeOfSupply! },
-    ...(exporting && i.exportDetails
+    ...(exporting && (i.exportDetails || i.foreignCurrency)
       ? {
           ExpDtls: {
-            ...(i.exportDetails.shippingBillNo ? { ShipBNo: i.exportDetails.shippingBillNo } : {}),
-            ...(i.exportDetails.shippingBillDate ? { ShipBDt: i.exportDetails.shippingBillDate.split('-').reverse().join('/') } : {}),
-            ...(i.exportDetails.portCode ? { Port: i.exportDetails.portCode } : {}),
-            ...(i.exportDetails.countryCode ? { CntCode: i.exportDetails.countryCode } : {}),
+            ...(i.exportDetails?.shippingBillNo ? { ShipBNo: i.exportDetails.shippingBillNo } : {}),
+            ...(i.exportDetails?.shippingBillDate ? { ShipBDt: i.exportDetails.shippingBillDate.split('-').reverse().join('/') } : {}),
+            ...(i.exportDetails?.portCode ? { Port: i.exportDetails.portCode } : {}),
+            ...(i.exportDetails?.countryCode ? { CntCode: i.exportDetails.countryCode } : {}),
             ...(i.foreignCurrency ? { ForCur: i.foreignCurrency } : {}),
           },
         }

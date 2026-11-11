@@ -106,6 +106,8 @@ describe('E-invoices for exports and SEZ supplies', () => {
     expect(j.TranDtls.SupTyp).toBe('EXPWOP');
     expect(j.BuyerDtls).toMatchObject({ Gstin: 'URP', Pin: 999999, Stcd: '96', Pos: '96' });
     expect(j.ExpDtls).toEqual({ ShipBNo: '7712345', ShipBDt: '06/10/2026', Port: 'INBOM4', CntCode: 'US', ForCur: 'USD' });
+    // Billed in dollars with no shipping bill yet: the currency still goes
+    expect(buildEinvoice({ ...exp, exportDetails: null }).ExpDtls).toEqual({ ForCur: 'USD' });
     // A domestic buyer still needs a GSTIN
     expect(einvoiceProblems(base)).toContainEqual({ code: 'gstin', party: 'buyer' });
   });

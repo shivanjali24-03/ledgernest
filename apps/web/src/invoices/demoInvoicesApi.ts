@@ -228,11 +228,15 @@ function demoSeller(): EinvoiceInput['seller'] {
 }
 /** A demo invoice as e-invoice input: tax by head from its groups' rates */
 function demoEinvoiceInput(v: Invoice): EinvoiceInput {
+  // The portals take rupees: a foreign-currency invoice at its rate, its currency named in the export details
+  const rate = v.currency && v.rate ? v.rate : null;
+  const inr = (minor: number) => (rate ? toBase(minor, rate, currencyDigits(v.currency!), 2) : minor);
   return {
     kind: 'invoice',
     number: v.number ?? '',
     date: v.issueDate,
-    currency: v.currency ?? 'INR',
+    currency: rate ? 'INR' : (v.currency ?? 'INR'),
+    foreignCurrency: v.currency,
     placeOfSupply: v.placeOfSupply,
     supplyKind: v.supplyKind ?? 'regular',
     exportDetails: v.exportDetails ?? null,
@@ -242,12 +246,13 @@ function demoEinvoiceInput(v: Invoice): EinvoiceInput {
     lines: v.lines.map((l) => {
       const g = groupOf((l.taxGroup ?? l.rcmTaxGroup)?.id ?? null);
       const heads = zeroHeads();
-      splitTax(l.amount, false, (g?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => {
+      const amount = inr(l.amount);
+      splitTax(amount, false, (g?.rates ?? []).map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => {
         const kind = g!.rates[k]!.kind;
         const h = kind === 'igst' ? 'igst' : kind === 'cgst' ? 'cgst' : kind === 'sgst' || kind === 'utgst' ? 'sgst' : kind === 'cess' ? 'cess' : null;
         if (h) heads[h] += t.amount;
       });
-      return { description: l.description, hsn: l.item?.hsnSac ?? null, quantity: l.quantity, unit: (l.item as { unit?: string | null } | null)?.unit ?? null, unitPrice: l.unitPrice, amount: l.amount, heads, gstRate: (g?.rates ?? []).filter((r) => ['igst', 'cgst', 'sgst', 'utgst'].includes(r.kind)).reduce((x, r) => x + r.ratePpm, 0) / 10_000 };
+      return { description: l.description, hsn: l.item?.hsnSac ?? null, quantity: l.quantity, unit: (l.item as { unit?: string | null } | null)?.unit ?? null, unitPrice: inr(l.unitPrice), amount, heads, gstRate: (g?.rates ?? []).filter((r) => ['igst', 'cgst', 'sgst', 'utgst'].includes(r.kind)).reduce((x, r) => x + r.ratePpm, 0) / 10_000 };
     }),
   };
 }
