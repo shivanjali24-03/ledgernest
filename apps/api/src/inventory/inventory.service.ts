@@ -12,6 +12,7 @@ import {
   batchExpired,
   billNumber,
   creditNoteNumber,
+  vendorCreditNumber,
   costOfQuantity,
   formatQuantity,
   invoiceNumber,
@@ -448,7 +449,9 @@ export class InventoryService {
             ? 'sold'
             : kind === 'adjustment'
               ? 'written_off'
-              : 'removed';
+              : kind === 'debit_note'
+                ? 'returned'
+                : 'removed';
         await tx.stockSerial.updateMany({
           where: { organizationId, id: { in: rows.map((r) => r.id) } },
           data: { status },
@@ -503,13 +506,17 @@ export class InventoryService {
     if (!ids.length) return new Map<string, string>();
     const pick = { id: true, contact: { select: { name: true } } } as const;
     const where = { organizationId, id: { in: ids } };
-    const [invoices, bills, notes] = await Promise.all([
+    const [invoices, bills, notes, debitNotes] = await Promise.all([
       this.prisma.invoice.findMany({ where, select: pick }),
       this.prisma.bill.findMany({ where, select: pick }),
       this.prisma.creditNote.findMany({ where, select: pick }),
+      this.prisma.vendorCredit.findMany({ where, select: pick }),
     ]);
     return new Map(
-      [...invoices, ...bills, ...notes].map((d) => [d.id, d.contact.name]),
+      [...invoices, ...bills, ...notes, ...debitNotes].map((d) => [
+        d.id,
+        d.contact.name,
+      ]),
     );
   }
 
@@ -823,6 +830,132 @@ export class InventoryService {
     return { movements, journal };
   }
 
+  /**
+   * For a debit note sending goods back to the supplier: each tracked line leaves stock at what it cost on the bill
+   * (the value the debit note takes off the inventory account), from the batch it came in as, with the serial
+   * numbers that came in on that bill line. Taking out the last of an item clears what's left of its value against
+   * cost of sales, so nothing is left valued at nothing.
+   */
+  async purchaseReturns(
+    tx: Tx,
+    organizationId: string,
+    billId: string,
+    lines: {
+      /** The bill line it credits */
+      billLineId: string;
+      itemId: string | null;
+      quantity: string;
+      /** What the goods cost on the bill, in the base currency */
+      value: number;
+      serials?: string[];
+      inAltUnit?: boolean;
+      costCentreId?: string | null;
+    }[],
+  ) {
+    const items = await this.tracked(
+      tx,
+      organizationId,
+      lines.map((l) => l.itemId),
+    );
+    const movements: Movement[] = [];
+    const journal: EnteredLine[] = [];
+    if (!items.size) return { movements, journal };
+    await this.lock(tx, organizationId);
+    const stock = await this.onHand(tx, organizationId, [...items.keys()]);
+    const batchLeft = new Map(
+      (
+        await this.batchStock(
+          tx,
+          organizationId,
+          [...items.values()].filter((i) => i.trackBatches).map((i) => i.id),
+        )
+      ).map((b) => [b.id, b]),
+    );
+    for (const l of lines) {
+      const item = l.itemId ? items.get(l.itemId) : undefined;
+      if (!item) continue;
+      const q = this.mainQuantity(item, l);
+      const s = stock.get(item.id) ?? { quantity: 0n, value: 0n };
+      if (q > s.quantity)
+        throw refuse(
+          ConflictException,
+          `Only ${onHandText(s.quantity)} of ${item.name} in stock to send back.`,
+          'insufficient_stock',
+          { itemId: item.id, onHand: onHandText(s.quantity) },
+        );
+      const bought = await tx.stockMovement.findMany({
+        where: {
+          organizationId,
+          kind: 'bill',
+          sourceId: billId,
+          sourceLineId: l.billLineId,
+        },
+        select: { batchId: true, serials: true },
+      });
+      const batchId = bought.find((m) => m.batchId)?.batchId ?? null;
+      if (batchId) {
+        const b = batchLeft.get(batchId);
+        if (!b || q > b.onHand)
+          throw refuse(
+            ConflictException,
+            `Only ${onHandText(b?.onHand ?? 0n)} of ${item.name} left in batch ${b?.batchNo ?? ''} to send back.`,
+            'insufficient_batch',
+            {
+              itemId: item.id,
+              batchNo: b?.batchNo ?? null,
+              onHand: onHandText(b?.onHand ?? 0n),
+            },
+          );
+        batchLeft.set(batchId, { ...b, onHand: b.onHand - q });
+      }
+      const back = item.trackSerials ? upper(l.serials) : [];
+      if (item.trackSerials) {
+        this.checkSerials(item, formatQuantity(q), back);
+        const came = new Set(bought.flatMap((m) => m.serials ?? []));
+        const stranger = back.find((x) => !came.has(x));
+        if (stranger)
+          throw refuse(
+            BadRequestException,
+            `Serial number ${stranger} didn’t come in on this bill line.`,
+            'serial_not_bought',
+            { serial: stranger },
+          );
+      }
+      // The last of the item takes all its value with it; the difference from the bill's cost goes to cost of sales
+      const cost = BigInt(l.value);
+      const value = q === s.quantity ? s.value : cost;
+      stock.set(item.id, { quantity: s.quantity - q, value: s.value - value });
+      movements.push({
+        itemId: item.id,
+        quantity: -q,
+        value: -value,
+        batchId,
+        sourceLineId: l.billLineId,
+        serials: back,
+      });
+      const diff = value - cost;
+      if (diff !== 0n) {
+        const description = `${item.name} sent back: left in stock at a different cost`;
+        journal.push(
+          {
+            accountId: item.cogsAccountId,
+            description,
+            debit: diff > 0n ? Number(diff) : 0,
+            credit: diff < 0n ? Number(-diff) : 0,
+            costCentreId: l.costCentreId ?? null,
+          },
+          {
+            accountId: item.inventoryAccountId,
+            description,
+            debit: diff < 0n ? Number(-diff) : 0,
+            credit: diff > 0n ? Number(diff) : 0,
+          },
+        );
+      }
+    }
+    return { movements, journal };
+  }
+
   /** For a bill being recorded: its tracked lines come into stock at their cost (net of tax, in the base currency) */
   async receipts(
     tx: Tx,
@@ -911,7 +1044,7 @@ export class InventoryService {
   async undoDocument(
     tx: Tx,
     organizationId: string,
-    kind: 'bill' | 'invoice' | 'credit_note',
+    kind: 'bill' | 'invoice' | 'credit_note' | 'debit_note',
     sourceId: string,
     date: string,
     journalEntryId: string | null,
@@ -1388,12 +1521,14 @@ export class InventoryService {
           'invoice_void',
           'credit_note',
           'credit_note_void',
+          'debit_note',
+          'debit_note_void',
         ].includes(x.kind),
     ))
       docs.set(r.sourceId!, null);
     if (docs.size) {
       const ids = [...docs.keys()];
-      const [bills, invoices, notes] = await Promise.all([
+      const [bills, invoices, notes, debitNotes] = await Promise.all([
         this.prisma.bill.findMany({
           where: { organizationId, id: { in: ids } },
           select: {
@@ -1420,7 +1555,21 @@ export class InventoryService {
             fullNumber: true,
           },
         }),
+        this.prisma.vendorCredit.findMany({
+          where: { organizationId, id: { in: ids } },
+          select: {
+            id: true,
+            number: true,
+            fiscalYear: { select: { name: true } },
+            fullNumber: true,
+          },
+        }),
       ]);
+      for (const c of debitNotes)
+        docs.set(
+          c.id,
+          c.fullNumber ?? vendorCreditNumber(c.fiscalYear.name, c.number),
+        );
       for (const c of notes)
         docs.set(
           c.id,

@@ -1205,6 +1205,9 @@ model VendorCredit {
   vendorReference  String?   @map("vendor_reference")
   reason           String?
   payableAccountId String    @map("payable_account_id") @db.Uuid
+  /// The bill's currency (null = base) and the rate the bill was posted at; amounts are in that currency
+  currency         String?   @db.Char(3)
+  rate             Decimal?  @db.Decimal(20, 10)
   subtotal         BigInt
   taxTotal         BigInt    @map("tax_total")
   total            BigInt
@@ -1275,6 +1278,8 @@ model VendorCreditApplication {
   bankAccountId  String?  @map("bank_account_id") @db.Uuid
   date           DateTime @db.Date
   amount         BigInt
+  /// For a refund of credit in another currency: the rate it came back at
+  rate           Decimal? @db.Decimal(20, 10)
   reference      String?
   createdById    String?  @map("created_by_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
@@ -1754,7 +1759,7 @@ model StockMovement {
   organizationId String   @map("organization_id") @db.Uuid
   itemId         String   @map("item_id") @db.Uuid
   date           DateTime @db.Date
-  /// bill | bill_void | invoice | invoice_void | adjustment | adjustment_undo
+  /// bill | bill_void | invoice | invoice_void | credit_note | credit_note_void | debit_note | debit_note_void | adjustment | adjustment_undo
   kind           String
   /// The bill or invoice it came from; for an undo, the movement it undoes
   sourceId       String?  @map("source_id") @db.Uuid

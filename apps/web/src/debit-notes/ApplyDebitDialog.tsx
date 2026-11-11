@@ -23,8 +23,8 @@ export default function ApplyDebitDialog({ note, api, onClose }: { note: DebitNo
   const settings = useOrganizationSettings().data;
   const paymentsApi = usePaymentsApi();
   const open = useQuery({ queryKey: ['payments', session.organizationId, 'open', 'payment', note.contact.id], queryFn: () => paymentsApi!.openBills(note.contact.id), enabled: !!paymentsApi });
-  const bills = (open.data ?? []).filter((b) => !b.currency);
-  const code = settings?.baseCurrency ?? 'INR';
+  const bills = (open.data ?? []).filter((b) => (b.currency ?? null) === (note.currency ?? null));
+  const code = note.currency ?? settings?.baseCurrency ?? 'INR';
   const digits = currencyDigits(code);
   const plain = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
   const [billId, setBill] = useState('');

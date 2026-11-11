@@ -15,6 +15,9 @@ export interface DebitNote {
   /** The supplier's own credit note number */
   vendorReference: string | null;
   reason: string | null;
+  /** The bill's currency (null = base), and the rate it was posted at */
+  currency?: string | null;
+  rate?: string | null;
   subtotal: number;
   taxTotal: number;
   total: number;

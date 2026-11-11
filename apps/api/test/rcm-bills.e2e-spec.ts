@@ -275,17 +275,49 @@ describe('Reverse charge on purchases (e2e)', () => {
     });
   });
 
-  it('refuses a debit note against a reverse-charge bill', async () => {
+  it('takes a debit note on a reverse-charge bill off the expense, with the GST owed and its credit', async () => {
     const b = (await bill(gta, 5_000_00, gst5).expect(201)).body as Bill & {
       lines: { id: string }[];
     };
     await post(`/bills/${b.id}/record`).expect(200);
+    const recorded = (await get(`/bills/${b.id}`).expect(200)).body as {
+      lines: { id: string }[];
+    };
     const res = await post('/debit-notes', {
       billId: b.id,
       date: '2026-06-20',
       reason: 'Short delivery',
-      lines: [{ billLineId: b.lines[0]!.id, quantity: '1' }],
-    }).expect(400);
-    expect(res.body.details).toMatchObject({ reason: 'bill_reverse_charge' });
+      lines: [{ billLineId: recorded.lines[0]!.id, quantity: '1' }],
+    }).expect(201);
+    // The vendor charged no GST: the note is for the value alone
+    expect(res.body).toMatchObject({ total: 5_000_00, taxTotal: 0 });
+    const { journalEntryId } = await prisma.vendorCredit.findUniqueOrThrow({
+      where: { id: res.body.id },
+      select: { journalEntryId: true },
+    });
+    const lines = await prisma.journalLine.findMany({
+      where: { entryId: journalEntryId },
+      select: {
+        debit: true,
+        credit: true,
+        taxRateId: true,
+        account: { select: { code: true, systemKey: true } },
+      },
+    });
+    expect(sum(lines, (l) => l.account.code === '2000', 'debit')).toBe(
+      5_000_00,
+    );
+    expect(sum(lines, (l) => l.account.code === '5100', 'credit')).toBe(
+      5_000_00,
+    );
+    // 5% we no longer owe under reverse charge, and the credit we no longer take
+    expect(
+      sum(lines, (l) => l.account.systemKey === 'rcm_payable', 'debit'),
+    ).toBe(250_00);
+    expect(
+      lines
+        .filter((l) => l.taxRateId)
+        .reduce((t, l) => t + Number(l.credit), 0),
+    ).toBe(250_00);
   });
 });

@@ -23,8 +23,8 @@ export default function VendorRefundDialog({ note, api, onClose }: { note: Debit
   const settings = useOrganizationSettings().data;
   const accountsApi = useAccountsApi();
   const accounts = useQuery({ queryKey: ['accounts', session.organizationId, session.role ?? session.customRoleName, 'all'], queryFn: () => accountsApi!.list(true), enabled: !!accountsApi });
-  const banks = useMemo(() => (accounts.data ?? []).filter((a) => a.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash') && !a.archived && !a.currency), [accounts.data]);
-  const code = settings?.baseCurrency ?? 'INR';
+  const banks = useMemo(() => (accounts.data ?? []).filter((a) => a.type === 'asset' && (a.subtype === 'bank' || a.subtype === 'cash') && !a.archived && (!a.currency || a.currency === (note.currency ?? null))), [accounts.data, note.currency]);
+  const code = note.currency ?? settings?.baseCurrency ?? 'INR';
   const digits = currencyDigits(code);
   const plain = (minor: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 10 ** digits);
   const [bankAccountId, setBank] = useState('');
