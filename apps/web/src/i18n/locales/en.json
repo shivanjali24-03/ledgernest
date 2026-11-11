@@ -1667,7 +1667,8 @@
         "bySgst": "Paid by SGST credit",
         "cash": "Paid in cash",
         "totalCash": "Tax to pay in cash",
-        "carried": "Credit carried forward: {{amounts}}"
+        "carried": "Credit carried forward: {{amounts}}",
+        "reverseCharge": "(d) Inward supplies liable to reverse charge"
       },
       "r1": {
         "empty": "No invoices or credit notes in these dates",
@@ -3057,7 +3058,9 @@
       "not_open": "Only bills waiting to be paid can be voided.",
       "bill_not_open": "Only recorded bills can be paid.",
       "bill_currency": "That bill is in a different currency.",
-      "bill_not_found": "That bill belongs to another vendor."
+      "bill_not_found": "That bill belongs to another vendor.",
+      "bill_reverse_charge": "Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again.",
+      "no_self_invoice": "Only a bill under reverse charge from an unregistered supplier has a self invoice."
     },
     "duplicates": {
       "title": "This may be a bill you’ve entered already:",
@@ -3070,6 +3073,14 @@
     },
     "hints": {
       "vendorBillDate": "The date printed on their bill, if it differs from the day you enter it. GSTR-2B and payment terms use it."
+    },
+    "reverseCharge": {
+      "label": "We pay GST (reverse charge)",
+      "hint": "Transport by a GTA, legal services, services from abroad, or supplies notified under reverse charge",
+      "wePay": "GST we pay under reverse charge",
+      "note": "Tax payable on reverse charge: we pay the GST on this bill and claim it as input credit.",
+      "selfInvoice": "Self invoice",
+      "selfInvoiceNo": "Self invoice {{number}}"
     }
   },
   "creditNotes": {
@@ -4414,7 +4425,8 @@
       "before_vendor_credit": "A refund can’t be dated before its debit note.",
       "stock_line": "Goods kept in stock go back with a stock adjustment instead.",
       "bill_currency": "Debit notes are for bills in rupees for now.",
-      "bill_not_open": "Only recorded bills can be credited."
+      "bill_not_open": "Only recorded bills can be credited.",
+      "bill_reverse_charge": "Debit notes aren’t raised against bills under reverse charge yet: void the bill and record it again."
     },
     "email": {
       "action": "Email debit note",

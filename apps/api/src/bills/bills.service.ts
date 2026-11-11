@@ -62,6 +62,8 @@ export type DraftIn = {
   vendorReference: string | null;
   /** The date on the vendor's bill; null = the bill date */
   vendorBillDate?: string | null;
+  /** We pay the GST under reverse charge */
+  reverseCharge?: boolean;
   notes: string | null;
   placeOfSupply: string | null;
   payableAccountId: string | null;
@@ -102,6 +104,8 @@ const select = {
   placeOfSupply: true,
   vendorReference: true,
   vendorBillDate: true,
+  reverseCharge: true,
+  selfInvoiceNumber: true,
   notes: true,
   subtotal: true,
   taxTotal: true,
@@ -188,6 +192,7 @@ const select = {
       itemId: true,
       accountId: true,
       taxGroupId: true,
+      rcmTaxGroupId: true,
       costCentreId: true,
       batchNo: true,
       mfgDate: true,
@@ -208,10 +213,12 @@ const select = {
       },
       account: { select: { id: true, code: true, name: true } },
       taxGroup: { select: groupSelect },
+      rcmTaxGroup: { select: groupSelect },
     },
   },
 } as const;
 type Row = Prisma.BillGetPayload<{ select: typeof select }>;
+const GSTIN_SHAPE = /^\d{2}[A-Z0-9]{13}$/;
 
 const entryLabel = (
   e: { number: number | null; fiscalYear: { name: string } | null } | null,
@@ -253,19 +260,23 @@ export class BillsService {
     const amount = (b: bigint) => Number(b);
     // Tax by rate (input tax credit: CGST 9% ₹…, SGST 9% ₹…)
     const breakdown = new Map<string, number>();
+    // Under reverse charge: the GST we pay ourselves, by rate
+    const rcmBreakdown = new Map<string, number>();
     for (const l of i.lines) {
-      if (!l.taxGroup) continue;
+      const group = l.taxGroup ?? l.rcmTaxGroup;
+      if (!group) continue;
+      const into = l.taxGroup ? breakdown : rcmBreakdown;
       const { taxes } = splitTax(
         Number(l.amount),
         false,
-        l.taxGroup.rates.map((r) => ({
+        group.rates.map((r) => ({
           rateId: r.rate.id,
           ratePpm: r.rate.ratePpm,
         })),
       );
       taxes.forEach((t, n) => {
-        const name = l.taxGroup!.rates[n]!.rate.name;
-        breakdown.set(name, (breakdown.get(name) ?? 0) + t.amount);
+        const name = group.rates[n]!.rate.name;
+        into.set(name, (into.get(name) ?? 0) + t.amount);
       });
     }
     const v = {
@@ -282,6 +293,13 @@ export class BillsService {
       placeOfSupply: i.placeOfSupply,
       vendorReference: i.vendorReference,
       vendorBillDate: i.vendorBillDate ? iso(i.vendorBillDate) : null,
+      /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
+      reverseCharge: i.reverseCharge,
+      reverseChargeTax: [...rcmBreakdown].map(([name, value]) => ({
+        name,
+        amount: value,
+      })),
+      selfInvoiceNumber: i.selfInvoiceNumber,
       notes: i.notes,
       contact: {
         ...i.contact,
@@ -364,6 +382,12 @@ export class BillsService {
           id: l.taxGroup.id,
           name: l.taxGroup.name,
           supply: l.taxGroup.supply,
+        },
+        /** Under reverse charge: the GST we pay on the line (the vendor charges none) */
+        rcmTaxGroup: l.rcmTaxGroup && {
+          id: l.rcmTaxGroup.id,
+          name: l.rcmTaxGroup.name,
+          supply: l.rcmTaxGroup.supply,
         },
         batchNo: l.batchNo,
         mfgDate: l.mfgDate ? iso(l.mfgDate) : null,
@@ -634,6 +658,7 @@ export class BillsService {
         currency: true,
         stateCode: true,
         paymentTermsDays: true,
+        taxId: true,
       },
     });
     if (!contact)
@@ -664,12 +689,16 @@ export class BillsService {
     const orgState =
       org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
     const placeOfSupply = input.placeOfSupply ?? contact.stateCode;
+    const rcm = !!input.reverseCharge;
+    // Services bought from abroad under reverse charge are an import: IGST
     const supply =
-      orgState && placeOfSupply
-        ? orgState === placeOfSupply
-          ? 'intra'
-          : 'inter'
-        : null;
+      rcm && !placeOfSupply
+        ? 'inter'
+        : orgState && placeOfSupply
+          ? orgState === placeOfSupply
+            ? 'intra'
+            : 'inter'
+          : null;
 
     const itemIds = [
       ...new Set(
@@ -736,6 +765,7 @@ export class BillsService {
     const lines: (LineIn & {
       accountId: string;
       group: Awaited<ReturnType<typeof forSupply>> | null;
+      rcmGroup?: Awaited<ReturnType<typeof forSupply>> | null;
     })[] = [];
     for (const [n, l] of input.lines.entries()) {
       const item = l.itemId ? items.get(l.itemId)! : null;
@@ -766,7 +796,13 @@ export class BillsService {
           { line: n + 1 },
         );
       if (group) group = await forSupply(group);
-      lines.push({ ...l, accountId, group });
+      // Under reverse charge the vendor charges no GST: we work it out and pay it ourselves
+      lines.push({
+        ...l,
+        accountId,
+        group: rcm ? null : group,
+        rcmGroup: rcm ? group : null,
+      });
     }
     await checkCostCentres(tx, organizationId, lines);
     const accountIds = [...new Set(lines.map((l) => l.accountId))];
@@ -845,6 +881,9 @@ export class BillsService {
         )?.id ?? null;
     }
     return {
+      reverseCharge: rcm,
+      /** No GSTIN: a self-invoice is raised for the reverse charge */
+      vendorRegistered: !!contact.taxId && GSTIN_SHAPE.test(contact.taxId),
       contactId: contact.id,
       currency,
       placeOfSupply,
@@ -878,6 +917,7 @@ export class BillsService {
         unitPrice: BigInt(l.unitPrice),
         discountPpm: l.discount,
         taxGroupId: l.group?.id ?? null,
+        rcmTaxGroupId: l.rcmGroup?.id ?? null,
         accountId: l.accountId,
         costCentreId: l.costCentreId ?? null,
         batchNo: l.batchNo ?? null,
@@ -906,6 +946,7 @@ export class BillsService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
+          reverseCharge: p.reverseCharge,
           vendorBillDate: input.vendorBillDate
             ? asDate(input.vendorBillDate)
             : null,
@@ -965,6 +1006,7 @@ export class BillsService {
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
           vendorReference: input.vendorReference,
+          reverseCharge: p.reverseCharge,
           vendorBillDate: input.vendorBillDate
             ? asDate(input.vendorBillDate)
             : null,
@@ -1080,6 +1122,7 @@ export class BillsService {
         billDate,
         dueDate: iso(i.dueDate),
         vendorReference: i.vendorReference,
+        reverseCharge: i.reverseCharge,
         notes: i.notes,
         placeOfSupply: i.placeOfSupply,
         payableAccountId: i.payableAccountId,
@@ -1090,7 +1133,7 @@ export class BillsService {
           quantity: formatQuantity(parseQuantity(l.quantity.toFixed(4))!),
           unitPrice: Number(l.unitPrice),
           discount: l.discountPpm,
-          taxGroupId: l.taxGroupId,
+          taxGroupId: l.taxGroupId ?? l.rcmTaxGroupId,
           accountId: l.accountId,
           costCentreId: l.costCentreId,
           batchNo: l.batchNo,
@@ -1167,14 +1210,30 @@ export class BillsService {
             { currency: p.currency, date: billDate },
           );
       }
+      // Under reverse charge: the GST we owe on a line, in the base currency (worked out as the entry's tax lines are)
+      const rcmTaxOf = (n: number) => {
+        const g = p.lines[n]!.rcmGroup;
+        return g
+          ? splitTax(
+              base(p.amounts.lines[n]!.net),
+              false,
+              g.rates.map((r) => ({
+                rateId: r.rate.id,
+                ratePpm: r.rate.ratePpm,
+              })),
+            ).taxes.reduce((t, x) => t + x.amount, 0)
+          : 0;
+      };
       const expense = p.lines.map((l, n) => ({
         accountId: l.accountId,
         description: l.description,
-        debit: base(
-          p.amounts.lines[n]!.net + (noCredit ? p.amounts.lines[n]!.tax : 0),
-        ),
+        debit:
+          base(
+            p.amounts.lines[n]!.net + (noCredit ? p.amounts.lines[n]!.tax : 0),
+          ) + (noCredit ? rcmTaxOf(n) : 0),
         credit: 0,
-        taxGroupId: noCredit ? null : (l.group?.id ?? null),
+        // Reverse charge GST is input tax credit too, once paid (CGST Act s.16)
+        taxGroupId: noCredit ? null : ((l.group ?? l.rcmGroup)?.id ?? null),
         taxInclusive: false,
         costCentreId: l.costCentreId ?? null,
       }));
@@ -1195,7 +1254,25 @@ export class BillsService {
             debit: 0,
             credit: p.amounts.total,
           };
-      const lines = [...expense.filter((l) => l.debit > 0), payable];
+      const lines: (
+        | (typeof expense)[number]
+        | typeof payable
+        | {
+            accountId: string;
+            description: string;
+            debit: number;
+            credit: number;
+          }
+      )[] = [...expense.filter((l) => l.debit > 0), payable];
+      // What we owe the government under reverse charge, paid in cash with the return
+      const rcmTotal = p.lines.reduce((t, _l, n) => t + rcmTaxOf(n), 0);
+      if (rcmTotal > 0)
+        lines.push({
+          accountId: await ensureFxAccount(tx, organizationId, 'rcm_payable'),
+          description: `${label} GST under reverse charge`,
+          debit: 0,
+          credit: rcmTotal,
+        });
       if (p.currency) {
         // Converting the parts and the total separately can differ by a paisa or two: book it as an exchange difference
         const parts = expense.reduce(
@@ -1271,6 +1348,26 @@ export class BillsService {
           }),
         ),
       );
+      // From an unregistered vendor (in India or abroad), we raise the invoice ourselves (CGST Act s.31(3)(f))
+      let selfInvoiceNumber: string | null = null;
+      if (p.reverseCharge && !p.vendorRegistered) {
+        const fy = year.name.replace(/^FY\s*/, '').replace('–', '-');
+        const prefix = `SI/${fy}/`;
+        const taken = await tx.bill.findMany({
+          where: { organizationId, selfInvoiceNumber: { startsWith: prefix } },
+          select: { selfInvoiceNumber: true },
+        });
+        const next =
+          taken.reduce(
+            (m, b) =>
+              Math.max(
+                m,
+                Number(b.selfInvoiceNumber!.slice(prefix.length)) || 0,
+              ),
+            0,
+          ) + 1;
+        selfInvoiceNumber = `${prefix}${String(next).padStart(4, '0')}`;
+      }
       await tx.bill.update({
         where: { id },
         data: {
@@ -1280,6 +1377,7 @@ export class BillsService {
           journalEntryId: entry.id,
           rate,
           recordedAt: new Date(),
+          selfInvoiceNumber,
         },
       });
       await this.audit.record(

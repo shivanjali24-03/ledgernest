@@ -119,6 +119,7 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
         if (!bill) throw refuse(400, 'bill_not_found');
         if (bill.status !== 'open') throw refuse(409, 'bill_not_open');
         if (bill.currency) throw refuse(400, 'bill_currency');
+        if (bill.reverseCharge) throw refuse(400, 'bill_reverse_charge');
         if (d.date < bill.billDate) throw refuse(400, 'before_bill');
         const left = await creditable(bill.id);
         const lines = d.lines.map((l, n) => {
@@ -190,6 +191,7 @@ export function createDemoDebitNotesApi(canManage: () => boolean, canRefund: () 
         if (!bill || bill.contact.id !== c.contact.id) throw refuse(400, 'bill_not_found');
         if (bill.status !== 'open') throw refuse(409, 'bill_not_open');
         if (bill.currency) throw refuse(400, 'bill_currency');
+        if (bill.reverseCharge) throw refuse(400, 'bill_reverse_charge');
         if (p.data.amount > c.remaining) throw refuse(409, 'over_applied');
         if (p.data.amount > bill.balance) throw refuse(409, 'over_allocated');
         const date = p.data.date ?? todayIn('Asia/Kolkata');

@@ -116,6 +116,25 @@ export class GstReturnsService {
         WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date
           AND e.id NOT IN (SELECT closing_entry_id FROM fiscal_years WHERE organization_id = ${organizationId}::uuid AND closing_entry_id IS NOT NULL)`,
     ]);
+    // 3.1(d): what we bought under reverse charge, and the GST we owe on it (entries carrying the reverse charge account)
+    const rcmRows = await this.prisma.$queryRaw<
+      { kind: string | null; tax: bigint | null; taxable: bigint | null }[]
+    >`
+      SELECT r.kind, sum(CASE WHEN l.tax_rate_id IS NOT NULL THEN l.debit - l.credit END)::bigint AS tax,
+             sum(CASE WHEN l.tax_group_id IS NOT NULL THEN l.debit - l.credit END)::bigint AS taxable
+      FROM journal_lines l JOIN journal_entries e ON e.id = l.entry_id
+      JOIN accounts a ON a.id = l.account_id
+      LEFT JOIN tax_rates r ON r.id = l.tax_rate_id
+      WHERE l.organization_id = ${organizationId}::uuid AND e.status = 'posted' AND e.date BETWEEN ${range[0]}::date AND ${range[1]}::date
+        AND a.type IN ('asset', 'expense') AND (l.tax_rate_id IS NOT NULL OR l.tax_group_id IS NOT NULL)
+        AND EXISTS (SELECT 1 FROM journal_lines x JOIN accounts y ON y.id = x.account_id WHERE x.entry_id = l.entry_id AND y.system_key = 'rcm_payable')
+      GROUP BY r.kind`;
+    const reverseCharge = { taxable: 0, ...zeroHeads() };
+    for (const r of rcmRows) {
+      reverseCharge.taxable += Number(r.taxable ?? 0);
+      const h = r.kind ? head(r.kind) : null;
+      if (h) reverseCharge[h] += Number(r.tax ?? 0);
+    }
     const output = zeroHeads();
     const itc = zeroHeads();
     for (const t of taxes) {
@@ -147,12 +166,20 @@ export class GstReturnsService {
       outward: { taxable: Number(v.taxed_out ?? 0), ...output },
       /** 3.1(c)/(e): outward supplies with no GST (nil-rated, exempt, non-GST) */
       outwardUntaxed: Number(v.untaxed_out ?? 0),
-      /** 4(A)(5): input tax credit on purchases */
+      /** 3.1(d): inward supplies liable to reverse charge, and the GST on them (paid in cash) */
+      inwardReverseCharge: reverseCharge,
+      /** 4(A)(5): input tax credit on purchases (4(A)(3) reverse charge included) */
       itc,
       inwardTaxable: Number(v.taxed_in ?? 0),
       /** 6.1: how the credit is used, what's paid in cash, and what's carried forward */
       setOff,
-      payable: setOff.cash,
+      // Reverse charge GST can't be paid from credit: it's added to the cash
+      payable: {
+        igst: setOff.cash.igst + Math.max(reverseCharge.igst, 0),
+        cgst: setOff.cash.cgst + Math.max(reverseCharge.cgst, 0),
+        sgst: setOff.cash.sgst + Math.max(reverseCharge.sgst, 0),
+        cess: setOff.cash.cess + Math.max(reverseCharge.cess, 0),
+      },
       carriedForward: setOff.carriedForward,
     };
   }

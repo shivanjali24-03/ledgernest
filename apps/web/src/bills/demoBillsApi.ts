@@ -1,10 +1,10 @@
-import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, splitTax, todayIn, toBase, type BillStatus, possibleDuplicateBills } from '@ledgernest/shared';
+import { billDraftSchema, billNumber, billState, currencyDigits, dueDateFor, invoiceAmounts, pdfTableBytes, rupeesInWords, splitTax, todayIn, toBase, type BillStatus, possibleDuplicateBills } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { csvBlob, major } from '../lib/listCsv';
 import { demoCheckUndo, demoInventoryAccountOf, demoSaveMovements, demoStockReceipts, demoUndoDocument } from '../inventory/demoInventoryApi';
 import { demoCostCentreRef } from '../cost-centres/demoCostCentresApi';
-import { demoAccountRows, sampleId } from '../accounts/demoAccountsApi';
+import { demoAccountRows, demoEnsureFxAccount, sampleId } from '../accounts/demoAccountsApi';
 import { demoContactRows } from '../contacts/demoContactsApi';
 import { demoRateOn } from '../currencies/demoCurrenciesApi';
 import { demoItemRows } from '../items/demoItemsApi';
@@ -27,6 +27,8 @@ type StoredLine = {
   unitPrice: number;
   discountPpm: number;
   taxGroupId: string | null;
+  /** Under reverse charge: the GST we pay on the line */
+  rcmTaxGroupId?: string | null;
   accountId: string;
   costCentreId?: string | null;
 };
@@ -43,6 +45,8 @@ type Stored = {
   placeOfSupply: string | null;
   vendorReference: string | null;
   vendorBillDate?: string | null;
+  reverseCharge?: boolean;
+  selfInvoiceNumber?: string | null;
   notes: string | null;
   amountPaid: number;
   journalEntryId: string | null;
@@ -246,6 +250,14 @@ function view(i: Stored): Bill {
       g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm })),
     ).taxes.forEach((t, k) => breakdown.set(g.rates[k]!.name, (breakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
   });
+  // Under reverse charge: the GST we pay ourselves, by rate
+  const rcmGroups = i.lines.map((l) => groupOf(l.rcmTaxGroupId ?? null));
+  const rcmBreakdown = new Map<string, number>();
+  i.lines.forEach((_l, n) => {
+    const g = rcmGroups[n];
+    if (!g) return;
+    splitTax(a.lines[n]!.net, false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.forEach((t, k) => rcmBreakdown.set(g.rates[k]!.name, (rcmBreakdown.get(g.rates[k]!.name) ?? 0) + t.amount));
+  });
   const payable = accounts.find((x) => x.type === 'liability' && (x.currency ?? null) === i.currency && /accounts payable/i.test(x.name));
   const base = {
     id: i.id,
@@ -258,6 +270,9 @@ function view(i: Stored): Bill {
     placeOfSupply: i.placeOfSupply,
     vendorReference: i.vendorReference,
     vendorBillDate: i.vendorBillDate ?? null,
+    reverseCharge: !!i.reverseCharge,
+    reverseChargeTax: [...rcmBreakdown].map(([name, amount]) => ({ name, amount })),
+    selfInvoiceNumber: i.selfInvoiceNumber ?? null,
     notes: i.notes,
     contact: {
       id: contact.id,
@@ -308,6 +323,7 @@ function view(i: Stored): Bill {
           : null,
         account: acc ? { id: acc.id, code: acc.code, name: acc.name } : null,
         taxGroup: g ? { id: g.id, name: g.name, supply: g.supply } : null,
+        rcmTaxGroup: rcmGroups[n] ? { id: rcmGroups[n].id, name: rcmGroups[n].name, supply: rcmGroups[n].supply } : null,
       };
     }),
   };
@@ -352,7 +368,9 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
     if (!contact.isVendor) throw refuse(400, 'not_vendor', { field: 'contactId' });
     if (contact.archived) throw refuse(400, 'contact_archived', { field: 'contactId' });
     const placeOfSupply = d.placeOfSupply ?? contact.stateCode;
-    const supply = supplyFor(ORG_STATE, placeOfSupply);
+    const rcm = !!d.reverseCharge;
+    // Services bought from abroad under reverse charge are an import: IGST
+    const supply = rcm && !placeOfSupply ? 'inter' : supplyFor(ORG_STATE, placeOfSupply);
     const items = demoItemRows();
     const accounts = demoAccountRows();
     const groups = allGroups();
@@ -372,7 +390,8 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
         quantity: l.quantity,
         unitPrice: l.unitPrice,
         discountPpm: l.discount,
-        taxGroupId: group?.id ?? null,
+        taxGroupId: rcm ? null : (group?.id ?? null),
+        rcmTaxGroupId: rcm ? (group?.id ?? null) : null,
         accountId,
         costCentreId: l.costCentreId ?? null,
       };
@@ -386,6 +405,7 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
       placeOfSupply,
       vendorReference: d.vendorReference,
       vendorBillDate: d.vendorBillDate,
+      reverseCharge: rcm,
       notes: d.notes,
       lines,
     };
@@ -515,7 +535,8 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
               accountId: l.account!.id,
               description: l.description,
               debit: toInr(l.amount),
-              taxGroupId: i.currency ? null : (l.taxGroup?.id ?? null),
+              // Reverse charge GST is ours to pay and claim, on imports too
+              taxGroupId: l.rcmTaxGroup ? l.rcmTaxGroup.id : i.currency ? null : (l.taxGroup?.id ?? null),
               costCentreId: l.costCentre?.id ?? null,
             })),
           i.currency
@@ -528,6 +549,12 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
               }
             : { accountId: payable.id, description: label, credit: v.total },
         ];
+        // What we owe the government under reverse charge
+        const rcmTotal = v.lines.reduce((s, l) => {
+          const g = l.rcmTaxGroup ? groupOf(l.rcmTaxGroup.id) : null;
+          return s + (g ? splitTax(toInr(l.amount), false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes.reduce((t, x) => t + x.amount, 0) : 0);
+        }, 0);
+        if (rcmTotal > 0) lines.push({ accountId: demoEnsureFxAccount('rcm_payable'), description: `${label} GST under reverse charge`, credit: rcmTotal });
         const draft = await journals.create({
           date: i.billDate,
           memo: `Bill ${label} · ${v.contact.name}`,
@@ -539,16 +566,51 @@ export function createDemoBillsApi(canManage: () => boolean, seeding = false, op
           throw e;
         });
         demoSaveMovements('bill', i.id, i.billDate, posted.id, demoStockReceipts(v.lines.map((l) => ({ itemId: l.item?.id ?? null, quantity: l.quantity, value: toInr(l.amount) }))));
+        // From an unregistered vendor we raise the invoice ourselves
+        let selfInvoiceNumber: string | null = null;
+        if (i.reverseCharge && !(v.contact.taxId && /^\d{2}[A-Z0-9]{13}$/.test(v.contact.taxId))) {
+          const prefix = `SI/${year.name.replace(/^FY\s*/, '').replace('–', '-')}/`;
+          const next = Math.max(0, ...rows.map((r) => (r.selfInvoiceNumber?.startsWith(prefix) ? Number(r.selfInvoiceNumber.slice(prefix.length)) : 0))) + 1;
+          selfInvoiceNumber = `${prefix}${String(next).padStart(4, '0')}`;
+        }
         Object.assign(i, {
           status: 'open',
           number,
           yearName: year.name,
+          selfInvoiceNumber,
           rate,
           journalEntryId: posted.id,
           journalNumber: posted.number,
         });
         save(rows);
         return view(i);
+      }),
+    selfInvoice: (iid) =>
+      wait(async () => {
+        const i = find(await load(), iid);
+        if (!i.selfInvoiceNumber) throw refuse(409, 'no_self_invoice');
+        const v = view(i);
+        const toInr = (minor: number) => (i.currency && i.rate ? toBase(minor, i.rate, currencyDigits(i.currency), 2) : minor);
+        const fmt = (minor: number) => (minor / 100).toFixed(2);
+        const byRate = new Map<string, number>();
+        const rows = v.lines.map((l) => {
+          const g = l.rcmTaxGroup ? groupOf(l.rcmTaxGroup.id) : null;
+          const value = toInr(l.amount);
+          const taxes = g ? splitTax(value, false, g.rates.map((r) => ({ rateId: r.id, ratePpm: r.ratePpm }))).taxes : [];
+          taxes.forEach((x, k) => byRate.set(g!.rates[k]!.name, (byRate.get(g!.rates[k]!.name) ?? 0) + x.amount));
+          return [l.description, l.item?.hsnSac ?? '', l.quantity, fmt(value), g?.name ?? '', fmt(taxes.reduce((s, x) => s + x.amount, 0))];
+        });
+        const tax = [...byRate.values()].reduce((s, x) => s + x, 0);
+        const total = (label: string, minor: number) => ['', '', '', label, '', fmt(minor)];
+        const bytes = pdfTableBytes({
+          title: `Self invoice ${i.selfInvoiceNumber}`,
+          subtitle: 'Nest Demo Private Limited · GSTIN 27AAPFN1234C1Z5 (recipient)',
+          info: [`Supplier (unregistered): ${v.contact.legalName ?? v.contact.name}`, `Date ${v.billDate}${v.vendorReference ? ` · Supplier’s bill ${v.vendorReference}` : ''}`],
+          rows: [['Description', 'HSN/SAC', 'Qty', 'Taxable value (INR)', 'GST', 'Tax'], ...rows, total('Taxable value', rows.reduce((s, r) => s + Math.round(Number(r[3]) * 100), 0)), ...[...byRate].map(([name, amount]) => total(name, amount)), total('GST payable by the recipient', tax)],
+          after: ['Whether tax is payable on reverse charge: Yes', `GST payable in words: ${rupeesInWords(tax)}`],
+          footer: `Nest Demo Private Limited · ${i.selfInvoiceNumber}`,
+        });
+        return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `self-invoice-${i.selfInvoiceNumber.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
       }),
     void: (iid, input) =>
       wait(async () => {

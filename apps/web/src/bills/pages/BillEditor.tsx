@@ -5,7 +5,8 @@ import { ApiError } from '../../auth/client';
 import { motion } from 'motion/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { currencyDigits, dueDateFor, parseSerials, findIndianState, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn } from '@ledgernest/shared';
-import { ArrowLeft, Ban, BookCheck, FileMinus, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Ban, BookCheck, FileDown, FileMinus, Plus, Repeat, Send, Trash2, X } from 'lucide-react';
+import { saveBlob } from '../../lib/saveBlob';
 import DebitNoteDialog from '../../debit-notes/DebitNoteDialog';
 import { useDebitNotesApi } from '../../debit-notes/useDebitNotesApi';
 import ReceiptDialog from '../../payments/ReceiptDialog';
@@ -128,6 +129,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const [dueDate, setDueDate] = useState(invoice?.dueDate ?? '');
   const [reference, setReference] = useState(invoice?.vendorReference ?? '');
   const [vendorDate, setVendorDate] = useState(invoice?.vendorBillDate ?? '');
+  const [reverseCharge, setReverseCharge] = useState(!!invoice?.reverseCharge);
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
   const [lines, setLines] = useState<Line[]>(
@@ -139,7 +141,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
           quantity: l.quantity,
           unitPrice: plain(l.unitPrice),
           discount: l.discount ? String(l.discount) : '',
-          taxGroupId: l.taxGroup?.id ?? '',
+          taxGroupId: (l.taxGroup ?? l.rcmTaxGroup)?.id ?? '',
           accountId: l.account?.id ?? '',
           costCentreId: l.costCentre?.id ?? '',
           batchNo: l.batchNo ?? '',
@@ -162,7 +164,8 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
   const pos = placeOfSupply || customer?.stateCode || null;
-  const supply = supplyFor(orgState, pos);
+  // Services bought from abroad under reverse charge are an import: IGST
+  const supply = reverseCharge && !pos ? 'inter' : supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   const pickItem = (key: string, itemId: string) => {
@@ -199,24 +202,25 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     };
   });
   const filled = parsed.filter((l) => l.description.trim() || l.price);
-  const amounts = invoiceAmounts(
-    filled
-      .filter((l) => !l.invalid)
-      .map((l) => ({
-        quantity: l.quantity,
-        unitPrice: l.price!,
-        discountPpm: l.disc!,
-        rates: (l.group?.rates ?? []).map((r) => ({
-          rateId: r.id,
-          ratePpm: r.ratePpm,
-        })),
+  const withRates = filled
+    .filter((l) => !l.invalid)
+    .map((l) => ({
+      quantity: l.quantity,
+      unitPrice: l.price!,
+      discountPpm: l.disc!,
+      rates: (l.group?.rates ?? []).map((r) => ({
+        rateId: r.id,
+        ratePpm: r.ratePpm,
       })),
-  );
+    }));
+  // Under reverse charge the vendor charges no GST: we pay it ourselves, so it's shown but not owed to them
+  const amounts = invoiceAmounts(reverseCharge ? withRates.map((l) => ({ ...l, rates: [] })) : withRates);
+  const rcmTax = reverseCharge ? invoiceAmounts(withRates).tax : 0;
   const breakdown = new Map<string, number>();
   filled
     .filter((l) => !l.invalid)
     .forEach((l, n) =>
-      (l.group?.rates ?? []).forEach((r, k) => {
+      (reverseCharge ? [] : (l.group?.rates ?? [])).forEach((r, k) => {
         const amount = amounts.lines[n]!.taxes[k]?.amount ?? 0;
         if (amount) breakdown.set(r.name, (breakdown.get(r.name) ?? 0) + amount);
       }),
@@ -229,6 +233,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     dueDate: dueDate || null,
     vendorReference: reference,
     vendorBillDate: vendorDate || null,
+    reverseCharge,
     notes,
     placeOfSupply: placeOfSupply || null,
     lines: filled.map((l) => ({
@@ -322,6 +327,15 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
         <TextField label={t('invoices.fields.dueDate')} type="date" value={dueDate || autoDue} onChange={(e) => setDueDate(e.target.value)} disabled={!canManage} hint={!dueDate && customer ? t('invoices.dueHint', { days: customer.paymentTermsDays }) : undefined} />
         <TextField label={t('bills.fields.vendorReference')} value={reference} onChange={(e) => setReference(e.target.value)} disabled={!canManage} placeholder="SOS/887" dir="auto" />
         <TextField label={t('bills.fields.vendorBillDate')} type="date" value={vendorDate} max={issueDate} onChange={(e) => setVendorDate(e.target.value)} disabled={!canManage} hint={t('bills.hints.vendorBillDate')} />
+        {india && (
+          <label className="flex items-center gap-2 self-end pb-2 text-sm font-medium">
+            <input type="checkbox" checked={reverseCharge} disabled={!canManage} onChange={(e) => setReverseCharge(e.target.checked)} className="size-4 rounded accent-brand-600" />
+            <span>
+              {t('bills.reverseCharge.label')}
+              <span className="block text-xs font-normal text-ink-500">{t('bills.reverseCharge.hint')}</span>
+            </span>
+          </label>
+        )}
         {india && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}
@@ -479,6 +493,14 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
                 </dd>
               </div>
             ))}
+            {reverseCharge && (
+              <>
+                <dt className="text-ink-500">{t('bills.reverseCharge.wePay')}</dt>
+                <dd className="text-end font-mono tabular-nums" dir="ltr" data-testid="rcm-tax">
+                  {plain(rcmTax)}
+                </dd>
+              </>
+            )}
             <dt className="border-t border-ink-200 pt-1 font-semibold dark:border-ink-700">{t('invoices.total')}</dt>
             <dd className="border-t border-ink-200 pt-1 text-end font-mono font-semibold tabular-nums dark:border-ink-700" dir="ltr">
               {currency} {plain(amounts.total)}
@@ -590,7 +612,12 @@ export default function BillEditor() {
                     {t('payments.payBill')}
                   </Button>
                 )}
-                {bill.status === 'open' && canManage && !bill.currency && (
+                {bill.selfInvoiceNumber && (
+                  <Button variant="secondary" icon={<FileDown className="size-4" />} onClick={() => void api!.selfInvoice(bill.id).then(saveBlob, (e: unknown) => toast(billErrorMessage(e, t), 'error'))}>
+                    {t('bills.reverseCharge.selfInvoice')}
+                  </Button>
+                )}
+                {bill.status === 'open' && canManage && !bill.currency && !bill.reverseCharge && (
                   <Button variant="secondary" icon={<FileMinus className="size-4" />} onClick={() => setDebiting(true)}>
                     {t('debitNotes.new')}
                   </Button>

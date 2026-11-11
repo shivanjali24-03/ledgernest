@@ -174,6 +174,8 @@ export interface Gstr3b {
   gstin: string | null;
   outward: { taxable: number } & GstHeads;
   outwardUntaxed: number;
+  /** 3.1(d): bought under reverse charge, and the GST on it (paid in cash) */
+  inwardReverseCharge?: { taxable: number } & GstHeads;
   itc: GstHeads;
   inwardTaxable: number;
   setOff: { cash: GstHeads; carriedForward: GstHeads; used: Record<'igst' | 'cgst' | 'sgst' | 'cess', GstHeads> };
