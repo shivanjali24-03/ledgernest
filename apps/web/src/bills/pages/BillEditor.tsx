@@ -25,6 +25,7 @@ import Button from '../../ui/Button';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { inputClass, SelectField, TextField } from '../../ui/Field';
 import WarehouseSelect from '../../inventory/WarehouseSelect';
+import RegistrationSelect from '../../gst-registrations/RegistrationSelect';
 import { Card, ErrorState, PageHeader, Pill, SkeletonRows } from '../../ui/Kit';
 import { useToast } from '../../ui/toastContext';
 import { groupForSupply, supplyFor } from '../../invoices/gst';
@@ -136,6 +137,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
   const [boe, setBoe] = useState<{ number: string; date: string; portCode: string } | null>(invoice?.billOfEntry ?? null);
   const [notes, setNotes] = useState(invoice?.notes ?? '');
   const [placeOfSupply, setPlaceOfSupply] = useState(invoice?.placeOfSupply ?? '');
+  const [gstRegistrationId, setGstRegistrationId] = useState((invoice as { gstRegistration?: { id: string } | null } | null)?.gstRegistration?.id ?? '');
   const [warehouseId, setWarehouseId] = useState((invoice as { warehouse?: { id: string } | null } | null)?.warehouse?.id ?? '');
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
@@ -248,6 +250,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
     notes,
     placeOfSupply: placeOfSupply || null,
     warehouseId: warehouseId || null,
+    gstRegistrationId: gstRegistrationId || null,
     lines: filled.map((l) => ({
       itemId: l.itemId || null,
       description: l.description,
@@ -381,6 +384,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
             hint={supply ? t(`invoices.supply.${supply}`) : undefined}
           />
         )}
+        <RegistrationSelect value={gstRegistrationId} onChange={setGstRegistrationId} disabled={!canManage} />
         <WarehouseSelect value={warehouseId} onChange={setWarehouseId} disabled={!canManage} />
       </Card>
 

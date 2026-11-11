@@ -5315,5 +5315,30 @@
       "failed": "That didn’t work. Try again."
     },
     "mainOption": "{{name}} (main)"
+  },
+  "gstRegistrations": {
+    "title": "GST registrations",
+    "hint": "A GSTIN for each state you do business from, under your PAN. Each document says which it’s under: that decides CGST and SGST or IGST, prints on it, and files with that GSTIN’s returns.",
+    "add": "Add GSTIN",
+    "addTitle": "Another GSTIN",
+    "addBody": "A registration in another state under the same PAN. A different PAN is a different business: give it its own organisation.",
+    "save": "Save GSTIN",
+    "own": "own",
+    "archived": "Archived",
+    "archive": "Archive",
+    "under": "Under GSTIN",
+    "added": "{{gstin}} added",
+    "fields": {
+      "tradeName": "Trade name there (if different)",
+      "city": "City",
+      "postalCode": "PIN code"
+    },
+    "errors": {
+      "gstin_is_organisation": "That’s the organisation’s own GSTIN.",
+      "gstin_other_pan": "This GSTIN is under another PAN: a separate business is a separate organisation.",
+      "gstin_taken": "This GSTIN is already here.",
+      "no_primary_gstin": "Enter the organisation’s own GSTIN first.",
+      "failed": "That didn’t work. Check the GSTIN and try again."
+    }
   }
 }

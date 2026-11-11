@@ -228,10 +228,11 @@ export interface ReportsApi {
   exportBalanceSheet(asOf: string, compareAsOf: string | null): Promise<{ blob: Blob; filename: string }>;
   dashboard(): Promise<Dashboard>;
   cashFlow(from: string, to: string): Promise<CashFlow>;
-  gstr3b(from: string, to: string): Promise<Gstr3b>;
-  gstr1(from: string, to: string): Promise<Gstr1>;
+  /** A GST return; `registrationId` for another GSTIN of the business (omitted = its own) */
+  gstr3b(from: string, to: string, registrationId?: string): Promise<Gstr3b>;
+  gstr1(from: string, to: string, registrationId?: string): Promise<Gstr1>;
   /** GSTR-2B (the portal's JSON) matched to bills dated in the range */
-  gstr2b(content: string, from: string, to: string): Promise<Gstr2bReport>;
+  gstr2b(content: string, from: string, to: string, registrationId?: string): Promise<Gstr2bReport>;
   /** What would go wrong when filing GST, with examples to fix */
   gstHealth(): Promise<GstHealth>;
   /** Cash week by week for the coming weeks */
@@ -252,7 +253,7 @@ export interface ReportsApi {
   requestConfirmations(input: { asOf: string; side: 'receivable' | 'payable'; contactIds?: string[]; send: boolean }): Promise<{ created: number; emailed: number; skipped: { contactId: string; name: string; reason: string }[] }>;
   /** The books as Tally Prime XML: ledger masters, or the vouchers posted in the dates */
   tally(part: 'masters' | 'vouchers', from?: string, to?: string): Promise<{ blob: Blob; filename: string }>;
-  exportGstr1(from: string, to: string, format: 'csv' | 'json'): Promise<{ blob: Blob; filename: string }>;
+  exportGstr1(from: string, to: string, format: 'csv' | 'json', registrationId?: string): Promise<{ blob: Blob; filename: string }>;
   exportCashFlow(from: string, to: string): Promise<{ blob: Blob; filename: string }>;
 }
 

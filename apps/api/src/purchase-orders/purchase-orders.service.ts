@@ -22,6 +22,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { BillsService } from '../bills/bills.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { registrationFor } from '../gst-registrations/gst-registrations.service.js';
 import { ensureFxAccount } from '../accounts/system-accounts.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { JournalsService } from '../journals/journals.service.js';
@@ -58,6 +59,8 @@ const select = {
   placeOfSupply: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true } },
+  gstRegistrationId: true,
+  gstRegistration: { select: { id: true, gstin: true, tradeName: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -158,6 +161,8 @@ export class PurchaseOrdersService {
       placeOfSupply: o.placeOfSupply,
       /** The warehouse goods come into (null: the main one) */
       warehouse: o.warehouse,
+      /** The GSTIN it's under (null: the organisation's own) */
+      gstRegistration: o.gstRegistration,
       reference: o.reference,
       notes: o.notes,
       contact: o.contact,
@@ -297,6 +302,7 @@ export class PurchaseOrdersService {
       vendorReference: null,
       notes: input.notes,
       placeOfSupply: input.placeOfSupply,
+      gstRegistrationId: input.gstRegistrationId,
       payableAccountId: null,
       rate: null,
       lines: input.lines.map((l) => ({ ...l, batchNo: null, serials: [] })),
@@ -347,6 +353,9 @@ export class PurchaseOrdersService {
           expectedDate: input.expectedDate ? asDate(input.expectedDate) : null,
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: input.warehouseId
             ? await this.inventory.warehouseFor(
                 tx,
@@ -401,6 +410,9 @@ export class PurchaseOrdersService {
           expectedDate: input.expectedDate ? asDate(input.expectedDate) : null,
           currency: p.currency,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: input.warehouseId
             ? await this.inventory.warehouseFor(
                 tx,
@@ -748,6 +760,7 @@ export class PurchaseOrdersService {
         notes: o.notes,
         placeOfSupply: o.placeOfSupply,
         warehouseId: o.warehouseId,
+        gstRegistrationId: o.gstRegistrationId,
         payableAccountId: null,
         rate: null,
         lines: open.map(({ l, toBill }) => ({

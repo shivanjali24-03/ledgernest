@@ -31,6 +31,8 @@ export interface Quote {
   placeOfSupply: string | null;
   /** The warehouse its goods leave or come into (null: the main one) */
   warehouse?: { id: string; name: string } | null;
+  /** The GSTIN it's under (null: the organisation's own) */
+  gstRegistration?: { id: string; gstin: string; tradeName: string | null } | null;
   reference: string | null;
   notes: string | null;
   contact: { id: string; name: string; email: string | null };

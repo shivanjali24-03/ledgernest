@@ -5315,5 +5315,30 @@
       "failed": "यह नहीं हुआ। फिर कोशिश करें।"
     },
     "mainOption": "{{name}} (मुख्य)"
+  },
+  "gstRegistrations": {
+    "title": "GST पंजीकरण",
+    "hint": "आपके PAN के तहत, हर उस राज्य का GSTIN जहाँ से आप व्यापार करते हैं। हर दस्तावेज़ बताता है कि वह किस GSTIN के तहत है: इसी से CGST व SGST या IGST तय होता है, वही उस पर छपता है और उसी GSTIN के रिटर्न में जाता है।",
+    "add": "GSTIN जोड़ें",
+    "addTitle": "एक और GSTIN",
+    "addBody": "उसी PAN के तहत दूसरे राज्य का पंजीकरण। अलग PAN अलग व्यवसाय है: उसके लिए अलग संगठन बनाएँ।",
+    "save": "GSTIN सहेजें",
+    "own": "अपना",
+    "archived": "संग्रहित",
+    "archive": "संग्रहित करें",
+    "under": "GSTIN के तहत",
+    "added": "{{gstin}} जोड़ा गया",
+    "fields": {
+      "tradeName": "वहाँ का व्यापार नाम (अगर अलग हो)",
+      "city": "शहर",
+      "postalCode": "पिन कोड"
+    },
+    "errors": {
+      "gstin_is_organisation": "यह संगठन का अपना GSTIN है।",
+      "gstin_other_pan": "यह GSTIN दूसरे PAN का है: अलग व्यवसाय अलग संगठन है।",
+      "gstin_taken": "यह GSTIN पहले से यहाँ है।",
+      "no_primary_gstin": "पहले संगठन का अपना GSTIN डालें।",
+      "failed": "यह नहीं हुआ। GSTIN जाँचें और फिर कोशिश करें।"
+    }
   }
 }

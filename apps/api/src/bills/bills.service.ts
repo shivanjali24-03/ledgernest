@@ -36,6 +36,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { registrationFor } from '../gst-registrations/gst-registrations.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 
 type Ctx = { actor: Actor; tenant: Tenant; req: Request };
@@ -75,6 +76,8 @@ export type DraftIn = {
   placeOfSupply: string | null;
   /** The warehouse its goods come into; null = the main one */
   warehouseId?: string | null;
+  /** The GST registration it's under; null = the organisation's own */
+  gstRegistrationId?: string | null;
   payableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
@@ -113,6 +116,8 @@ const select = {
   placeOfSupply: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true } },
+  gstRegistrationId: true,
+  gstRegistration: { select: { id: true, gstin: true, tradeName: true } },
   vendorReference: true,
   vendorBillDate: true,
   reverseCharge: true,
@@ -318,6 +323,8 @@ export class BillsService {
       placeOfSupply: i.placeOfSupply,
       /** The warehouse its goods come into (null: the main one) */
       warehouse: i.warehouse,
+      /** The GSTIN it's under (null: the organisation's own) */
+      gstRegistration: i.gstRegistration,
       vendorReference: i.vendorReference,
       vendorBillDate: i.vendorBillDate ? iso(i.vendorBillDate) : null,
       /** We pay the GST under reverse charge: how much, and the self-invoice raised for it */
@@ -720,8 +727,17 @@ export class BillsService {
       where: { id: organizationId },
       select: { country: true, region: true },
     });
-    const orgState =
-      org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
+    // The GSTIN it's under: its state decides intra- or inter-state supply
+    const registration = await registrationFor(
+      tx,
+      organizationId,
+      input.gstRegistrationId,
+    );
+    const orgState = registration
+      ? registration.stateCode
+      : org.country === 'IN'
+        ? (findIndianState(org.region)?.code ?? null)
+        : null;
     const placeOfSupply = input.placeOfSupply ?? contact.stateCode;
     const rcm = !!input.reverseCharge;
     const boe = input.billOfEntry ?? null;
@@ -1045,6 +1061,9 @@ export class BillsService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: await this.checkWarehouse(
             tx,
             organizationId,
@@ -1114,6 +1133,9 @@ export class BillsService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: await this.checkWarehouse(
             tx,
             organizationId,
@@ -1244,6 +1266,7 @@ export class BillsService {
         notes: i.notes,
         placeOfSupply: i.placeOfSupply,
         payableAccountId: i.payableAccountId,
+        gstRegistrationId: i.gstRegistrationId,
         rate: i.rate && rateText(i.rate),
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
@@ -1534,6 +1557,7 @@ export class BillsService {
         {
           date: billDate,
           memo: `Bill ${label} · ${contactName}`,
+          gstRegistrationId: i.gstRegistrationId,
           reference: i.vendorReference ?? label,
           lines,
         },

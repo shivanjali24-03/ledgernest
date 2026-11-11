@@ -48,6 +48,7 @@ import { JournalsService } from '../journals/journals.service.js';
 import { checkCostCentres } from '../cost-centres/check.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { registrationFor } from '../gst-registrations/gst-registrations.service.js';
 import { NumberingService } from '../numbering/numbering.service.js';
 import { WebhooksService } from '../integrations/webhooks.service.js';
 
@@ -100,6 +101,8 @@ export type DraftIn = {
   placeOfSupply: string | null;
   /** The warehouse its goods leave; null = the main one */
   warehouseId?: string | null;
+  /** The GST registration it's under; null = the organisation's own */
+  gstRegistrationId?: string | null;
   receivableAccountId: string | null;
   rate: string | null;
   lines: LineIn[];
@@ -138,6 +141,8 @@ const select = {
   placeOfSupply: true,
   warehouseId: true,
   warehouse: { select: { id: true, name: true } },
+  gstRegistrationId: true,
+  gstRegistration: { select: { id: true, gstin: true, tradeName: true } },
   reference: true,
   notes: true,
   subtotal: true,
@@ -371,6 +376,8 @@ export class InvoicesService {
       placeOfSupply: i.placeOfSupply,
       /** The warehouse its goods leave (null: the main one) */
       warehouse: i.warehouse,
+      /** The GSTIN it's under (null: the organisation's own) */
+      gstRegistration: i.gstRegistration,
       seriesId: i.seriesId,
       reference: i.reference,
       notes: i.notes,
@@ -838,8 +845,17 @@ export class InvoicesService {
         'Under the composition scheme no GST is charged: take the tax off the lines.',
         'composition_no_tax',
       );
-    const orgState =
-      org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
+    // The GSTIN it's under: its state decides intra- or inter-state supply
+    const registration = await registrationFor(
+      tx,
+      organizationId,
+      input.gstRegistrationId,
+    );
+    const orgState = registration
+      ? registration.stateCode
+      : org.country === 'IN'
+        ? (findIndianState(org.region)?.code ?? null)
+        : null;
     // Goods go to the ship-to address: its state is the usual place of supply (IGST Act s.10(1)(a)); it can be changed
     const shipToState =
       input.shipTo && (input.shipTo.country ?? 'IN') === 'IN'
@@ -1191,6 +1207,9 @@ export class InvoicesService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: await this.checkWarehouse(
             tx,
             organizationId,
@@ -1276,6 +1295,9 @@ export class InvoicesService {
           currency: p.currency,
           rate: input.rate,
           placeOfSupply: p.placeOfSupply,
+          gstRegistrationId:
+            (await registrationFor(tx, organizationId, input.gstRegistrationId))
+              ?.id ?? null,
           warehouseId: await this.checkWarehouse(
             tx,
             organizationId,
@@ -1388,6 +1410,7 @@ export class InvoicesService {
         notes: i.notes,
         placeOfSupply: i.placeOfSupply,
         receivableAccountId: i.receivableAccountId,
+        gstRegistrationId: i.gstRegistrationId,
         rate: i.rate && rateText(i.rate),
         instalments: (i.instalments as Instalment[] | null) ?? null,
         shipTo: (i.shipTo as ShipTo | null) ?? null,
@@ -1615,6 +1638,7 @@ export class InvoicesService {
         {
           date: issueDate,
           memo: `Invoice ${label} · ${contactName}`,
+          gstRegistrationId: i.gstRegistrationId,
           reference: label,
           lines: [...lines, ...(fromChallan?.journal ?? []), ...cost.journal],
         },

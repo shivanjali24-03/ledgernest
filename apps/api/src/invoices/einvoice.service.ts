@@ -59,6 +59,7 @@ const invoiceSelect = {
   exportDetails: true,
   reverseCharge: true,
   opening: true,
+  gstRegistrationId: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -88,7 +89,8 @@ const invoiceSelect = {
 export class EinvoiceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async seller(organizationId: string) {
+  /** The supplier: the organisation, or the other GSTIN of it the invoice is under (its number, name and address) */
+  private async seller(organizationId: string, registrationId?: string | null) {
     const o = await this.prisma.organization.findUniqueOrThrow({
       where: { id: organizationId },
       select: {
@@ -104,14 +106,23 @@ export class EinvoiceService {
         email: true,
       },
     });
+    const reg = registrationId
+      ? await this.prisma.gstRegistration.findUnique({
+          where: { id: registrationId },
+          select: { gstin: true, tradeName: true, address: true },
+        })
+      : null;
+    const a = (reg?.address ?? null) as Record<string, string | null> | null;
     return {
-      gstin: o.taxId?.toUpperCase() ?? null,
+      gstin: (reg?.gstin ?? o.taxId)?.toUpperCase() ?? null,
       legalName: o.legalName ?? o.name,
-      tradeName: o.legalName && o.legalName !== o.name ? o.name : null,
-      address1: o.addressLine1,
-      address2: o.addressLine2,
-      city: o.city ?? o.region,
-      pin: o.postalCode,
+      tradeName:
+        reg?.tradeName ??
+        (o.legalName && o.legalName !== o.name ? o.name : null),
+      address1: a ? a.line1 : o.addressLine1,
+      address2: a ? a.line2 : o.addressLine2,
+      city: a ? (a.city ?? a.region) : (o.city ?? o.region),
+      pin: a ? a.postalCode : o.postalCode,
       phone: o.phone,
       email: o.email,
     };
@@ -268,7 +279,10 @@ export class EinvoiceService {
           'This invoice was owed from before the books started here: it was reported then.',
         details: { reason: 'opening_invoice' },
       });
-    const input = this.input(i, await this.seller(organizationId));
+    const input = this.input(
+      i,
+      await this.seller(organizationId, i.gstRegistrationId),
+    );
     const problems = einvoiceProblems(input);
     if (problems.length)
       throw new ConflictException({
@@ -304,7 +318,10 @@ export class EinvoiceService {
           'This invoice was owed from before the books started here: its goods moved then.',
         details: { reason: 'opening_invoice' },
       });
-    const input = this.input(i, await this.seller(organizationId));
+    const input = this.input(
+      i,
+      await this.seller(organizationId, i.gstRegistrationId),
+    );
     const problems = ewayProblems(input, transport);
     if (problems.length)
       throw new ConflictException({
@@ -400,8 +417,13 @@ export class EinvoiceService {
       number: string;
       problems: ReturnType<typeof einvoiceProblems>;
     }[] = [];
+    // Each under its own GSTIN: the organisation's, or another of it
+    const sellers = new Map<string, typeof seller>();
     for (const i of rows) {
-      const input = this.input(i, seller);
+      const key = i.gstRegistrationId ?? '';
+      if (key && !sellers.has(key))
+        sellers.set(key, await this.seller(organizationId, key));
+      const input = this.input(i, key ? sellers.get(key)! : seller);
       const problems = einvoiceProblems(input);
       if (problems.length)
         skipped.push({ id: i.id, number: input.number, problems });

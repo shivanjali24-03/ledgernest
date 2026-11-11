@@ -349,6 +349,7 @@ export class VendorCreditsService {
           billDate: true,
           currency: true,
           rate: true,
+          gstRegistrationId: true,
           reverseCharge: true,
           billOfEntry: true,
           total: true,
@@ -637,6 +638,8 @@ export class VendorCreditsService {
         {
           date: input.date,
           memo: `Debit note ${label} · ${bill.contact.name} · ${billLabelText}`,
+          // Its tax files with the bill's GSTIN
+          gstRegistrationId: bill.gstRegistrationId,
           reference: input.vendorReference ?? label,
           lines: entryLines as never,
         },

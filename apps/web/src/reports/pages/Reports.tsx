@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ import { useOrganizationSettings } from '../../settings/useOrganizationSettings'
 import Button from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import Gstr2bPanel from '../Gstr2bPanel';
+import RegistrationSelect from '../../gst-registrations/RegistrationSelect';
 import GstHealthPanel from '../GstHealthPanel';
 import Itc180Panel from '../Itc180Panel';
 import CashLimitsPanel from '../CashLimitsPanel';
@@ -112,10 +114,12 @@ export default function Reports() {
   const itc180 = useQuery({ queryKey: [...key, 'itc-180', asOf], queryFn: () => api!.itc180(asOf), enabled: !!api && tab === 'gst' && gstReturn === 'itc-180' });
   const india = settings?.country === 'IN';
   const gstHealth = useQuery({ queryKey: [...key, 'gst-health'], queryFn: () => api!.gstHealth(), enabled: !!api && tab === 'gst' && gstReturn === 'health' });
-  const g3b = useQuery({ queryKey: [...key, 'gstr3b', from, to], queryFn: () => api!.gstr3b(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-3b' && from <= to, placeholderData: keepPreviousData });
-  const g1 = useQuery({ queryKey: [...key, 'gstr1', from, to], queryFn: () => api!.gstr1(from, to), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-1' && from <= to, placeholderData: keepPreviousData });
+  // Another GSTIN of the business; empty = its own
+  const [gstReg, setGstReg] = useState('');
+  const g3b = useQuery({ queryKey: [...key, 'gstr3b', from, to, gstReg], queryFn: () => api!.gstr3b(from, to, gstReg || undefined), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-3b' && from <= to, placeholderData: keepPreviousData });
+  const g1 = useQuery({ queryKey: [...key, 'gstr1', from, to, gstReg], queryFn: () => api!.gstr1(from, to, gstReg || undefined), enabled: !!api && tab === 'gst' && gstReturn === 'gstr-1' && from <= to, placeholderData: keepPreviousData });
   const jsonExport = useMutation({
-    mutationFn: () => api!.exportGstr1(from, to, 'json'),
+    mutationFn: () => api!.exportGstr1(from, to, 'json', gstReg || undefined),
     onSuccess: (f) => {
       saveBlob(f);
       toast(t('audit.exported', { file: f.filename }));
@@ -429,10 +433,15 @@ export default function Reports() {
             <div className="w-44">
               <TextField label={t('reports.to')} type="date" value={to} min={from} onChange={(e) => e.target.value && set({ to: e.target.value })} error={from > to ? t('audit.filters.badRange') : undefined} />
             </div>
+            {(gstReturn === 'gstr-3b' || gstReturn === 'gstr-1' || gstReturn === 'gstr-2b') && (
+              <div className="w-72">
+                <RegistrationSelect value={gstReg} onChange={setGstReg} />
+              </div>
+            )}
             <p className="flex-1 pb-2 text-sm text-ink-500">{t('reports.gst.hint')}</p>
             {gstReturn === 'gstr-1' && session.permissions.has('invoices.view') && <EinvoiceBatchButton from={from} to={to} />}
           </div>
-          {gstReturn === 'itc-180' ? <Itc180Panel data={itc180.data} isPending={itc180.isPending} isError={itc180.isError} onRetry={() => void itc180.refetch()} /> : gstReturn === 'health' ? <GstHealthPanel data={gstHealth.data} isPending={gstHealth.isPending} isError={gstHealth.isError} onRetry={() => void gstHealth.refetch()} /> : gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
+          {gstReturn === 'itc-180' ? <Itc180Panel data={itc180.data} isPending={itc180.isPending} isError={itc180.isError} onRetry={() => void itc180.refetch()} /> : gstReturn === 'health' ? <GstHealthPanel data={gstHealth.data} isPending={gstHealth.isPending} isError={gstHealth.isError} onRetry={() => void gstHealth.refetch()} /> : gstReturn === 'gstr-2b' ? <Gstr2bPanel api={api!} from={from} to={to} registrationId={gstReg || undefined} /> : gstReturn === 'gstr-3b' ? <Gstr3bPanel data={g3b.data} isPending={g3b.isPending} isError={g3b.isError} onRetry={() => void g3b.refetch()} /> : <Gstr1Panel data={g1.data} isPending={g1.isPending} isError={g1.isError} onRetry={() => void g1.refetch()} onJson={canExport ? () => jsonExport.mutate() : undefined} />}
         </motion.div>
       ) : tab === 'scheduled' ? (
         <motion.div variants={fadeUp} role="tabpanel">

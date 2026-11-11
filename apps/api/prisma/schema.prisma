@@ -195,6 +195,7 @@ model Organization {
   goodsReceiptLines  GoodsReceiptLine[]
   warehouses         Warehouse[]
   stockTransfers     StockTransfer[]
+  gstRegistrations   GstRegistration[]
 
   @@map("organizations")
 }
@@ -350,22 +351,24 @@ model Period {
 
 /// A double-entry journal entry. Drafts can change freely; posted entries never change (a reversal corrects them).
 model JournalEntry {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  /// The GST registration (GSTIN) it's under; null = the organisation's own
+  gstRegistrationId String?   @map("gst_registration_id") @db.Uuid
   /// Gap-free per financial year, assigned when posted
-  number         Int?
-  fiscalYearId   String?   @map("fiscal_year_id") @db.Uuid
-  date           DateTime  @db.Date
-  memo           String?
-  reference      String?
-  status         String    @default("draft") /// draft | posted
+  number            Int?
+  fiscalYearId      String?   @map("fiscal_year_id") @db.Uuid
+  date              DateTime  @db.Date
+  memo              String?
+  reference         String?
+  status            String    @default("draft") /// draft | posted
   /// For a reversal: the entry it reverses
-  reversalOfId   String?   @map("reversal_of_id") @db.Uuid
-  createdById    String?   @map("created_by_id") @db.Uuid
-  postedById     String?   @map("posted_by_id") @db.Uuid
-  postedAt       DateTime? @map("posted_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  reversalOfId      String?   @map("reversal_of_id") @db.Uuid
+  createdById       String?   @map("created_by_id") @db.Uuid
+  postedById        String?   @map("posted_by_id") @db.Uuid
+  postedAt          DateTime? @map("posted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fiscalYear   FiscalYear?         @relation("FiscalYearEntries", fields: [organizationId, fiscalYearId], references: [organizationId, id], onDelete: NoAction)
@@ -397,6 +400,8 @@ model JournalEntry {
   depreciationRun       DepreciationRun?         @relation("DepreciationEntry")
   stockMovements        StockMovement[]
   assetDisposal         FixedAsset?              @relation("AssetDisposalEntry")
+
+  gstRegistration GstRegistration? @relation("JournalEntryGstRegistration", fields: [organizationId, gstRegistrationId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -864,6 +869,8 @@ model Item {
 model Invoice {
   id                  String    @id @default(uuid()) @db.Uuid
   organizationId      String    @map("organization_id") @db.Uuid
+  /// The GST registration (GSTIN) it's under; null = the organisation's own
+  gstRegistrationId   String?   @map("gst_registration_id") @db.Uuid
   contactId           String    @map("contact_id") @db.Uuid
   /// Gap-free per financial year, given on issue
   number              Int?
@@ -958,6 +965,8 @@ model Invoice {
   interestWaivers InterestWaiver[]
 
   warehouse Warehouse? @relation("InvoiceWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
+
+  gstRegistration GstRegistration? @relation("InvoiceGstRegistration", fields: [organizationId, gstRegistrationId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, fullNumber])
@@ -1090,6 +1099,8 @@ model PaymentAllocation {
 model Bill {
   id                String    @id @default(uuid()) @db.Uuid
   organizationId    String    @map("organization_id") @db.Uuid
+  /// The GST registration (GSTIN) it's under; null = the organisation's own
+  gstRegistrationId String?   @map("gst_registration_id") @db.Uuid
   contactId         String    @map("contact_id") @db.Uuid
   number            Int?
   fiscalYearId      String?   @map("fiscal_year_id") @db.Uuid
@@ -1151,6 +1162,8 @@ model Bill {
   purchaseOrder PurchaseOrder? @relation(fields: [organizationId, purchaseOrderId], references: [organizationId, id], onDelete: NoAction)
 
   warehouse Warehouse? @relation("BillWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
+
+  gstRegistration GstRegistration? @relation("BillGstRegistration", fields: [organizationId, gstRegistrationId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, fiscalYearId, number])
@@ -2028,47 +2041,49 @@ model ReminderPolicy {
 /// A quote (estimate) for a customer: priced like an invoice but posts nothing. It can be sent, accepted or
 /// declined, and turned into a draft invoice with the same lines.
 model Quote {
-  id              String    @id @default(uuid()) @db.Uuid
-  organizationId  String    @map("organization_id") @db.Uuid
-  number          Int
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  /// The GST registration (GSTIN) it's under; null = the organisation's own
+  gstRegistrationId String?   @map("gst_registration_id") @db.Uuid
+  number            Int
   /// quote | proforma | sales_order | delivery_challan, each numbered on its own
-  kind            String    @default("quote")
+  kind              String    @default("quote")
   /// A delivery challan's reason (Rule 55): job_work | approval | branch_transfer | exhibition | unknown_quantity | other
-  purpose         String?
-  contactId       String    @map("contact_id") @db.Uuid
-  status          String    @default("draft") /// draft | sent | accepted | declined | invoiced
-  quoteDate       DateTime  @map("quote_date") @db.Date
-  expiryDate      DateTime  @map("expiry_date") @db.Date
-  currency        String?   @db.Char(3)
-  placeOfSupply   String?   @map("place_of_supply") @db.Char(2)
+  purpose           String?
+  contactId         String    @map("contact_id") @db.Uuid
+  status            String    @default("draft") /// draft | sent | accepted | declined | invoiced
+  quoteDate         DateTime  @map("quote_date") @db.Date
+  expiryDate        DateTime  @map("expiry_date") @db.Date
+  currency          String?   @db.Char(3)
+  placeOfSupply     String?   @map("place_of_supply") @db.Char(2)
   /// The warehouse its goods leave or come into; null = the main one
-  warehouseId     String?   @map("warehouse_id") @db.Uuid
-  reference       String?
-  notes           String?
-  subtotal        BigInt    @default(0)
-  taxTotal        BigInt    @default(0) @map("tax_total")
-  total           BigInt    @default(0)
+  warehouseId       String?   @map("warehouse_id") @db.Uuid
+  reference         String?
+  notes             String?
+  subtotal          BigInt    @default(0)
+  taxTotal          BigInt    @default(0) @map("tax_total")
+  total             BigInt    @default(0)
   /// The invoice it became
-  invoiceId       String?   @map("invoice_id") @db.Uuid
+  invoiceId         String?   @map("invoice_id") @db.Uuid
   /// A delivery challan's goods leaving stock (to "goods sent on challan"), and coming back: invoiced or returned
-  dispatchedAt    DateTime? @map("dispatched_at") @db.Date
-  dispatchEntryId String?   @map("dispatch_entry_id") @db.Uuid
-  backAt          DateTime? @map("back_at") @db.Date
+  dispatchedAt      DateTime? @map("dispatched_at") @db.Date
+  dispatchEntryId   String?   @map("dispatch_entry_id") @db.Uuid
+  backAt            DateTime? @map("back_at") @db.Date
   /// invoiced | returned
-  backReason      String?   @map("back_reason")
-  backEntryId     String?   @map("back_entry_id") @db.Uuid
-  createdById     String?   @map("created_by_id") @db.Uuid
-  sentAt          DateTime? @map("sent_at")
-  decidedAt       DateTime? @map("decided_at")
+  backReason        String?   @map("back_reason")
+  backEntryId       String?   @map("back_entry_id") @db.Uuid
+  createdById       String?   @map("created_by_id") @db.Uuid
+  sentAt            DateTime? @map("sent_at")
+  decidedAt         DateTime? @map("decided_at")
   /// A link the customer opens without signing in, to accept or decline (random, revocable)
-  shareToken      String?   @unique @map("share_token")
-  shareViews      Int       @default(0) @map("share_views")
-  shareViewedAt   DateTime? @map("share_viewed_at")
+  shareToken        String?   @unique @map("share_token")
+  shareViews        Int       @default(0) @map("share_views")
+  shareViewedAt     DateTime? @map("share_viewed_at")
   /// Who accepted or declined it from the link, and what they said
-  decidedBy       String?   @map("decided_by")
-  decisionNote    String?   @map("decision_note")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  decidedBy         String?   @map("decided_by")
+  decisionNote      String?   @map("decision_note")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact      Contact      @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
@@ -2076,6 +2091,8 @@ model Quote {
   lines        QuoteLine[]
 
   warehouse Warehouse? @relation("QuoteWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
+
+  gstRegistration GstRegistration? @relation("QuoteGstRegistration", fields: [organizationId, gstRegistrationId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, kind, number])
@@ -2290,27 +2307,29 @@ model InterestWaiver {
 
 /// An order for goods or services from a vendor (PO-0001): drafted, issued, then received against and billed
 model PurchaseOrder {
-  id             String    @id @default(uuid()) @db.Uuid
-  organizationId String    @map("organization_id") @db.Uuid
-  number         Int
-  contactId      String    @map("contact_id") @db.Uuid
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  /// The GST registration (GSTIN) it's under; null = the organisation's own
+  gstRegistrationId String?   @map("gst_registration_id") @db.Uuid
+  number            Int
+  contactId         String    @map("contact_id") @db.Uuid
   /// draft | issued | closed | cancelled
-  status         String    @default("draft")
-  orderDate      DateTime  @map("order_date") @db.Date
-  expectedDate   DateTime? @map("expected_date") @db.Date
-  currency       String?   @db.Char(3)
-  placeOfSupply  String?   @map("place_of_supply") @db.Char(2)
+  status            String    @default("draft")
+  orderDate         DateTime  @map("order_date") @db.Date
+  expectedDate      DateTime? @map("expected_date") @db.Date
+  currency          String?   @db.Char(3)
+  placeOfSupply     String?   @map("place_of_supply") @db.Char(2)
   /// The warehouse its goods leave or come into; null = the main one
-  warehouseId    String?   @map("warehouse_id") @db.Uuid
-  reference      String?
-  notes          String?
-  subtotal       BigInt    @default(0)
-  taxTotal       BigInt    @default(0) @map("tax_total")
-  total          BigInt    @default(0)
-  createdById    String?   @map("created_by_id") @db.Uuid
-  issuedAt       DateTime? @map("issued_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  warehouseId       String?   @map("warehouse_id") @db.Uuid
+  reference         String?
+  notes             String?
+  subtotal          BigInt    @default(0)
+  taxTotal          BigInt    @default(0) @map("tax_total")
+  total             BigInt    @default(0)
+  createdById       String?   @map("created_by_id") @db.Uuid
+  issuedAt          DateTime? @map("issued_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   contact      Contact             @relation(fields: [organizationId, contactId], references: [organizationId, id], onDelete: NoAction)
@@ -2319,6 +2338,8 @@ model PurchaseOrder {
   bills        Bill[]
 
   warehouse Warehouse? @relation("PurchaseOrderWarehouse", fields: [organizationId, warehouseId], references: [organizationId, id], onDelete: NoAction)
+
+  gstRegistration GstRegistration? @relation("PurchaseOrderGstRegistration", fields: [organizationId, gstRegistrationId], references: [organizationId, id], onDelete: NoAction)
 
   @@unique([organizationId, id])
   @@unique([organizationId, number])
@@ -2450,4 +2471,30 @@ model StockTransfer {
   @@unique([organizationId, id])
   @@unique([organizationId, number])
   @@map("stock_transfers")
+}
+
+/// A further GST registration under the same PAN: a GSTIN in another state (a branch, a depot). The organisation's own
+/// GSTIN is the first; documents name the one they're under, which sets intra- or inter-state tax and files with it.
+model GstRegistration {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  gstin          String
+  /// Two-digit state code, from the GSTIN
+  stateCode      String    @map("state_code")
+  tradeName      String?   @map("trade_name")
+  /// { line1, line2, city, region, postalCode, country }
+  address        Json?
+  archivedAt     DateTime? @map("archived_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoices       Invoice[]       @relation("InvoiceGstRegistration")
+  bills          Bill[]          @relation("BillGstRegistration")
+  quotes         Quote[]         @relation("QuoteGstRegistration")
+  purchaseOrders PurchaseOrder[] @relation("PurchaseOrderGstRegistration")
+  journalEntries JournalEntry[]  @relation("JournalEntryGstRegistration")
+
+  @@unique([organizationId, id])
+  @@unique([organizationId, gstin])
+  @@map("gst_registrations")
 }

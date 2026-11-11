@@ -18,6 +18,8 @@ export interface Bill {
   placeOfSupply: string | null;
   /** The warehouse its goods leave or come into (null: the main one) */
   warehouse?: { id: string; name: string } | null;
+  /** The GSTIN it's under (null: the organisation's own) */
+  gstRegistration?: { id: string; gstin: string; tradeName: string | null } | null;
   /** The vendor's own number for it */
   vendorReference: string | null;
   /** The date on the vendor's bill; null = the bill date */

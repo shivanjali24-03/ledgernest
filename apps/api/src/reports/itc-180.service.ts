@@ -33,10 +33,18 @@ export class Itc180Service {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Recorded bills with credit taken, dated on or before the day, with what settled them */
-  private async bills(organizationId: string, asOf: string) {
+  private async bills(
+    organizationId: string,
+    asOf: string,
+    /** One GST registration's bills; undefined = all */
+    registrationId?: string | null,
+  ) {
     const rows = await this.prisma.bill.findMany({
       where: {
         organizationId,
+        ...(registrationId !== undefined && {
+          gstRegistrationId: registrationId,
+        }),
         status: 'open',
         currency: null,
         reverseCharge: false,
@@ -151,9 +159,17 @@ export class Itc180Service {
   }
 
   /** For GSTR-3B: credit to reverse (4(B)(2)) and to take back (4(D)(1)) in the period */
-  async forPeriod(organizationId: string, from: string, to: string) {
+  async forPeriod(
+    organizationId: string,
+    from: string,
+    to: string,
+    /** One GST registration's (null: the organisation's own GSTIN) */
+    registrationId: string | null = null,
+  ) {
     return itcRule37ForPeriod(
-      (await this.bills(organizationId, to)).map((b) => b.input),
+      (await this.bills(organizationId, to, registrationId)).map(
+        (b) => b.input,
+      ),
       from,
       to,
     );

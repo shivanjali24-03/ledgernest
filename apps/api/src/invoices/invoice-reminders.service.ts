@@ -382,6 +382,15 @@ export class InvoiceRemindersService
       },
     });
     const composition = !!org.taxId && org.gstScheme === 'composition';
+    // Under another GSTIN of the business: its number, trade name and address are the supplier's on this invoice
+    const reg = inv.gstRegistration
+      ? await this.prisma.gstRegistration.findUnique({
+          where: { id: inv.gstRegistration.id },
+          select: { gstin: true, tradeName: true, address: true },
+        })
+      : null;
+    const gstin = reg?.gstin ?? org.taxId;
+    const regAddress = reg?.address as Record<string, string | null> | null;
     const currency = inv.currency ?? org.baseCurrency;
     const digits = currencyDigits(currency);
     const upi = this.upiLink(org, inv, currency);
@@ -389,7 +398,7 @@ export class InvoiceRemindersService
       [a.line1, a.line2, a.city, a.region, a.postalCode]
         .filter(Boolean)
         .join(', ');
-    const seller = org.legalName ?? org.name;
+    const seller = reg?.tradeName ?? org.legalName ?? org.name;
     const pos = inv.placeOfSupply
       ? findIndianState(inv.placeOfSupply)
       : undefined;
@@ -418,7 +427,7 @@ export class InvoiceRemindersService
         logo,
         signature,
         title: `${composition ? 'Bill of supply' : org.taxId ? 'Tax invoice' : 'Invoice'} ${inv.number}`,
-        subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}${copy ? ` · ${INVOICE_COPIES[copy]}` : ''}`,
+        subtitle: `${seller}${gstin ? ` · GSTIN ${gstin}` : ''}${copy ? ` · ${INVOICE_COPIES[copy]}` : ''}`,
         info: [
           // What a composition dealer's bill must say at the top
           ...(composition
@@ -426,13 +435,15 @@ export class InvoiceRemindersService
                 'Composition taxable person, not eligible to collect tax on supplies',
               ]
             : []),
-          address({
-            line1: org.addressLine1,
-            line2: org.addressLine2,
-            city: org.city,
-            region: org.region,
-            postalCode: org.postalCode,
-          }),
+          address(
+            regAddress ?? {
+              line1: org.addressLine1,
+              line2: org.addressLine2,
+              city: org.city,
+              region: org.region,
+              postalCode: org.postalCode,
+            },
+          ),
           // The PAN, and a company's CIN (Companies Act s.12(3)(c))
           [
             org.pan && `PAN ${org.pan}`,

@@ -77,6 +77,8 @@ export const gstr2bRequestSchema = z
     content: z.string().min(1, 'The file is empty.').max(GSTR2B_MAX_BYTES, 'GSTR-2B files can be up to 4 MB.'),
     from: day,
     to: day,
+    /** The GST registration it's for; omitted = the organisation's own GSTIN */
+    registrationId: z.uuid().optional(),
   })
   .refine((v) => v.from <= v.to, { message: 'The start comes after the end.', path: ['to'] });
 export type Gstr2bRequest = z.infer<typeof gstr2bRequestSchema>;

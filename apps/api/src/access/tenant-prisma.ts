@@ -57,6 +57,7 @@ export const TENANT_MODELS = new Set<string>([
   'CostCentre',
   'StockMovement',
   'Warehouse',
+  'GstRegistration',
   'StockTransfer',
   'ApprovalRule',
   'ApprovalRequest',
