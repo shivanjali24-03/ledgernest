@@ -154,6 +154,11 @@ describe('customers and vendors', () => {
     const wa = decodeURIComponent((await screen.findByRole('link', { name: 'Remind on WhatsApp' })).getAttribute('href')!);
     expect(wa).toMatch(/^https:\/\/wa\.me\/\?text=Dear Kumar Logistics, a gentle reminder from .+\. These invoices are overdue:\n• INV\/.+ · ₹1,000\.00 · due /);
     expect(wa).toMatch(/\nTotal: ₹[\d,.]+\n/);
+    // Sending it notes the chase, for Collections (the link opens WhatsApp in a new tab)
+    vi.spyOn(window, 'open').mockImplementation(() => null);
+    fireEvent.click(screen.getByRole('link', { name: 'Remind on WhatsApp' }));
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    await waitFor(() => expect(demoContactRows().find((c) => c.name === 'Kumar Logistics')?.lastChasedAt).toBeTruthy(), { timeout: 4000 });
     fireEvent.click(remind);
     const dialog = await screen.findByRole('dialog', { name: 'Remind Kumar Logistics about overdue invoices?' });
     expect(dialog).toHaveTextContent('accounts@kumarlogistics.in');

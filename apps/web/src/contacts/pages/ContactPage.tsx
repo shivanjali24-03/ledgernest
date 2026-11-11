@@ -125,6 +125,8 @@ export default function ContactPage() {
                   href={whatsappLink(overdueMessage(overdue.data.items), c.phone)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  // Noted as chased, for the Collections list
+                  onClick={() => void api?.chased(c.id, 'whatsapp').then(() => qc.invalidateQueries({ queryKey: ['contacts'] }), () => {})}
                   className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#1fa855] px-4 text-sm font-semibold text-white hover:bg-[#178a45]"
                 >
                   <MessageCircle className="size-4" aria-hidden /> {t('contacts.page.whatsappRemind')}
