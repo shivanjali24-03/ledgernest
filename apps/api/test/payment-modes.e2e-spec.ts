@@ -165,4 +165,74 @@ describe('Payment modes (e2e)', () => {
       (await receive({ mode: 'cash' }).expect(400)).body.details,
     ).toMatchObject({ reason: 'mode_account', field: 'bankAccountId' });
   });
+
+  it('stops cash over the Income-tax limits unless confirmed, and lists the days that crossed them', async () => {
+    await receive({
+      bankAccountId: cash,
+      amount: 1_50_000_00,
+      date: '2026-06-20',
+    }).expect(201);
+    const over = await receive({
+      bankAccountId: cash,
+      amount: 60_000_00,
+      date: '2026-06-20',
+    }).expect(409);
+    expect(over.body.details).toMatchObject({
+      reason: 'cash_limit',
+      section: '269ST',
+      basis: 'day',
+      total: 2_10_000_00,
+    });
+    await receive({
+      bankAccountId: cash,
+      amount: 60_000_00,
+      date: '2026-06-20',
+      acknowledgeCashLimit: true,
+    }).expect(201);
+    // Another day starts again
+    await receive({
+      bankAccountId: cash,
+      amount: 60_000_00,
+      date: '2026-06-21',
+    }).expect(201);
+
+    const vendor = (
+      await contact({ name: 'Ramesh Transport', isCustomer: false }).expect(201)
+    ).body.id as string;
+    const pay = (amount: number, extra: object = {}) =>
+      post('/payments/payments', {
+        contactId: vendor,
+        date: '2026-06-20',
+        bankAccountId: cash,
+        amount,
+        ...extra,
+      });
+    await pay(8_000_00).expect(201);
+    expect((await pay(3_000_00).expect(409)).body.details).toMatchObject({
+      section: '40A(3)',
+      limit: 10_000_00,
+    });
+    await pay(3_000_00, { acknowledgeCashLimit: true }).expect(201);
+
+    const r = (
+      await auth(
+        http().get(
+          '/api/v1/payments/cash-limits?from=2026-06-01&to=2026-06-30',
+        ),
+      ).expect(200)
+    ).body as {
+      items: {
+        section: string;
+        date: string;
+        total: number;
+        payments: unknown[];
+      }[];
+    };
+    expect(
+      r.items.map((i) => [i.section, i.date, i.total, i.payments.length]),
+    ).toEqual([
+      ['269ST', '2026-06-20', 2_10_000_00, 2],
+      ['40A(3)', '2026-06-20', 11_000_00, 2],
+    ]);
+  });
 });

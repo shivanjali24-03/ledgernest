@@ -6,6 +6,7 @@ import { useAccountsApi } from '../accounts/useAccountsApi';
 import { useContactsApi } from '../contacts/useContactsApi';
 import { useIntlLocale } from '../i18n';
 import { billErrorMessage } from '../bills/errors';
+import { ApiError } from '../auth/client';
 import { formatDate } from '../lib/format';
 import { useSession } from '../layout/session';
 import { useOrganizationSettings } from '../settings/useOrganizationSettings';
@@ -87,10 +88,12 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
   const tdsProblem = tdsActive && (!(ratePpm > 0 && ratePpm <= 300_000) || !baseMinor || !tdsMinor || !tdsAccount || (amt !== null && tdsMinor >= amt));
   const problem = !contactId ? (receipt ? 'customer' : 'vendor') : !bank ? 'bank' : !amt ? 'amount' : parsedAllocs.some((i) => i.value === null || (i.value ?? 0) > i.balance) ? 'allocation' : allocated > amt ? 'over' : tdsProblem ? 'tds' : null;
 
+  // A cash amount over an Income-tax limit: said, then recorded only when confirmed
+  const [cashLimit, setCashLimit] = useState<{ section: string; total: number } | null>(null);
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: (acknowledgeCashLimit: boolean = false) => {
       const instrument = mode === 'cheque' || mode === 'dd';
-      const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null, mode: (isCash ? 'cash' : mode) || null, instrumentNo: isCash ? null : instrumentNo || null, instrumentDate: instrument ? instrumentDate || null : null, drawnOn: instrument ? drawnOn || null : null };
+      const base = { contactId, date, bankAccountId: bank, amount: amt!, reference: reference || null, mode: (isCash ? 'cash' : mode) || null, instrumentNo: isCash ? null : instrumentNo || null, instrumentDate: instrument ? instrumentDate || null : null, drawnOn: instrument ? drawnOn || null : null, acknowledgeCashLimit };
       const chosen = parsedAllocs.filter((i) => i.value);
       const tds = tdsActive ? { section, ratePpm, base: baseMinor!, amount: tdsMinor!, accountId: tdsAccount } : null;
       return receipt ? api.receive({ ...base, tds, allocations: chosen.map((i) => ({ invoiceId: i.id, amount: i.value! })) }) : api.pay({ ...base, tds, allocations: chosen.map((i) => ({ billId: i.id, amount: i.value! })) });
@@ -101,6 +104,7 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
       onDone(p);
     },
     onError: (e) => {
+      if (e instanceof ApiError && e.details?.reason === 'cash_limit') return setCashLimit({ section: String(e.details.section), total: Number(e.details.total) });
       if (!heldForApproval(e)) return toast(billErrorMessage(e, t), 'error');
       void queryClient.invalidateQueries({ queryKey: ['approvals'] });
       toast(heldMessage(e, t));
@@ -110,7 +114,8 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (problem) return toast(t(`payments.problems.${!receipt && ['amount', 'allocation', 'over'].includes(problem) ? `${problem}Paid` : problem}`), 'error');
-    save.mutate();
+    setCashLimit(null);
+    save.mutate(false);
   };
   const suggest = () => {
     if (!amt || !open.data) return;
@@ -293,6 +298,14 @@ export default function ReceiptDialog({ api, kind = 'receipt', contactId: fixedC
               </p>
             ) : null}
           </fieldset>
+        )}
+        {cashLimit && (
+          <div role="alert" className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
+            <p className="font-medium">{t(cashLimit.section === '269ST' ? 'payments.cashLimit.receipt' : 'payments.cashLimit.payment', { amount: plain(cashLimit.total) })}</p>
+            <Button type="button" variant="secondary" size="sm" className="mt-2" loading={save.isPending} onClick={() => save.mutate(true)}>
+              {t('payments.cashLimit.recordAnyway')}
+            </Button>
+          </div>
         )}
       </form>
     </Modal>

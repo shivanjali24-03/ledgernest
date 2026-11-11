@@ -1,4 +1,4 @@
-import { currencyDigits, paymentNumber, pdfTableBytes, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind, chequePdfBytes, type PaymentMode } from '@ledgernest/shared';
+import { currencyDigits, paymentNumber, pdfTableBytes, receiptSchema, todayIn, toBase, vendorPaymentSchema, type PaymentKind, chequePdfBytes, type PaymentMode, cashLimitBreach } from '@ledgernest/shared';
 import { demoApprovalCheck } from '../approvals/demoApprovalsApi';
 import { ApiError } from '../auth/client';
 import { demoAccountRows } from '../accounts/demoAccountsApi';
@@ -53,7 +53,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     if (!canManage()) throw new ApiError('forbidden', 403, undefined, undefined, { missing: ['payments.manage'] });
   };
   /** Receipts credit invoices' receivables; payments debit bills' payables. The rest is an advance. */
-  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; mode?: PaymentMode | null; instrumentNo?: string | null; instrumentDate?: string | null; drawnOn?: string | null; notes: string | null; allocations: { documentId: string; amount: number }[]; tds?: { section: string; ratePpm: number; base: number; amount: number; accountId: string } | null }) => {
+  const settle = async (kind: PaymentKind, d: { contactId: string; date: string; bankAccountId: string; amount: number; rate: string | null; reference: string | null; mode?: PaymentMode | null; instrumentNo?: string | null; instrumentDate?: string | null; drawnOn?: string | null; acknowledgeCashLimit?: boolean; notes: string | null; allocations: { documentId: string; amount: number }[]; tds?: { section: string; ratePpm: number; base: number; amount: number; accountId: string } | null }) => {
     guard();
     const receipt = kind === 'receipt';
     const contact = demoContactRows().find((c) => c.id === d.contactId);
@@ -67,6 +67,14 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
     const mode = d.mode ?? (bank.subtype === 'cash' ? 'cash' : null);
     if (mode && (mode === 'cash') !== (bank.subtype === 'cash')) throw refuse(400, 'mode_account', { field: mode === 'cash' ? 'bankAccountId' : 'mode' });
     const instrument = mode === 'cheque' || mode === 'dd';
+    // Cash in rupees over the Income-tax limits (s.269ST, s.40A(3)): only when confirmed
+    if (mode === 'cash' && !currency && !d.acknowledgeCashLimit) {
+      const rows = load().filter((p) => p.status === 'posted' && p.kind === kind && p.contact.id === d.contactId && p.mode === 'cash');
+      const sameDay = rows.filter((p) => p.date === d.date).reduce((t, p) => t + p.amount, 0);
+      const perInvoice = receipt ? d.allocations.map((a) => rows.flatMap((p) => p.allocations).filter((x) => x.documentId === a.documentId).reduce((t, x) => t + x.amount, 0) + a.amount) : [];
+      const breach = cashLimitBreach({ kind, amount: d.amount, sameDay, perInvoice });
+      if (breach) throw new ApiError('conflict', 409, undefined, undefined, { reason: 'cash_limit', ...breach });
+    }
     // TDS: vendor payments in rupees, owed on a tax or current liability account
     const tds = d.tds ?? null;
     const tdsAccount = tds ? demoAccountRows().find((a) => a.id === tds.accountId) : undefined;
@@ -167,6 +175,19 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
           .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
           .map((b) => ({ id: b.id, number: b.number!, vendorReference: b.vendorReference, issueDate: b.billDate, dueDate: b.dueDate, currency: b.currency, subtotal: b.subtotal, total: b.total, balance: b.balance })),
       ),
+    cashLimits: (from, to) =>
+      wait(() => {
+        const days = new Map<string, Stored[]>();
+        for (const p of load().filter((x) => x.status === 'posted' && x.mode === 'cash' && !x.currency && x.date >= from && x.date <= to)) {
+          const k = `${p.kind}|${p.contact.id}|${p.date}`;
+          days.set(k, [...(days.get(k) ?? []), p]);
+        }
+        const items = [...days.values()].flatMap((g) => {
+          const b = cashLimitBreach({ kind: g[0]!.kind, amount: g.reduce((t, p) => t + p.amount, 0), sameDay: 0 });
+          return b ? [{ ...b, kind: g[0]!.kind, date: g[0]!.date, contact: g[0]!.contact, payments: g.map((p) => ({ id: p.id, number: p.number, amount: p.amount })) }] : [];
+        });
+        return { from, to, items: items.sort((a, b) => a.date.localeCompare(b.date) || a.section.localeCompare(b.section)) };
+      }),
     openInvoices: (contactId) =>
       wait(async () =>
         (await demoInvoiceViews())

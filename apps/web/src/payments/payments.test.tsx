@@ -64,6 +64,21 @@ describe('receipts', () => {
     expect(list.items[0]).toMatchObject({ mode: 'cheque', instrumentNo: '004512', drawnOn: 'HDFC Bank' });
   }, 20_000);
 
+  it('stops cash over ₹2 lakh from one customer in a day until confirmed, and lists it for the tax audit', async () => {
+    const { createDemoPaymentsApi } = await import('./demoPaymentsApi');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const { createDemoAccountsApi } = await import('../accounts/demoAccountsApi');
+    const cash = (await createDemoAccountsApi(() => true).list(true)).find((a) => a.subtype === 'cash')!;
+    const kumar = demoContactRows().find((c) => c.name === 'Kumar Logistics')!;
+    const api = createDemoPaymentsApi(() => true);
+    const r = (amount: number, ack = false) => api.receive({ contactId: kumar.id, date: '2026-10-05', bankAccountId: cash.id, amount, reference: null, acknowledgeCashLimit: ack, allocations: [] });
+    await r(1_50_000_00);
+    await expect(r(60_000_00)).rejects.toMatchObject({ details: { reason: 'cash_limit', section: '269ST' } });
+    await r(60_000_00, true);
+    const report = await api.cashLimits('2026-10-01', '2026-10-31');
+    expect(report.items).toEqual([expect.objectContaining({ section: '269ST', total: 2_10_000_00 })]);
+  }, 20_000);
+
   it('records a receipt where the customer kept TDS back: the invoice is paid in full and the TDS is to claim back', async () => {
     renderApp('/invoices');
     await userEvent.click(await screen.findByRole('link', { name: /^INV\/.*\/0001$/ }, { timeout: 4000 }));

@@ -20,6 +20,7 @@ import { SelectField, TextField } from '../../ui/Field';
 import Gstr2bPanel from '../Gstr2bPanel';
 import GstHealthPanel from '../GstHealthPanel';
 import Itc180Panel from '../Itc180Panel';
+import CashLimitsPanel from '../CashLimitsPanel';
 import CashForecastPanel from '../CashForecastPanel';
 import TdsPanel from '../TdsPanel';
 import MsmePanel from '../MsmePanel';
@@ -380,6 +381,7 @@ export default function Reports() {
             <p className="flex-1 pb-2 text-sm text-ink-500">{t(tdsSide === 'payable' ? 'reports.tds.hint' : 'reports.tds.hintReceivable')}</p>
           </div>
           <TdsPanel side={tdsSide} data={tdsReport.data} isPending={tdsReport.isPending} isError={tdsReport.isError} onRetry={() => void tdsReport.refetch()} />
+          <CashLimitsPanel from={from} to={to} />
         </motion.div>
       ) : tab === 'msme' ? (
         <motion.div variants={fadeUp} className="space-y-4" role="tabpanel">

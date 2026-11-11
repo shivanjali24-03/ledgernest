@@ -2079,6 +2079,20 @@
         "reverse": "Credit to reverse",
         "reclaim": "Credit to take back"
       }
+    },
+    "cashLimits": {
+      "title": "Cash over the Income-tax limits",
+      "hint": "Days a person paid you ₹2,00,000 or more in cash (s.269ST), or you paid them over ₹10,000 in cash (s.40A(3)): for the tax audit, Form 3CD.",
+      "none": "No cash crossed the limits in these dates.",
+      "section": "Rule",
+      "date": "Day",
+      "person": "Person",
+      "documents": "Receipts and payments",
+      "total": "Cash that day",
+      "sections": {
+        "r269st": "s.269ST, cash received",
+        "r40a3": "s.40A(3), cash paid"
+      }
     }
   },
   "taxes": {
@@ -3143,6 +3157,11 @@
       "upi": "UPI",
       "card": "Card",
       "other": "Other"
+    },
+    "cashLimit": {
+      "receipt": "This takes cash from them to {{amount}} in a day or for one invoice: receiving ₹2,00,000 or more in cash is barred (Income-tax Act s.269ST), with a penalty of the whole amount. Record it only if it really happened.",
+      "payment": "Cash paid to them today comes to {{amount}}, over ₹10,000: the expense can’t be deducted (s.40A(3)). Record it only if it really happened.",
+      "recordAnyway": "It happened: record it"
     }
   },
   "bills": {

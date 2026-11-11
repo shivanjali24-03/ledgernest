@@ -51,6 +51,8 @@ export interface OpenInvoice {
 export interface PaymentsApi {
   list(q: { kind?: PaymentKind; contactId?: string; page: number; pageSize: number }): Promise<{ total: number; page: number; pageSize: number; items: Payment[] }>;
   openInvoices(contactId: string): Promise<OpenInvoice[]>;
+  /** Days cash crossed the Income-tax limits (s.269ST, s.40A(3)) */
+  cashLimits(from: string, to: string): Promise<CashLimitsReport>;
   openBills(contactId: string): Promise<OpenInvoice[]>;
   receive(input: ReceiptInput): Promise<Payment>;
   pay(input: VendorPaymentInput): Promise<Payment>;
@@ -61,4 +63,11 @@ export interface PaymentsApi {
   cheque(id: string, options: { offsetX: number; offsetY: number; crossed: boolean }): Promise<{ blob: Blob; filename: string }>;
   /** Emails a posted receipt to the customer as a PDF; the demo only pretends */
   email(id: string, input: { email?: string; message?: string }): Promise<{ sentTo: string }>;
+}
+
+/** What GET /payments/cash-limits returns */
+export interface CashLimitsReport {
+  from: string;
+  to: string;
+  items: { section: '269ST' | '40A(3)'; limit: number; total: number; basis: 'day' | 'invoice'; kind: PaymentKind; date: string; contact: { id: string; name: string }; payments: { id: string; number: string; amount: number }[] }[];
 }

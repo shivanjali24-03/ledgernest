@@ -71,6 +71,31 @@ export function paymentModeText(v: { mode: PaymentMode | null; instrumentNo: str
   return v.instrumentNo ? `${label[v.mode]}, ${v.instrumentNo}` : label[v.mode];
 }
 
+/**
+ * Cash limits in the Income-tax Act. s.269ST: nobody may receive ₹2,00,000 or more in cash from one person in a day,
+ * or for one transaction (one invoice) — the penalty under s.271DA is the whole amount. s.40A(3): an expense paid in
+ * cash to one person above ₹10,000 in a day (₹35,000 to a transporter) can't be deducted.
+ */
+export const CASH_RECEIPT_LIMIT = 2_00_000_00;
+export const CASH_EXPENSE_LIMIT = 10_000_00;
+export const CASH_EXPENSE_LIMIT_TRANSPORT = 35_000_00;
+
+export type CashLimitBreach = { section: '269ST' | '40A(3)'; limit: number; total: number; basis: 'day' | 'invoice' };
+
+/** Whether a cash receipt or payment crosses a limit, counting what the person already paid or was paid in cash */
+export function cashLimitBreach(v: { kind: PaymentKind; amount: number; sameDay: number; perInvoice?: number[]; transporter?: boolean }): CashLimitBreach | null {
+  if (v.kind === 'receipt') {
+    const day = v.sameDay + v.amount;
+    if (day >= CASH_RECEIPT_LIMIT) return { section: '269ST', limit: CASH_RECEIPT_LIMIT, total: day, basis: 'day' };
+    const inv = Math.max(0, ...(v.perInvoice ?? []));
+    if (inv >= CASH_RECEIPT_LIMIT) return { section: '269ST', limit: CASH_RECEIPT_LIMIT, total: inv, basis: 'invoice' };
+    return null;
+  }
+  const limit = v.transporter ? CASH_EXPENSE_LIMIT_TRANSPORT : CASH_EXPENSE_LIMIT;
+  const day = v.sameDay + v.amount;
+  return day > limit ? { section: '40A(3)', limit, total: day, basis: 'day' } : null;
+}
+
 const modeCheck = (v: { mode: PaymentMode | null; instrumentNo: string | null; instrumentDate: string | null; date: string }, ctx: z.RefinementCtx) => {
   const p = paymentModeProblem(v);
   if (p) ctx.addIssue({ code: 'custom', path: [p.field], message: p.message });
@@ -88,6 +113,8 @@ export const receiptSchema = z
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
     ...modeShape,
+    /** Recorded although it crosses a cash limit (s.269ST, s.40A(3)): it happened, and the books say so */
+    acknowledgeCashLimit: z.boolean().optional().default(false),
     notes: text(500),
     /** TDS the customer kept back and pays the government for you: claimed back against Form 26AS */
     tds: tdsSchema,
@@ -113,6 +140,8 @@ export const vendorPaymentSchema = z
     rate: rateSchema.nullable().optional().default(null),
     reference: text(64),
     ...modeShape,
+    /** Recorded although it crosses a cash limit (s.269ST, s.40A(3)): it happened, and the books say so */
+    acknowledgeCashLimit: z.boolean().optional().default(false),
     notes: text(500),
     /** Tax deducted at source: kept back from the bank payment, owed to the government instead */
     tds: tdsSchema,
