@@ -4808,5 +4808,11 @@
       "vehicleNo": "Vehicle no.",
       "termsOfDelivery": "Terms of delivery"
     }
+  },
+  "shipTo": {
+    "toggle": "Ship to a different address",
+    "title": "Ship to",
+    "name": "Receiver",
+    "posHint": "Goods delivered to the customer’s own place in this state are supplied here, so it’s the place of supply. If they go to someone else on the customer’s say-so, choose the customer’s state instead (bill to, ship to)."
   }
 }

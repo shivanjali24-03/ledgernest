@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment } from '@ledgernest/shared';
+import { currencyDigits, findIndianState, parseSerials, INDIAN_STATES, invoiceAmounts, percentToPpm, parseQuantity, toMinor, todayIn, type DispatchDetails, type Instalment, type ShipTo } from '@ledgernest/shared';
 import { Plus, Send, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { useContactsApi } from '../contacts/useContactsApi';
 import type { Contact } from '../contacts/types';
 import SerialsInput from '../inventory/SerialsInput';
 import InstalmentsEditor from './InstalmentsEditor';
+import IndianAddressFields from '../geo/IndianAddressFields';
 import UnitSelect from '../items/UnitSelect';
 import { priceInUnit } from '../items/unitPrice';
 import CostCentreSelect from '../cost-centres/CostCentreSelect';
@@ -44,6 +45,8 @@ export interface SalesDraft {
   instalments?: Instalment[] | null;
   /** Order and dispatch details (invoices) */
   dispatch?: DispatchDetails | null;
+  /** Where the goods go (invoices) */
+  shipTo?: ShipTo | null;
   lines: { id: string; item: { id: string } | null; description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { id: string } | null; account: { id: string } | null; costCentre?: { id: string } | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftPayload {
@@ -57,6 +60,7 @@ export interface SalesDraftPayload {
   interestRateBp?: number | null;
   instalments?: Instalment[] | null;
   dispatch?: Partial<DispatchDetails> | null;
+  shipTo?: ShipTo | null;
   lines: { itemId: string | null; description: string; quantity: string; unitPrice: number; discount: string | number; taxGroupId: string | null; accountId: string | null; costCentreId: string | null; batchId?: string | null; serials?: string[]; inAltUnit?: boolean }[];
 }
 export interface SalesDraftConfig {
@@ -146,6 +150,8 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
   const [instalments, setInstalments] = useState<Instalment[] | null>(invoice?.instalments ?? null);
   const [dispatch, setDispatch] = useState<Partial<DispatchDetails>>(invoice?.dispatch ?? {});
   const [showDispatch, setShowDispatch] = useState(!!invoice?.dispatch);
+  const [shipTo, setShipTo] = useState<ShipTo | null>(invoice?.shipTo ?? null);
+  const shipToState = shipTo && (shipTo.country ?? 'IN') === 'IN' ? (findIndianState(shipTo.region)?.code ?? null) : null;
   const [lines, setLines] = useState<Line[]>(
     invoice?.lines.length
       ? invoice.lines.map((l) => ({ key: l.id, itemId: l.item?.id ?? '', description: l.description, quantity: l.quantity, unitPrice: plain(l.unitPrice), discount: l.discount ? String(l.discount) : '', taxGroupId: l.taxGroup?.id ?? '', accountId: l.account?.id ?? '', costCentreId: l.costCentre?.id ?? '', batchId: l.batchId ?? '', serials: (l.serials ?? []).join('\n'), inAltUnit: l.inAltUnit ?? false }))
@@ -155,7 +161,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
 
   const india = settings?.country === 'IN';
   const orgState = india ? (findIndianState(settings?.address.region)?.code ?? null) : null;
-  const pos = placeOfSupply || customer?.stateCode || null;
+  const pos = placeOfSupply || shipToState || customer?.stateCode || null;
   const supply = supplyFor(orgState, pos);
   const groups = useMemo(() => taxes.data?.groups ?? [], [taxes.data]);
   const set = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -197,7 +203,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
     notes,
     placeOfSupply: placeOfSupply || null,
     ...(config.series ? { seriesId: seriesId || null } : {}),
-    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null } : {}),
+    ...(config.interest ? { instalments: instalments?.length ? instalments : null, dispatch: Object.values(dispatch).some((x) => x) ? dispatch : null, shipTo: shipTo && (shipTo.line1 || shipTo.city || shipTo.postalCode) ? shipTo : null } : {}),
     ...(config.interest ? { interestRateBp: interestRate.trim() ? Math.round(Number(interestRate.replace('%', '').trim()) * 100) : null } : {}),
     lines: filled.map((l) => ({ itemId: l.itemId || null, description: l.description, quantity: l.quantity, unitPrice: l.price ?? 0, discount: l.discount || 0, taxGroupId: l.group?.id ?? null, accountId: l.accountId || null, costCentreId: l.costCentreId || null, inAltUnit: l.inAltUnit, ...(config.batches ? { batchId: l.batchId || null, serials: items.data?.find((x) => x.id === l.itemId)?.trackSerials ? parseSerials(l.serials) : [] } : {}) })),
   });
@@ -255,7 +261,7 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         {india && (
           <SelectField
             label={t('invoices.fields.placeOfSupply')}
-            value={placeOfSupply || customer?.stateCode || ''}
+            value={placeOfSupply || shipToState || customer?.stateCode || ''}
             onChange={(e) => setPlaceOfSupply(e.target.value)}
             disabled={!canManage}
             options={[{ value: '', label: t('invoices.outsideIndia') }, ...INDIAN_STATES.map((s) => ({ value: s.code, label: `${s.code} · ${s.name}` }))]}
@@ -392,6 +398,32 @@ export default function SalesDraftForm({ config }: { config: SalesDraftConfig })
         </div>
       </Card>
 
+      {config.interest && (
+        <Card className="p-5">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={!!shipTo}
+              disabled={!canManage}
+              onChange={(e) => {
+                const s = customer?.shippingAddress;
+                setShipTo(e.target.checked ? { name: null, line1: s?.line1 ?? null, line2: s?.line2 ?? null, city: s?.city ?? null, region: s?.region ?? null, postalCode: s?.postalCode ?? null, country: s?.country ?? 'IN' } : null);
+              }}
+              className="size-4 rounded accent-brand-600"
+            />
+            {t('shipTo.toggle')}
+          </label>
+          {shipTo && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <TextField label={t('shipTo.name')} value={shipTo.name ?? ''} onChange={(e) => setShipTo({ ...shipTo, name: e.target.value || null })} disabled={!canManage} dir="auto" placeholder={customer?.name} />
+              </div>
+              <IndianAddressFields value={{ line1: shipTo.line1 ?? '', line2: shipTo.line2 ?? '', city: shipTo.city ?? '', region: shipTo.region ?? '', postalCode: shipTo.postalCode ?? '' }} onChange={(patch) => setShipTo((x) => (x ? { ...x, ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v || null])) } : x))} disabled={!canManage} />
+              {shipToState && shipToState !== customer?.stateCode && <p className="text-xs text-ink-500 sm:col-span-2">{t('shipTo.posHint')}</p>}
+            </div>
+          )}
+        </Card>
+      )}
       {config.interest && (
         <Card className="p-5">
           <button type="button" className="text-sm font-medium text-brand-700 hover:underline dark:text-brand-300" aria-expanded={showDispatch} onClick={() => setShowDispatch((x) => !x)}>

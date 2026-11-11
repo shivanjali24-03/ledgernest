@@ -144,6 +144,18 @@ export function dispatchLines(d: Partial<DispatchDetails> | null | undefined): s
   return pairs.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
 }
 
+/** A ship-to address on an invoice: who receives the goods there, and where */
+export const shipToSchema = z.object({
+  name: text(160),
+  line1: text(120),
+  line2: text(120),
+  city: text(80),
+  region: text(80),
+  postalCode: text(16),
+  country: z.preprocess((v) => (typeof v === 'string' ? v.trim().toUpperCase() || null : v), z.string().regex(/^[A-Z]{2}$/).nullable().optional().default(null)),
+});
+export type ShipTo = z.output<typeof shipToSchema>;
+
 export const invoiceDraftSchema = z
   .object({
     contactId: z.uuid(),
@@ -160,6 +172,8 @@ export const invoiceDraftSchema = z
     notes: text(1000),
     /** Order and dispatch details (goods) */
     dispatch: dispatchSchema.nullable().optional().default(null),
+    /** Where the goods go, when not the customer's billing address; its state is the usual place of supply */
+    shipTo: shipToSchema.nullable().optional().default(null),
     /** GST state code of the place of supply; omitted = the customer's state */
     placeOfSupply: z
       .string()

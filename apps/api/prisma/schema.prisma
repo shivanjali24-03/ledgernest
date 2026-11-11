@@ -812,6 +812,8 @@ model Invoice {
   instalments         Json?
   /// Order and dispatch details: buyer's order, delivery note, transporter, LR, vehicle, destination, terms
   dispatch            Json?
+  /// Where the goods go, when not the customer's billing address: { name, line1, line2, city, region, postalCode, country }
+  shipTo              Json?     @map("ship_to")
   fiscalYearId        String?   @map("fiscal_year_id") @db.Uuid
   status              String    @default("draft") /// draft | issued | void
   issueDate           DateTime  @map("issue_date") @db.Date

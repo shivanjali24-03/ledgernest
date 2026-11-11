@@ -415,6 +415,12 @@ export class InvoiceRemindersService
           }),
           `Bill to: ${inv.contact.legalName ?? inv.contact.name}${inv.contact.taxId ? ` · ${inv.contact.taxId}` : ''}`,
           address(inv.contact.billingAddress),
+          // Where the goods go, when not the billing address
+          ...(inv.shipTo
+            ? [
+                `Ship to: ${[inv.shipTo.name, inv.shipTo.line1, inv.shipTo.line2, inv.shipTo.city, inv.shipTo.region, inv.shipTo.postalCode].filter(Boolean).join(', ')}`,
+              ]
+            : []),
           `Invoice date ${inv.issueDate} · Due ${inv.dueDate}${inv.reference ? ` · Ref ${inv.reference}` : ''}${pos ? ` · Place of supply: ${pos.name} (${pos.code})` : ''}`,
           // Order and dispatch details, two to a line
           ...dispatchLines(inv.dispatch)

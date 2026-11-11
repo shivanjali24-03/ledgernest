@@ -29,6 +29,7 @@ import {
   instalmentsProblem,
   type Instalment,
   type DispatchDetails,
+  type ShipTo,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -74,6 +75,8 @@ export type DraftIn = {
   instalments?: Instalment[] | null;
   /** Order and dispatch details */
   dispatch?: DispatchDetails | null;
+  /** Where the goods go, when not the billing address */
+  shipTo?: ShipTo | null;
   issueDate: string;
   dueDate: string | null;
   reference: string | null;
@@ -142,6 +145,7 @@ const select = {
   interestGraceDays: true,
   instalments: true,
   dispatch: true,
+  shipTo: true,
   contact: {
     select: {
       id: true,
@@ -470,6 +474,8 @@ export class InvoicesService {
       ),
       /** Order and dispatch details */
       dispatch: (i.dispatch as DispatchDetails | null) ?? null,
+      /** Where the goods go, when not the billing address */
+      shipTo: (i.shipTo as ShipTo | null) ?? null,
       /** Paid in instalments: each with what's been paid on it and where it stands today */
       instalments: plan?.length
         ? instalmentStatus(plan, v.amountPaid, today)
@@ -752,7 +758,13 @@ export class InvoicesService {
       );
     const orgState =
       org.country === 'IN' ? (findIndianState(org.region)?.code ?? null) : null;
-    const placeOfSupply = input.placeOfSupply ?? contact.stateCode;
+    // Goods go to the ship-to address: its state is the usual place of supply (IGST Act s.10(1)(a)); it can be changed
+    const shipToState =
+      input.shipTo && (input.shipTo.country ?? 'IN') === 'IN'
+        ? (findIndianState(input.shipTo.region)?.code ?? null)
+        : null;
+    const placeOfSupply =
+      input.placeOfSupply ?? shipToState ?? contact.stateCode;
     const supply =
       orgState && placeOfSupply
         ? orgState === placeOfSupply
@@ -1046,6 +1058,9 @@ export class InvoicesService {
           dispatch: input.dispatch
             ? (input.dispatch as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
+          shipTo: input.shipTo
+            ? (input.shipTo as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
           recurringInvoiceId: input.recurringInvoiceId ?? null,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -1110,6 +1125,9 @@ export class InvoicesService {
             : Prisma.DbNull,
           dispatch: input.dispatch
             ? (input.dispatch as unknown as Prisma.InputJsonValue)
+            : Prisma.DbNull,
+          shipTo: input.shipTo
+            ? (input.shipTo as unknown as Prisma.InputJsonValue)
             : Prisma.DbNull,
           receivableAccountId: p.receivableAccountId,
           subtotal: BigInt(p.amounts.subtotal),
@@ -1196,6 +1214,7 @@ export class InvoicesService {
         receivableAccountId: i.receivableAccountId,
         rate: i.rate && rateText(i.rate),
         instalments: (i.instalments as Instalment[] | null) ?? null,
+        shipTo: (i.shipTo as ShipTo | null) ?? null,
         lines: i.lines.map((l) => ({
           itemId: l.itemId,
           description: l.description,

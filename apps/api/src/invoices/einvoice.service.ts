@@ -16,6 +16,7 @@ import {
   type EinvoiceIrnInput,
   type EwayTransport,
   type GstHeads,
+  findIndianState,
 } from '@ledgernest/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -39,6 +40,7 @@ const invoiceSelect = {
   issueDate: true,
   currency: true,
   placeOfSupply: true,
+  shipTo: true,
   fiscalYear: { select: { name: true } },
   fullNumber: true,
   contact: {
@@ -111,6 +113,7 @@ export class EinvoiceService {
       issueDate: Date;
       currency: string | null;
       placeOfSupply: string | null;
+      shipTo?: unknown;
       fullNumber: string | null;
       fiscalYear: { name: string } | null;
       contact: {
@@ -156,6 +159,21 @@ export class EinvoiceService {
         city: a.city ?? a.region ?? null,
         pin: a.postalCode ?? null,
       },
+      // Goods delivered elsewhere: the ship-to address, with its state for the portals
+      shipTo: i.shipTo
+        ? (() => {
+            const s = i.shipTo as Record<string, string | null>;
+            return {
+              gstin: null,
+              legalName: s.name ?? i.contact.legalName ?? i.contact.name,
+              address1: s.line1 ?? null,
+              address2: s.line2 ?? null,
+              city: s.city ?? s.region ?? null,
+              pin: s.postalCode ?? null,
+              stateCode: findIndianState(s.region)?.code ?? null,
+            };
+          })()
+        : null,
       lines: i.lines.map((l) => {
         const rates = l.taxGroup?.rates ?? [];
         const heads = zeroHeads();

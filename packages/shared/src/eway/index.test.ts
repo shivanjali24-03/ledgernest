@@ -61,6 +61,16 @@ describe('E-way bill JSON', () => {
     expect(b.itemList[0]).toMatchObject({ cgstRate: 9, sgstRate: 9, igstRate: 0 });
   });
 
+  it('sends goods to the ship-to address as Bill To - Ship To, and checks that address', async () => {
+    const shipTo = { gstin: null, legalName: 'Kumar Warehouse', address1: 'Plot 4, Hosur Road', city: 'Hosur', pin: '635109', stateCode: '33' };
+    const bill = buildEwayBill(input({ shipTo }), road);
+    expect(bill).toMatchObject({ transType: 2, toPlace: 'Hosur', toPincode: 635109, actualToStateCode: 33, toStateCode: 29, toGstin: '29AAKCK4821R1Z4' });
+    expect(ewayProblems(input({ shipTo: { ...shipTo, pin: '1234' } }), road)).toContainEqual({ code: 'pin', party: 'buyer' });
+    const { buildEinvoice } = await import('../einvoice/index.js');
+    expect(buildEinvoice(input({ shipTo })).ShipDtls).toEqual({ LglNm: 'Kumar Warehouse', Addr1: 'Plot 4, Hosur Road', Loc: 'Hosur', Pin: 635109, Stcd: '33' });
+    expect(buildEinvoice(input()).ShipDtls).toBeUndefined();
+  });
+
   it('is needed for goods over ₹50,000 with tax, whatever the services come to', () => {
     expect(ewayRequired(input())).toBe(true);
     expect(ewayRequired(input({ lines: [input().lines[2]!] }))).toBe(false);

@@ -20,6 +20,8 @@ export interface EinvoiceParty {
   pin: string | null;
   phone?: string | null;
   email?: string | null;
+  /** For a ship-to address: its two-digit state code */
+  stateCode?: string | null;
 }
 
 export interface EinvoiceLine {
@@ -47,6 +49,8 @@ export interface EinvoiceInput {
   placeOfSupply: string | null;
   seller: EinvoiceParty;
   buyer: EinvoiceParty;
+  /** Where the goods go, when not the buyer's billing address */
+  shipTo?: EinvoiceParty | null;
   lines: EinvoiceLine[];
 }
 
@@ -133,6 +137,20 @@ export function buildEinvoice(i: EinvoiceInput) {
     DocDtls: { Typ: i.kind === 'credit_note' ? 'CRN' : 'INV', No: i.number, Dt: ddmmyyyy(i.date) },
     SellerDtls: party(i.seller),
     BuyerDtls: { ...party(i.buyer), Pos: i.placeOfSupply! },
+    // Goods delivered elsewhere: the ship-to address, its state from the address (it may have no GSTIN)
+    ...(i.shipTo && i.shipTo.stateCode
+      ? {
+          ShipDtls: {
+            ...(i.shipTo.gstin ? { Gstin: i.shipTo.gstin } : {}),
+            LglNm: cut(i.shipTo.legalName, 100),
+            Addr1: cut(i.shipTo.address1, 100),
+            ...(cut(i.shipTo.address2, 100) ? { Addr2: cut(i.shipTo.address2, 100) } : {}),
+            Loc: cut(i.shipTo.city, 50),
+            Pin: Number((i.shipTo.pin ?? '0').replace(/\s/g, '')),
+            Stcd: i.shipTo.stateCode,
+          },
+        }
+      : {}),
     ItemList: items,
     ValDtls: {
       AssVal: rupees(sum((l) => l.amount)),
