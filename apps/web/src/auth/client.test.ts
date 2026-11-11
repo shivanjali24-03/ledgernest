@@ -77,6 +77,14 @@ describe('auth client', () => {
     expect(await client.refresh()).toBe(false);
   });
 
+  it('waits and tries again when refresh is rate limited, instead of losing the session', async () => {
+    const calls: number[] = [];
+    const responses = [new Response('{}', { status: 429, headers: { 'Retry-After': '0' } }), new Response(JSON.stringify({ accessToken: 'tok', expiresIn: 900 }), { status: 200 })];
+    const client = createAuthClient(BASE, async () => (calls.push(1), responses.shift()!));
+    expect(await client.refresh()).toBe(true);
+    expect(calls).toHaveLength(2);
+  });
+
   it('logout forgets the access token even if the network fails', async () => {
     const { api, client } = setup();
     await client.login(ME.user.email, 'Right-Password-1');

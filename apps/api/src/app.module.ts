@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { UserThrottlerGuard } from './common/user-throttler.guard.js';
 import { AccessModule } from './access/access.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -58,7 +59,8 @@ import { PayrollModule } from './payroll/payroll.module.js';
       cache: true,
     }),
     // Default limit: 120 requests per minute per client; sensitive routes (login) set stricter limits
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    // Per person when signed in (see UserThrottlerGuard), per address otherwise
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -100,7 +102,7 @@ import { PayrollModule } from './payroll/payroll.module.js';
     PlatformModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: UserThrottlerGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })
