@@ -43,7 +43,8 @@
       "debitNotes": "Debit notes",
       "collections": "Collections",
       "yearEnd": "Year-end close",
-      "purchaseOrders": "Purchase orders"
+      "purchaseOrders": "Purchase orders",
+      "payroll": "Payroll"
     },
     "soon": "Soon"
   },
@@ -580,7 +581,8 @@
       "reports": "Reports",
       "audit": "Audit",
       "approvals": "Approvals",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "payroll": "Payroll"
     },
     "org_settings_view": "View settings",
     "org_settings_manage": "Change settings",
@@ -616,7 +618,9 @@
     "audit_view": "See the audit log",
     "approvals_manage": "Set approval rules",
     "approvals_approve": "Approve and send back",
-    "integrations_manage": "Manage API keys and webhooks"
+    "integrations_manage": "Manage API keys and webhooks",
+    "payroll_view": "See salaries and payslips",
+    "payroll_manage": "Run payroll"
   },
   "audit": {
     "title": "Audit log",
@@ -5340,5 +5344,115 @@
       "no_primary_gstin": "Enter the organisation’s own GSTIN first.",
       "failed": "That didn’t work. Check the GSTIN and try again."
     }
+  },
+  "payroll": {
+    "title": "Payroll",
+    "description": "Employees, their monthly salary, and each month’s payslips: PF, ESI, professional tax and TDS worked out, posted at the month’s end and paid from the bank.",
+    "addEmployee": "Add employee",
+    "runPayroll": "Run payroll",
+    "view": "Show",
+    "tabs": {
+      "runs": "Pay runs",
+      "employees_one": "Employees ({{count}})",
+      "employees_other": "Employees ({{count}})"
+    },
+    "noEmployees": "No employees yet",
+    "noEmployeesBody": "Add the people on the payroll with their monthly salary.",
+    "noRuns": "No pay runs yet",
+    "noRunsBody": "Run payroll for a month to make its payslips.",
+    "addFirst": "Add employees first, then run payroll for a month.",
+    "columns": {
+      "employee": "Employee",
+      "joined": "Joined",
+      "monthly": "Monthly gross",
+      "days": "Days paid",
+      "gross": "Gross",
+      "deductions": "Deductions",
+      "net": "Net pay"
+    },
+    "edit": "Edit {{name}}",
+    "editTitle": "Edit {{name}}",
+    "saveEmployee": "Save employee",
+    "saved": "{{name}} saved",
+    "runTitle": "Salaries for {{month}}",
+    "runTitleNew": "Run payroll for a month",
+    "runBody": "Payslips for everyone on the payroll that month, at their salary, less any days not paid. Nothing is posted until you post it.",
+    "lopTitle": "Days not paid (loss of pay)",
+    "lopFor": "{{name}}",
+    "ran": "Payroll for {{month}} drafted",
+    "statuses": {
+      "draft": "Draft",
+      "posted": "Posted",
+      "paid": "Paid"
+    },
+    "post": "Post",
+    "unpost": "Undo posting",
+    "delete": "Delete",
+    "pay": "Pay salaries",
+    "posted": "Salaries for {{month}} posted",
+    "unposted": "Salaries for {{month}} back to a draft",
+    "deleted": "Run for {{month}} deleted",
+    "paid": "Salaries for {{month}} paid",
+    "payTitle": "Pay salaries for {{month}}",
+    "payBody": "{{amount}} net pay leaves the bank account.",
+    "payslipsOf": "Payslips for {{month}}",
+    "payslipFor": "Payslip of {{name}}",
+    "totals": "Totals",
+    "dues": {
+      "gross": "Gross",
+      "net": "Net pay",
+      "employerCost": "Employer PF and ESI",
+      "pf": "PF due",
+      "esi": "ESI due",
+      "pt": "Professional tax due",
+      "tds": "TDS due (s.192)"
+    },
+    "lines": {
+      "pf": "PF",
+      "esi": "ESI",
+      "pt": "PT",
+      "tds": "TDS"
+    },
+    "fields": {
+      "code": "Employee code",
+      "name": "Name",
+      "designation": "Designation",
+      "dateOfJoining": "Date of joining",
+      "state": "State worked in",
+      "stateHint": "Its professional tax applies.",
+      "gender": "Gender",
+      "basic": "Basic (₹ a month)",
+      "hra": "House rent allowance (₹)",
+      "specialAllowance": "Special allowance (₹)",
+      "otherAllowance": "Other allowances (₹)",
+      "taxRegime": "Income tax regime",
+      "pf": "Provident fund",
+      "esi": "ESI (up to ₹21,000 gross)",
+      "pt": "Professional tax",
+      "month": "Month",
+      "paidOn": "Paid on",
+      "bank": "From account"
+    },
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "regimes": {
+      "new": "New regime",
+      "old": "Old regime"
+    },
+    "errors": {
+      "code_taken": "Another employee has this code.",
+      "run_exists": "There’s already a run for that month.",
+      "no_employees": "No one is on the payroll that month.",
+      "not_draft": "Only a draft run can be changed.",
+      "not_posted": "Post the run before paying it.",
+      "already_paid": "This run is paid.",
+      "bank_invalid": "Choose a bank or cash account in rupees.",
+      "before_month": "Salaries can’t be paid before their month.",
+      "failed": "That didn’t work. Try again."
+    },
+    "newEmployee": "New employee"
   }
 }
