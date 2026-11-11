@@ -263,6 +263,31 @@ describe('Credit notes (e2e)', () => {
     ).toBe('2');
   });
 
+  it('gives the credit note as a PDF: against which invoice and when, with the GST', async () => {
+    const r = await as()
+      .get(`/credit-notes/${cn.one!.id}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(r.headers['content-disposition']).toContain(
+      'credit-note-cn-2026-27-0001.pdf',
+    );
+    const text = (r.body as Buffer).toString('latin1');
+    expect(text).toContain('(Credit note CN/2026-27/0001) Tj');
+    expect(text).toMatch(
+      /\(Date 2026-05-12 · Against invoice INV\/2026-27\/\d{4} dated 2026-\d\d-\d\d/,
+    );
+    expect(text).toContain('(Reason: One day not delivered) Tj');
+    expect(text).toContain('(CGST 9%) Tj');
+    expect(text).toContain(
+      '(Amount in words: Indian Rupees Two Thousand Nine Hundred and Fifty Only) Tj',
+    );
+  });
+
   it('refuses crediting more than is left, a line of another invoice, or as an Auditor', async () => {
     const line = inv.a!.lines[0]!.id;
     expect(
