@@ -20,6 +20,8 @@ import {
 import {
   stockAdjustmentSchema,
   stockValuationQuerySchema,
+  expiringQuerySchema,
+  todayIn,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { z } from 'zod';
@@ -31,6 +33,7 @@ import {
 import type { Actor, Tenant } from '../access/types.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { InventoryService } from './inventory.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 const id = new ParseUUIDPipe({ version: '4' });
 
@@ -44,7 +47,10 @@ const id = new ParseUUIDPipe({ version: '4' });
 })
 @Controller('inventory')
 export class InventoryController {
-  constructor(private readonly inventory: InventoryService) {}
+  constructor(
+    private readonly inventory: InventoryService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('valuation')
   @RequirePermission('reports.view')
@@ -58,6 +64,27 @@ export class InventoryController {
     @CurrentTenant() tenant: Tenant,
   ) {
     return this.inventory.valuation(tenant.organizationId, q.asOf);
+  }
+
+  @Get('expiring')
+  @RequirePermission('invoices.view')
+  @ApiOkResponse({
+    description:
+      'Batches with stock that have expired or expire within the days asked (default 90), valued at average cost',
+  })
+  async expiring(
+    @Query(new ZodValidationPipe(expiringQuerySchema)) q: { days: number },
+    @CurrentTenant() tenant: Tenant,
+  ) {
+    const { timeZone } = await this.prisma.organization.findUniqueOrThrow({
+      where: { id: tenant.organizationId },
+      select: { timeZone: true },
+    });
+    return this.inventory.expiring(
+      tenant.organizationId,
+      todayIn(timeZone),
+      q.days,
+    );
   }
 
   @Get('items/:id/movements')

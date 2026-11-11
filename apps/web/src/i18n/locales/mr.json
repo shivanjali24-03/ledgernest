@@ -121,7 +121,9 @@
       "recurring_bills_due": "{{count}} आवर्ती बिले देय",
       "bills_due_soon": "या आठवड्यात {{count}} बिले देय, {{amount}}",
       "msme_due_one": "MSME पुरवठादाराचे 1 बिल 45 दिवसांच्या मर्यादेत भरायचे आहे, {{amount}}",
-      "msme_due_other": "MSME पुरवठादारांची {{count}} बिले 45 दिवसांच्या मर्यादेत भरायची आहेत, {{amount}}"
+      "msme_due_other": "MSME पुरवठादारांची {{count}} बिले 45 दिवसांच्या मर्यादेत भरायची आहेत, {{amount}}",
+      "stock_expiring_one": "स्टॉकच्या 1 बॅचची मुदत संपली आहे किंवा 30 दिवसांत संपेल",
+      "stock_expiring_other": "स्टॉकच्या {{count}} बॅचची मुदत संपली आहे किंवा 30 दिवसांत संपेल"
     },
     "forecast": {
       "title": "13 आठवड्यांत रोख",
@@ -4616,6 +4618,22 @@
       "insufficient_unexpired": "मुदत न संपलेल्या स्टॉकमध्ये फक्त {{onHand}} आहे.",
       "batch_invalid": "ही बॅच या वस्तूची नाही.",
       "batches_need_stock": "ज्या वस्तूंचा स्टॉक ठेवला जातो त्याच बॅचमध्ये ठेवता येतात."
+    },
+    "expiring": {
+      "title": "मुदत संपणारा स्टॉक",
+      "summary": "{{expired}} बॅचची मुदत संपली ({{expiredValue}}), {{expiring}} बॅच {{days}} दिवसांत संपतील ({{expiringValue}}). आधी मुदत संपणारा माल आधी विका, आणि मुदत संपलेला माल निर्लेखित करा किंवा परत करा.",
+      "within": "इतक्या दिवसांत मुदत संपणारे",
+      "days_one": "{{count}} दिवस",
+      "days_other": "{{count}} दिवस",
+      "item": "वस्तू",
+      "onHand": "उपलब्ध",
+      "value": "किंमतीनुसार मूल्य",
+      "daysLeft_one": "{{count}} दिवस शिल्लक",
+      "daysLeft_other": "{{count}} दिवस शिल्लक",
+      "expiredAgo_one": "काल मुदत संपली",
+      "expiredAgo_other": "{{count}} दिवसांपूर्वी मुदत संपली",
+      "none_one": "{{count}} दिवसात कशाचीही मुदत संपत नाही.",
+      "none_other": "{{count}} दिवसांत कशाचीही मुदत संपत नाही."
     }
   }
 }

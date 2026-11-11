@@ -121,7 +121,9 @@
       "recurring_bills_due": "{{count}} recurring bills due",
       "bills_due_soon": "{{count}} bills due this week, {{amount}}",
       "msme_due_one": "1 bill from an MSME supplier to pay within the 45-day limit, {{amount}}",
-      "msme_due_other": "{{count}} bills from MSME suppliers to pay within the 45-day limit, {{amount}}"
+      "msme_due_other": "{{count}} bills from MSME suppliers to pay within the 45-day limit, {{amount}}",
+      "stock_expiring_one": "1 batch of stock has expired or expires within 30 days",
+      "stock_expiring_other": "{{count}} batches of stock have expired or expire within 30 days"
     },
     "forecast": {
       "title": "Cash in 13 weeks",
@@ -4616,6 +4618,22 @@
       "insufficient_unexpired": "Only {{onHand}} in stock that hasn’t expired.",
       "batch_invalid": "That batch isn’t one of the item’s.",
       "batches_need_stock": "Only goods whose stock is tracked can be kept in batches."
+    },
+    "expiring": {
+      "title": "Expiring stock",
+      "summary": "{{expired}} batches expired ({{expiredValue}}), {{expiring}} expiring within {{days}} days ({{expiringValue}}). Sell the earliest first, and write off or return what has expired.",
+      "within": "Expiring within",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "item": "Item",
+      "onHand": "On hand",
+      "value": "Value at cost",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "expiredAgo_one": "expired yesterday",
+      "expiredAgo_other": "expired {{count}} days ago",
+      "none_one": "Nothing expires within {{count}} day.",
+      "none_other": "Nothing expires within {{count}} days."
     }
   }
 }

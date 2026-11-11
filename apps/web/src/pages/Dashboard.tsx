@@ -91,6 +91,7 @@ const ALERT_LINKS: Record<DashboardData['alerts'][number]['kind'], string> = {
   draft_entries: '/journals',
   approvals_waiting: '/approvals',
   low_stock: '/inventory',
+  stock_expiring: '/inventory#expiring',
   quotes_expiring: '/quotes?state=open',
   recurring_bills_due: '/recurring-bills',
   bills_due_soon: '/bills?state=unpaid',

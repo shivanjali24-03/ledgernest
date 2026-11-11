@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
+import { todayIn } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
@@ -367,6 +368,78 @@ describe('Batches with expiry dates (e2e)', () => {
       204,
     );
     expect((await onHand())['PX-OLD']).toBe('4');
+  });
+
+  it('lists stock that has expired or expires soon, valued at average cost, and raises it on the dashboard', async () => {
+    const day = (offset: number) => {
+      const d = new Date(`${todayIn('Asia/Kolkata')}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + offset);
+      return d.toISOString().slice(0, 10);
+    };
+    const syrup = (
+      await post('/items', {
+        name: 'Cough syrup',
+        kind: 'goods',
+        unit: 'BTL',
+        trackStock: true,
+        trackBatches: true,
+        inventoryAccountId: acc.stock,
+        cogsAccountId: acc.cogs,
+      }).expect(201)
+    ).body.id as string;
+    for (const [batchNo, expiryDate] of [
+      ['CS-GONE', day(-5)],
+      ['CS-SOON', day(10)],
+      ['CS-LATER', day(200)],
+    ] as const)
+      await post('/inventory/adjustments', {
+        itemId: syrup,
+        date: day(-30),
+        direction: 'in',
+        quantity: '2',
+        unitCost: 50_00,
+        accountId: acc.writeoff,
+        reason: 'Opening stock',
+        batchNo,
+        expiryDate,
+      }).expect(201);
+    const r = (await get('/inventory/expiring?days=30').expect(200)).body as {
+      days: number;
+      rows: {
+        item: string;
+        batchNo: string;
+        daysLeft: number;
+        expired: boolean;
+        onHand: string;
+        value: number;
+      }[];
+      expired: { count: number; value: number };
+      expiring: { count: number; value: number };
+    };
+    const mine = r.rows.filter((x) => x.item === 'Cough syrup');
+    expect(mine).toEqual([
+      expect.objectContaining({
+        batchNo: 'CS-GONE',
+        daysLeft: -5,
+        expired: true,
+        onHand: '2',
+        value: 100_00,
+      }),
+      expect.objectContaining({
+        batchNo: 'CS-SOON',
+        daysLeft: 10,
+        expired: false,
+        onHand: '2',
+        value: 100_00,
+      }),
+    ]);
+    expect(r.expired.count).toBeGreaterThanOrEqual(1);
+    const dash = (await get('/reports/dashboard').expect(200)).body as {
+      alerts: { kind: string; count: number }[];
+    };
+    expect(
+      dash.alerts.find((a) => a.kind === 'stock_expiring')?.count,
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it('won’t change to batches once stock has moved', async () => {

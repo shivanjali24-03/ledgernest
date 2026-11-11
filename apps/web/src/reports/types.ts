@@ -141,7 +141,7 @@ export interface Dashboard {
   baseCurrency: string;
   kpis: { cash: DashboardKpi; receivables: DashboardKpi; payables: DashboardKpi; profit: DashboardKpi & { since: string } };
   monthly: { month: string; income: number; expenses: number; profit: number; cash: number }[];
-  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon' | 'msme_due'; count: number; amount?: number }[];
+  alerts: { kind: 'overdue_invoices' | 'overdue_bills' | 'unreconciled' | 'recurring_due' | 'open_periods' | 'draft_entries' | 'approvals_waiting' | 'low_stock' | 'quotes_expiring' | 'recurring_bills_due' | 'bills_due_soon' | 'msme_due' | 'stock_expiring'; count: number; amount?: number }[];
   /** gst and upi only for organisations in India */
   setup: { organisation: boolean; team: boolean; coa: boolean; fiscal: boolean; bank: boolean; gst?: boolean; upi?: boolean };
 }

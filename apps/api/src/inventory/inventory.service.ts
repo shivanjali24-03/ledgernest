@@ -192,6 +192,65 @@ export class InventoryService {
     }));
   }
 
+  /**
+   * Stock that has expired or expires within some days, batch by batch, valued at each item's average cost:
+   * what to sell first, return to the supplier or write off.
+   */
+  async expiring(organizationId: string, day: string, days: number) {
+    const until = asDate(day);
+    until.setUTCDate(until.getUTCDate() + days);
+    const batches = await this.prisma.stockBatch.findMany({
+      where: {
+        organizationId,
+        expiryDate: { lte: until },
+        item: { archivedAt: null },
+      },
+      orderBy: [{ expiryDate: 'asc' }, { batchNo: 'asc' }],
+      select: {
+        id: true,
+        batchNo: true,
+        mfgDate: true,
+        expiryDate: true,
+        item: { select: { id: true, name: true, unit: true } },
+      },
+    });
+    const itemIds = [...new Set(batches.map((b) => b.item.id))];
+    const [left, stock] = await Promise.all([
+      this.batchStock(this.prisma, organizationId, itemIds),
+      this.onHand(this.prisma, organizationId, itemIds),
+    ]);
+    const onHand = new Map(left.map((b) => [b.id, b.onHand]));
+    const rows = batches
+      .map((b) => {
+        const q = onHand.get(b.id) ?? 0n;
+        const s = stock.get(b.item.id) ?? { quantity: 0n, value: 0n };
+        const expiry = iso(b.expiryDate!);
+        return {
+          itemId: b.item.id,
+          item: b.item.name,
+          unit: b.item.unit,
+          batchId: b.id,
+          batchNo: b.batchNo,
+          mfgDate: b.mfgDate ? iso(b.mfgDate) : null,
+          expiryDate: expiry,
+          daysLeft: Math.round(
+            (asDate(expiry).getTime() - asDate(day).getTime()) / 86_400_000,
+          ),
+          expired: batchExpired(expiry, day),
+          q,
+          onHand: onHandText(q),
+          value: Number(costOfQuantity(s.quantity, s.value, q)),
+        };
+      })
+      .filter((r) => r.q > 0n)
+      .map(({ q: _q, ...r }) => r);
+    const sum = (expired: boolean) => {
+      const x = rows.filter((r) => r.expired === expired);
+      return { count: x.length, value: x.reduce((t, r) => t + r.value, 0) };
+    };
+    return { asOf: day, days, rows, expired: sum(true), expiring: sum(false) };
+  }
+
   /** An item's batches with what's on hand, for choosing one and for the item page */
   async batches(organizationId: string, itemId: string, day: string) {
     const rows = await this.batchStock(this.prisma, organizationId, [itemId]);

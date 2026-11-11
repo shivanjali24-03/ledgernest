@@ -69,3 +69,6 @@ export function batchLabel(b: { batchNo: string; mfgDate?: string | null; expiry
   const my = (d: string) => `${d.slice(5, 7)}/${d.slice(0, 4)}`;
   return [`Batch ${b.batchNo}`, b.mfgDate && `Mfg ${my(b.mfgDate)}`, b.expiryDate && `Exp ${my(b.expiryDate)}`].filter(Boolean).join(' · ');
 }
+
+/** GET /inventory/expiring: how far ahead to look */
+export const expiringQuerySchema = z.object({ days: z.coerce.number().int().min(0).max(730).default(90) });

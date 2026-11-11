@@ -278,6 +278,17 @@ export class DashboardService {
           AND coalesce((SELECT sum(m.quantity) FROM stock_movements m WHERE m.item_id = i.id), 0) <= i.reorder_level`;
       if (low && Number(low.n))
         alerts.push({ kind: 'low_stock', count: Number(low.n) });
+      // Batches with stock left that have expired or expire within 30 days
+      const [expiringStock] = await this.prisma.$queryRaw<{ n: bigint }[]>`
+        SELECT count(*)::bigint AS n FROM stock_batches b JOIN items i ON i.id = b.item_id
+        WHERE b.organization_id = ${organizationId}::uuid AND i.archived_at IS NULL AND b.expiry_date IS NOT NULL
+          AND b.expiry_date <= ${asDate(today)}::date + 30
+          AND coalesce((SELECT sum(m.quantity) FROM stock_movements m WHERE m.batch_id = b.id), 0) > 0`;
+      if (expiringStock && Number(expiringStock.n))
+        alerts.push({
+          kind: 'stock_expiring',
+          count: Number(expiringStock.n),
+        });
       // Open quotes running out within the week
       const weekOn = asDate(today);
       weekOn.setUTCDate(weekOn.getUTCDate() + 7);
