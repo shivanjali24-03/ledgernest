@@ -6,6 +6,7 @@ export const SignIn = lazy(() => import('./SignIn'));
 export const AcceptInvite = lazy(() => import('./AcceptInvite'));
 export const PublicInvoice = lazy(() => import('../public/PublicInvoice'));
 export const LegalPage = lazy(() => import('../legal/LegalPage'));
+export const PublicQuote = lazy(() => import('../public/PublicQuote'));
 export const CustomerAccount = lazy(() => import('../public/CustomerAccount'));
 export const BalanceConfirmation = lazy(() => import('../public/BalanceConfirmation'));
 export const ForgotPassword = lazy(() => import('./ForgotPassword'));

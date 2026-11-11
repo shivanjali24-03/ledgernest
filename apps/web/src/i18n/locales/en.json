@@ -3904,7 +3904,16 @@
       "sent": "Quote sent to {{email}}",
       "sentDemo": "In the demo nothing is really sent; it would go to {{email}}"
     },
-    "duplicate": "Duplicate"
+    "duplicate": "Duplicate",
+    "share": {
+      "action": "Share",
+      "title": "Share quote {{number}}",
+      "description": "A link your customer opens without an account, to see the quote, download it and accept or decline. Sharing a draft marks it sent.",
+      "link": "Quote link",
+      "message": "Dear {{name}}, here is quote {{number}} from {{organization}} for {{amount}}. You can see it and accept it here: {{link}}",
+      "acceptedBy": "Accepted by {{name}} from the quote link.",
+      "declinedBy": "Declined by {{name}} from the quote link."
+    }
   },
   "emailDialog": {
     "send": "Send",
@@ -4231,5 +4240,35 @@
     "nav": "Legal",
     "updated": "Last updated {{date}}",
     "english": "This page is in English."
+  },
+  "publicQuote": {
+    "pageTitle": "Quote {{number}}",
+    "title": "Quote {{number}}",
+    "dates": "{{date}}, valid until {{until}}",
+    "lines": "What’s quoted",
+    "cols": {
+      "item": "Item",
+      "qty": "Qty",
+      "amount": "Amount"
+    },
+    "subtotal": "Subtotal",
+    "tax": "GST",
+    "total": "Total",
+    "pdf": "Download PDF",
+    "formLabel": "Your answer",
+    "accept": "Accept quote",
+    "decline": "Decline",
+    "name": "Your name",
+    "note": "Note (optional)",
+    "sendAccept": "Accept",
+    "sendDecline": "Send",
+    "accepted": "Accepted by {{name}}. Thank you: the business will be in touch.",
+    "declined": "Declined by {{name}}.",
+    "expired": "This quote expired on {{date}}. Ask the business for a new one.",
+    "errors": {
+      "name": "Enter your name.",
+      "closed": "This quote can’t be answered any more.",
+      "failed": "That didn’t go through. Try again."
+    }
   }
 }

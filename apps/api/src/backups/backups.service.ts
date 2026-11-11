@@ -408,6 +408,9 @@ export class BackupsService {
                 if (t === 'contacts' && c.name === 'share_token') v = null;
                 if (t === 'contacts' && c.name === 'share_views') v = 0;
                 if (t === 'contacts' && c.name === 'share_viewed_at') v = null;
+                if (t === 'quotes' && c.name === 'share_token') v = null;
+                if (t === 'quotes' && c.name === 'share_views') v = 0;
+                if (t === 'quotes' && c.name === 'share_viewed_at') v = null;
                 // Balance confirmations keep their answers, but the copy's links are its own
                 if (t === 'balance_confirmations' && c.name === 'token')
                   v = randomBytes(24).toString('base64url');

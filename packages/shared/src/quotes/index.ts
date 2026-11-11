@@ -92,3 +92,16 @@ export function quoteState(q: { status: QuoteStatus; expiryDate: string }, today
 }
 
 export const quoteNumber = (n: number) => `QT-${String(n).padStart(4, '0')}`;
+
+/** A customer accepting or declining a quote from its link */
+export const quoteDecisionSchema = z.object({
+  response: z.enum(['accept', 'decline']),
+  name: z.string().trim().min(2, 'Enter your name.').max(120),
+  note: z
+    .string()
+    .trim()
+    .max(1000)
+    .transform((v) => v || null)
+    .nullish(),
+});
+export type QuoteDecisionInput = z.input<typeof quoteDecisionSchema>;

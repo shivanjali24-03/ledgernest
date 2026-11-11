@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import AppProviders from '../AppProviders';
@@ -10,6 +10,7 @@ import { resetDemoItems } from '../items/demoItemsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
+import { openDialog } from '../test/openDialog';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoQuotes } from './demoQuotesApi';
 
@@ -121,5 +122,37 @@ describe('quotes', () => {
     await previewAs('auditor');
     expect(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 4000 })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New quote' })).not.toBeInTheDocument();
+  });
+
+  it('shares a quote as a link the customer accepts, and shows who accepted it', { timeout: 30_000 }, async () => {
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 6000 }));
+    await screen.findByRole('button', { name: 'Share' }, { timeout: 6000 });
+    const dialog = await openDialog('Share', 'Share quote QT-0001');
+    expect(await within(dialog).findByTestId('quote-message', {}, { timeout: 4000 })).toHaveTextContent(/Dear Bluewave Clinics, here is quote QT-0001 from .* for ₹/);
+    const token = (JSON.parse(localStorage.getItem('ledgernest.demo.quotes')!) as { shareToken?: string }[]).find((q) => q.shareToken)!.shareToken!;
+
+    cleanup();
+    sessionStorage.clear();
+    const router = createMemoryRouter(routes, { initialEntries: [`/q/${token}`] });
+    render(
+      <AppProviders client={null}>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Quote QT-0001' }, { timeout: 6000 })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Accept quote' }));
+    await userEvent.type(screen.getByLabelText('Your name'), 'Dr. Meera Iyer');
+    await userEvent.type(screen.getByLabelText('Note (optional)'), 'Go ahead from next week.');
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    expect(await screen.findByRole('status', {}, { timeout: 4000 })).toHaveTextContent('Accepted by Dr. Meera Iyer.');
+
+    cleanup();
+    renderApp();
+    await userEvent.click(await screen.findByRole('link', { name: 'QT-0001' }, { timeout: 6000 }));
+    // Slow machines: wait for the quote itself, then its note (re-queried, as the page can remount)
+    await screen.findByRole('heading', { name: /QT-0001/ }, { timeout: 10_000 });
+    await waitFor(() => expect(screen.getByText('Accepted by Dr. Meera Iyer from the quote link.')).toBeInTheDocument(), { timeout: 10_000 });
+    expect(screen.getByText('“Go ahead from next week.”')).toBeInTheDocument();
   });
 });
