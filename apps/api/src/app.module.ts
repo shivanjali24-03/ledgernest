@@ -44,8 +44,10 @@ import { BackupsModule } from './backups/backups.module.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
+import { PdfFontsModule } from './pdf-fonts/pdf-fonts.module.js';
 @Module({
   imports: [
+    PdfFontsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { qrMatrix } from '../upi/index.js';
-import { pdfTableBytes } from './index.js';
+import { setPdfShaper, pdfPageBytes, type PdfShaper,  pdfTableBytes } from './index.js';
 
 const text = (b: Uint8Array) => Array.from(b, (c) => String.fromCharCode(c)).join('');
 
@@ -121,5 +121,57 @@ describe('signature and seal', () => {
     // Without the line, nothing is drawn
     const none = new TextDecoder('latin1').decode(pdfTableBytes({ title: 'X', rows: [['A']], after: ['Thanks'], signature: { anchor: 'Authorised signatory', image: img } }));
     expect(none).not.toContain('/Im2');
+  });
+});
+
+describe('shaped scripts', () => {
+  const latin1 = (b: Uint8Array) => new TextDecoder('latin1').decode(b);
+  // A pretend font: every letter one glyph (its code less 0x900), 500 units wide in a 1000-unit em; the vowel sign i
+  // sits 20 units to the left
+  const fake: PdfShaper = {
+    fontName: 'FakeDeva',
+    fontFile: new Uint8Array([1, 2, 3]),
+    fontLength: 9,
+    unitsPerEm: 1000,
+    ascent: 900,
+    descent: -300,
+    capHeight: 700,
+    bbox: [-100, -300, 1000, 900],
+    shape: (text) => [...text].map((ch) => ({ gid: ch.codePointAt(0)! - 0x900, ax: ch === 'ि' ? 0 : 500, dx: ch === 'ि' ? -20 : 0, dy: 0 })),
+  };
+  afterEach(() => setPdfShaper(null));
+
+  it('prints “?” for Devanagari without a shaper, as before', () => {
+    const t = latin1(pdfTableBytes({ title: 'किरण Traders', rows: [['A']] }));
+    expect(t).toContain('(???? Traders) Tj');
+    expect(t).not.toContain('/F3');
+  });
+
+  it('embeds the font and writes shaped words as its glyphs, carrying the real text', () => {
+    setPdfShaper(fake);
+    const t = latin1(pdfTableBytes({ title: 'किरण Traders', rows: [['Item'], ['तेल 1 लिटर']] }));
+    expect(t).toContain('/Subtype /Type0 /BaseFont /FakeDeva /Encoding /Identity-H');
+    expect(t).toContain('/FontFile2');
+    expect(t).toContain('/Length1 9');
+    // कि र ण: the vowel sign is drawn 20 units left, the pen not moved by it
+    expect(t).toContain('/Span << /ActualText <FEFF0915093f09300923> >> BDC');
+    expect(t).toContain('/F3 14 Tf [<0015> 20 <003f> -20 <0030> <0023>] TJ /F2 14 Tf EMC');
+    expect(t).toContain('( Traders) Tj');
+    // Widths of each glyph used
+    expect(t).toMatch(/\/W \[[^\]]*21 \[500\]/);
+  });
+
+  it('measures shaped words by their glyphs, so columns and wrapping fit them', () => {
+    setPdfShaper({ ...fake, shape: (text) => [...text].map(() => ({ gid: 1, ax: 3000, dx: 0, dy: 0 })) });
+    // Very wide letters push the table to landscape, as wide Latin text would
+    const w = 'कककककककककक';
+    expect(latin1(pdfTableBytes({ title: 'T', rows: [['A', 'B', 'C'], [w, w, w]] }))).toContain('/MediaBox [0 0 842 595]');
+  });
+
+  it('writes shaped text on positioned pages too (cheques)', () => {
+    setPdfShaper(fake);
+    const t = latin1(pdfPageBytes({ width: 500, height: 200, texts: [{ x: 10, y: 10, text: 'राम' }] }));
+    expect(t).toContain('/F3 7 0 R');
+    expect(t).toContain('/BaseFont /FakeDeva');
   });
 });

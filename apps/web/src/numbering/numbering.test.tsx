@@ -29,25 +29,27 @@ describe('number series', () => {
   it('lists the default series and adds one with a prefix, previewing its numbers and refusing ones GST won’t take', async () => {
     renderApp();
     await screen.findByRole('heading', { name: 'Number series' }, { timeout: 10_000 });
-    const card = document.body;
-    expect(within(card).getByText(/^INV\/\d{4}-\d{2}\/0001$/)).toBeInTheDocument();
-    expect(within(card).getByText(/^CN\/\d{4}-\d{2}\/0001$/)).toBeInTheDocument();
-    await userEvent.click(within(card).getByRole('button', { name: 'Add series' }));
-    const dialog = await screen.findByRole('dialog', { name: 'New number series' });
-    await userEvent.type(within(dialog).getByLabelText('Name'), 'Exports');
-    await userEvent.type(within(dialog).getByLabelText('Prefix'), 'EXPORT-INVOICE/');
-    expect(within(dialog).getByText(/longer than the 16 characters/)).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Save series' })).toBeDisabled();
-    await userEvent.clear(within(dialog).getByLabelText('Prefix'));
-    await userEvent.type(within(dialog).getByLabelText('Prefix'), 'EXP-');
-    await userEvent.clear(within(dialog).getByLabelText('Digits'));
-    await userEvent.type(within(dialog).getByLabelText('Digits'), '3');
-    await userEvent.clear(within(dialog).getByLabelText('Start at'));
-    await userEvent.type(within(dialog).getByLabelText('Start at'), '101');
-    expect(within(dialog).getByText('EXP-101')).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Save series' }));
-    expect(await screen.findByText('Number series saved')).toBeInTheDocument();
-    await waitFor(() => expect(within(card).getByText('Exports')).toBeInTheDocument());
+    // Found afresh each time: the settings page can remount while it loads under a busy machine
+    expect(await screen.findByText(/^INV\/\d{4}-\d{2}\/0001$/, {}, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getByText(/^CN\/\d{4}-\d{2}\/0001$/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Add series' }));
+    await screen.findByRole('dialog', { name: 'New number series' }, { timeout: 10_000 });
+    const dialog = () => within(screen.getByRole('dialog', { name: 'New number series' }));
+    await userEvent.type(dialog().getByLabelText('Name'), 'Exports');
+    await userEvent.type(dialog().getByLabelText('Prefix'), 'EXPORT-INVOICE/');
+    expect(await dialog().findByText(/longer than the 16 characters/, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(dialog().getByRole('button', { name: 'Save series' })).toBeDisabled();
+    await userEvent.clear(dialog().getByLabelText('Prefix'));
+    await userEvent.type(dialog().getByLabelText('Prefix'), 'EXP-');
+    await userEvent.clear(dialog().getByLabelText('Digits'));
+    await userEvent.type(dialog().getByLabelText('Digits'), '3');
+    await userEvent.clear(dialog().getByLabelText('Start at'));
+    await userEvent.type(dialog().getByLabelText('Start at'), '101');
+    expect(await dialog().findByText('EXP-101', {}, { timeout: 4000 })).toBeInTheDocument();
+    await waitFor(() => expect(dialog().getByRole('button', { name: 'Save series' })).toBeEnabled());
+    await userEvent.click(dialog().getByRole('button', { name: 'Save series' }));
+    expect(await screen.findByText('Number series saved', {}, { timeout: 10_000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Exports')).toBeInTheDocument(), { timeout: 10_000 });
   }, 30_000);
 
   it('offers the series on a new invoice once there is more than one, and numbers from the one chosen', async () => {
