@@ -104,6 +104,33 @@ describe('Payments to vendors against bills (e2e)', () => {
         ),
       };
     }
+    // Someone on the sales side: sees customers' receipts, not what's paid to vendors
+    {
+      const u = await prisma.user.create({
+        data: {
+          email: `sales-${run}@test.ledgernest.local`,
+          name: 'User sales',
+          passwordHash: 'unused',
+        },
+      });
+      const role = await prisma.role.create({
+        data: {
+          organizationId: org,
+          name: `Sales desk ${run}`,
+          permissions: ['invoices.view'],
+        },
+      });
+      await prisma.membership.create({
+        data: { userId: u.id, organizationId: org, customRoleId: role.id },
+      });
+      users.sales = {
+        id: u.id,
+        token: await jwt.signAsync(
+          { sub: u.id, sa: false },
+          { expiresIn: '15m' },
+        ),
+      };
+    }
     await as().post('/currencies', { code: 'USD' }).expect(201);
     await as()
       .put('/currencies/USD/rates/2026-05-01', { rate: '90' })
@@ -355,6 +382,21 @@ describe('Payments to vendors against bills (e2e)', () => {
       ['4950', 120_000, 0, 0],
     ]);
     expect((await billOf(bill.u)).state).toBe('paid');
+  });
+
+  it('keeps vendor payments from roles without bills access', async () => {
+    const kinds = (who: string, query = '') =>
+      as(who)
+        .get(`/payments${query}`)
+        .expect(200)
+        .then((r) =>
+          (r.body.items as { kind: string }[]).map((p) => p.kind),
+        );
+    expect(await kinds('owner')).toContain('payment');
+    expect(await kinds('sales')).not.toContain('payment');
+    expect(await kinds('sales', '?kind=payment')).toEqual([]);
+    await as('sales').get(`/payments/${payment}`).expect(404);
+    await as('owner').get(`/payments/${payment}`).expect(200);
   });
 
   it("a paid bill can't be voided; voiding the payment opens it again", async () => {
