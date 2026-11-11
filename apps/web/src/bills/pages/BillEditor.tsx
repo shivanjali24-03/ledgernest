@@ -187,7 +187,7 @@ function DraftForm({ bill: invoice, api }: { bill: Bill | null; api: BillsApi })
             description: item.name,
             unitPrice: item.purchasePrice !== null && !customer?.currency ? plain(item.purchasePrice) : '',
             taxGroupId: item.taxGroupId ?? '',
-            accountId: item.expenseAccountId ?? '',
+            accountId: (item.trackStock ? item.inventoryAccountId : item.expenseAccountId) ?? '',
             inAltUnit: false,
             itc: item.itcBlocked ? 'blocked' : 'eligible',
           }

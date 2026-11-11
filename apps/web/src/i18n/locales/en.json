@@ -2636,7 +2636,8 @@
     "units": "units",
     "lineUnit": "Unit on line {{n}}",
     "itcBlocked": "Input tax credit blocked (s.17(5))",
-    "itcBlockedHint": "Cars, food and drinks, club or health memberships, gifts, building works and the like: GST paid on buying it becomes part of its cost"
+    "itcBlockedHint": "Cars, food and drinks, club or health memberships, gifts, building works and the like: GST paid on buying it becomes part of its cost",
+    "mainSales": "Main sales account"
   },
   "invoices": {
     "title": "Invoices",

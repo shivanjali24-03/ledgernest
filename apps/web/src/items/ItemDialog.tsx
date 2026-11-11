@@ -53,6 +53,17 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const active = (accounts.data ?? []).filter((a) => !a.archived);
+  // The usual account of a kind: the first by code without sub-accounts (e.g. 1500 Merchandise inventory)
+  const usual = (type: string, subtype: string) => {
+    const of = active.filter((a) => a.type === type && a.subtype === subtype).sort((a, b) => a.code.localeCompare(b.code));
+    return (of.find((a) => !active.some((c) => c.parentId === a.id)) ?? of[0])?.id ?? '';
+  };
+  const turnTrackStock = (on: boolean) => {
+    setTrackStock(on);
+    if (!on) return;
+    if (!inventoryAccountId) setInventory(usual('asset', 'inventory'));
+    if (!cogsAccountId) setCogs(usual('expense', 'cost_of_sales'));
+  };
   const values = () => ({
     name: name.trim(),
     kind,
@@ -197,7 +208,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
           value={incomeAccountId}
           onChange={(e) => setIncome(e.target.value)}
           error={errors.incomeAccountId}
-          options={[{ value: '', label: t('items.chooseLater') }, ...active.filter((a) => a.type === 'income').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
+          options={[{ value: '', label: t('items.mainSales') }, ...active.filter((a) => a.type === 'income').map((a) => ({ value: a.id, label: `${a.code} · ${a.name}` }))]}
         />
         <SelectField
           label={t('items.fields.expenseAccount')}
@@ -216,7 +227,7 @@ export default function ItemDialog({ item, api, onClose, onSaved }: { item?: Ite
         {kind === 'goods' && (
           <fieldset className="space-y-3 rounded-xl border border-ink-100 p-3 sm:col-span-2 dark:border-ink-800">
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={trackStock} onChange={(e) => setTrackStock(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
+              <input type="checkbox" checked={trackStock} onChange={(e) => turnTrackStock(e.target.checked)} className="mt-0.5 size-4 rounded accent-brand-600" />
               <span>
                 <span className="font-medium">{t('inventory.track')}</span>
                 <span className="block text-xs text-ink-500">{t('inventory.trackHint')}</span>

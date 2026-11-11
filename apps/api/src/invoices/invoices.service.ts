@@ -977,6 +977,27 @@ export class InvoicesService {
       /** Under reverse charge: the GST the buyer pays */
       rcmGroup?: Awaited<ReturnType<typeof forSupply>> | null;
     })[] = [];
+    // A line with no account of its own, and no item that has one, goes to the main sales account:
+    // the first operating-income account by code that has no sub-accounts (e.g. 4010 Sales – in-store)
+    let fallbackIncome: string | null | undefined;
+    const defaultIncome = async () => {
+      if (fallbackIncome !== undefined) return fallbackIncome;
+      const candidates = await tx.account.findMany({
+        where: {
+          organizationId,
+          type: 'income',
+          subtype: 'operating_income',
+          archivedAt: null,
+          currency: null,
+        },
+        select: { id: true, _count: { select: { children: true } } },
+        orderBy: { code: 'asc' },
+      });
+      fallbackIncome =
+        (candidates.find((a) => a._count.children === 0) ?? candidates[0])
+          ?.id ?? null;
+      return fallbackIncome;
+    };
     for (const [n, l] of input.lines.entries()) {
       const item = l.itemId ? items.get(l.itemId)! : null;
       if (item?.archivedAt)
@@ -986,7 +1007,8 @@ export class InvoicesService {
           'item_archived',
           { line: n + 1 },
         );
-      const accountId = l.accountId ?? item?.incomeAccountId ?? null;
+      const accountId =
+        l.accountId ?? item?.incomeAccountId ?? (await defaultIncome()) ?? null;
       if (!accountId)
         throw refuse(
           BadRequestException,
