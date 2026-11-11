@@ -357,7 +357,9 @@ describe('Order and dispatch details on invoices (e2e)', () => {
       });
     const text = (pdf.body as Buffer).toString('latin1');
     expect(text).toContain('HSN/SAC summary:');
-    expect(text).toContain('2523 @ 18%: taxable 3600.00, tax 648.00');
+    expect(text).toContain('2523 @ 18%: taxable 3,600.00, tax 648.00');
+    // Dates as printed in India, not ISO
+    expect(text).toMatch(/Invoice date \d{2} [A-Z][a-z]{2} \d{4} · Due \d{2} [A-Z][a-z]{2} \d{4}/);
     expect(text).toContain('Includes a discount of INR 500.00');
   });
 });

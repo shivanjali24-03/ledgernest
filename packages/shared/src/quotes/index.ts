@@ -1,3 +1,4 @@
+import { pdfAmount } from '../pdf/index.js';
 import { z } from 'zod';
 import { invoiceLineSchema, MAX_INVOICE_LINES } from '../invoices/index.js';
 import { serialsSchema } from '../inventory/serials.js';
@@ -92,7 +93,7 @@ export type QuoteEmailInput = z.input<typeof quoteEmailSchema>;
 
 /** A quote's lines and totals as rows for the PDF (amounts in major units, e.g. rupees) */
 export function quoteRows(q: { currency: string; lines: { description: string; quantity: string; unitPrice: number; discount: number; taxGroup: { name: string } | null; amount: number }[]; subtotal: number; taxTotal: number; total: number }, digits: number): string[][] {
-  const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
+  const fmt = (minor: number) => pdfAmount(minor, digits);
   return [
     ['Description', 'Qty', `Price (${q.currency})`, 'Discount', 'Tax', `Amount (${q.currency})`],
     ...q.lines.map((l) => [l.description, l.quantity, fmt(l.unitPrice), l.discount ? `${l.discount}%` : '', l.taxGroup?.name ?? '', fmt(l.amount)]),

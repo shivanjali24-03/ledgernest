@@ -25,9 +25,9 @@ describe('reminderDue', () => {
 describe('invoiceRows', () => {
   it('lays out lines, tax by rate and totals, with the balance once something is paid', () => {
     const rows = invoiceRows({ currency: 'INR', subtotal: 1_000_000, total: 1_180_000, amountPaid: 180_000, balance: 1_000_000, taxBreakdown: [{ name: 'CGST 9%', amount: 90_000 }, { name: 'SGST 9%', amount: 90_000 }], lines: [{ description: 'Development', quantity: '4', unitPrice: 250_000, discount: 0, amount: 1_000_000, taxAmount: 180_000, item: { hsnSac: '998314' } }] }, 2);
-    expect(rows[1]).toEqual(['Development', '998314', '4', '2500.00', '', '10000.00', '1800.00']);
+    expect(rows[1]).toEqual(['Development', '998314', '4', '2,500.00', '', '10,000.00', '1,800.00']);
     expect(rows.map((r) => r[4])).toContain('CGST 9%');
-    expect(rows.at(-1)).toEqual(['', '', '', '', 'Balance due', '', '10000.00']);
+    expect(rows.at(-1)).toEqual(['', '', '', '', 'Balance due', '', '10,000.00']);
   });
 
   it('lists the serial numbers of the units sold under the line, three to a row', () => {

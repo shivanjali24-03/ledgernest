@@ -1,3 +1,4 @@
+import { pdfAmount } from '../pdf/index.js';
 import { z } from 'zod';
 import { batchLabel } from '../inventory/batches.js';
 import { serialsSchema } from '../inventory/serials.js';
@@ -309,7 +310,7 @@ export function invoiceRows(
   i: { currency: string; roundOff?: number; lines: { description: string; quantity: string; unitPrice: number; discount: number; amount: number; taxAmount: number; item: { hsnSac: string | null } | null; batches?: { batchNo: string; mfgDate: string | null; expiryDate: string | null; quantity: string }[]; serials?: string[] }[]; taxBreakdown: { name: string; amount: number }[]; subtotal: number; total: number; amountPaid: number; balance: number },
   digits: number,
 ): string[][] {
-  const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
+  const fmt = (minor: number) => pdfAmount(minor, digits);
   // Labels under Discount, amounts under Tax, so the number columns stay right-aligned
   const total = (label: string, minor: number) => ['', '', '', '', label, '', fmt(minor)];
   return [

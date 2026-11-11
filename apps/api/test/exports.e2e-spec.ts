@@ -178,7 +178,7 @@ describe('Exports and SEZ supplies (e2e)', () => {
       });
     const text = (pdf.body as Buffer).toString('latin1');
     expect(text).toContain('without payment of IGST \\(LUT AD2704260012345\\)');
-    expect(text).toContain('Shipping bill 7712345 dated 2026-06-12');
+    expect(text).toContain('Shipping bill 7712345 dated 12 Jun 2026');
   });
 
   it('charges IGST on a supply to an SEZ unit in the same state, and on an export with payment', async () => {

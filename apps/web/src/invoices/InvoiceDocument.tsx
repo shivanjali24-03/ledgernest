@@ -94,7 +94,7 @@ export default function InvoiceDocument({ invoice: i }: { invoice: Invoice }) {
           ))}
           {i.contact.taxId && (
             <p className="text-ink-600 dark:text-ink-300">
-              {t('invoices.taxId')} <span className="font-mono">{i.contact.taxId}</span>
+              {/^\d{2}[A-Z0-9]{13}$/.test(i.contact.taxId) ? t('invoices.gstin') : t('invoices.taxId')} <span className="font-mono">{i.contact.taxId}</span>
             </p>
           )}
           {i.shipTo && (

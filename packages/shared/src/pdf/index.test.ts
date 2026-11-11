@@ -175,3 +175,14 @@ describe('shaped scripts', () => {
     expect(t).toContain('/BaseFont /FakeDeva');
   });
 });
+
+describe('amounts and dates on printed documents', () => {
+  it('groups amounts the Indian way and writes dates as 11 Nov 2026', async () => {
+    const { pdfAmount, pdfDate } = await import('./index.js');
+    expect(pdfAmount(22050000)).toBe('2,20,500.00');
+    expect(pdfAmount(-150)).toBe('-1.50');
+    expect(pdfAmount(1500, 0)).toBe('1,500');
+    expect(pdfDate('2026-11-11')).toBe('11 Nov 2026');
+    expect(pdfDate(null)).toBe('');
+  });
+});
