@@ -135,7 +135,8 @@ th a.font-mono {
   table.stack-sm thead {
     display: none;
   }
-  table.stack-sm tbody {
+  table.stack-sm tbody,
+  table.stack-sm tfoot {
     display: block;
   }
   table.stack-sm tr {
@@ -175,5 +176,12 @@ th a.font-mono {
   }
   table.stack-sm tr + tr {
     border-top: 1px solid var(--color-ink-200);
+  }
+}
+
+@media (max-width: 639.98px) {
+  /* A cell that takes the whole width of the card (actions) */
+  table.stack-sm [data-full] {
+    grid-column: 1 / -1;
   }
 }
