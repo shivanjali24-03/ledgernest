@@ -50,6 +50,8 @@ Merging into a branch deploys that environment automatically: the web app via th
    | `API_URL_PRODUCTION` | production service address + `/api/v1` |
    | `API_URL_STAGING` | staging service address + `/api/v1` |
    | `API_URL_DEV` | development service address + `/api/v1` |
+   | `OPERATOR_NAME` | optional: who runs the service, named on the privacy notice and terms |
+   | `CONTACT_EMAIL` | optional: where people write about their data (grievances under the DPDP Act) |
 
    Leave one empty and that environment is built as a demo.
 4. **Actions → Deploy web → Run workflow** for the first deploy. After that, merges deploy by themselves.
