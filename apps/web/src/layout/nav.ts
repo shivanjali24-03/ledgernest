@@ -31,8 +31,7 @@ import {
   FileUp,
   Plug,
   Megaphone,
-  CalendarCheck,
-} from 'lucide-react';
+  CalendarCheck, ClipboardList } from 'lucide-react';
 import type { Permission } from '@ledgernest/shared';
 
 export interface NavItem {
@@ -87,6 +86,7 @@ export const NAV: NavGroup[] = [
       { to: '/credit-notes', labelKey: 'nav.items.creditNotes', icon: FileMinus, permission: 'invoices.view', ready: true, keywords: 'credit note refund return correction cn' },
       { to: '/bills', labelKey: 'nav.items.bills', icon: Receipt, permission: 'bills.view', ready: true, keywords: 'vendors suppliers payables purchases expenses input gst' },
       { to: '/recurring-bills', labelKey: 'nav.items.recurringBills', icon: Repeat, permission: 'bills.view', ready: true, keywords: 'recurring bills rent subscription standing repeat monthly' },
+      { to: '/purchase-orders', labelKey: 'nav.items.purchaseOrders', icon: ClipboardList, permission: 'bills.view', ready: true, keywords: 'purchase order po grn goods receipt note indent supplier order' },
       { to: '/debit-notes', labelKey: 'nav.items.debitNotes', icon: FileMinus, permission: 'bills.view', ready: true, keywords: 'debit note purchase return vendor credit supplier credit note dn' },
       { to: '/banking', labelKey: 'nav.items.banking', icon: Landmark, permission: 'banking.view', ready: true, keywords: 'bank cash reconcile statement transfer spend receive money' },
       { to: '/collections', labelKey: 'nav.items.collections', icon: Megaphone, permission: 'invoices.view', ready: true, keywords: 'collections overdue chase follow up remind whatsapp dues outstanding debtors' },

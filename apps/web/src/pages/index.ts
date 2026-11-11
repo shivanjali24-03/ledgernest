@@ -40,6 +40,8 @@ export const YearEnd = lazy(() => import('../year-end/YearEnd'));
 export const ContactPage = lazy(() => import('../contacts/pages/ContactPage'));
 export const RecurringBills = lazy(() => import('../recurring-bills/pages/RecurringBills'));
 export const DebitNotes = lazy(() => import('../debit-notes/pages/DebitNotes'));
+export const PurchaseOrders = lazy(() => import('../purchase-orders/pages/PurchaseOrders'));
+export const PurchaseOrderEditor = lazy(() => import('../purchase-orders/pages/PurchaseOrderEditor'));
 export const QuoteEditor = lazy(() => import('../quotes/pages/QuoteEditor'));
 export const Recurring = lazy(() => import('../recurring/pages/Recurring'));
 export const Banking = lazy(() => import('../banking/pages/Banking'));

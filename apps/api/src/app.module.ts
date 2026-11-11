@@ -23,6 +23,7 @@ import { ContactsModule } from './contacts/contacts.module.js';
 import { ItemsModule } from './items/items.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
 import { QuotesModule } from './quotes/quotes.module.js';
+import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { BillsModule } from './bills/bills.module.js';
 import { VendorCreditsModule } from './vendor-credits/vendor-credits.module.js';
@@ -72,6 +73,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ItemsModule,
     InvoicesModule,
     QuotesModule,
+    PurchaseOrdersModule,
     PaymentsModule,
     BillsModule,
     CreditNotesModule,
