@@ -184,9 +184,13 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
       wait(() => {
         const p = load().find((x) => x.id === id);
         if (!p) throw new ApiError('not_found', 404);
-        if (p.kind !== 'receipt') throw refuse(409, 'not_receipt');
         const cur = p.currency ?? 'INR';
         const fmt = (minor: number) => (minor / 10 ** currencyDigits(cur)).toFixed(currencyDigits(cur));
+        if (p.kind === 'payment') {
+          const bank = p.amount - (p.tds?.amount ?? 0);
+          const advice = pdfTableBytes({ title: `Payment advice ${p.number}`, subtitle: 'Nest Demo Private Limited', info: [`Paid to: ${p.contact.name}`, `Date ${p.date} · ${cur} ${fmt(bank)} to your bank${p.reference ? ` · Ref ${p.reference}` : ''}`], footer: `Nest Demo Private Limited · ${p.number}`, rows: [['Bill', `Amount (${cur})`], ...p.allocations.map((a) => [a.documentNumber ?? 'Bill', fmt(a.amount)]), ...(p.unallocated ? [['Paid in advance', fmt(p.unallocated)]] : []), ['Total settled', fmt(p.amount)], ...(p.tds ? [[`TDS deducted under section ${p.tds.section}`, fmt(p.tds.amount)], ['Paid to your bank', fmt(bank)]] : [])] });
+          return { blob: new Blob([advice.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `payment-advice-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
+        }
         const bytes = pdfTableBytes({ title: `Payment receipt ${p.number}`, subtitle: 'Nest Demo Private Limited', info: [`Received from: ${p.contact.name}`, `Date ${p.date} · ${cur} ${fmt(p.amount)}`], footer: `Nest Demo Private Limited · ${p.number}`, rows: [['Applied to', `Amount (${cur})`], ...p.allocations.map((a) => [a.documentNumber ?? 'Invoice', fmt(a.amount)]), ...(p.unallocated ? [['Held as advance', fmt(p.unallocated)]] : []), ['Total received', fmt(p.amount)]] });
         return { blob: new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' }), filename: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf` };
       }),
@@ -205,7 +209,7 @@ export function createDemoPaymentsApi(canManage: () => boolean, opts: { approval
         guard();
         const p = load().find((x) => x.id === id);
         if (!p) throw new ApiError('not_found', 404);
-        if (p.kind !== 'receipt' || p.status !== 'posted') throw refuse(409, 'not_receipt');
+        if (p.status !== 'posted') throw refuse(409, 'not_posted');
         const to = input.email ?? demoContactRows().find((c) => c.id === p.contact.id)?.email;
         if (!to) throw refuse(400, 'no_email');
         return { sentTo: to };

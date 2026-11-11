@@ -7,6 +7,7 @@ import { gstinCheckChar, tdsDepositDue, todayIn } from '@ledgernest/shared';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { setupApp } from '../src/setup-app.js';
+import { MailService } from '../src/mail/mail.service.js';
 
 const gstin = (first14: string) => `${first14}${gstinCheckChar(first14)}`;
 const MEHTA = gstin('27AAKFM2468P1Z');
@@ -318,6 +319,41 @@ describe('TDS on vendor payments (e2e)', () => {
         ? [expect.objectContaining({ due, amount: 5_100_00 })]
         : [],
     );
+  });
+
+  it('gives the vendor a payment advice: their bill numbers, the TDS kept back and what reached their bank', async () => {
+    const pdf = await as()
+      .get(`/payments/${paid.id}/pdf`)
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(pdf.headers['content-disposition']).toContain('payment-advice-pay-');
+    const text = (pdf.body as Buffer).toString('latin1');
+    expect(text).toContain('Payment advice PAY/');
+    // The vendor's own number first, with ours (PDF text escapes the bracket)
+    expect(text).toMatch(/\(MA\/[0-9a-f]{4} \\\(our BILL\//);
+    expect(text).toContain('(TDS deducted under section 194J) Tj');
+    expect(text).toContain('(54000.00) Tj');
+    process.env.SMTP_URL = 'json';
+    try {
+      await as()
+        .post(`/payments/${paid.id}/email`, { email: 'accounts@mehta.example' })
+        .expect(200);
+      const mail = app.get(MailService);
+      expect(mail.captured.at(-1)).toMatchObject({
+        to: ['accounts@mehta.example'],
+        subject: expect.stringMatching(/^Payment advice PAY\//),
+      });
+      expect(mail.capturedText.at(-1)).toMatch(
+        /We have paid INR 54000\.00 to your bank on .*, settling MA\/[0-9a-f]{4}, after TDS of INR 5000\.00 under section 194J\./,
+      );
+    } finally {
+      delete process.env.SMTP_URL;
+    }
   });
 
   it('voiding the payment takes the TDS back off, and the bill is owed again', async () => {

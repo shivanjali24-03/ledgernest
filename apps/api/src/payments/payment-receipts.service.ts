@@ -42,6 +42,47 @@ export class PaymentReceiptsService {
     const digits = currencyDigits(currency);
     const fmt = (minor: number) => (minor / 10 ** digits).toFixed(digits);
     const seller = org.legalName ?? org.name;
+    // A payment to a vendor is a payment advice: the bills it settles, the TDS kept back, and what reached their bank
+    if (p.kind === 'payment') {
+      const rows = [
+        ['Bill', `Amount (${currency})`],
+        ...p.allocations.map((a) => [
+          'vendorReference' in a && a.vendorReference
+            ? `${a.vendorReference} (our ${a.documentNumber})`
+            : (a.documentNumber ?? 'Bill'),
+          fmt(a.amount),
+        ]),
+        ...(p.unallocated ? [['Paid in advance', fmt(p.unallocated)]] : []),
+        ['Total settled', fmt(p.amount)],
+        ...(p.tds
+          ? [
+              [
+                `TDS deducted under section ${p.tds.section}`,
+                fmt(p.tds.amount),
+              ],
+              ['Paid to your bank', fmt(p.bankAmount)],
+            ]
+          : []),
+      ];
+      const pdf = Buffer.from(
+        pdfTableBytes({
+          title: `Payment advice ${p.number}`,
+          subtitle: `${seller}${org.taxId ? ` · GSTIN ${org.taxId}` : ''}`,
+          info: [
+            `Paid to: ${contact.legalName ?? contact.name}`,
+            `Date ${p.date} · ${currency} ${fmt(p.bankAmount)} to your bank${p.reference ? ` · Ref ${p.reference}` : ''}`,
+          ],
+          after: p.tds
+            ? [
+                `TDS of ${currency} ${fmt(p.tds.amount)} under section ${p.tds.section} is deposited with the government in your name (PAN) and shows in your Form 26AS; a Form 16A certificate follows each quarter.`,
+              ]
+            : undefined,
+          footer: `${seller} · ${p.number}`,
+          rows,
+        }),
+      );
+      return { pdf, currency, fmt };
+    }
     const rows = [
       ['Applied to', `Amount (${currency})`],
       ...p.allocations.map((a) => [
@@ -78,11 +119,6 @@ export class PaymentReceiptsService {
   /** The PDF of a posted receipt, to download */
   async download(organizationId: string, id: string) {
     const p = await this.payments.get(organizationId, id);
-    if (p.kind !== 'receipt')
-      throw new ConflictException({
-        message: 'Only receipts from customers have a receipt to download.',
-        details: { reason: 'not_receipt' },
-      });
     const [contact, org] = await Promise.all([
       this.prisma.contact.findFirstOrThrow({
         where: { id: p.contact.id, organizationId },
@@ -101,7 +137,7 @@ export class PaymentReceiptsService {
     const { pdf } = this.pdf(p, contact, org);
     return {
       data: pdf,
-      fileName: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+      fileName: `${p.kind === 'payment' ? 'payment-advice' : 'receipt'}-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
     };
   }
 
@@ -142,11 +178,12 @@ export class PaymentReceiptsService {
   ) {
     const organizationId = ctx.tenant.organizationId;
     const p = await this.payments.get(organizationId, id);
-    if (p.kind !== 'receipt' || p.status !== 'posted')
+    if (p.status !== 'posted')
       throw new ConflictException({
-        message: 'Only posted receipts from customers can be sent.',
-        details: { reason: 'not_receipt' },
+        message: 'Only posted receipts and payments can be sent.',
+        details: { reason: 'not_posted' },
       });
+    const advice = p.kind === 'payment';
     if (!this.mail.configured)
       throw new ConflictException({
         message:
@@ -171,22 +208,35 @@ export class PaymentReceiptsService {
     const to = input.email ?? contact.email;
     if (!to)
       throw new BadRequestException({
-        message: 'This customer has no email address. Enter one to send it to.',
+        message: `This ${advice ? 'vendor' : 'customer'} has no email address. Enter one to send it to.`,
         details: { reason: 'no_email' },
       });
     const { pdf, currency, fmt } = this.pdf(p, contact, org);
     const sent = await this.mail.send({
       to: [to],
-      subject: `Payment receipt ${p.number} from ${org.name}`,
+      subject: advice
+        ? `Payment advice ${p.number} from ${org.name}`
+        : `Payment receipt ${p.number} from ${org.name}`,
       text: [
         `Dear ${contact.name},`,
         ...(input.message ? [input.message] : []),
-        `Thank you for your payment of ${currency} ${fmt(p.amount)} on ${p.date}. The receipt is attached.`,
+        advice
+          ? `We have paid ${currency} ${fmt(p.bankAmount)} to your bank on ${p.date}${p.reference ? ` (ref ${p.reference})` : ''}, settling ${
+              p.allocations
+                .map(
+                  (a) =>
+                    ('vendorReference' in a && a.vendorReference) ||
+                    a.documentNumber,
+                )
+                .filter(Boolean)
+                .join(', ') || 'your bills'
+            }${p.tds ? `, after TDS of ${currency} ${fmt(p.tds.amount)} under section ${p.tds.section}` : ''}. The payment advice is attached.`
+          : `Thank you for your payment of ${currency} ${fmt(p.amount)} on ${p.date}. The receipt is attached.`,
         org.name,
       ].join('\n\n'),
       attachments: [
         {
-          filename: `receipt-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+          filename: `${advice ? 'payment-advice' : 'receipt'}-${p.number.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
           content: pdf,
           contentType: 'application/pdf',
         },

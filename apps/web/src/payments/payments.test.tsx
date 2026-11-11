@@ -173,6 +173,31 @@ describe('vendor payments', () => {
     await waitFor(() => expect(sharma).toHaveTextContent('We owe ₹53,100.00'));
   }, 20_000);
 
+  it('gives a vendor a payment advice for what was paid', { timeout: 20_000 }, async () => {
+    const { createDemoPaymentsApi } = await import('./demoPaymentsApi');
+    const { sampleId } = await import('../accounts/demoAccountsApi');
+    const { todayIn } = await import('@ledgernest/shared');
+    const { demoContactRows } = await import('../contacts/demoContactsApi');
+    const sharma = demoContactRows().find((c) => c.name === 'Sharma Office Supplies')!;
+    const p = await createDemoPaymentsApi(() => true).pay({ contactId: sharma.id, date: todayIn('Asia/Kolkata'), bankAccountId: sampleId('1100.01'), amount: 10_000_00, allocations: [], reference: 'UTR 77120' });
+    let saved: Blob | undefined;
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => ((saved = b), 'blob:pdf')), revokeObjectURL: vi.fn() });
+    renderApp('/payments');
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('menu')) fireEvent.click(screen.getByRole('button', { name: `Actions for ${p.number}` }));
+        expect(screen.getByRole('menuitem', { name: 'Download payment advice' })).toBeInTheDocument();
+      },
+      { timeout: 6000 },
+    );
+    expect(screen.getByRole('menuitem', { name: 'Email payment advice' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Download payment advice' }));
+    await waitFor(() => expect(saved).toBeDefined(), { timeout: 4000 });
+    const text = new TextDecoder('latin1').decode(await saved!.arrayBuffer());
+    expect(text).toContain(`(Payment advice ${p.number}) Tj`);
+    expect(text).toContain('(Paid in advance) Tj');
+  });
+
   it('emails a customer a receipt for what they paid', { timeout: 20_000 }, async () => {
     // An advance from Kumar into the HDFC account, today
     const { createDemoPaymentsApi } = await import('./demoPaymentsApi');

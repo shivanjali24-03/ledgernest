@@ -2682,6 +2682,14 @@
       "range": "Between -30 and 30 mm.",
       "crossed": "Cross it “A/c Payee” (paid only into the payee’s account)",
       "tip": "Print at actual size (100%), with the leaf fed as your printer takes envelopes. Try plain paper held over a cheque first; adjust the moves until it lines up. They are remembered on this device."
+    },
+    "advice": {
+      "download": "Download payment advice",
+      "email": "Email payment advice",
+      "title": "Email payment advice {{number}}",
+      "body": "The vendor gets a PDF of the bills this payment settles, any TDS kept back, and what reached their bank.",
+      "blankHint": "Leave blank to use the vendor’s email address.",
+      "noEmail": "This vendor has no email address. Enter one to send it to."
     }
   },
   "bills": {

@@ -153,7 +153,7 @@ export default function Payments() {
                   </span>
                   <RowMenu
                     label={t('payments.actionsFor', { number: p.number })}
-                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, ...(p.kind === 'receipt' ? [{ key: 'pdf', label: t('payments.downloadReceipt'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }] : []), ...(p.status === 'posted' && p.kind === 'payment' && !p.currency ? [{ key: 'cheque', label: t('payments.cheque.action'), icon: SquarePen, onSelect: () => setCheque(p) }] : []), ...(canManage && p.status === 'posted' && p.kind === 'receipt' ? [{ key: 'email', label: t('payments.emailReceipt.action'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
+                    items={[{ key: 'files', label: t('attachments.title'), icon: Paperclip, onSelect: () => setFiles(p) }, { key: 'pdf', label: t(p.kind === 'receipt' ? 'payments.downloadReceipt' : 'payments.advice.download'), icon: FileDown, onSelect: () => void api!.pdf(p.id).then(saveBlob, (e: unknown) => toast(apiErrorMessage(e, t), 'error')) }, ...(p.status === 'posted' && p.kind === 'payment' && !p.currency ? [{ key: 'cheque', label: t('payments.cheque.action'), icon: SquarePen, onSelect: () => setCheque(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'email', label: t(p.kind === 'receipt' ? 'payments.emailReceipt.action' : 'payments.advice.email'), icon: Mail, onSelect: () => setEmailing(p) }] : []), ...(canManage && p.status === 'posted' ? [{ key: 'void', label: t(p.kind === 'receipt' ? 'payments.voidAction' : 'payments.voidPayment'), icon: Ban, danger: true, onSelect: () => setVoiding(p) }] : [])]}
                   />
                 </li>
               ))}
@@ -182,14 +182,14 @@ export default function Payments() {
       {cheque && api && <ChequeDialog payment={cheque} api={api} onClose={() => setCheque(null)} />}
       {emailing && api && (
         <EmailDialog
-          title={t('payments.emailReceipt.title', { number: emailing.number })}
-          description={t('payments.emailReceipt.body')}
+          title={t(emailing.kind === 'receipt' ? 'payments.emailReceipt.title' : 'payments.advice.title', { number: emailing.number })}
+          description={t(emailing.kind === 'receipt' ? 'payments.emailReceipt.body' : 'payments.advice.body')}
           defaultEmail={null}
-          blankHint={t('payments.emailReceipt.blankHint')}
+          blankHint={t(emailing.kind === 'receipt' ? 'payments.emailReceipt.blankHint' : 'payments.advice.blankHint')}
           send={(input) => api.email(emailing.id, input)}
           sentMessage={(email) => t('payments.emailReceipt.sent', { email })}
           demoMessage={(email) => t('payments.emailReceipt.sentDemo', { email })}
-          errorMessage={(e) => (e instanceof Error && 'details' in e && (e as { details?: { reason?: string } }).details?.reason === 'no_email' ? t('payments.emailReceipt.noEmail') : apiErrorMessage(e, t))}
+          errorMessage={(e) => (e instanceof Error && 'details' in e && (e as { details?: { reason?: string } }).details?.reason === 'no_email' ? t(emailing.kind === 'receipt' ? 'payments.emailReceipt.noEmail' : 'payments.advice.noEmail') : apiErrorMessage(e, t))}
           onClose={() => setEmailing(null)}
         />
       )}
