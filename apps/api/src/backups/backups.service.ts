@@ -4,6 +4,7 @@ import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
   type BackupFile,
+  sniffLogoType,
 } from '@ledgernest/shared';
 import type { Request } from 'express';
 import type { Actor, Tenant } from '../access/types.js';
@@ -238,6 +239,19 @@ export class BackupsService {
           `${dangling.length} row(s) in ${fk.table} point to missing ${fk.refTable}`,
         );
     }
+    // Logos, signatures and seals must be the images they say they are, as an upload would be checked
+    for (const t of ['organization_logos', 'organization_images'])
+      for (const r of b.tables[t] ?? []) {
+        const bytes =
+          typeof r.data === 'string'
+            ? Buffer.from(r.data, 'base64')
+            : Buffer.alloc(0);
+        const type = sniffLogoType(bytes);
+        if (!type || type !== r.content_type)
+          problems.push(
+            `A row in ${t} isn’t the PNG, JPEG or WebP image it says it is`,
+          );
+      }
     // Posted entries balance
     const lines = b.tables.journal_lines ?? [];
     for (const e of (b.tables.journal_entries ?? []).filter(
