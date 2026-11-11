@@ -1,3 +1,4 @@
+import { press } from '../test/openDialog';
 import { vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -233,7 +234,7 @@ describe('customers and vendors', () => {
     let link = '';
     await waitFor(
       () => {
-        if (!screen.queryByRole('dialog')) fireEvent.click(screen.getByRole('button', { name: /^Share account/ }));
+        if (!screen.queryByRole('dialog')) press(/^Share account/);
         link = (within(screen.getByRole('dialog', { name: 'Account link for Kumar Logistics' })).getByLabelText('Account link') as HTMLInputElement).value;
         expect(link).toMatch(/\/c\/[A-Za-z0-9_-]{32}$/);
       },

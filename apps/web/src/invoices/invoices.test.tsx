@@ -10,6 +10,7 @@ import { resetDemoItems } from '../items/demoItemsApi';
 import { resetDemoJournals } from '../journals/demoJournalsApi';
 import { resetDemoPeriods } from '../periods/demoPeriodsApi';
 import { routes } from '../routes';
+import { press } from '../test/openDialog';
 import { resetDemoTaxes } from '../taxes/demoTaxesApi';
 import { resetDemoInvoices } from './demoInvoicesApi';
 import { openDialog } from '../test/openDialog';
@@ -69,7 +70,7 @@ describe('invoices', () => {
     expect(within(doc).getByText('HSN/SAC 998314')).toBeInTheDocument();
     expect(within(doc).getByText('₹1,98,240.00')).toBeInTheDocument();
     expect(screen.getByText('Posted as').parentElement!.querySelector('a')!.textContent).toMatch(/^JV\//);
-    expect(screen.getByRole('button', { name: 'Print or save as PDF' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More actions' })).toBeInTheDocument();
   }, 20_000);
 
   it('charges no GST under the composition scheme, even for an item that usually carries it', async () => {
@@ -121,7 +122,7 @@ describe('invoices', () => {
     // outside it) and confirm in the same step, as the header re-renders while the invoice's details load
     await waitFor(
       () => {
-        if (!screen.queryByText(/^Its entry is reversed today/)) fireEvent.click(screen.getByRole('button', { name: 'Void' }));
+        if (!screen.queryByText(/^Its entry is reversed today/)) press('Void');
         const dialog = screen.getByText(/^Its entry is reversed today/).closest('[role="dialog"]') as HTMLElement;
         expect(dialog).toHaveTextContent(/^Void INV\//);
         fireEvent.click(within(dialog).getByRole('button', { name: 'Void' }));
@@ -160,7 +161,7 @@ describe('invoices', () => {
     await screen.findByRole('article', {}, { timeout: 4000 });
     await waitFor(
       () => {
-        if (!router.state.location.search.includes('copy=')) fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+        if (!router.state.location.search.includes('copy=')) press('Duplicate');
         expect(router.state.location.search).toMatch(/^\?copy=/);
       },
       { timeout: 6000 },
@@ -310,7 +311,7 @@ describe('invoices', () => {
     await screen.findByRole('article', {}, { timeout: 4000 });
     await waitFor(
       () => {
-        if (!saved) fireEvent.click(screen.getByRole('button', { name: 'e-Invoice JSON' }));
+        if (!saved) press('e-Invoice JSON');
         expect(saved).toBeDefined();
       },
       { timeout: 8000 },
@@ -322,8 +323,14 @@ describe('invoices', () => {
     // Without the organisation's PIN code the portal would refuse it: say so, with where to fix it
     const { createDemoSettingsApi, resetDemoSettings } = await import('../settings/demoSettingsApi');
     await createDemoSettingsApi(() => true).update({ address: { postalCode: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'e-Invoice JSON' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Not ready for the e-invoice portal' }, { timeout: 4000 });
+    await waitFor(
+      () => {
+        if (!screen.queryByRole('dialog', { name: 'Not ready for the e-invoice portal' })) press('e-Invoice JSON');
+        expect(screen.getByRole('dialog', { name: 'Not ready for the e-invoice portal' })).toBeInTheDocument();
+      },
+      { timeout: 6000 },
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Not ready for the e-invoice portal' });
     expect(within(dialog).getByText('Your organisation’s PIN code is missing or not 6 digits.')).toBeInTheDocument();
     expect(within(dialog).getByRole('link', { name: 'Fix' })).toHaveAttribute('href', '/settings');
     resetDemoSettings();

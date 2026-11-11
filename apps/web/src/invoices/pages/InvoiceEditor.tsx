@@ -156,39 +156,7 @@ export default function InvoiceEditor() {
                 <Pill tone={invoice.status === 'issued' ? 'brand' : 'neutral'}>
                   <span className={stateTone(invoice.state)}>{t(`invoices.states.${invoice.state}`)}</span>
                 </Pill>
-                {canManage && (
-                  <Button variant="ghost" icon={<Copy className="size-4" />} onClick={() => navigate(`/invoices/new?copy=${invoice.id}`)}>
-                    {t('invoices.duplicate')}
-                  </Button>
-                )}
-                {invoice.status !== 'draft' && (
-                  <Button variant="secondary" icon={<Printer className="size-4" />} onClick={() => window.print()}>
-                    {t('invoices.print')}
-                  </Button>
-                )}
-                {invoice.status !== 'draft' && (
-                  <>
-                    <Button variant="ghost" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate(undefined)}>
-                      {t('common.downloadPdf')}
-                    </Button>
-                    {india && (
-                      <RowMenu
-                        label={t('invoices.copies.menu')}
-                        items={(['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: c, label: t(`invoices.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) }))}
-                      />
-                    )}
-                  </>
-                )}
-                {invoice.status === 'issued' && india && invoice.contact.taxId && (
-                  <Button variant="ghost" icon={<FileJson className="size-4" />} loading={einvoice.isPending} onClick={() => einvoice.mutate()}>
-                    {t('invoices.einvoice.action')}
-                  </Button>
-                )}
-                {invoice.status === 'issued' && india && (!invoice.currency || invoice.currency === 'INR') && invoice.lines.some((l) => !l.item?.hsnSac?.startsWith('99')) && (
-                  <Button variant="ghost" icon={<Truck className="size-4" />} onClick={() => setEway(true)}>
-                    {t('invoices.eway.action')}
-                  </Button>
-                )}
+                {/* What's done most stays visible; everything else is under More */}
                 {invoice.status === 'issued' && canReceive && invoice.balance > 0 && (
                   <Button icon={<HandCoins className="size-4" />} onClick={() => setReceiving(true)}>
                     {t('payments.recordPayment')}
@@ -209,21 +177,29 @@ export default function InvoiceEditor() {
                     {t('invoices.reminder.action')}
                   </Button>
                 )}
-                {invoice.status !== 'void' && canManage && (
-                  <Button variant="ghost" icon={<Repeat className="size-4" />} onClick={() => setRepeating(true)}>
-                    {t('recurring.makeRecurring')}
-                  </Button>
+                {invoice.status !== 'draft' && (
+                  <>
+                    <Button variant="secondary" icon={<FileDown className="size-4" />} loading={download.isPending} onClick={() => download.mutate(undefined)}>
+                      {t('common.downloadPdf')}
+                    </Button>
+                  </>
                 )}
-                {invoice.status === 'issued' && canManage && (
-                  <Button variant="secondary" icon={<FileMinus className="size-4" />} onClick={() => setCrediting(true)}>
-                    {t('creditNotes.new')}
-                  </Button>
-                )}
-                {invoice.status === 'issued' && canManage && invoice.amountPaid === 0 && (
-                  <Button variant="ghost" icon={<Ban className="size-4" />} onClick={() => setVoiding(true)}>
-                    {t('invoices.void')}
-                  </Button>
-                )}
+                <RowMenu
+                  label={t('quotes.moreActions')}
+                  items={[
+                    ...(canManage ? [{ key: 'duplicate', label: t('invoices.duplicate'), icon: Copy, onSelect: () => navigate(`/invoices/new?copy=${invoice.id}`) }] : []),
+                    ...(invoice.status !== 'draft' ? [{ key: 'print', label: t('invoices.print'), icon: Printer, onSelect: () => window.print() }] : []),
+                    // The three copies a GST invoice is made out in (Rule 48)
+                    ...(invoice.status !== 'draft' && india ? (['original', 'duplicate', 'triplicate'] as const).map((c) => ({ key: `copy-${c}`, label: t(`invoices.copies.${c}`), icon: FileDown, onSelect: () => download.mutate(c) })) : []),
+                    ...(invoice.status === 'issued' && india && invoice.contact.taxId ? [{ key: 'einvoice', label: t('invoices.einvoice.action'), icon: FileJson, onSelect: () => einvoice.mutate() }] : []),
+                    ...(invoice.status === 'issued' && india && (!invoice.currency || invoice.currency === 'INR') && invoice.lines.some((l) => !l.item?.hsnSac?.startsWith('99'))
+                      ? [{ key: 'eway', label: t('invoices.eway.action'), icon: Truck, onSelect: () => setEway(true) }]
+                      : []),
+                    ...(invoice.status !== 'void' && canManage ? [{ key: 'recurring', label: t('recurring.makeRecurring'), icon: Repeat, onSelect: () => setRepeating(true) }] : []),
+                    ...(invoice.status === 'issued' && canManage ? [{ key: 'credit', label: t('creditNotes.new'), icon: FileMinus, onSelect: () => setCrediting(true) }] : []),
+                    ...(invoice.status === 'issued' && canManage && invoice.amountPaid === 0 ? [{ key: 'void', label: t('invoices.void'), icon: Ban, danger: true, onSelect: () => setVoiding(true) }] : []),
+                  ]}
+                />
               </>
             ) : undefined
           }
